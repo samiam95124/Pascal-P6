@@ -1,0 +1,705 @@
+================================================================================
+                  PASCAL-P6 PORTABLE INTERPRETER (PINT) THEORY OF OPERATIONS
+================================================================================
+
+                             Table of Contents
+                             -----------------
+
+  1.  Overview
+  2.  Memory Model
+  3.  Instruction Set
+  4.  Standard Procedures (CSP)
+  5.  Program Loading
+  6.  Execution Engine
+  7.  File I/O
+  8.  Exception Handling
+  9.  Debugging System
+  10. File Organization
+  11. Build System
+  12. References
+
+                                  Overview
+                                  --------
+
+The Pascal-P6 portable interpreter (pint.pas) is a stack-based virtual machine
+that executes P-code produced by the Pascal-P6 compiler (pcom). It provides a
+complete runtime environment including memory management, file I/O, exception
+handling, and an interactive debugger.
+
+pint reads text-format P-code from an intermediate file (.p6), assembles it into
+a binary store, resolves labels and forward references, then executes it via a
+fetch-decode-execute loop. It is written in Pascal and compiled by the P6 system
+itself.
+
+Program header:
+
+  program pint(input,output,command);
+
+  uses endian,    { endian mode detection }
+       mpb,       { machine parameter block }
+       version,   { version number constants }
+       parcmd,    { command line parsing }
+       pint_mem,  { low-level VM memory access }
+       extlink,   { external routine linkages }
+       extend;    { extension routines }
+
+================================================================================
+                              1. MEMORY MODEL
+================================================================================
+
+Layout:
+-------
+The entire program lives in a single byte array (store[0..maxstr]):
+
+  Address 0     ┌──────────────────────────┐
+                │ Code (P-code binary)     │
+                ├──────────────────────────┤ pctop
+                │ Constants                │
+                ├──────────────────────────┤ gbtop
+                │ Global variables         │
+                ├──────────────────────────┤
+                │      (free space)        │
+                ├──────────────────────────┤ np (heap pointer, grows down)
+                │ Heap (dynamic alloc)     │
+                ├──────────────────────────┤
+                │      (free space)        │
+                ├──────────────────────────┤ sp (stack pointer, grows up)
+                │ Stack (frames + temps)   │
+  maxstr        └──────────────────────────┘
+
+Registers:
+----------
+  pc   - Program counter (current instruction address)
+  sp   - Stack pointer (top of stack, grows toward lower addresses)
+  mp   - Mark pointer (base of current stack frame)
+  np   - New pointer (top of heap, grows downward)
+  ep   - Extent pointer (stack limit for overflow detection)
+
+Stack Frame Layout:
+-------------------
+Each procedure call creates a mark on the stack:
+
+  mp+markdl:  Dynamic link (saved mp of caller)
+  mp+markra:  Return address (saved pc)
+  mp+markdsp: Display entries (static link chain, p levels)
+  mp+marksb:  Stack bottom
+  mp+market:  Exception extent
+
+Local variables and temporaries follow the mark area.
+
+Heap Block Format:
+------------------
+Each heap block has an address-sized header:
+  - Negative value = allocated block (abs value = size)
+  - Positive value = free block (value = size)
+  - Used by new/dispose for memory management
+  - Coalescing merges adjacent free blocks
+
+Defined Bit Tracking:
+---------------------
+storedef[] tracks which bytes have been initialized (1 bit per address).
+When dochkdef is enabled, every memory read checks the defined bit and
+throws UndefinedLocationAccess if the location was never written.
+
+================================================================================
+                           2. INSTRUCTION SET
+================================================================================
+
+pint implements 255 instruction opcodes (0-254). Instructions are categorized
+by function:
+
+Load Instructions:
+------------------
+  0   lodi    Load integer from variable (p=level, q=offset)
+  1   ldoi    Load integer from global
+  105 loda    Load address from variable
+  106 lodr    Load real from variable
+  107 lods    Load set from variable
+  108 lodb    Load boolean from variable
+  109 lodc    Load character from variable
+  193 lodx    Load byte from variable
+  65  ldoa    Load address from global
+  66  ldor    Load real from global
+  67  ldos    Load set from global
+  68  ldob    Load boolean from global
+  69  ldoc    Load character from global
+  194 ldox    Load byte from global
+  123 ldci    Load constant integer
+  124 ldcr    Load constant real
+  125 ldcn    Load nil constant
+  126 ldcb    Load constant boolean
+  127 ldcc    Load constant character
+  4   lda     Load address of variable (p=level, q=offset)
+  5   lao     Load address of global (q=offset)
+  56  lca     Load constant address
+
+Store Instructions:
+-------------------
+  2   stri    Store integer to variable
+  3   sroi    Store integer to global
+  6   stoi    Store integer indirect (via address on stack)
+  70  stra    Store address to variable
+  71  strr    Store real to variable
+  72  strs    Store set to variable
+  73  strb    Store boolean to variable
+  74  strc    Store character to variable
+  195 strx    Store byte to variable
+  75-79       sroa, sror, sros, srob, sroc (store to global variants)
+  80-84       stoa, stor, stos, stob, stoc (store indirect variants)
+  196-197     srox, stox (byte store variants)
+
+Indirect Access:
+----------------
+  9   indi    Indirect load integer (with offset q)
+  85  inda    Indirect load address
+  86  indr    Indirect load real
+  87  inds    Indirect load set
+  88  indb    Indirect load boolean
+  89  indc    Indirect load character
+  198 indx    Indirect load byte
+
+Increment/Decrement:
+--------------------
+  10  inci    Increment integer by q
+  90  inca    Increment address by q
+  93  incb    Increment boolean
+  94  incc    Increment character
+  201 incx    Increment byte
+  57  deci    Decrement integer by q
+  103 decb    Decrement boolean
+  104 decc    Decrement character
+  202 decx    Decrement byte
+
+Arithmetic:
+-----------
+  28  adi     Add integers
+  29  adr     Add reals
+  30  sbi     Subtract integers
+  31  sbr     Subtract reals
+  51  mpi     Multiply integers
+  52  mpr     Multiply reals
+  53  dvi     Divide integers
+  54  dvr     Divide reals
+  49  mod     Modulo
+  36  ngi     Negate integer
+  37  ngr     Negate real
+  38  sqi     Square integer
+  39  sqr     Square real
+  40  abi     Absolute value integer
+  41  abr     Absolute value real
+  50  odd     Test odd
+
+Type Conversion:
+----------------
+  33  flt     Integer to real
+  34  flo     Float (both operands on stack)
+  35  trc     Truncate real to integer
+  62  rnd     Round real to integer
+  59  ordi    Ordinal integer (no-op)
+  134 ordb    Ordinal boolean (no-op)
+  136 ordc    Ordinal character (no-op)
+  200 ordx    Ordinal byte (no-op)
+  60  chr     Character (no-op)
+
+Logical/Bitwise:
+----------------
+  42  notb    Boolean NOT
+  43  and     Bitwise AND
+  44  ior     Bitwise OR
+  205 noti    Bitwise NOT (integer)
+  206 xor     Bitwise XOR
+
+Set Operations:
+---------------
+  32  sgs     Singleton set
+  45  dif     Set difference
+  46  int     Set intersection
+  47  uni     Set union
+  48  inn     Set membership test
+  110 rgs     Range set
+  97  chks    Check set bounds
+
+Comparison:
+-----------
+  17,18       equa, neqa (address)
+  137-142     equi, equr, equb, equs, equc, equm (typed equality)
+  143-148     neqi, neqr, neqb, neqs, neqc, neqm (typed inequality)
+  149-154     geqi, geqr, geqb, geqs, geqc, geqm
+  155-160     grti, grtr, grtb, grts, grtc, grtm
+  161-166     leqi, leqr, leqb, leqs, leqc, leqm
+  167-172     lesi, lesr, lesb, less, lesc, lesm
+  215-220     equv, neqv, lesv, grtv, leqv, geqv (variant)
+
+Control Flow:
+-------------
+  23  ujp     Unconditional jump
+  24  fjp     False jump (jump if top of stack is false)
+  119 tjp     True jump
+  25  xjp     Indexed jump (case statement)
+  8   cjp     Case jump with range check
+  61  ujc     Unconditional jump case (error)
+
+Procedure Call/Return:
+----------------------
+  11  mst     Mark stack (prepare for call)
+  12  cup     Call user procedure
+  246 cuf     Call user function
+  27  cuv     Call via vector (indirect)
+  249 cvf     Call function via vector
+  21  cal     Call address
+  113 cip     Call indirect procedure
+  247 cif     Call indirect function
+  114 lpa     Load procedure address
+  120 lip     Load indirect procedure
+  22  ret     Return (void)
+  128-132     reti, retr, retc, retb, reta (typed returns)
+  236 rets    Return set
+  237 retm    Return multi (block copy)
+  204 retx    Return byte
+  14  retp    Return procedure (with parameters)
+  112 ipj     Inter-procedure jump
+  20  lnp     Load new program (set globals size)
+
+Bounds Checking:
+----------------
+  26  chki    Check integer range
+  95  chka    Check address validity
+  98  chkb    Check boolean range
+  99  chkc    Check character range
+  199 chkx    Check byte range
+  190 ckla    Check load address
+  189 inv     Invalidate pointer
+
+Stack Operations:
+-----------------
+  117 dmp     Dump (remove q bytes from stack)
+  118 swp     Swap top stack elements (size q)
+  55  mov     Move memory block (q bytes)
+  181-186     dupi, dupa, dupr, dups, dupb, dupc (duplicate top)
+
+Array/Container:
+----------------
+  16  ixa     Index array (compute element address)
+  63  pck     Pack array
+  64  upk     Unpack array
+  211 cxs     Container index set
+  212 cxc     Container index component
+  213 lft     Lift
+  214 max     Maximum
+  222 spc     Space container
+  223 ccs     Convert container to stack
+  224 scp     Set container pointer
+  225 ldp     Load pointer
+
+Vector/Dynamic:
+---------------
+  122 vis     Vector integer storage
+  133 vip     Vector indirect pointer
+  226 vin     Vector initialize
+
+Variant Type Operations:
+------------------------
+  100 cvbi    Convert boolean to integer (variant)
+  115 cvbx    Convert boolean to byte
+  116 cvbb    Convert boolean to boolean
+  121 cvbc    Convert boolean to character
+  192 ivti    Initialize variant integer
+  101 ivtx    Initialize variant byte
+  102 ivtb    Initialize variant boolean
+  111 ivtc    Initialize variant character
+  175 ckvi    Check variant integer
+  203 ckvx    Check variant byte
+  179 ckvb    Check variant boolean
+  180 ckvc    Check variant character
+  188 cke     Check enum
+  191 cta     Change tag address
+
+VAR/WITH Block:
+---------------
+  92  vbs     VAR block start
+  96  vbe     VAR block end
+  243 wbs     WITH block start
+  244 wbe     WITH block end
+  245 sfr     Set function result
+
+Exception Handling:
+-------------------
+  207 bge     Begin exception frame
+  208 ede     End exception frame
+  209 mse     Move to exception (throw)
+  253 sev     Set exception vector
+
+Special:
+--------
+  15  csp     Call standard procedure
+  19  brk     Breakpoint
+  58  stp     Stop execution
+  174 mrkl    Mark source line
+  242 eext    Execute external routine
+  254 mdc     Make duplicate copy
+
+================================================================================
+                       3. STANDARD PROCEDURES (CSP)
+================================================================================
+
+pint implements 112 standard procedures (CSP 0-111), dispatched by the callsp()
+procedure:
+
+File I/O:
+---------
+  0   get     Get next character from file buffer
+  1   put     Write file buffer to file
+  3   rln     Read line (skip to next newline)
+  5   wln     Write line (newline)
+  7   eln     Test end of line
+  21  pag     Page (form feed)
+  41  eof     Test end of file
+  42  efb     EOF with buffer check
+
+Formatted Read:
+---------------
+  11  rdi     Read integer
+  12  rdr     Read real
+  13  rdc     Read character
+  37  rib     Read integer bounded
+  38  rcb     Read character bounded
+  70  rds     Read string
+  72  rdif    Read integer fielded
+  73  rdrf    Read real fielded
+  75  rdcf    Read character fielded
+  76  rdsf    Read string fielded
+  77  rdsp    Read string packed
+  82-110      Extended read variants (hex, octal, binary, byte, fielded)
+
+Formatted Write:
+----------------
+  6   wrs     Write string with field width
+  8   wri     Write integer
+  9   wrr     Write real
+  10  wrc     Write character
+  24  wrb     Write boolean
+  25  wrf     Write real formatted (field + fraction)
+  65  wrsp    Write packed string
+  62-69       Write integer variants (hex, octal, binary, zero-fill)
+
+Binary File I/O:
+----------------
+  27  wbf     Write binary file
+  28  wbi     Write binary integer
+  29  wbr     Write binary real
+  30  wbc     Write binary character
+  31  wbb     Write binary boolean
+  45  wbx     Write binary byte
+  32  rbf     Read binary file
+  33  rsb     Reset binary
+  34  rwb     Rewrite binary
+  35  gbf     Get binary file
+  36  pbf     Put binary file
+
+File Management:
+----------------
+  22  rsf     Reset file (open for reading)
+  23  rwf     Rewrite file (open for writing)
+  46  asst    Assign filename (text)
+  47  clst    Close file (text)
+  48  pos     Position in file
+  49  upd     Update file
+  50  appt    Append file (text)
+  51  del     Delete file
+  52  chg     Change (rename) file
+  53  len     File length
+  54  loc     File location
+  55  exs     File exists
+  56  assb    Assign filename (binary)
+  57  clsb    Close file (binary)
+  58  appb    Append file (binary)
+
+Memory Management:
+------------------
+  4   new     Allocate heap block
+  26  dsp     Dispose heap block
+  39  nwl     New with tag list (variant record)
+  40  dsl     Dispose with tag list
+
+Math Functions:
+---------------
+  14  sin     Sine
+  15  cos     Cosine
+  16  exp     Exponential
+  17  log     Natural logarithm
+  18  sqt     Square root
+  19  atn     Arctangent
+
+Buffer Validation:
+------------------
+  43  fbv     File buffer validate (text)
+  44  fvb     File buffer validate (binary)
+
+Assertions:
+-----------
+  60  ast     Assert (boolean)
+  61  asts    Assert with string message
+
+Control:
+--------
+  59  hlt     Halt execution
+  111 sete    Set event
+
+================================================================================
+                          4. PROGRAM LOADING
+================================================================================
+
+The load() procedure (line ~1697) reads text-format P-code from the intermediate
+file (.p6) and assembles it into the binary store[].
+
+Loading Process:
+----------------
+1. Initialize instruction table (256 entries with parameter flags)
+2. Initialize standard procedure table (112 entries)
+3. Read intermediate file record by record
+4. Parse instructions: opcode mnemonic, optional p digit, q value
+5. Process special records:
+   - Labels ('l'): Near labels (numeric) and far labels (symbolic with dots)
+   - Options ('o'): Compiler flags
+   - Block markers ('b'/'e'): Procedure/function boundaries
+   - Symbol info ('s'): Variable names and types for debugging
+6. Resolve forward label references via link chain
+7. Perform constant and global address fixups
+8. Build symbol tables from source debug information
+
+The loader sets pctop (top of code), gbtop (top of globals), and the initial
+values for np, sp, mp, and ep.
+
+================================================================================
+                          5. EXECUTION ENGINE
+================================================================================
+
+The main execution loop calls sinins() (single instruction) repeatedly until
+the stop flag is set:
+
+  repeat
+    stopins := false;
+    sinins
+  until stopins;
+
+sinins() (line ~4513):
+1. Check pc is within code bounds
+2. Fetch opcode with getop()
+3. Dispatch to instruction handler via case statement (256 branches)
+4. Each handler decodes parameters (getp, getq) and executes semantics
+5. Stack operations via push/pop macros:
+   - popint(i)  / pshint(i)   - integer
+   - poprel(r)  / pshrel(r)   - real
+   - popset(s)  / pshset(s)   - set
+   - popadr(a)  / pshadr(a)   - address
+6. If debugging enabled, check breakpoints and watches after each instruction
+
+================================================================================
+                             6. FILE I/O
+================================================================================
+
+Standard Files:
+---------------
+Seven pre-defined file descriptors mapped to fixed memory offsets:
+
+  inputoff  = 0    'input'   (stdin, read-only)
+  outputoff = 2    'output'  (stdout, write-only)
+  prdoff    = 4    'prd'     (program read deck)
+  prroff    = 6    'prr'     (program result file)
+  erroroff  = 8    'error'   (stderr)
+  listoff   = 10   'list'    (listing output)
+  commandoff= 12   'command' (command line)
+
+Each file descriptor occupies 2 units: file number (1 byte) + buffer (1 byte).
+
+File State Machine:
+-------------------
+Each file has a state tracked in filstate[]:
+  fnone   - Not yet initialized
+  fclosed - Assigned but not open
+  fread   - Open for reading
+  fwrite  - Open for writing
+
+User files (beyond the 7 standard files) are dynamically allocated from
+filtable[] (text files) and bfiltable[] (binary files).
+
+Read Operations:
+----------------
+  readi()   - Parse integer with radix support (decimal, hex $, octal &, binary %)
+  readr()   - Parse real numbers (decimal point, exponent)
+  readc()   - Read single character
+  reads()   - Read string with width
+
+Write Operations:
+-----------------
+  writestr()  - Write string with field width (right/left alignment)
+  writestrp() - Write packed string (trailing spaces trimmed)
+  writei()    - Write integer with radix and zero-fill support
+  writerf()   - Write real with field and fraction widths
+  writec()    - Write character with field width
+
+================================================================================
+                         7. EXCEPTION HANDLING
+================================================================================
+
+Exception Frame Stack:
+----------------------
+  expadr  - Handler address (0 if none)
+  expstk  - Saved sp when exception frame was established
+  expmrk  - Saved mp when exception frame was established
+
+Instructions:
+-------------
+  bge (207): Begin exception - save current frame, set new handler address
+  ede (208): End exception - restore previous frame (normal completion)
+  mse (209): Throw - restore mp/sp/pc from frame, branch to handler
+
+Exception Categories:
+---------------------
+  Catchable (14-88):  Can be caught by exception handlers
+    - ValueOutOfRange, ZeroDivide, NilPointerDereference,
+      RealOverflow, EndOfFile, FileNotOpen, etc.
+
+  Uncatchable (89-121): Fatal errors, immediate halt
+    - UndefinedLocationAccess, InvalidInstruction, HeapFormatInvalid,
+      BadPointerValue, StoreOverflow, PCOutOfRange, etc.
+
+Error Reporting:
+----------------
+  errorv(ea) - Uncatchable error: print message and abort
+  errore(ei) - Catchable error: dispatch to handler or abort
+  errorm(ea) - Unhandled exception: format message and abort
+
+================================================================================
+                          8. DEBUGGING SYSTEM
+================================================================================
+
+pint includes a comprehensive interactive debugger (debug() procedure,
+line ~5335) with 50+ commands.
+
+Execution Control:
+------------------
+  r     - Run to breakpoint
+  c     - Continue execution
+  s     - Single step (step over)
+  si    - Step into
+  n     - Step to next source line
+
+Breakpoints (10 max):
+---------------------
+  b <line>     - Set breakpoint at source line
+  bi <addr>    - Set breakpoint at instruction address
+  cb <n>       - Clear breakpoint
+  lb           - List breakpoints
+  tp <line>    - Set tracepoint (print but don't stop)
+
+Watch Points (10 max):
+----------------------
+  w <symbol>   - Watch variable (break on change)
+  lw           - List watches
+  cw <n>       - Clear watch
+
+Inspection:
+-----------
+  p <symbol>   - Print variable value
+  e <expr>     - Evaluate expression
+  l [range]    - List source lines
+  lc [range]   - List source with coverage
+  li [range]   - List instructions
+  d <addr>     - Dump memory (various formats: d8, d16, d32, d64)
+  ds           - Dump storage layout
+  dd           - Dump display (scope chain)
+  df           - Dump frames (call stack)
+
+Runtime Flags:
+--------------
+  dochkovf    - Check arithmetic overflow
+  dodmplab    - Dump label definitions at load
+  dotrcrot    - Trace routine entry/exit
+  dotrcins    - Trace every instruction
+  dosrclin    - Track source line info
+  dotrcsrc    - Trace source line execution
+  dorecycl    - Recycle freed heap blocks
+  dodebug     - Start in debugger on entry
+  dodbgflt    - Enter debugger on runtime fault
+  dodbgsrc    - Source-level debugging mode
+  dochkrpt    - Check reuse of freed blocks
+  dochkdef    - Check undefined variable access
+  dosrcprf    - Source-level profiling
+  dochkcov    - Code coverage tracking
+  doanalys    - Instruction analysis mode
+  dodckout    - Output object code deck
+  dochkvbk    - Check VAR block references
+  iso7185     - ISO 7185 compliance mode
+
+Symbol Table:
+-------------
+The debugger maintains symbol information loaded from the intermediate file:
+
+  block = record
+    name    : block name (including type prefix)
+    btyp    : btprog, btmod, btproc, btfunc
+    symbols : linked list of variable symbols
+    bestart : block entry start address
+    bstart  : block body start address
+    bend    : block end address
+    lintrk  : source line to address mapping
+    linprf  : line execution counts (profiling)
+  end
+
+  symbol = record
+    name    : variable name
+    styp    : stglobal, stlocal, stparam, stfixg, stfixl
+    off     : offset address
+    digest  : type digest string
+  end
+
+================================================================================
+                          9. FILE ORGANIZATION
+================================================================================
+
+  Lines 1-160: Header comments, licensing
+  Lines 162-171: Program header (uses clauses)
+  Lines 174-365: Constants (sizes, exception codes, debug commands)
+  Lines 367-463: Type definitions (break, symbol, block, debug commands)
+  Lines 465-563: Global variables (VM state, registers, debug flags)
+  Lines 856-1247: Memory access functions (get/put for all types)
+  Lines 1247-1522: Utility functions (string handling, bitwise, stack ops)
+  Lines 1697-3051: Load procedure (P-code loading and assembly)
+  Lines 3234-3342: Heap management (newspc, dspspc, fndfre, cscspc)
+  Lines 3346-4341: Standard procedure handler (callsp)
+  Lines 4513-5333: Instruction executor (sinins)
+  Lines 5335-7398: Interactive debugger (debug)
+  Lines 7495-7760: Main program (initialization and entry point)
+
+================================================================================
+                           10. BUILD SYSTEM
+================================================================================
+
+Build:
+  . setpath && pc source/pint
+
+pint uses only `uses` clauses (no `joins`), so all dependencies are resolved
+at compile time via module interfaces:
+
+  uses endian, mpb, version, parcmd, pint_mem, extlink, extend
+
+Run:
+  pint <program.p6> [<output>] [options]
+
+The .p6 file is text-format P-code produced by pcom. pint assembles it into
+binary form during the load phase, then executes it.
+
+For machine-code format (binary deck), use pmach instead.
+
+================================================================================
+                              11. REFERENCES
+================================================================================
+
+1. "Pascal Implementation" by Steven Pemberton and Martin Daniels
+
+2. ISO 7185:1990 - Pascal standard
+
+3. Pascaline Language Reference - P6 extensions documentation
+
+================================================================================

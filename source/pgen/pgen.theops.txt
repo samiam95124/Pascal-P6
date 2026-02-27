@@ -1,0 +1,631 @@
+================================================================================
+              PASCAL-P6 AMD64 CODE GENERATOR (PGEN) THEORY OF OPERATIONS
+================================================================================
+
+                             Table of Contents
+                             -----------------
+
+  1.  Overview
+  2.  Architecture
+  3.  Expression Trees
+  4.  Register Allocation
+  5.  Calling Conventions
+  6.  Code Generation
+  7.  Standard Procedure Calls (CSP)
+  8.  Intermediate Code Format
+  9.  CPU-Independent Module
+  10. Register Definitions
+  11. Runtime Support
+  12. Stack Frame Layout
+  13. DWARF Debug Information
+  14. File Organization
+  15. Build System
+  16. References
+
+                                  Overview
+                                  --------
+
+pgen is a two-stage native code generator for Pascal-P6 that transforms
+platform-independent P-code into AMD64 (x86-64) assembly language compatible
+with GAS (GNU Assembler) and gcc. It produces native executables that run
+directly on the hardware without an interpreter.
+
+The code generator reads text P-code from pcom's intermediate output, builds
+expression trees capturing the computation structure, assigns physical registers,
+and emits AMD64 assembly. The assembly is then assembled and linked by gcc along
+with runtime support libraries (psystem.c, psystem.asm, main.asm).
+
+Compilation pipeline:
+  source.pas -> pcom -> source.p6 -> pgen -> source.s -> gcc -> executable
+
+Program header:
+
+  program pgen(output);
+
+  joins services;
+
+  uses endian,      { endian mode }
+       mpb,         { machine parameter block }
+       version,     { version number }
+       parcmd,      { command line parsing }
+       registers,   { AMD64 register definitions }
+       independent; { CPU-independent tables and infrastructure }
+
+Source files:
+  source/pgen/amd64/pgen.pas       AMD64-specific code generator
+  source/pgen/independent.pas      CPU-independent tables and types
+  source/pgen/amd64/registers.pas  AMD64 register definitions
+  source/pgen/psystem.c            C runtime support functions
+  source/pgen/amd64/psystem.asm    Assembly runtime stubs
+  source/pgen/amd64/main.asm       Program entry point
+
+================================================================================
+                            1. ARCHITECTURE
+================================================================================
+
+pgen uses a two-stage code generation approach:
+
+Stage 1: Tree Building
+  - Read P-code instructions from intermediate file
+  - Build expression trees on an expression stack
+  - Each tree node captures an operation, its operands, and parameters
+  - Trees represent complete expressions or statements
+
+Stage 2: Code Emission
+  - Assign physical registers to tree nodes (assreg)
+  - Recursively generate AMD64 assembly from trees (genexp)
+  - Emit assembly directives, labels, and instructions to output file
+
+The expression tree approach allows pgen to:
+  - See the full expression before committing to register assignments
+  - Allocate registers optimally across an expression
+  - Handle the mismatch between P-code's stack model and AMD64's register model
+
+Override Structure:
+-------------------
+pgen.pas overrides several procedures declared in independent.pas:
+
+  abort      - Error handling and program termination
+  preamble   - Module-specific assembly preamble (.text, .globl directives)
+  postamble  - Module epilogue (empty for AMD64)
+  assemble   - Main instruction-to-assembly translation (the core of pgen)
+  dwarf_fbreg     - Returns AMD64 frame base register (RBP = 6)
+  dwarf_addr_size - Returns 8 for 64-bit addresses
+
+================================================================================
+                          2. EXPRESSION TREES
+================================================================================
+
+Tree Node Structure (expstk, in independent.pas):
+--------------------------------------------------
+  op          Instruction opcode (0-255)
+  p           Level parameter
+  q, q1-q4   Address/constant parameters
+  qs, qs1     Symbol name parameters
+  r1, r2, r3  Assigned result registers
+  t1, t2, t3  Temporary registers
+  r1a, r2a    Stack offsets for set temporaries
+  l, r        Left and right child nodes
+  x1          Extra link (additional operand)
+  pl          Parameter list link (for calls)
+  sl          SFR (stack frame) start link
+  cl          Constraint edge chain
+  al          Attachment link
+  fn          Function name (for calls)
+  lb          Label (for stack frame setup)
+  rc          Return code: 0=int, 1=real, 2=set, 3=struct
+  rs          Register save set (registers to push/pop)
+  blk         Block reference (for procedure calls)
+
+Tree Management:
+----------------
+  getexp(ep)   - Allocate node from free list or create new
+  deltre(ep)   - Return node to free list
+  pshstk(ep)   - Push node onto expression stack
+  popstk(ep)   - Pop node from expression stack
+
+Expression Stack:
+-----------------
+P-code is stack-based; pgen maintains a parallel expression stack (estack) that
+mirrors the P-code stack. As P-code instructions are read:
+
+  - Load instructions (lodi, ldci, lda, etc.) push new leaf nodes
+  - Binary operations (adi, sbi, equi, etc.) pop two nodes and push a combined
+    tree with the operation as root
+  - Store instructions (stri, stoi, etc.) pop nodes and generate code
+  - Call instructions (cup, csp) consume parameter nodes from the stack
+
+================================================================================
+                         3. REGISTER ALLOCATION
+================================================================================
+
+Register Set (AMD64):
+---------------------
+Integer registers (14 allocatable):
+  Callee-save (preferred): rbx, r12, r13, r14, r15
+  Caller-save:             rcx, r8, r9, r10, r11, rsi, rdi, rdx, rax
+
+Floating-point registers (16 allocatable):
+  xmm8-xmm15 (preferred), xmm0-xmm7
+
+Allocation order prefers callee-save registers to minimize save/restore around
+calls. The allocation arrays are:
+
+  intassord: [rbx, r12, r13, r14, r15, rcx, r8, r9, r10, r11,
+              rsi, rdi, rdx, rax]
+  fltassord: [xmm8-15, xmm0-7]
+
+Assignment Algorithm (assreg):
+------------------------------
+assreg() recursively traverses the expression tree and assigns physical
+registers to each node:
+
+1. For each node, check if a specific register is required (e.g., rax for
+   multiply result, rdi for first parameter)
+2. If not constrained, call getreg()/getfreg() to allocate the next available
+   register from the preference list
+3. Mark allocated registers as unavailable in the free set
+4. Mark registers destroyed by the operation (e.g., all caller-save registers
+   are destroyed by a call)
+5. Compute the save set (rs): registers that are live across a sub-expression
+   and must be pushed/saved before the sub-expression and restored after
+
+Key sub-procedures:
+  resreg(r)    - Reserve register (mark as unavailable)
+  dstreg(r)    - Mark register as destroyed by operation
+  asspar(ep)   - Assign registers to procedure call parameters
+  asscall()    - Mark all caller-save registers as destroyed
+
+================================================================================
+                        4. CALLING CONVENTIONS
+================================================================================
+
+pgen follows the System V AMD64 ABI for external calls (CSP -> C runtime) and
+uses a compatible convention for Pascal-to-Pascal calls (CUP).
+
+System V AMD64 ABI (for CSP calls to psystem_xxx):
+---------------------------------------------------
+  Integer parameters:  rdi, rsi, rdx, rcx, r8, r9 (first 6)
+  Float parameters:    xmm0-xmm7 (first 8)
+  Integer return:      rax (or rdx:rax for 128-bit)
+  Float return:        xmm0
+  Caller-save:         rax, rcx, rdx, rsi, rdi, r8-r11, xmm0-xmm15
+  Callee-save:         rbx, r12-r15, rbp, rsp
+  Stack alignment:     16-byte aligned at call instruction
+
+Pascal-to-Pascal Calls (CUP/CUF):
+----------------------------------
+For user procedure/function calls, parameters are passed on the stack:
+
+1. SFR instruction allocates local variable space (subq from rsp)
+2. Parameters pushed right-to-left onto the stack
+3. call instruction transfers control
+4. Return value:
+   - Integer/address: rax
+   - Real: xmm0
+   - Set: copied via movsq (4 quadwords = 32 bytes)
+   - Struct: copied via repnz movsb
+
+Stack Alignment:
+----------------
+Before calling psystem_xxx routines, pgen checks if stkadr is 16-byte aligned.
+If not, it inserts a pushq %rbx to align, and pops it after the call returns.
+
+================================================================================
+                          5. CODE GENERATION
+================================================================================
+
+The genexp() procedure recursively generates AMD64 assembly from an expression
+tree. For each node, it:
+
+1. Saves registers in the node's save set (rs) by pushing them
+2. Recursively generates code for child nodes
+3. Emits the operation's assembly instructions
+4. Restores saved registers by popping them
+
+Key Instruction Translations:
+-----------------------------
+
+Load variable (lodi, loda, lodr, etc.):
+  If local (p=current level):
+    movq -offset(%rbp), %r1           # direct frame access
+  If non-local:
+    movq -p*8(%rbp), %r1              # follow display chain
+    movq offset(%r1), %r1             # load from enclosing frame
+
+Load constant (ldci):
+  movq $value, %r1                    # immediate
+
+Load address (lda):
+  leaq -offset(%rbp), %r1             # address of local variable
+
+Load global address (lao):
+  leaq offset(%rip), %r1              # RIP-relative addressing
+
+Array index (ixa):
+  imulq $element_size, %index, %rax   # scale index
+  addq %base, %rax                    # add to base address
+
+Arithmetic (adi, sbi):
+  addq %r2, %r1                       # result in r1
+  With optional overflow check:
+    jno 1f
+    call psystem_errore                # overflow error
+    1:
+
+Multiply (mpi):
+  imulq %r2, %r1
+  With overflow check via jo
+
+Divide (dvi):
+  cqto                                # sign-extend rax to rdx:rax
+  idivq %r2                           # quotient in rax, remainder in rdx
+
+Comparison (equi, neqi, etc.):
+  cmpq %r2, %r1
+  setCC %al                           # set byte from condition code
+  movzbq %al, %r1                     # zero-extend to 64-bit
+
+Float operations (adr, sbr, mpr, dvr):
+  addsd %xmm_r2, %xmm_r1             # double-precision SSE
+  subsd, mulsd, divsd similarly
+
+Jump (ujp, fjp, tjp):
+  ujp: jmp label
+  fjp: testq %r1, %r1; je label
+  tjp: testq %r1, %r1; jne label
+
+Procedure call (cup):
+  genexp(sfr_node)                    # allocate locals
+  push parameters                     # right to left
+  call procedure_label
+  movq %rax, %r1                      # capture return value
+
+Set operations:
+  All dispatched to psystem routines:
+    call psystem_setdif                # set difference
+    call psystem_setint                # set intersection
+    call psystem_setuni                # set union
+    call psystem_setsin                # singleton set
+
+String comparison:
+  movq %addr1, %rdi
+  movq %addr2, %rsi
+  movq $length, %rdx
+  call psystem_strcmp
+  test/set based on result
+
+================================================================================
+                    6. STANDARD PROCEDURE CALLS (CSP)
+================================================================================
+
+CSP instructions are translated to calls to psystem_xxx C functions. The
+standard function/procedure table (sfptab in independent.pas) defines 112
+entries with:
+
+  sptable  - Function name (e.g., 'get', 'sin', 'wri')
+  spfunc   - Whether it returns a value (true = function)
+  sppar    - Number of parameters
+
+CSP Translation:
+----------------
+For most CSPs, pgen generates:
+
+  1. Evaluate all parameters (genexp on parameter list)
+  2. Parameters are in registers per System V ABI (rdi, rsi, rdx, ...)
+  3. Align stack to 16 bytes if needed
+  4. call psystem_<name>
+  5. Remove alignment if added
+  6. Move return value from rax/xmm0 to destination register
+
+Special handling for nwl (39) and dsl (40) which have variable-length tag lists
+pushed on the stack.
+
+Example (sin function):
+  genexp(parameter)                    # value in xmm_r1
+  movsd %xmm_r1, %xmm0               # parameter in xmm0
+  call psystem_sin
+  movsd %xmm0, %xmm_result            # result from xmm0
+
+================================================================================
+                      7. INTERMEDIATE CODE FORMAT
+================================================================================
+
+The generate() procedure (in independent.pas) processes the intermediate file
+line by line. Each line starts with a record type character:
+
+  '!'  Comment (ignored)
+  'l'  Label definition: l<number>[=<address>]
+  'q'  End of intermediate code
+  ' '  Instruction (dispatched to assemble)
+  ':'  Source line number (for debug info)
+  'o'  Compilation option
+  'g'  Global space size
+  'b'  Block start (program/module/procedure/function)
+  'e'  Block end
+  's'  Symbol definition (variable name and type)
+  'f'  Source error count
+  'v'  Variant logical table
+  't'  Template
+  'n'  Start constant table
+  'x'  End constant table
+  'c'  Constant definition
+  'p'  Parameter definition
+  'r'  Return parameter
+
+Instruction lines contain: opcode mnemonic, optional p parameter, q values,
+and optional symbolic references.
+
+================================================================================
+                       8. CPU-INDEPENDENT MODULE
+================================================================================
+
+independent.pas provides infrastructure shared across potential CPU targets:
+
+Instruction Table (instab, 256 entries):
+----------------------------------------
+Each entry defines:
+  mnemonic   - Instruction name (10-char alfa)
+  insr       - Stack words in result (0, 1, or 2)
+  insf       - Result is floating-point
+  inss       - Result is a set
+
+Standard Procedure Table (sfptab, 112 entries):
+-----------------------------------------------
+Each entry defines:
+  sptable    - Procedure name
+  spfunc     - Is a function (returns value)
+  sppar      - Number of parameters
+
+Expression Stack Management:
+-----------------------------
+  getexp/deltre   - Allocate/free tree nodes
+  pshstk/popstk   - Push/pop expression stack
+  duptre          - Duplicate a tree (deep copy)
+
+Constant Management:
+--------------------
+  entcst          - Enter constant into deduplication table
+  gencst          - Output all constants as .data section
+
+Translation Driver:
+-------------------
+  xlate           - Top-level: output header, call generate, output constants
+  generate        - Main loop: read intermediate, dispatch to assemble
+  init            - Reset expression stack and temporaries
+
+Temporary Management:
+---------------------
+  gettmp(off,sz)  - Allocate temporary space in stack frame
+  puttmp(off)     - Free specific temporary
+  puttmps         - Free all temporaries (bulk)
+
+================================================================================
+                        9. REGISTER DEFINITIONS
+================================================================================
+
+registers.pas defines the AMD64 register set:
+
+Register Enumeration:
+---------------------
+  rgnull                              No register
+  rgrax..rgr15                        Integer registers (16)
+  rgxmm0..rgxmm15                    SSE floating-point registers (16)
+
+Allocation Order:
+-----------------
+  intassord[1..14]: Preferred order for integer register allocation
+    rbx, r12, r13, r14, r15,          (callee-save first)
+    rcx, r8, r9, r10, r11,            (caller-save)
+    rsi, rdi, rdx, rax                (parameter/special last)
+
+  fltassord[1..16]: Preferred order for float register allocation
+    xmm8-xmm15,                       (callee-save first)
+    xmm0-xmm7                         (caller-save)
+
+Parameter Registers:
+--------------------
+  parreg[1..6]:  rdi, rsi, rdx, rcx, r8, r9    (integer parameters)
+  parregf[1..8]: xmm0-xmm7                      (float parameters)
+
+Output Procedures:
+------------------
+  wrtreg(r)   - Write full register name (e.g., "rax", "xmm0")
+  wrtbreg(r)  - Write byte register name (e.g., "al", "r8b")
+  regl(r)     - Return estimated output length for register name
+  wrtregs(s)  - Write register set as comma-separated list
+
+================================================================================
+                          10. RUNTIME SUPPORT
+================================================================================
+
+psystem.c (6,057 lines):
+-------------------------
+C runtime library providing all standard procedures as callable functions.
+Each function is named psystem_<name> and follows the System V AMD64 ABI.
+
+Categories:
+  File I/O:       psystem_get, psystem_put, psystem_rln, psystem_wln, ...
+  Read/Write:     psystem_rdi, psystem_rdr, psystem_wri, psystem_wrr, ...
+  Math:           psystem_sin, psystem_cos, psystem_exp, psystem_log, ...
+  Set operations: psystem_setdif, psystem_setint, psystem_setuni, ...
+  Memory:         psystem_nwl, psystem_dsl, psystem_newspc, psystem_dspspc
+  Errors:         psystem_errore, psystem_errorv, psystem_caseerror
+  String:         psystem_strcmp
+
+psystem.asm (192 lines):
+-------------------------
+Assembly stubs for operations that require direct assembly:
+  psystem_caseerror  - Case statement not-found exception
+  psystem_thw        - Throw exception (restore frame and dispatch)
+  psystem_unwind     - Convert error code to exception vector
+
+main.asm (63 lines):
+---------------------
+Program entry point:
+  - Sets up master exception frame
+  - Calls module initialization chain (label 3: for module chaining)
+  - Handles top-level exception dispatch
+
+================================================================================
+                        11. STACK FRAME LAYOUT
+================================================================================
+
+Native Code Frame (AMD64):
+--------------------------
+
+  Higher addresses
+  +------------------------------+
+  | Caller's frame               |
+  +------------------------------+
+  | Return address (from call)   |
+  +---[rbp]---------------------+  <- RBP (frame pointer)
+  | Saved RBP                    |
+  +------------------------------+
+  | Mark area:                   |
+  |   Static link (SL)           |  rbp-8
+  |   Dynamic link (DL)          |  rbp-16
+  |   Saved EP                   |  rbp-24
+  |   Stack bottom (SB)          |  rbp-32
+  |   Current EP                 |  rbp-40
+  |   Return address (RA)        |  rbp-48
+  +------------------------------+
+  | Local variables              |  negative offsets from rbp
+  +------------------------------+
+  | Temporary set storage        |  (allocated by gettmp)
+  +---[rsp]---------------------+  <- RSP (stack pointer)
+  | Parameters for calls         |  (pushed before call)
+  Lower addresses
+
+The mark area is compatible with the P-code mark structure used by the
+interpreters, allowing mixed execution if needed.
+
+Display Chain:
+--------------
+Non-local variable access uses the static link chain stored in the mark area.
+For a variable at level p (current level is l), pgen generates:
+
+  movq -8(%rbp), %r          # follow first static link
+  movq -8(%r), %r            # follow second static link (if p < l-1)
+  ... (repeat for each level difference)
+  movq offset(%r), %r        # load variable
+
+================================================================================
+                      12. DWARF DEBUG INFORMATION
+================================================================================
+
+pgen optionally generates DWARF debug information for source-level debugging
+with GDB. This includes:
+
+  - .debug_info: Compilation unit, subprograms, variables with types
+  - .debug_line: Source line to address mapping (via .loc directives)
+  - .debug_str: String table for names
+
+Source line tracking is controlled by the dosrclin flag. When enabled, the ':'
+records in the intermediate file generate .loc directives:
+
+  .loc 1 <line> 1
+
+This allows GDB to map between source lines and generated code.
+
+================================================================================
+                         13. FILE ORGANIZATION
+================================================================================
+
+pgen.pas (3,306 lines):
+------------------------
+  Lines 1-38: Header, licensing
+  Lines 39-98: Program header, module dependencies, override declarations
+  Lines 100-109: assemble procedure header and local variables
+  Lines 111-145: Register allocation helpers (getreg, getfreg, isfltres)
+  Lines 146-821: Register assignment (assreg - recursive tree traversal)
+  Lines 823-860: Parameter pushing (pshpar)
+  Lines 863-929: System call generation (callsp, callnwldsl)
+  Lines 930-1946: Expression code generation (genexp - main code emitter)
+  Lines 1947-3272: Statement code generation (remaining assemble cases)
+  Lines 3274-3306: Main program (proginit, xlate, entry point)
+
+independent.pas (~3,500 lines):
+--------------------------------
+  Lines 1-85: Header, licensing
+  Lines 86-390: Constants, types, global variables
+  Lines 391-425: Expression tree node (expstk record)
+  Lines 426-448: Instruction table record (inspar)
+  Lines 449-709: Instruction table (instab, 256 entries)
+  Lines 710-715: Standard procedure table record (spfpar)
+  Lines 716-829: Standard procedure table (sfptab, 112 entries)
+  Lines 830-1100: Expression stack management, tree operations
+  Lines 1101-1345: Utility procedures (number output, string handling)
+  Lines 1346-1625: Output procedures (error codes, MPB, constants, DWARF)
+  Lines 1626-3300: Translation driver (generate, xlate)
+  Lines 3301-3500: Initialization (proginit, init)
+
+registers.pas (170 lines):
+---------------------------
+  Lines 1-25: Register enumeration (reg type)
+  Lines 26-50: Register sets and allocation order arrays
+  Lines 51-100: Parameter register arrays
+  Lines 101-170: Output procedures (wrtreg, wrtbreg, regl, wrtregs)
+
+psystem.c (6,057 lines):
+-------------------------
+  All 112 standard procedures as C functions
+  File I/O, math, set operations, memory management, error handling
+
+psystem.asm (192 lines):
+-------------------------
+  Exception handling stubs, case error handler
+
+main.asm (63 lines):
+---------------------
+  Program entry point, module chain initialization
+
+================================================================================
+                           14. BUILD SYSTEM
+================================================================================
+
+Build pgen itself:
+  . setpath && pc source/pgen/amd64/pgen
+
+Build a program with pgen (via pc):
+  . setpath && pc <program>
+
+Manual pgen invocation:
+  pgen <input.p6> <output.s>
+
+The output .s file is then assembled and linked by gcc:
+  gcc -g3 -DWRDSIZ64 source/pgen/psystem.c \
+      -x assembler source/pgen/amd64/psystem.asm \
+      source/pgen/amd64/main.asm \
+      output.s -o executable -lm
+
+Bootstrap Notes:
+----------------
+pgen is compiled by pcom and itself, forming a matched pair. When modifying
+either pcom or pgen:
+
+  1. flush                              Restore known-good tools
+  2. pc source/pcom -r                  Build new pcom with old tools
+  3. pc source/pgen/amd64/pgen -r       Build new pgen with old tools
+  4. cp source/pcom bin/pcom            Install both together
+     cp source/pgen/amd64/pgen bin/pgen
+
+Never install new pcom without new pgen (or vice versa). The P-code format
+may change between versions.
+
+================================================================================
+                              15. REFERENCES
+================================================================================
+
+1. "Pascal Implementation" by Steven Pemberton and Martin Daniels
+
+2. System V Application Binary Interface, AMD64 Architecture Processor
+   Supplement (AMD64 ABI)
+
+3. ISO 7185:1990 - Pascal standard
+
+4. Pascaline Language Reference - P6 extensions documentation
+
+5. DWARF Debugging Information Format, Version 4
+
+================================================================================
