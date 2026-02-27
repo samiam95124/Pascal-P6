@@ -2399,7 +2399,7 @@ void callsp(void)
                    fputc(store[ad+FILEIDSIZE+j], filtable[fn]);
                  filbuff[fn] = FALSE;
                  break;
-    case 43 /*fbv*/: popadr(ad); pshadr(ad); valfil(ad);
+    case 43 /*fbv*/: popadr(ad); valfil(ad);
                    fn = store[ad];
                    if (fn == INPUTFN) putchr(ad+FILEIDSIZE, buffn(INPUTFN));
                    else if (fn == PRDFN) putchr(ad+FILEIDSIZE, buffn(PRDFN));
@@ -2410,7 +2410,7 @@ void callsp(void)
                    }
                    filbuff[fn] = TRUE;
                    break;
-    case 44 /*fvb*/: popint(i); popadr(ad); pshadr(ad); valfil(ad);
+    case 44 /*fvb*/: popint(i); popadr(ad); valfil(ad);
                    fn = store[ad];
                    /* load buffer only if in read mode, and buffer is
                      empty */
