@@ -2483,11 +2483,7 @@ begin { assemble }
       else getparn(ep, sfptab[q].sppar);
       if sfptab[q].spfunc then pshstk(ep) { non-terminal, stack it }
       else begin { terminal, execute here }
-        if sfptab[ep^.q].spkeep then begin
-          if ep^.pl = nil then error('System error');
-          duptre(ep^.pl, ep2); pshstk(ep2)
-        end;
-        frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
+        frereg := allreg; assreg(ep, frereg, rgnull, rgnull);
         dmptre(ep); genexp(ep);
         deltre(ep)
       end

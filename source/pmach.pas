@@ -2358,7 +2358,7 @@ begin (*callsp*)
                           write(bfiltable[fn], store[ad+fileidsize+j-1]);
                         filbuff[fn] := false;
                       end;
-           43 (*fbv*): begin popadr(ad); pshadr(ad); valfil(ad);
+           43 (*fbv*): begin popadr(ad); valfil(ad);
                           fn := store[ad];
                           if fn = inputfn then putchr(ad+fileidsize, input^)
                           else if fn = prdfn then putchr(ad+fileidsize, prd^)
@@ -2370,7 +2370,7 @@ begin (*callsp*)
                           end;
                           filbuff[fn] := true { validate buffer }
                         end;
-           44 (*fvb*): begin popint(i); popadr(ad); pshadr(ad); valfil(ad);
+           44 (*fvb*): begin popint(i); popadr(ad); valfil(ad);
                           fn := store[ad];
                           { load buffer only if in read mode, and buffer is
                             empty }

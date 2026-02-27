@@ -4794,6 +4794,7 @@ end;
   procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
   var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer;
       id: stp; lastptr: boolean; cc: integer; ct: boolean;
+      filadr: stkoff;
   function schblk(fcp: ctp): boolean;
   var i: disprange; f: boolean;
   begin
@@ -5087,6 +5088,11 @@ end;
                     end
                   else
                     if form = files then begin loadaddress;
+                       { store file address to temp }
+                       gettmp(filadr, ptrsize, true);
+                       gen2t(56(*str*),level,filadr,nilptr);
+                       { load file address for buffer validate }
+                       gen2t(54(*lod*),level,filadr,nilptr);
                        { generate buffer validate for file }
                        if typtr = textptr then
                          gen1(30(*csp*), 46(*fbv*))
@@ -5094,6 +5100,8 @@ end;
                          gen2(51(*ldc*),1,filtype^.size);
                          gen1(30(*csp*),47(*fvb*))
                        end;
+                       { load file address for buffer index }
+                       gen2t(54(*lod*),level,filadr,nilptr);
                        { index buffer }
                        gen1t(34(*inc*),fileidsize,gattr.typtr);
                        typtr := filtype;
@@ -11085,8 +11093,8 @@ end;
       pdx[39]  := +(intsize+adrsize);   pdx[40]  := +(adrsize*2+intsize*2);
       pdx[41]  := +(adrsize*2+intsize*2); pdx[42]  := +(adrsize+intsize*2);
       pdx[43]  := +(adrsize+intsize*2); pdx[44]  := +adrsize-intsize;
-      pdx[45]  := +adrsize-intsize;     pdx[46]  :=  0;
-      pdx[47]  := +intsize;             pdx[48]  := +(intsize+adrsize);
+      pdx[45]  := +adrsize-intsize;     pdx[46]  := +adrsize;
+      pdx[47]  := +(intsize+adrsize);   pdx[48]  := +(intsize+adrsize);
       pdx[49]  := +adrsize*2+intsize;   pdx[50]  := +adrsize;
       pdx[51]  := +adrsize+intsize;     pdx[52]  := +adrsize;
       pdx[53]  := +adrsize;             pdx[54]  := +adrsize+intsize;
