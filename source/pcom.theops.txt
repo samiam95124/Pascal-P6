@@ -2,6 +2,24 @@
                     PASCAL-P6 COMPILER (PCOM) THEORY OF OPERATIONS
 ================================================================================
 
+                             Table of Contents
+                             -----------------
+
+  1.  Compiler Phases
+  2.  Lexical Analysis
+  3.  Syntax Analysis
+  4.  Semantic Analysis
+  5.  Code Generation
+  6.  Data Structures
+  7.  Memory Model
+  8.  Pascaline Extensions
+  9.  Compilation Flow
+  10. Error Handling
+  11. File Organization
+  12. Build System
+  13. Debugging Aids
+  14. References
+
                                   Overview
                                   --------
 
@@ -412,27 +430,155 @@ The source file is organized as:
 
   Lines 1-100: Header comments, licensing
   Lines 101-111: Program header, label
-  Lines 112-187: Constants
-  Lines 188-433: Type definitions
-  Lines 434-630: Variable declarations
-  Lines 631-1180: Utility procedures (string handling, memory management)
-  Lines 1181-1234: Bitwise operations (bnot, bor, band, bxor)
-  Lines 1235-1776: Error handling, input processing, scanner support
-  Lines 1777-2297: Scanner (insymbol)
-  Lines 2298-2888: Symbol table management
-  Lines 2889-3606: Label and constant pool management
-  Lines 3607-4010: Code generation primitives
-  Lines 4011-4743: Type utilities, compatibility checking
-  Lines 4744-5097: Selector (array indexing, field access)
-  Lines 5098-6440: Call processing (procedure/function calls)
-  Lines 6442-6989: Expression parsing
-  Lines 6990-8608: Declaration parsing
-  Lines 8610-9403: Body and statement parsing
-  Lines 9404-9636: External headers, virtual method initialization
-  Lines 9637-9803: Include file and module handling
-  Lines 9804-9932: Main program/module parsing (modulep)
-  Lines 9933-10356: Standard identifier initialization
-  Lines 10357-10700: Main program initialization and entry point
+  Lines 113-193: Constants
+  Lines 194-452: Type definitions
+  Lines 453-656: Variable declarations
+  Lines 657-1199: Utility procedures (string handling, memory management)
+  Lines 1200-1253: Bitwise operations (bnot, bor, band, bxor)
+  Lines 1254-1824: Error handling, input processing, scanner support
+  Lines 1825-2345: Scanner (insymbol)
+  Lines 2346-2936: Symbol table management
+  Lines 2937-3654: Label and constant pool management
+  Lines 3655-4060: Code generation primitives
+  Lines 4061-4793: Type utilities, compatibility checking, temp management
+  Lines 4794-5155: Selector (array indexing, field access, file dereference)
+  Lines 5156-6556: Call processing (procedure/function calls)
+  Lines 6557-7104: Expression parsing
+  Lines 7105-8724: Declaration parsing
+  Lines 8725-9518: Body and statement parsing
+  Lines 9520-9858: External headers, virtual method initialization
+  Lines 9859-9934: Uses/joins and module handling
+  Lines 9935-10169: Main program/module parsing (modulep)
+  Lines 10170-10640: Standard identifier initialization (entstdnames)
+  Lines 10641-11406: Main program initialization and entry point
+
+================================================================================
+                          BUILD SYSTEM
+================================================================================
+
+Environment Setup:
+------------------
+Before building, source the `setpath` script from the project root:
+
+  . setpath
+
+This adds bin/ to PATH and sets $PASCALP6 to the project root. Both are required
+for the build tools and runtime support to be found.
+
+Build Tool (pc):
+----------------
+The `pc` command is the primary build tool. It is itself a native executable
+(built via pgen) that invokes pcom and pgen, manages module dependencies, and
+links the final executable. It handles the full pipeline:
+
+  source.pas → pcom → source.p6 → pgen → source.s → gcc → executable
+
+Usage:
+
+  pc source/pcom           Build pcom (resolves module paths automatically)
+  pc source/pcom -r        Force rebuild (ignores cached .p6 intermediates)
+  pc /tmp/test             Build a standalone program
+
+The `pc` command knows about module search paths and can compile multi-module
+programs. Use `pc` for all system component builds (pcom, pint, pmach, pgen).
+
+The `compile` script (bin/compile) is a simpler batch-mode wrapper that invokes
+pcom and pgen directly. It does NOT know about module paths and should only be
+used for user programs (sample_programs, standard_tests), not system components.
+
+System Components:
+------------------
+The compiler system consists of these major executables:
+
+  bin/pcom   - The Pascal compiler (Pascal source → P-code)
+  bin/pgen   - Native code generator (P-code → AMD64 assembly)
+  bin/pint   - Portable P-code interpreter
+  bin/pmach  - Portable machine-code interpreter
+  bin/pc     - Build tool (orchestrates compilation pipeline)
+
+Source Files:
+-------------
+Compiler (pcom):
+  source/pcom.pas           Main compiler source
+
+Code Generator (pgen):
+  source/pgen/amd64/pgen.pas      AMD64-specific code generator
+  source/pgen/amd64/registers.pas CPU register definitions
+  source/pgen/independent.pas     CPU-independent tables and types
+  source/pgen/psystem.c           C runtime support (psystem_xxx wrappers)
+  source/pgen/amd64/psystem.asm   Assembly runtime (GC, exception support)
+  source/pgen/amd64/main.asm      Program entry point
+
+Interpreters:
+  source/pint.pas           P-code interpreter
+  source/pmach.pas          Machine-code interpreter
+  source/cmach/cmach.c      C implementation of machine-code interpreter
+
+Shared Modules (used by pcom, pgen, pint, pmach):
+  source/parcmd.pas         Command line parsing (uses form)
+  source/extend.pas         Extension routines
+  source/extlink.pas        External routine linkages
+  source/pint_mem.pas       Low-level VM memory access
+  source/version.pas        Version number
+
+Libraries (precompiled modules in libs/):
+  libs/source/services.pas  System services module
+  libs/source/parse.pas     Command line parsing module (joins form)
+  libs/source/strings.pas   String handling functions
+  libs/services.a           Precompiled services archive
+  libs/psystem.a            Precompiled psystem archive
+
+Module Dependencies:
+--------------------
+Each program declares its dependencies via `joins` (link-time) and `uses`
+(compile-time interface) clauses:
+
+  pcom:  joins services, parse;  uses endian, mpb, version, strings
+  pgen:  joins services;         uses endian, mpb, version, parcmd,
+                                      registers, independent
+  pint:  uses endian, mpb, version, parcmd, pint_mem, extlink, extend
+  pmach: joins parse;            uses services, endian, mpb, version,
+                                      strings, pint_mem
+
+Bootstrap:
+----------
+The compiler is self-compiling: pcom is written in Pascal and compiled by pcom.
+When modifying pcom or pgen, the bootstrap ordering is critical:
+
+  1. flush             Restore known-good pcom and pgen from hosts/ to bin/
+  2. pc source/pcom -r Build new pcom using old (known-good) tools
+  3. pc source/pgen/amd64/pgen -r
+                       Build new pgen using old (known-good) tools
+  4. cp source/pcom bin/pcom
+     cp source/pgen/amd64/pgen bin/pgen
+                       Install both new tools together
+
+Key rules:
+  - Always build BOTH pcom and pgen with the OLD tools before installing either
+  - New pcom and new pgen form a matched pair (new pcom output may require new
+    pgen to process it correctly)
+  - Never install new pcom alone — old pgen may not understand new P-code
+  - Delete stale .p6 files or use -r to force recompilation
+
+The hosts/ directory contains the bootstrap binaries:
+  hosts/pascaline/linux_X86/pcom    Known-good compiler
+  hosts/pascaline/linux_X86/pgen    Known-good code generator
+
+Regression Testing:
+-------------------
+After building, run the full regression suite:
+
+  . setpath && regress
+
+This runs all test programs through all backends (pint, pmach, cmach, package,
+pgen) and compares output against gold-standard .cmp files. Results are written
+to regress_report.txt. All dif counts should be 0 for a pass.
+
+Specific backend testing:
+
+  regress --pint          Test only pint backend
+  regress --pgen          Test only pgen backend
+  regress --full          Extended tests including self-compile
 
 ================================================================================
                               DEBUGGING AIDS

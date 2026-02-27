@@ -1,0 +1,362 @@
+================================================================================
+            PASCAL-P6 C MACHINE CODE INTERPRETER (CMACH) THEORY OF OPERATIONS
+================================================================================
+
+                             Table of Contents
+                             -----------------
+
+  1.  Overview
+  2.  Differences from pmach
+  3.  Preprocessor Configuration
+  4.  Memory Model
+  5.  Code Loading
+  6.  Instruction Set
+  7.  Standard Procedures (CSP)
+  8.  Execution Engine
+  9.  File I/O
+  10. Exception Handling
+  11. Package Mode
+  12. Performance
+  13. File Organization
+  14. Build System
+  15. References
+
+                                  Overview
+                                  --------
+
+cmach.c is a C language implementation of the Pascal-P6 machine code interpreter.
+It is functionally equivalent to pmach.pas but written in C for portability and
+performance. Like pmach, it loads binary hex deck format (.p6o files) and
+executes the P-code instruction set on a simulated virtual machine.
+
+cmach can also be compiled in PACKAGE mode, where the program code is embedded
+directly in the executable as a C array, eliminating the need for separate .p6o
+files at runtime.
+
+Source files:
+  source/cmach/cmach.c        Main interpreter source
+  source/cmach/mpb16.inc      16-bit machine parameter block
+  source/cmach/mpb32.inc      32-bit machine parameter block
+  source/cmach/mpb64.inc      64-bit machine parameter block
+  source/cmach/externals.inc  External routine declarations
+
+================================================================================
+                        1. DIFFERENCES FROM PMACH
+================================================================================
+
+cmach is a C transliteration of pmach.pas with these implementation differences:
+
+  Feature                    pmach (Pascal)     cmach (C)
+  ─────────────────────────  ─────────────────  ─────────────────
+  Language                   Pascal             C
+  Stack operations           Procedures         Inline macros
+  Memory access              Procedures         Inline macros/casts
+  File I/O                   Pascal file types  C stdio (FILE*)
+  Math library               Pascal builtins    C math.h
+  String handling            Pascal strings     C char arrays
+  Dynamic allocation         Pascal new/dispose C malloc/free
+  Dispatch                   Case statement     Switch statement
+  Preprocessor config        None               #ifdef/#define
+
+Functionally equivalent:
+  - Same 255 instruction opcodes
+  - Same 112 standard procedures
+  - Same memory model and addressing
+  - Same stack frame layout
+  - Same heap allocation algorithm
+  - Same exception handling model
+
+Performance advantage: cmach benefits from C compiler optimizations (gcc -O2),
+inline macros for stack operations, and direct pointer casts for memory access.
+
+================================================================================
+                      2. PREPROCESSOR CONFIGURATION
+================================================================================
+
+Word Size Selection:
+--------------------
+Exactly one must be defined at compile time:
+
+  WRDSIZ32    32-bit mode (includes mpb32.inc) - default
+  WRDSIZ64    64-bit mode (includes mpb64.inc)
+
+Each mpb*.inc defines INTSIZE, REALSIZE, ADRSIZE, CHARSIZE, BOOLSIZE, SETSIZE,
+PTRSIZE, MARKSIZE, and related constants.
+
+Runtime Check Flags:
+--------------------
+These are compile-time defaults that can be overridden by command-line options:
+
+  DOCHKOVF  (default TRUE)   Check arithmetic overflow
+  DOSRCLIN  (default TRUE)   Track source line numbers
+  DORECYCL  (default TRUE)   Recycle freed heap blocks
+  DOCHKRPT  (default FALSE)  Detect reuse of freed blocks
+  DONORECPAR (default FALSE) Prevent recycling of freed blocks
+  DOCHKDEF  (default TRUE)   Check undefined memory access
+  ISO7185   (default FALSE)  ISO 7185 strict compliance mode
+
+Build Mode:
+-----------
+  PACKAGE   When defined, embeds program code as a C array via
+            #include "program_code.c". The resulting executable is
+            self-contained and needs no .p6o file at runtime.
+
+  GPC       Compatibility flag (set to 0 for standard C compilation)
+
+================================================================================
+                            3. MEMORY MODEL
+================================================================================
+
+The memory model is identical to pint/pmach. The entire program lives in a
+single byte array:
+
+  store[MAXSTR]     Complete program storage (up to 16MB for 32-bit)
+  storedef[MAXDEF]  Defined bit flags (1 bit per address)
+
+Layout:
+-------
+  0 to pctop:        Code (instructions)
+  pctop to gbtop:    Constants
+  gbtop to np:       Global variables + heap (heap grows down)
+  sp to MAXTOP:      Stack (grows up toward lower sp values)
+
+Registers: pc, sp, mp, np, ep (same semantics as pint/pmach)
+
+Memory Access (C macros):
+-------------------------
+cmach uses direct pointer casts for memory access, which is faster than the
+byte-by-byte assembly used in pmach.pas:
+
+  getint(a)    (*((long*)(store+(a))))
+  putint(a,x)  *((long*)(store+(a))) = x
+  getrel(a)    *((double*)(store+(a)))
+  putrel(a,f)  *((double*)(store+(a))) = f
+  getadr(a)    *((address*)(store+(a)))
+  putadr(a,ad) *((address*)(store+(a))) = ad
+
+Each access includes defined-bit checking when DOCHKDEF is enabled.
+
+Stack Operation Macros:
+-----------------------
+  popint(i)   { i = getint(sp); sp = sp+INTSIZE; }
+  pshint(i)   { sp = sp-INTSIZE; putint(sp, i); }
+  popadr(a)   { a = getadr(sp); sp = sp+ADRSIZE; }
+  pshadr(a)   { sp = sp-ADRSIZE; putadr(sp, a); }
+  poprel(r)   { r = getrel(sp); sp = sp+REALSIZE; }
+  pshrel(r)   { sp = sp-REALSIZE; putrel(sp, r); }
+
+================================================================================
+                           4. CODE LOADING
+================================================================================
+
+Normal Mode:
+------------
+Same hex deck format as pmach:
+
+  :LL AAAA BB...BB CC
+
+  :     Start marker
+  LL    Byte count (2 hex digits)
+  AAAA  Starting address (hex digits)
+  BB    Data bytes (2 hex digits each)
+  CC    Checksum
+
+The load() function reads the hex deck, validates checksums and address
+continuity, and populates store[]. Sets pctop to the final address.
+
+Package Mode:
+-------------
+When compiled with -DPACKAGE, the store[] array is initialized at compile time
+by including program_code.c (generated by the genobj tool):
+
+  #ifdef PACKAGE
+  #include "program_code.c"
+  #endif
+
+The program_code.c file contains the store[] initializer and defines PCTOP.
+No file I/O is needed at startup.
+
+================================================================================
+                          5. INSTRUCTION SET
+================================================================================
+
+cmach implements the same 255 instruction opcodes as pint/pmach. See
+pint.theops.txt for the complete instruction listing.
+
+The instruction dispatch uses a C switch statement:
+
+  void sinins(void) {
+      getop();
+      switch (op) {
+          case 0 /*lodi*/: getp(); getq();
+              pshint(getint(getadr(mp-p*PTRSIZE)+q));
+              break;
+          ...
+      }
+  }
+
+================================================================================
+                       6. STANDARD PROCEDURES (CSP)
+================================================================================
+
+cmach implements the same 112 standard procedures as pint/pmach. See
+pint.theops.txt for the complete CSP listing.
+
+The C implementation calls standard C library functions directly:
+  - Math: sin(), cos(), exp(), log(), sqrt(), atan() from math.h
+  - File I/O: fopen(), fclose(), fread(), fwrite(), fseek() from stdio.h
+  - Output: fprintf(), fputc(), fgetc() from stdio.h
+  - Memory: malloc(), free() for VAR/WITH block tracking
+
+================================================================================
+                          7. EXECUTION ENGINE
+================================================================================
+
+Main loop:
+
+  do {
+      stopins = FALSE;
+      sinins();
+  } while (!stopins);
+
+sinins() fetches one instruction and dispatches via switch(op). This is
+functionally identical to pmach's case statement dispatch.
+
+================================================================================
+                             8. FILE I/O
+================================================================================
+
+File I/O uses C stdio instead of Pascal file types:
+
+  filtable[MAXFIL+1]    FILE* pointers for text files
+  filnamtab[MAXFIL+1]   Filename strings (char arrays)
+  filanamtab[MAXFIL+1]  Name-assigned flags
+  filstate[MAXFIL+1]    File state (fsnone, fsclosed, fsread, fswrite)
+  filbuff[MAXFIL+1]     Buffer-full status
+  fileoln[MAXFIL+1]     Last character was EOLN
+  filbof[MAXFIL+1]      Beginning-of-file flags
+
+Standard files are mapped to C stdio:
+  input   -> stdin
+  output  -> stdout
+  error   -> stdout (or stderr)
+  command -> internal buffer (cmdlin[])
+
+Command Line Handling:
+----------------------
+The command line is buffered in cmdlin[] (max 250 bytes) with helper functions:
+  bufcommand()    Return current character
+  getcommand()    Advance position
+  eofcommand()    Check EOF
+  eolncommand()   Check EOL
+
+================================================================================
+                         9. EXCEPTION HANDLING
+================================================================================
+
+Exception handling is identical to pint/pmach. See pint.theops.txt for details.
+
+Exception frame: expadr, expstk, expmrk
+Instructions: bge (207), ede (208), mse (209)
+
+Error functions:
+  errorv(ea)  - Fatal error, print message and abort
+  errore(ei)  - Catchable error, dispatch to handler or abort
+  errors(a,l) - Runtime error with custom message string
+
+================================================================================
+                          10. PACKAGE MODE
+================================================================================
+
+Package mode creates standalone executables by embedding the P-code directly
+in the C source:
+
+Build Process:
+--------------
+1. Compile Pascal source to P-code:    pcom program.pas program.p6
+2. Assemble to machine deck:           pint -machdeck program.p6 program.p6o
+3. Convert to C array:                 genobj program.p6o program_code.c
+4. Compile with cmach:                 gcc -DPACKAGE -DWRDSIZ64 \
+                                         source/cmach/cmach.c -o program -lm
+
+The resulting executable contains both the interpreter and the program code.
+No external files are needed at runtime (except for files the program itself
+opens).
+
+The compile script automates this with the --package flag:
+  compile --package program
+
+================================================================================
+                            11. PERFORMANCE
+================================================================================
+
+cmach is the fastest interpreter backend. Benchmark comparison (fbench test):
+
+  Backend          Time      Relative
+  ───────────────  ────────  ────────
+  pgen (native)    0.184s    1.0x
+  cmach (package)  1.147s    6.2x
+  pmach            ~2s       ~11x
+  pint             ~3s       ~16x
+
+Performance factors:
+  - C compiler optimizations (gcc -O2)
+  - Inline macros for stack operations (no function call overhead)
+  - Direct pointer casts for memory access
+  - switch statement compiles to jump table
+  - Disabling DOCHKDEF and DOSRCLIN improves by ~20-25%
+
+================================================================================
+                          12. FILE ORGANIZATION
+================================================================================
+
+  Lines 1-150: Header, licensing, documentation
+  Lines 151-447: Preprocessor configuration, constants, exception codes
+  Lines 449-566: Type definitions, global store
+  Lines 553-632: Global state variables (registers, flags, file tables)
+  Lines 633-905: Utility functions (number formatting, command line, options)
+  Lines 906-1200: Memory access functions and error handling
+  Lines 1201-1233: Code loading (hex deck reader)
+  Lines 1234-1356: Heap management and block tracking
+  Lines 1357-1366: Instruction fetch macros
+  Lines 1367-1923: Read/write helper functions (readi, readr, writei, etc.)
+  Lines 1924-2550: Standard procedure handler (callsp)
+  Lines 2552-3150: Instruction executor (sinins)
+  Lines 3151-3370: Main program (initialization and entry point)
+
+Support Files:
+--------------
+  source/cmach/mpb32.inc      32-bit constants (INTSIZE=4, ADRSIZE=4, etc.)
+  source/cmach/mpb64.inc      64-bit constants (INTSIZE=8, ADRSIZE=8, etc.)
+  source/cmach/externals.inc  External routine declarations
+
+================================================================================
+                           13. BUILD SYSTEM
+================================================================================
+
+Build (standalone interpreter):
+  gcc -DWRDSIZ64 -o cmach source/cmach/cmach.c -lm
+
+Build (packaged executable):
+  gcc -DPACKAGE -DWRDSIZ64 -I. -o program source/cmach/cmach.c -lm
+
+The bin/cmach binary is typically built via the compile script or pc tool
+during system bootstrap. The -DWRDSIZ64 flag selects 64-bit addressing.
+
+Run:
+  cmach <program.p6o> [options]
+
+Command-line options match pmach: debugflt, chk, chkoverflo, recycle,
+chkreuse, chkundef, etc.
+
+================================================================================
+                              14. REFERENCES
+================================================================================
+
+1. "Pascal Implementation" by Steven Pemberton and Martin Daniels
+
+2. ISO 7185:1990 - Pascal standard
+
+3. Pascaline Language Reference - P6 extensions documentation
+
+================================================================================

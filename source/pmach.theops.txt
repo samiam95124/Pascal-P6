@@ -1,0 +1,259 @@
+================================================================================
+               PASCAL-P6 MACHINE CODE INTERPRETER (PMACH) THEORY OF OPERATIONS
+================================================================================
+
+                             Table of Contents
+                             -----------------
+
+  1.  Overview
+  2.  Differences from pint
+  3.  Memory Model
+  4.  Code Loading
+  5.  Instruction Set
+  6.  Standard Procedures (CSP)
+  7.  Execution Engine
+  8.  File I/O
+  9.  Exception Handling
+  10. File Organization
+  11. Build System
+  12. References
+
+                                  Overview
+                                  --------
+
+The Pascal-P6 machine code interpreter (pmach.pas) is a stripped-down variant of
+pint designed for higher-performance execution. Unlike pint, which loads
+text-format P-code, pmach loads pre-assembled binary machine code from hex deck
+format (.p6o files). It implements the same instruction set and memory model as
+pint but omits the interactive debugger and most diagnostic features.
+
+Program header:
+
+  program pmach(input,output,command);
+
+  joins parse;    { command line parsing module }
+
+  uses services,  { system services }
+       endian,    { endian mode }
+       mpb,       { machine parameter block }
+       version,   { version number }
+       strings,   { string functions }
+       pint_mem,  { low-level VM memory access }
+       extlink;   { external routine linkages }
+
+================================================================================
+                        1. DIFFERENCES FROM PINT
+================================================================================
+
+pmach is derived from pint with these key differences:
+
+Feature Comparison:
+-------------------
+  Feature                    pint          pmach
+  ─────────────────────────  ────────────  ────────────
+  Input format               Text P-code   Binary hex deck
+  Interactive debugger        Yes           No
+  Instruction tracing         Full          Commented out
+  Breakpoints/watches         Yes (10 ea)   No
+  Source-level debugging      Yes           No
+  Code coverage tracking      Yes           No
+  Source profiling             Yes           No
+  Memory dump commands         Yes           Minimal
+  Symbol table loading         Yes           No
+  Label resolution             Yes           No (pre-resolved)
+  Performance                 Slower        Faster
+
+Both interpreters implement:
+  - Full 255-instruction P-code set
+  - All 112 standard procedures
+  - Exception handling with frame stack
+  - Heap management with coalescing
+  - Memory definition tracking (undefined checks)
+  - VAR/WITH block reference tracking
+  - Endian-aware memory access
+
+The primary use case for pmach is production execution where debugging is not
+needed. pint is used for development and debugging.
+
+================================================================================
+                            2. MEMORY MODEL
+================================================================================
+
+The memory model is identical to pint. See pint.theops.txt for details.
+
+Layout:
+-------
+  store[0..maxstr]  - Complete program storage
+  storedef[]        - Defined bit tracking (1 bit per address)
+
+  Code:    0 to pctop
+  Globals: pctop to gbtop
+  Heap:    gbtop down to np (grows downward)
+  Stack:   sp up to ep (grows upward)
+
+Registers: pc, sp, mp, np, ep (same as pint)
+
+Heap management: newspc(), dspspc(), fndfre(), cscspc() (same algorithms)
+
+================================================================================
+                           3. CODE LOADING
+================================================================================
+
+pmach uses a simpler loader than pint because it reads pre-assembled binary code
+from hex deck format (.p6o files) rather than text P-code.
+
+Hex Deck Format:
+----------------
+Each line has the structure:
+
+  :LL AAAA BB...BB CC
+
+  :     Start marker
+  LL    Byte count (2 hex digits)
+  AAAA  Starting address (4+ hex digits)
+  BB    Payload bytes (2 hex digits each)
+  CC    Checksum (sum of all data bytes mod 256)
+
+A line with LL=0 terminates loading. The loader validates:
+  - Sequential addresses (no gaps)
+  - Checksum integrity
+  - Proper format
+
+After loading, pctop is set to the final address.
+
+The hex deck is produced by pint's -machdeck option, which assembles text P-code
+and outputs the binary store in hex format.
+
+================================================================================
+                          4. INSTRUCTION SET
+================================================================================
+
+pmach implements the same 255 instruction opcodes as pint. See pint.theops.txt
+for the complete instruction listing.
+
+Instruction Format (binary):
+----------------------------
+  Byte 0:   Opcode (0-255)
+  Byte 1:   P parameter (level, 0-255)
+  Bytes 2+: Q parameter (address, adrsize bytes)
+
+Instruction Fetch:
+------------------
+  getop()   - op := store[pc]; pc := pc+1
+  getp()    - p := store[pc]; pc := pc+1
+  getq()    - q := getadr(pc); pc := pc+adrsize
+  getq1()   - q1 := getadr(pc); pc := pc+adrsize
+  getq2()   - q2 := getadr(pc); pc := pc+adrsize
+
+================================================================================
+                       5. STANDARD PROCEDURES (CSP)
+================================================================================
+
+pmach implements the same 112 standard procedures as pint. See pint.theops.txt
+for the complete CSP listing.
+
+The callsp() procedure dispatches on the Q parameter (0-111) and implements
+file I/O, memory management, math functions, and all other standard operations.
+
+================================================================================
+                          6. EXECUTION ENGINE
+================================================================================
+
+The execution loop is identical in structure to pint:
+
+  repeat
+    stopins := false;
+    sinins
+  until stopins;
+
+sinins() fetches one instruction and dispatches via a case statement.
+
+Stack operations use the same push/pop macros as pint:
+  popint/pshint, poprel/pshrel, popset/pshset, popadr/pshadr
+
+Performance is improved over pint because:
+  - No breakpoint checking per instruction
+  - No watch point evaluation
+  - No coverage tracking overhead
+  - No instruction trace overhead
+  - Binary code is pre-assembled (no text parsing at load)
+
+================================================================================
+                             7. FILE I/O
+================================================================================
+
+File I/O is identical to pint. See pint.theops.txt for details.
+
+Standard files: input, output, prd, prr, error, list, command
+Dynamic files: filtable[] (text), bfiltable[] (binary)
+File states: fnone, fclosed, fread, fwrite
+
+================================================================================
+                         8. EXCEPTION HANDLING
+================================================================================
+
+Exception handling is identical to pint. See pint.theops.txt for details.
+
+Exception frame stack: expadr, expstk, expmrk
+Instructions: bge (207), ede (208), mse (209)
+Catchable (14-88) vs uncatchable (89-121) exceptions
+
+================================================================================
+                          9. FILE ORGANIZATION
+================================================================================
+
+  Lines 1-164: Header comments, licensing
+  Lines 166-176: Program header (joins/uses clauses)
+  Lines 180-359: Constants (sizes, exception codes)
+  Lines 360-400: Type definitions
+  Lines 401-491: Global variables (registers, flags, file handles)
+  Lines 494-905: Utility/output functions (number formatting, memory dump)
+  Lines 577-747: Error handling (errors, errorv, errorm)
+  Lines 748-1127: Storage functions (get/put with endian and defined tracking)
+  Lines 1130-1175: Stack operations (swap, push/pop macros)
+  Lines 1200-1356: Program loading (hex deck) and file validation
+  Lines 1358-1396: Instruction fetch (getop, getp, getq)
+  Lines 1411-1520: Heap management (fndfre, cscspc, newspc, dspspc)
+  Lines 1523-2489: Standard library (callsp - all 112 procedures)
+  Lines 2490-3199: Execution loop (sinins - instruction executor)
+  Lines 3201-3506: Utilities (option parsing) and main program
+
+================================================================================
+                           10. BUILD SYSTEM
+================================================================================
+
+Build:
+  . setpath && pc source/pmach
+
+Run:
+  pmach <program.p6o> [<output>] [options]
+
+The .p6o file is a binary hex deck produced by:
+  pint -machdeck <program.p6> <program.p6o>
+
+Runtime Options:
+----------------
+  debugflt     - Enter debug on fault
+  chk          - Enable runtime checks
+  chkoverflo   - Check arithmetic overflow
+  recycle      - Obey heap recycling
+  chkreuse     - Check reuse of freed blocks
+  chkundef     - Check undefined accesses
+
+Endianness:
+-----------
+pmach detects host byte order at startup and flips multi-byte values if the
+host endianness differs from the target. This is handled transparently by the
+get/put access functions.
+
+================================================================================
+                              11. REFERENCES
+================================================================================
+
+1. "Pascal Implementation" by Steven Pemberton and Martin Daniels
+
+2. ISO 7185:1990 - Pascal standard
+
+3. Pascaline Language Reference - P6 extensions documentation
+
+================================================================================
