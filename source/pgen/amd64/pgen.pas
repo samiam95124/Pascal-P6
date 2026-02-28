@@ -822,6 +822,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
   procedure genexp(ep: expptr);
   var r: reg; ep2: expptr; stkadrs: integer; fl: integer;
+      rvpl, rvpp: expptr; { for inline param list reversal }
+      callaln: boolean; ls, ps: integer; { call alignment for SYS V }
 
   { push parameters in order }
   procedure pshpar(pp: expptr);
@@ -857,6 +859,94 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
       pp := pp^.next
     end
+  end;
+
+  { push parameters SYS V style.
+    List is reversed (rightmost first). pn is total param count.
+    Params 7+ are pushed to stack, params 1-6 just evaluated into registers
+    (asspar already assigned the correct parameter registers). }
+  procedure pshparsvsv(pp: expptr; pn: integer);
+  var ipc, fpc: integer; p: expptr; stk: boolean;
+  begin
+    { pre-count total int and float params (list is reversed) }
+    ipc := 0; fpc := 0; p := pp;
+    while p <> nil do begin
+      if isfltres(p) then fpc := fpc+1
+      else if instab[p^.op].insr = 2 then ipc := ipc+2
+      else ipc := ipc+1;
+      p := p^.next
+    end;
+    { walk reversed list: rightmost param first, counting down }
+    while pp <> nil do begin
+      genexp(pp);
+      { determine if this param is stacked (overflow) }
+      if isfltres(pp) then begin
+        stk := fpc > 6; fpc := fpc-1
+      end else begin
+        stk := ipc > maxintparreg;
+        if instab[pp^.op].insr = 2 then ipc := ipc-2
+        else ipc := ipc-1
+      end;
+      if stk then begin
+        { stacked parameter: push to stack like pshpar }
+        if pp^.r2 <> rgnull then begin
+          wrtins(' pushq %1 # place 2nd register on stack', pp^.r2);
+          stkadr := stkadr-intsize
+        end;
+        if instab[pp^.op].inss then begin
+          wrtins(' subq $0,%rsp # allocate set', setsize);
+          wrtins(' pushq %rsi # save source');
+          wrtins(' pushq %rdi # save destination');
+          if pp^.r1 <> rgrsi then
+            wrtins(' movq %1,%rsi # place source', pp^.r1);
+          wrtins(' movq %rsp,%rdi # destination is stack');
+          wrtins(' addq $0,%rdi # index over saved', ptrsize*2);
+          wrtins(' movsq # move set');
+          wrtins(' movsq');
+          wrtins(' movsq');
+          wrtins(' movsq');
+          wrtins(' popq %rdi # restore');
+          wrtins(' popq %rsi');
+          stkadr := stkadr-setsize
+        end else if pp^.r1 in [rgrax..rgr15] then begin
+          wrtins(' pushq %1 # save parameter', pp^.r1);
+          stkadr := stkadr-intsize
+        end else if pp^.r1 in [rgxmm0..rgxmm15] then begin
+          wrtins(' subq $0,%rsp # allocate real on stack', realsize);
+          stkadr := stkadr-realsize;
+          wrtins(' movsd %1,(%rsp) # place real on stack', pp^.r1)
+        end
+      end;
+      { register params: genexp already placed result in assigned register }
+      pp := pp^.next
+    end
+  end;
+
+  { compute overflow parameter stack space for alignment pre-check.
+    pp = param list in original order, pn = total param count. }
+  function cmpparmspc(pp: expptr; pn: integer): integer;
+  var sz, ipc, fpc: integer; p: expptr;
+  begin
+    sz := 0; ipc := 0; fpc := 0; p := pp;
+    while p <> nil do begin
+      if isfltres(p) then begin
+        fpc := fpc + 1;
+        if fpc > 6 then sz := sz + realsize
+      end else begin
+        if instab[p^.op].insr = 2 then begin
+          ipc := ipc + 2;
+          if ipc > maxintparreg then sz := sz + intsize * 2
+        end else begin
+          ipc := ipc + 1;
+          if ipc > maxintparreg then begin
+            if instab[p^.op].inss then sz := sz + setsize
+            else sz := sz + intsize
+          end
+        end
+      end;
+      p := p^.next
+    end;
+    cmpparmspc := sz
   end;
 
   { call system procedure/function }
@@ -1662,9 +1752,30 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {cup,cuf}
         12, 246: begin
+          { 16-byte alignment for SYS V ABI user calls }
+          callaln := false;
+          if doamd64 then begin
+            if ep^.op = 246{cuf} then ls := ep^.q3 else ls := 0;
+            ps := cmpparmspc(ep^.pl, ep^.pn);
+            if (stkadr - ls - ps) mod 16 <> 0 then begin
+              wrtins(' subq $0,%rsp # align for user call', ptrsize);
+              stkadr := stkadr - ptrsize;
+              callaln := true
+            end
+          end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshpar(ep^.pl); { process parameters first }
+          if doamd64 then begin
+            { reverse param list for right-to-left evaluation }
+            rvpl := nil;
+            while ep^.pl <> nil do begin
+              rvpp := ep^.pl; ep^.pl := ep^.pl^.next;
+              rvpp^.next := rvpl; rvpl := rvpp
+            end;
+            ep^.pl := rvpl;
+            pshparsvsv(ep^.pl, ep^.pn) { stack 7+, eval 1-6 into regs }
+          end else
+            pshpar(ep^.pl); { process parameters first }
           if ep^.blk <> nil then begin
             write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc; 
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl); 
@@ -1696,14 +1807,39 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' movq %rax,%1 # place result', ep^.r1);
             end
           end;
-          stkadr := stkadrs { restore stack position }
+          stkadr := stkadrs; { restore stack position }
+          if callaln then begin
+            wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
+            stkadr := stkadr + ptrsize
+          end
         end;
 
         {cip,cif}
         113,247: begin
+          { 16-byte alignment for SYS V ABI user calls }
+          callaln := false;
+          if doamd64 then begin
+            if ep^.op = 247{cif} then ls := ep^.q3 else ls := 0;
+            ps := cmpparmspc(ep^.pl, ep^.pn);
+            if (stkadr - ls - ps) mod 16 <> 0 then begin
+              wrtins(' subq $0,%rsp # align for user call', ptrsize);
+              stkadr := stkadr - ptrsize;
+              callaln := true
+            end
+          end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshpar(ep^.pl); { process parameters first }
+          if doamd64 then begin
+            { reverse param list for right-to-left evaluation }
+            rvpl := nil;
+            while ep^.pl <> nil do begin
+              rvpp := ep^.pl; ep^.pl := ep^.pl^.next;
+              rvpp^.next := rvpl; rvpl := rvpp
+            end;
+            ep^.pl := rvpl;
+            pshparsvsv(ep^.pl, ep^.pn)
+          end else
+            pshpar(ep^.pl); { process parameters first }
           genexp(ep^.l); { load procedure address }
           wrtins(' movq %rbp,%r15 # move our frame pointer to preserved register');
           wrtins(' movq ^0(%1),%rbp # set callee frame pointer', 1*ptrsize, ep^.l^.r1);
@@ -1735,7 +1871,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             end
           end;
           wrtins(' movq %r15,%rbp # restore our frame pointer');
-          stkadr := stkadrs { restore stack position }
+          stkadr := stkadrs; { restore stack position }
+          if callaln then begin
+            wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
+            stkadr := stkadr + ptrsize
+          end
         end;
 
         {cuv,cvf}
@@ -2632,6 +2772,23 @@ begin { assemble }
       wrtins(' enterq $1,$0 # enter frame', p+1);
       writeln(prr, '        .cfi_def_cfa rbp, 40');
       writeln(prr, '        .cfi_offset rbp, -40');
+      if doamd64 then begin
+        { save integer parameter registers to known frame slots }
+        wrtins(' pushq %rdi # save int param reg 1');
+        wrtins(' pushq %rsi # save int param reg 2');
+        wrtins(' pushq %rdx # save int param reg 3');
+        wrtins(' pushq %rcx # save int param reg 4');
+        wrtins(' pushq %r8 # save int param reg 5');
+        wrtins(' pushq %r9 # save int param reg 6');
+        { save float parameter registers to known frame slots }
+        wrtins(' subq $0,%rsp # allocate float param save area', 6*realsize);
+        wrtins(' movsd %xmm0,^0(%rsp) # save float param reg 1', 5*realsize);
+        wrtins(' movsd %xmm1,^0(%rsp) # save float param reg 2', 4*realsize);
+        wrtins(' movsd %xmm2,^0(%rsp) # save float param reg 3', 3*realsize);
+        wrtins(' movsd %xmm3,^0(%rsp) # save float param reg 4', 2*realsize);
+        wrtins(' movsd %xmm4,^0(%rsp) # save float param reg 5', 1*realsize);
+        wrtins(' movsd %xmm5,^0(%rsp) # save float param reg 6', 0*realsize);
+      end;
       wrtins(' movq %rsp,%rax # copy sp');
       { find sp-locals }
       write(prr, '        subq    $'); write(prr, lclspc^); write(prr, '+'); 

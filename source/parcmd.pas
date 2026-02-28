@@ -50,7 +50,7 @@ procedure parhdrfilnam(var f: text; var wasproc: boolean; out name: string;
 const
   maxlin = 20000; { size of source line buffer }
   maxcmd = 2000; { size of command line buffer }
-  maxopt = 28;  { number of options }
+  maxopt = 29;  { number of options }
   optlen = 10;  { maximum length of option words }
 
 type
@@ -126,7 +126,7 @@ begin
         halt
       end;
       oni := 1; optst := '          ';
-      while bufcommand in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
+      while bufcommand in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
         ch1 := lcase(bufcommand); 
         if optst[oni] = ' ' then optst[oni] := ch1; 
         if oni < optlen then oni := oni+1;
@@ -243,6 +243,7 @@ begin
   opts[26] := 'z         ';
   opts[27] := 'md        ';
   opts[28] := 'mal       ';
+  opts[29] := 'amd64_svsv';
 
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
@@ -272,5 +273,6 @@ begin
   optsl[26] := 'lineinfo  ';
   optsl[27] := 'modules   ';
   optsl[28] := 'mrkasslin ';
+  optsl[29] := 'amd64_svsv';
 end.
 

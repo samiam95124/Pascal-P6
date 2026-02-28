@@ -2389,9 +2389,9 @@ procedure load;
                   if not (ch in ['a'..'z', 'A'..'Z', '_']) then
                     errorl('No valid option found    ');
                   oni := 1; optst := '          ';
-                  while ch in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
-                    ch1 := lcase(ch); 
-                    if optst[oni] = ' ' then optst[oni] := ch1; 
+                  while ch in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
+                    ch1 := lcase(ch);
+                    if optst[oni] = ' ' then optst[oni] := ch1;
                     if oni < optlen then oni := oni+1;
                     getnxt
                   end;
@@ -2416,8 +2416,10 @@ procedure load;
                       6:  dodbgsrc   := option[oi];
                       5:  dodckout   := option[oi];
                       9:  dochkvbk   := option[oi];
+                      29: if option[oi] then
+                            errorl('Call conv not supported  ');
                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
-                      24:; 25:; 26:; 10:; 18:;
+                      24:; 25:; 26:; 10:; 18:; 27:; 28:;
                     end
                   end else errorl('No valid option found    ');
                   while not eoln(prd) and (ch = ' ') do getnxt
@@ -7471,7 +7473,7 @@ end;
 procedure plcopt;
 var oi: 1..maxopt;
 begin
-  for oi := 1 to 26 do if options[oi] then
+  for oi := 1 to maxopt do if options[oi] then
     case oi of
       7:  dodmplab   := option[oi];
       8:  dosrclin   := option[oi];
@@ -7487,8 +7489,12 @@ begin
       6:  dodbgsrc   := option[oi];
       5:  dodckout   := option[oi];
       9:  dochkvbk   := option[oi];
+      29: if option[oi] then begin
+            writeln('*** Calling convention not supported');
+            halt
+          end;
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
-      24:; 25:; 26:; 10:; 18:;
+      24:; 25:; 26:; 10:; 18:; 27:; 28:;
     end
 end;
 

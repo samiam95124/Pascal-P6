@@ -182,7 +182,7 @@ const
 
    { command line parsing }
    maxlin     = 20000; { size of source line buffer }
-   maxopt     = 28;    { number of options }
+   maxopt     = 29;    { number of options }
    optlen     = 10;    { maximum length of option words }
 
    { standard exceptions. Used for extension routines, this is a subset. }
@@ -1879,9 +1879,9 @@ end;
       nextch;
       repeat
         oni := 1; optst := '          ';
-        while ch in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
-          ch1 := lcase(ch); 
-          if optst[oni] = ' ' then optst[oni] := ch1; 
+        while ch in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
+          ch1 := lcase(ch);
+          if optst[oni] = ' ' then optst[oni] := ch1;
           if oni < optlen then oni := oni+1;
           nextch
         end;
@@ -1918,6 +1918,8 @@ end;
           25: switch(dodmpdsp);
           26: switch(dummy);
           27: switch(dummy);
+          28: switch(dummy);
+          29: switch(dummy);
         end else begin
           { skip all likely option chars }
           while ch in ['a'..'z','A'..'Z','+','-','0'..'9','_'] do
@@ -4791,6 +4793,47 @@ end;
     taggedrec := b
   end;
 
+  { compute parameter space for overflow params only (SYS V AMD64).
+    Uses separate int/float counters: first 6 int params in registers,
+    first 6 float params in float registers, rest on stack. }
+  function parmspc7(plst: ctp): addrrange;
+  var lp: addrrange; ipc, fpc: integer; stk: boolean;
+  begin
+    ipc := 0; fpc := 0; lp := 0;
+    while plst <> nil do begin
+      stk := false;
+      if plst^.klass = vars then begin
+        if plst^.idtype <> nil then begin
+          if plst^.idtype = realptr then begin
+            fpc := fpc+1; if fpc > 6 then stk := true
+          end else begin
+            ipc := ipc+1; if ipc > 6 then stk := true
+          end
+        end
+      end else if (plst^.klass = proc) or (plst^.klass = func) then begin
+        ipc := ipc+1; if ipc > 6 then stk := true
+      end;
+      if stk then begin
+        if (plst^.idtype <> nil) and (plst^.klass = vars) then begin
+          if (plst^.part = ptval) or (plst^.part = ptview) then begin
+            if plst^.idtype^.form <= power then
+              lp := lp+plst^.idtype^.size
+            else if plst^.idtype^.form = arrayc then
+              lp := lp+ptrsize*2
+            else lp := lp+ptrsize
+          end else begin
+            if plst^.idtype^.form = arrayc then lp := lp+ptrsize*2
+            else lp := lp+ptrsize
+          end
+        end else if (plst^.klass = proc) or (plst^.klass = func) then
+          lp := lp+ptrsize*2;
+        alignu(parmptr,lp)
+      end;
+      plst := plst^.next
+    end;
+    parmspc7 := lp
+  end;
+
   procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
   var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer;
       id: stp; lastptr: boolean; cc: integer; ct: boolean;
@@ -4937,7 +4980,10 @@ end;
                       the upper half of the FR. }
                     id := basetype(fcp^.idtype);
                     lsize := parmsize; if id <> nil then lsize := id^.size;
-                    dplmt := marksize+ptrsize+adrsize+locpar { addr of fr }
+                    if option[29] then
+                      dplmt := marksize+ptrsize+adrsize+parmspc7(pflist)
+                    else
+                      dplmt := marksize+ptrsize+adrsize+locpar { addr of fr }
                   end
               end;
             proc: { nothing, its an error case }
@@ -6152,7 +6198,8 @@ end;
     end;
     begin { callnonstandard }
       soff := abs(topnew); { save stack net offset }
-      fcpe := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
+      fcpe := fcp; fcp := fcp^.grppar; locpar := 0;
+      genlabel(frlab);
       while ((isfunc and (fcp^.klass <> func)) or 
              (not isfunc and (fcp^.klass <> proc))) and (fcp^.grpnxt <> nil) do
         fcp := fcp^.grpnxt;
@@ -6317,7 +6364,7 @@ end;
                       end
                   end
               end;
-            if nxt <> nil then nxt := nxt^.next; 
+            if nxt <> nil then nxt := nxt^.next;
             prcnt := prcnt+1;
             test := sy <> comma;
             if sy = comma then insymbol;
@@ -6368,7 +6415,7 @@ end;
                   end
                 end else begin
                   if inherit then error(234);
-                  if fcp^.klass = func then 
+                  if fcp^.klass = func then
                     gencupcuf(122(*cuf*),locpar,pfname,fcp)
                   else
                     gencupcuf(46(*cup*),locpar,pfname,fcp)
@@ -8275,7 +8322,9 @@ end;
             lcp3 := nil;
             (*reverse pointers and reserve local cells for copies of multiple
              values*)
-            lc := -level*ptrsize; { set locals top }
+            if option[29] then
+              lc := -level*ptrsize - 12*ptrsize { reserve int+float reg save slots }
+            else lc := -level*ptrsize; { set locals top }
             while lcp1 <> nil do
               with lcp1^ do
                 begin lcp2 := next; next := lcp3;
@@ -8295,7 +8344,11 @@ end;
                   lcp3 := lcp1; lcp1 := lcp2
                 end;
             fpar := lcp3
-          end else begin fpar := nil; lc := -level*ptrsize end
+          end else begin fpar := nil;
+            if option[29] then
+              lc := -level*ptrsize - 12*ptrsize
+            else lc := -level*ptrsize
+          end
     end (*parameterlist*) ;
 
     { for overloading, same as strict cmpparlst(), but includes read = integer
@@ -8406,9 +8459,77 @@ end;
       while plst <> nil do begin
         if plst^.klass = vars then begin
           if not plst^.isloc then plst^.vaddr := plst^.vaddr+off
-        end else if (plst^.klass = proc) or (plst^.klass = func) then 
+        end else if (plst^.klass = proc) or (plst^.klass = func) then
           plst^.pfaddr := plst^.pfaddr+off;
         plst := plst^.next
+      end
+    end;
+
+    { reassign parameter addresses for SYS V AMD64 ABI.
+      First 6: index saved register slots below display.
+      Params 7+: allocate left-to-right from base (reversed vs normal). }
+    procedure parmoffsvsv(plst: ctp; lev: levrange);
+    var p: ctp; ipc: integer; fpc: integer;
+        off: addrrange; sz: addrrange; inreg: boolean;
+
+    function isflt(p: ctp): boolean;
+    begin isflt := false;
+      if p^.klass = vars then
+        if p^.idtype <> nil then
+          if p^.idtype = realptr then isflt := true
+    end;
+
+    begin
+      { assign params to register save slots or stack.
+        Integer params use separate counter (ipc) from float params (fpc),
+        matching pgen's asspar which uses parreg[] vs parregf[].
+        Int saves (up to 6):   rbp - lev*8 - ipc*8
+        Float saves (up to 6): rbp - lev*8 - 6*8 - fpc*8
+        Overflow params: ascending from marksize+ptrsize+adrsize = 40 }
+      p := plst; ipc := 0; fpc := 0;
+      off := marksize+ptrsize+adrsize; { = 40, for stacked overflow params }
+      while p <> nil do begin
+        inreg := false;
+        if isflt(p) then begin
+          if fpc < 6 then begin
+            fpc := fpc+1; inreg := true;
+            if p^.klass = vars then
+              if not p^.isloc then
+                p^.vaddr := -(lev*ptrsize + 6*ptrsize + fpc*ptrsize)
+          end
+        end else begin
+          if ipc < 6 then begin
+            ipc := ipc+1; inreg := true;
+            if p^.klass = vars then begin
+              if not p^.isloc then
+                p^.vaddr := -(lev*ptrsize + ipc*ptrsize)
+            end else if (p^.klass = proc) or (p^.klass = func) then
+              p^.pfaddr := -(lev*ptrsize + ipc*ptrsize)
+          end
+        end;
+        if not inreg then begin
+          { overflow: assign stacked address }
+          if (p^.klass = vars) and (p^.idtype <> nil) then begin
+            if not p^.isloc then begin
+              if (p^.part = ptval) or (p^.part = ptview) then begin
+                if p^.idtype^.form <= power then sz := p^.idtype^.size
+                else if p^.idtype^.form = arrayc then sz := ptrsize*2
+                else sz := ptrsize
+              end else begin
+                if p^.idtype^.form = arrayc then sz := ptrsize*2
+                else sz := ptrsize
+              end;
+              alignu(parmptr, off);
+              p^.vaddr := off;
+              off := off+sz
+            end
+          end else if (p^.klass = proc) or (p^.klass = func) then begin
+            alignu(parmptr, off);
+            p^.pfaddr := off;
+            off := off+ptrsize*2
+          end
+        end;
+        p := p^.next
       end
     end;
 
@@ -8629,6 +8750,8 @@ end;
         lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
         lcp^.locpar := parmspc(lcp^.pflist);
         parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
+        if option[29] then
+          parmoffsvsv(lcp^.pflist, level);
         lcp^.locstr := lc { save locals counter }
       end else begin
         parmrg(lcp1^.pflist); { merge back the forwarded parameter list }
@@ -8733,6 +8856,8 @@ end;
         stalvl: integer; { statement nesting level }
         ilp: ctp;
         rp: ripptr; { for rip label resolution }
+        pcnt: integer; ipc, fpc: integer;
+        svsvoff: addrrange; psz: addrrange;
 
     { add statement level }
     procedure addlvl;
@@ -9626,46 +9751,90 @@ end;
     genmst(level-1,segsize,stackbot);
     if fprocp <> nil then (*copy multiple values into local cells*)
       begin llc1 := marksize+ptrsize+adrsize+fprocp^.locpar; { index params }
+        ipc := 0; fpc := 0;
+        svsvoff := marksize+ptrsize+adrsize; { for svsv mode }
         lcp := fprocp^.pflist;
         while lcp <> nil do
           with lcp^ do
             begin
               if klass = vars then
                 if idtype <> nil then begin
-                  if idtype^.form > power then
-                    begin
-                      if idtype^.form = arrayc then llc1 := llc1 - ptrsize*2
-                      else llc1 := llc1-ptrsize;
-                      alignd(parmptr,llc1);
-                      if vkind = actual then
-                        if idtype^.form = arrayc then begin
-                          { Container array. These are not preallocated, so we
-                            have to create a copy on stack. }
-                          gen2(50(*lda*),level,llc1); { index the pointer }
-                          gen0(111(*ldp*)); { load complex pointer }
-                          { copy complex to stack }
-                          gen2(109(*ccs*),containers(idtype),containerbase(idtype));
-                          gen2(50(*lda*),level,vaddr); { load dest addr }
-                          gen1(72(*swp*),stackelsize*2); { swap that under cp }
-                          gen0(110(*scp*)) { store complex pointer }
-                        end else begin
-                          gen2(50(*lda*),level,vaddr);
-                          gen2t(54(*lod*),level,llc1,nilptr);
-                          gen1(40(*mov*),idtype^.size);
-                        end
+                  { compute param frame size }
+                  if idtype^.form > power then begin
+                    if idtype^.form = arrayc then psz := ptrsize*2
+                    else psz := ptrsize
+                  end else begin
+                    if vkind = formal then psz := ptrsize
+                    else psz := idtype^.size
+                  end;
+                  if option[29] then begin
+                    { SYS V: compute source address by int/float position }
+                    if idtype = realptr then begin
+                      { float parameter }
+                      fpc := fpc+1;
+                      if fpc <= 6 then
+                        llc1 := -(level*ptrsize + 6*ptrsize + fpc*ptrsize)
+                      else begin
+                        alignu(parmptr, svsvoff);
+                        llc1 := svsvoff;
+                        svsvoff := svsvoff+psz
+                      end
+                    end else begin
+                      { integer parameter }
+                      ipc := ipc+1;
+                      if ipc <= 6 then
+                        llc1 := -(level*ptrsize + ipc*ptrsize)
+                      else begin
+                        alignu(parmptr, svsvoff);
+                        llc1 := svsvoff;
+                        svsvoff := svsvoff+psz
+                      end
                     end
-                  else
-                    begin
-                      if vkind = formal then llc1 := llc1-ptrsize
-                      else llc1 := llc1-idtype^.size;
-                      alignd(parmptr,llc1);
-                    end;
+                  end else begin
+                    { normal: count down from top }
+                    llc1 := llc1-psz;
+                    alignd(parmptr,llc1)
+                  end;
+                  if idtype^.form > power then begin
+                    if vkind = actual then
+                      if idtype^.form = arrayc then begin
+                        { Container array. These are not preallocated, so we
+                          have to create a copy on stack. }
+                        gen2(50(*lda*),level,llc1); { index the pointer }
+                        gen0(111(*ldp*)); { load complex pointer }
+                        { copy complex to stack }
+                        gen2(109(*ccs*),containers(idtype),containerbase(idtype));
+                        gen2(50(*lda*),level,vaddr); { load dest addr }
+                        gen1(72(*swp*),stackelsize*2); { swap that under cp }
+                        gen0(110(*scp*)) { store complex pointer }
+                      end else begin
+                        gen2(50(*lda*),level,vaddr);
+                        gen2t(54(*lod*),level,llc1,nilptr);
+                        gen1(40(*mov*),idtype^.size);
+                      end
+                  end;
                   if chkvbk and (vkind = formal) then begin
                     { establish var block }
                     gen2t(54(*lod*),level,llc1,nilptr);
                     gen1(93(*vbs*),idtype^.size)
                   end
-                end;
+                end
+              else if (klass = proc) or (klass = func) then begin
+                if option[29] then begin
+                  { proc/func params are always integer-class }
+                  ipc := ipc+1;
+                  if ipc <= 6 then
+                    llc1 := -(level*ptrsize + ipc*ptrsize)
+                  else begin
+                    alignu(parmptr, svsvoff);
+                    llc1 := svsvoff;
+                    svsvoff := svsvoff+ptrsize*2
+                  end
+                end else begin
+                  llc1 := llc1-ptrsize*2;
+                  alignd(parmptr,llc1)
+                end
+              end;
               lcp := lcp^.next;
             end;
       end;
@@ -9726,10 +9895,13 @@ end;
               if chkvbk and (vkind = formal) then gen0(94(*vbe*));
             lcp := next
           end;
-        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),fprocp^.locpar)
+        if option[29] then
+          svsvoff := parmspc7(fprocp^.pflist)
+        else svsvoff := fprocp^.locpar;
+        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),svsvoff)
         else if fprocp^.idtype^.form in [records, arrays] then
-          gen2t(42(*ret*),fprocp^.locpar,fprocp^.idtype^.size,basetype(fprocp^.idtype))
-        else gen1t(42(*ret*),fprocp^.locpar,fprocp^.idtype);
+          gen2t(42(*ret*),svsvoff,fprocp^.idtype^.size,basetype(fprocp^.idtype))
+        else gen1t(42(*ret*),svsvoff,fprocp^.idtype);
         alignd(parmptr,lc);
         if prcode then
           begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
@@ -10604,6 +10776,7 @@ end;
         errfval := true
       end;
       setflg('mal', 'mrkasslin', option[28], options[28]);
+      setflg('amd64_svsv', 'amd64_svsv', option[29], options[29]);
       if not optfnd then begin
         writeln('*** Unknown option ', w:*); goto 99
       end;
@@ -10633,8 +10806,8 @@ end;
         25: dodmpdsp := option[oi];
         26: dolineinfo := option[oi];
         { these are backend options }
-        1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:; 
-        17:; 23:; 27:; 28:;
+        1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:;
+        17:; 23:; 27:; 28:; 29:;
       end
   end;
 
@@ -10658,6 +10831,7 @@ end;
     opts[23] := 'w         '; opts[24] := 'x         ';
     opts[25] := 'y         '; opts[26] := 'z         ';
     opts[27] := 'md        '; opts[28] := 'mal       ';
+    opts[29] := 'amd64_svsv';
     optsl[1]  := 'debugflt  '; optsl[2]  := 'prtlab    ';
     optsl[3]  := 'lstcod    '; optsl[4]  := 'chk       ';
     optsl[5]  := 'machdeck  '; optsl[6]  := 'debugsrc  ';
@@ -10672,6 +10846,7 @@ end;
     optsl[23] := 'debug     '; optsl[24] := 'prtlex    ';
     optsl[25] := 'prtdisplay'; optsl[26] := 'lineinfo  ';
     optsl[27] := 'modules   '; optsl[28] := 'mrkasslin ';
+    optsl[29] := 'amd64_svsv';
     prtables := false; option[20] := false; list := false; option[12] := false;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;

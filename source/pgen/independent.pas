@@ -876,6 +876,7 @@ dochkvbk: boolean; { do check VAR blocks }
 dodbgchk: boolean; { do debug checks }
 doechlin: boolean; { echo input command line }
 domrklin: boolean; { mark source line translations in assembly }
+doamd64: boolean; { enable amd64 calling convention }
 
 { other flags }
 iso7185: boolean; { iso7185 standard flag }
@@ -1711,8 +1712,9 @@ begin
                     5:  dodckout   := option[oi];
                     9:  dochkvbk   := option[oi];
                     28: domrklin   := option[oi];
+                    29: doamd64   := option[oi];
                     2:; 3:; 4:; 12:; 20:; 21:; 22:;
-                    24:; 25:; 26:; 10:; 18:;
+                    24:; 25:; 26:; 10:; 18:; 27:;
                   end
                 end else error('No valid option found');
                 skpspc
@@ -3386,8 +3388,9 @@ begin
       5:  dodckout   := option[oi];
       9:  dochkvbk   := option[oi];
       28: domrklin   := option[oi];
+      29: doamd64   := option[oi];
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
-      24:; 25:; 26:; 10:; 18:;
+      24:; 25:; 26:; 10:; 18:; 27:;
     end
 end;
 
@@ -3435,6 +3438,7 @@ begin
   dodbgchk := true;  { do debug checks }
   doechlin := false; { don't echo command lines }
   domrklin := true;  { mark assembly lines }
+  doamd64 := false;  { don't enable amd64 calling convention }
 
   { supress warnings }
   refer(dochkovf);
