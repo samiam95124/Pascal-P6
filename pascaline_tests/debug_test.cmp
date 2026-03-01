@@ -5657,58 +5657,247 @@ debug> li @pc
     002ACE: 0F csp            0000000000000005
     002AD0: AE mrkl*          00000000000000F2
 debug> ! run to start of wrs call
-debug> ! this is the csp instruction 5th from the top of the above listing
-debug> bi @pc+28
+debug> ! this is the csp instruction 7th from the top of the above listing
+debug> bi @pc+47
 debug> r
-Step me!
-Hi there!
-Hi there!
-Hi there!
-
-*** Stop instruction hit
 
 === break ===
 
-*** No active module
+ 240:      1:    
+ 241:      1: b*     writeln('Step me!');
+ 242:      0:    
 
 debug> li @pc
 
     Addr    Op Ins         P  Q
 ----------------------------------
- *  000012: 3A stp*        
-    000013: F2 eext*       
-    000014: F2 eext*       
-    000015: F2 eext*       
-    000016: F2 eext*       
-    000017: F2 eext*       
-    000018: F2 eext*       
-    000019: F2 eext*       
-    00001A: F2 eext*       
-    00001B: F2 eext*       
+b*  002AC2: 0F csp            0000000000000006
+    002AC4: 69 loda        01,FFFFFFFFFFFFFFF0
+    002ACE: 0F csp            0000000000000005
+    002AD0: AE mrkl*          00000000000000F2
+    002AD9: AE mrkl*          00000000000000F3
+    002AE2: 7B ldci           0000000000000001
+    002AEB: 03 sroi           0000000000003379
+    002AF4: AE mrkl*          00000000000000F4
+    002AFD: 01 ldoi           0000000000003379
+    002B06: 7B ldci           0000000000000001
 debug> ! dump stack should have parameters on it.
 debug> dst
+00FFFF80: 0000000000000008 (8)
+00FFFF88: 0000000000002C89 (11401)
+00FFFF90: 0000000000000008 (8)
+00FFFF98: 0000000000003316 (13078)
+00FFFFA0: 000000000000000A (10)
+00FFFFA8: 0000000000000001 (1)
+00FFFFB0: 000000000000000A (10)
+00FFFFB8: 0000000000003316 (13078)
+00FFFFC0: 0000000000FFFFC8 (16777160)
+00FFFFC8: 0000000001000000 (16777216)
 debug> ! step over wrs call
 debug> sio
+Step me!
 
-pc: 000012 sp: 1000000 mp: 1000000 np: 003DB0
-  * 000012: 3A stp*        
+ 240:      1:    
+ 241:      1: b*     writeln('Step me!');
+ 242:      0:    
 
-*** Stop instruction hit
 debug> li @pc
 
     Addr    Op Ins         P  Q
 ----------------------------------
- *  000011: 00 lodi        3A,F2F2F2F2F2F2F2F2
-    00001B: F2 eext*       
-    00001C: F2 eext*       
-    00001D: F2 eext*       
-    00001E: F2 eext*       
-    00001F: F2 eext*       
-    000020: F2 eext*       
-    000021: F2 eext*       
-    000022: F2 eext*       
-    000023: F2 eext*       
+ *  002AC4: 69 loda        01,FFFFFFFFFFFFFFF0
+    002ACE: 0F csp            0000000000000005
+    002AD0: AE mrkl*          00000000000000F2
+    002AD9: AE mrkl*          00000000000000F3
+    002AE2: 7B ldci           0000000000000001
+    002AEB: 03 sroi           0000000000003379
+    002AF4: AE mrkl*          00000000000000F4
+    002AFD: 01 ldoi           0000000000003379
+    002B06: 7B ldci           0000000000000001
+    002B0F: 1C adi         
 debug> ! step over wln call
 debug> siso
+debug> li @pc:11
 
-*** Runtime error: pint:1446:Value out of range
+    Addr    Op Ins         P  Q
+----------------------------------
+ *  002ACE: 0F csp            0000000000000005
+    002AD0: AE mrkl*          00000000000000F2
+    002AD9: AE mrkl*          00000000000000F3
+    002AE2: 7B ldci           0000000000000001
+    002AEB: 03 sroi           0000000000003379
+    002AF4: AE mrkl*          00000000000000F4
+    002AFD: 01 ldoi           0000000000003379
+    002B06: 7B ldci           0000000000000001
+    002B0F: 1C adi         
+    002B10: 03 sroi           0000000000003379
+    002B19: AE mrkl*          00000000000000F5
+debug> ! load analyzer buffer
+debug> an
+debug> ! break at mrkl instruction, 11th from the top of the above listing
+debug> bi @pc+75
+debug> r
+
+
+=== break ===
+
+ 244:      1: b      x := x+1;
+ 245:      1:  * 
+ 246:      0:        for i := 1 to 3 do writeln('Hi there!');    
+
+debug> p @pc$
+
+2B19
+
+debug> li @pc
+
+    Addr    Op Ins         P  Q
+----------------------------------
+b*  002B19: AE mrkl*          00000000000000F5
+    002B22: AE mrkl*          00000000000000F6
+    002B2B: 7B ldci           0000000000000001
+    002B34: 02 stri        01,FFFFFFFFFFFFFFF0
+    002B3E: 7B ldci           0000000000000003
+    002B47: 02 stri        01,FFFFFFFFFFFFFFE8
+    002B51: 00 lodi        01,FFFFFFFFFFFFFFF0
+    002B5B: 03 sroi           0000000000003381
+    002B64: AE mrkl*          00000000000000F6
+    002B6D: 01 ldoi           0000000000003381
+debug> lia
+
+last instructions executed:
+
+    002B10: 03 sroi           0000000000003379
+    002B0F: 1C adi         
+    002B06: 7B ldci           0000000000000001
+    002AFD: 01 ldoi           0000000000003379
+    002AF4: AE mrkl*          00000000000000F4
+    002AEB: 03 sroi           0000000000003379
+    002AE2: 7B ldci           0000000000000001
+    002AD9: AE mrkl*          00000000000000F3
+    002AD0: AE mrkl*          00000000000000F2
+    002ACE: 0F csp            0000000000000005
+
+debug> ! Now step to for loop (sourcewise)
+debug> s
+
+ 245:      2:    
+ 246:      1:  *     for i := 1 to 3 do writeln('Hi there!');    
+ 247:      0:    
+
+debug> li @pc:20
+
+    Addr    Op Ins         P  Q
+----------------------------------
+ *  002B2B: 7B ldci           0000000000000001
+    002B34: 02 stri        01,FFFFFFFFFFFFFFF0
+    002B3E: 7B ldci           0000000000000003
+    002B47: 02 stri        01,FFFFFFFFFFFFFFE8
+    002B51: 00 lodi        01,FFFFFFFFFFFFFFF0
+    002B5B: 03 sroi           0000000000003381
+    002B64: AE mrkl*          00000000000000F6
+    002B6D: 01 ldoi           0000000000003381
+    002B76: 00 lodi        01,FFFFFFFFFFFFFFE8
+    002B80: A1 leqi        
+    002B81: 18 fjp            0000000000002C1B
+    002B8A: 05 lao            0000000000003316
+    002B93: 46 stra        01,FFFFFFFFFFFFFFE0
+    002B9D: 38 lca            0000000000002C78
+    002BA6: 7B ldci           0000000000000009
+    002BAF: 76 swp            0000000000000008
+    002BB8: 69 loda        01,FFFFFFFFFFFFFFE0
+    002BC2: 76 swp            0000000000000010
+    002BCB: FB cpl         
+    002BCC: 0F csp            0000000000000006
+debug> ! trace at the top of the for loop, and break the line after
+debug> ! This is the fjp, 11th instruction from the top of the above listing
+debug> tpi @pc+86
+debug> b stop9
+debug> r
+
+ 245:      2:    
+ 246:      2: t*     for i := 1 to 3 do writeln('Hi there!');    
+ 247:      0:    
+
+Hi there!
+
+ 245:      2:    
+ 246:      3: t*     for i := 1 to 3 do writeln('Hi there!');    
+ 247:      0:    
+
+Hi there!
+
+ 245:      2:    
+ 246:      4: t*     for i := 1 to 3 do writeln('Hi there!');    
+ 247:      0:    
+
+Hi there!
+
+=== break ===
+
+  43:      0:    
+  44:      1: b* procedure stop9; begin end;
+  45:      0:    
+
+debug> ret
+
+ 249:      1:    
+ 250:      1:  * end.
+
+debug> 
+debug> ! Test system variables
+debug> ! This must be done at the end since it corrupts the variables.
+debug> p @pc$
+
+2C6D
+
+debug> st @pc $1234
+debug> p @pc$
+
+1234
+
+debug> 
+debug> p @sp$
+
+FFFFA0
+
+debug> st @sp $1234
+debug> p @sp$
+
+1234
+
+debug> 
+debug> p @mp$
+
+FFFFC8
+
+debug> st @mp $1234
+debug> p @mp$
+
+1234
+
+debug> 
+debug> p @np$
+
+3DB0
+
+debug> st @np $1234
+debug> p @np$
+
+1234
+
+debug> 
+debug> ! these variables can't be changed
+debug> p @constants
+
+11384
+
+debug> p @heapbottom
+
+15728
+
+debug> 
+debug> ! exit complete
+debug> q
+
+program complete
