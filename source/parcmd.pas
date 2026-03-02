@@ -243,7 +243,7 @@ begin
   opts[26] := 'z         ';
   opts[27] := 'md        ';
   opts[28] := 'mal       ';
-  opts[29] := 'amd64_svsv';
+  opts[29] := 'amd64_sysv';
 
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
@@ -273,6 +273,6 @@ begin
   optsl[26] := 'lineinfo  ';
   optsl[27] := 'modules   ';
   optsl[28] := 'mrkasslin ';
-  optsl[29] := 'amd64_svsv';
+  optsl[29] := 'amd64_sysv';
 end.
 

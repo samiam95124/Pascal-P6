@@ -515,6 +515,7 @@ var   pc, pcs     : address;   (*program address register*)
       doanalys: boolean; { do analyze }
       dodckout: boolean; { do output code deck }
       dochkvbk: boolean; { do check VAR blocks }
+      amd64_sysv: boolean; { use SYS V AMD64 ABI calling convention }
       doechlin: boolean; { echo input command line }
 
       { other flags }
@@ -2416,8 +2417,10 @@ procedure load;
                       6:  dodbgsrc   := option[oi];
                       5:  dodckout   := option[oi];
                       9:  dochkvbk   := option[oi];
-                      29: if option[oi] then
-                            errorl('Call conv not supported  ');
+                      29: begin amd64_sysv := option[oi];
+                            if amd64_sysv then
+                              errorl('Call conv not supported  ')
+                          end;
                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
                       24:; 25:; 26:; 10:; 18:; 27:; 28:;
                     end
@@ -7489,9 +7492,11 @@ begin
       6:  dodbgsrc   := option[oi];
       5:  dodckout   := option[oi];
       9:  dochkvbk   := option[oi];
-      29: if option[oi] then begin
-            writeln('*** Calling convention not supported');
-            halt
+      29: begin amd64_sysv := option[oi];
+            if amd64_sysv then begin
+              writeln('*** Calling convention not supported');
+              halt
+            end
           end;
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:; 27:; 28:;
@@ -7550,6 +7555,7 @@ begin (* main *)
   doanalys := false; { don't do analyze mode }
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
+  amd64_sysv := false; { don't use SYS V AMD64 ABI calling convention }
   doechlin := false; { don't echo command lines }
 
   strcnt := 0; { clear string quanta allocation count }

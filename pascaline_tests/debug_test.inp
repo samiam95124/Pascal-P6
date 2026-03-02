@@ -251,8 +251,8 @@ sis
 p @pc$
 li @pc
 ! run to start of wrs call
-! this is the csp instruction 5th from the top of the above listing
-bi @pc+28
+! this is the csp instruction 7th from the top of the above listing
+bi @pc+47
 r
 li @pc
 ! dump stack should have parameters on it.
@@ -266,7 +266,7 @@ li @pc:11
 ! load analyzer buffer
 an
 ! break at mrkl instruction, 11th from the top of the above listing
-bi @pc+82
+bi @pc+75
 r
 p @pc$
 li @pc

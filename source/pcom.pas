@@ -503,8 +503,10 @@ var
     doprtlab: boolean;              { -- b: print labels }
     dodmpdsp: boolean;              { -- y: dump the display }
     chkvbk: boolean;                { -- i: check VAR block violations }
-    experr: boolean;                { -- ee/experror: expanded error 
+    experr: boolean;                { -- ee/experror: expanded error
                                          descriptions }
+    amd64_sysv: boolean;            { -- amd64_sysv: use SYS V AMD64 ABI
+                                         calling convention }
 
     { switches passed through to pint }
 
@@ -1919,7 +1921,7 @@ end;
           26: switch(dummy);
           27: switch(dummy);
           28: switch(dummy);
-          29: switch(dummy);
+          29: switch(amd64_sysv);
         end else begin
           { skip all likely option chars }
           while ch in ['a'..'z','A'..'Z','+','-','0'..'9','_'] do
@@ -4797,7 +4799,7 @@ end;
     Uses separate int/float counters: first 6 int params in registers,
     first 6 float params in float registers, rest on stack. }
   function parmspc7(plst: ctp): addrrange;
-  var lp: addrrange; ipc, fpc: integer; stk: boolean;
+  var lp: addrrange; ipc, fpc, n: integer; stk: boolean;
   begin
     ipc := 0; fpc := 0; lp := 0;
     while plst <> nil do begin
@@ -4807,11 +4809,12 @@ end;
           if plst^.idtype = realptr then begin
             fpc := fpc+1; if fpc > 6 then stk := true
           end else begin
-            ipc := ipc+1; if ipc > 6 then stk := true
+            if plst^.idtype^.form = arrayc then n := 2 else n := 1;
+            ipc := ipc+n; if ipc > 6 then stk := true
           end
         end
       end else if (plst^.klass = proc) or (plst^.klass = func) then begin
-        ipc := ipc+1; if ipc > 6 then stk := true
+        ipc := ipc+2; if ipc > 6 then stk := true
       end;
       if stk then begin
         if (plst^.idtype <> nil) and (plst^.klass = vars) then begin
@@ -4980,9 +4983,14 @@ end;
                       the upper half of the FR. }
                     id := basetype(fcp^.idtype);
                     lsize := parmsize; if id <> nil then lsize := id^.size;
-                    if option[29] then
-                      dplmt := marksize+ptrsize+adrsize+parmspc7(pflist)
-                    else
+                    if amd64_sysv then begin
+                      if (fcp^.idtype <> nil) and
+                         not (fcp^.idtype^.form in [records, arrays, power])
+                      then
+                        dplmt := -((pflev+1)*ptrsize + 7*ptrsize)
+                      else
+                        dplmt := marksize+ptrsize+adrsize+parmspc7(pflist)
+                    end else
                       dplmt := marksize+ptrsize+adrsize+locpar { addr of fr }
                   end
               end;
@@ -6386,7 +6394,7 @@ end;
       lsize := 0;
       if (fcp^.klass = func) and (fcp^.idtype <> nil) then begin
           lsize := fcp^.idtype^.size;
-          alignu(parmptr,lsize);
+          alignu(parmptr,lsize)
       end;
       if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
       if lkind = actual then
@@ -6569,8 +6577,8 @@ end;
     { find function result size }
     lsize := 0;
     if fcp^.klass = func then begin
-      lsize := fcp^.idtype^.size;
-      alignu(parmptr,lsize)
+        lsize := fcp^.idtype^.size;
+        alignu(parmptr,lsize)
     end;
     { generate a stack hoist of parameters. Basically the common math on stack
       not formatted the same way as function calls, so we hoist the parameters
@@ -8322,8 +8330,8 @@ end;
             lcp3 := nil;
             (*reverse pointers and reserve local cells for copies of multiple
              values*)
-            if option[29] then
-              lc := -level*ptrsize - 12*ptrsize { reserve int+float reg save slots }
+            if amd64_sysv then
+              lc := -level*ptrsize - 13*ptrsize { reserve int+float+result reg save slots }
             else lc := -level*ptrsize; { set locals top }
             while lcp1 <> nil do
               with lcp1^ do
@@ -8345,8 +8353,8 @@ end;
                 end;
             fpar := lcp3
           end else begin fpar := nil;
-            if option[29] then
-              lc := -level*ptrsize - 12*ptrsize
+            if amd64_sysv then
+              lc := -level*ptrsize - 13*ptrsize
             else lc := -level*ptrsize
           end
     end (*parameterlist*) ;
@@ -8468,9 +8476,10 @@ end;
     { reassign parameter addresses for SYS V AMD64 ABI.
       First 6: index saved register slots below display.
       Params 7+: allocate left-to-right from base (reversed vs normal). }
-    procedure parmoffsvsv(plst: ctp; lev: levrange);
+    procedure parmoffsysv(plst: ctp; lev: levrange);
     var p: ctp; ipc: integer; fpc: integer;
         off: addrrange; sz: addrrange; inreg: boolean;
+        n: integer;
 
     function isflt(p: ctp): boolean;
     begin isflt := false;
@@ -8483,8 +8492,14 @@ end;
       { assign params to register save slots or stack.
         Integer params use separate counter (ipc) from float params (fpc),
         matching pgen's asspar which uses parreg[] vs parregf[].
-        Int saves (up to 6):   rbp - lev*8 - ipc*8
-        Float saves (up to 6): rbp - lev*8 - 6*8 - fpc*8
+        MST saves regs in reverse push order (r9..rdi), so reg 1 (rdi) is
+        at the lowest address. Slot s (1-based) maps to:
+          rbp - lev*8 - (7-s)*8
+        Using ipc (0-based, before increment), first slot = ipc+1, so:
+          offset = -(lev*8 + (6-ipc)*8)
+        Container arrays and proc/func params consume 2 register slots.
+        Function result slot: rbp - lev*8 - 7*8 (rax save)
+        Float saves (up to 6): rbp - lev*8 - 7*8 - fpc*8
         Overflow params: ascending from marksize+ptrsize+adrsize = 40 }
       p := plst; ipc := 0; fpc := 0;
       off := marksize+ptrsize+adrsize; { = 40, for stacked overflow params }
@@ -8495,17 +8510,27 @@ end;
             fpc := fpc+1; inreg := true;
             if p^.klass = vars then
               if not p^.isloc then
-                p^.vaddr := -(lev*ptrsize + 6*ptrsize + fpc*ptrsize)
+                p^.vaddr := -(lev*ptrsize + 7*ptrsize + fpc*ptrsize)
           end
         end else begin
-          if ipc < 6 then begin
-            ipc := ipc+1; inreg := true;
+          { determine number of register slots needed }
+          n := 1;
+          if p^.klass = vars then begin
+            if p^.idtype <> nil then
+              if p^.idtype^.form = arrayc then n := 2
+          end else if (p^.klass = proc) or (p^.klass = func) then n := 2;
+          if ipc + n <= 6 then begin
+            inreg := true;
+            { offset of first slot in reversed layout }
             if p^.klass = vars then begin
               if not p^.isloc then
-                p^.vaddr := -(lev*ptrsize + ipc*ptrsize)
+                p^.vaddr := -(lev*ptrsize + (6 - ipc)*ptrsize)
             end else if (p^.klass = proc) or (p^.klass = func) then
-              p^.pfaddr := -(lev*ptrsize + ipc*ptrsize)
-          end
+              p^.pfaddr := -(lev*ptrsize + (6 - ipc)*ptrsize)
+          end else if (n > 1) and (ipc < 6) then
+            writeln(output,
+              '*** Warning: gap in AMD64 registered parameters');
+          ipc := ipc + n { always advance to match pgen asspar }
         end;
         if not inreg then begin
           { overflow: assign stacked address }
@@ -8750,8 +8775,8 @@ end;
         lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
         lcp^.locpar := parmspc(lcp^.pflist);
         parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
-        if option[29] then
-          parmoffsvsv(lcp^.pflist, level);
+        if amd64_sysv then
+          parmoffsysv(lcp^.pflist, level);
         lcp^.locstr := lc { save locals counter }
       end else begin
         parmrg(lcp1^.pflist); { merge back the forwarded parameter list }
@@ -8856,8 +8881,8 @@ end;
         stalvl: integer; { statement nesting level }
         ilp: ctp;
         rp: ripptr; { for rip label resolution }
-        pcnt: integer; ipc, fpc: integer;
-        svsvoff: addrrange; psz: addrrange;
+        pcnt: integer; ipc, fpc, n: integer;
+        sysvoff: addrrange; psz: addrrange;
 
     { add statement level }
     procedure addlvl;
@@ -9752,7 +9777,7 @@ end;
     if fprocp <> nil then (*copy multiple values into local cells*)
       begin llc1 := marksize+ptrsize+adrsize+fprocp^.locpar; { index params }
         ipc := 0; fpc := 0;
-        svsvoff := marksize+ptrsize+adrsize; { for svsv mode }
+        sysvoff := marksize+ptrsize+adrsize; { for sysv mode }
         lcp := fprocp^.pflist;
         while lcp <> nil do
           with lcp^ do
@@ -9767,27 +9792,29 @@ end;
                     if vkind = formal then psz := ptrsize
                     else psz := idtype^.size
                   end;
-                  if option[29] then begin
+                  if amd64_sysv then begin
                     { SYS V: compute source address by int/float position }
                     if idtype = realptr then begin
                       { float parameter }
                       fpc := fpc+1;
                       if fpc <= 6 then
-                        llc1 := -(level*ptrsize + 6*ptrsize + fpc*ptrsize)
+                        llc1 := -(level*ptrsize + 7*ptrsize + fpc*ptrsize)
                       else begin
-                        alignu(parmptr, svsvoff);
-                        llc1 := svsvoff;
-                        svsvoff := svsvoff+psz
+                        alignu(parmptr, sysvoff);
+                        llc1 := sysvoff;
+                        sysvoff := sysvoff+psz
                       end
                     end else begin
                       { integer parameter }
-                      ipc := ipc+1;
-                      if ipc <= 6 then
-                        llc1 := -(level*ptrsize + ipc*ptrsize)
-                      else begin
-                        alignu(parmptr, svsvoff);
-                        llc1 := svsvoff;
-                        svsvoff := svsvoff+psz
+                      if idtype^.form = arrayc then n := 2 else n := 1;
+                      if ipc + n <= 6 then begin
+                        llc1 := -(level*ptrsize + (6 - ipc)*ptrsize);
+                        ipc := ipc + n
+                      end else begin
+                        ipc := ipc + n;
+                        alignu(parmptr, sysvoff);
+                        llc1 := sysvoff;
+                        sysvoff := sysvoff+psz
                       end
                     end
                   end else begin
@@ -9820,15 +9847,16 @@ end;
                   end
                 end
               else if (klass = proc) or (klass = func) then begin
-                if option[29] then begin
-                  { proc/func params are always integer-class }
-                  ipc := ipc+1;
-                  if ipc <= 6 then
-                    llc1 := -(level*ptrsize + ipc*ptrsize)
-                  else begin
-                    alignu(parmptr, svsvoff);
-                    llc1 := svsvoff;
-                    svsvoff := svsvoff+ptrsize*2
+                if amd64_sysv then begin
+                  { proc/func params need 2 integer register slots }
+                  if ipc + 2 <= 6 then begin
+                    llc1 := -(level*ptrsize + (6 - ipc)*ptrsize);
+                    ipc := ipc + 2
+                  end else begin
+                    ipc := ipc + 2;
+                    alignu(parmptr, sysvoff);
+                    llc1 := sysvoff;
+                    sysvoff := sysvoff+ptrsize*2
                   end
                 end else begin
                   llc1 := llc1-ptrsize*2;
@@ -9895,13 +9923,13 @@ end;
               if chkvbk and (vkind = formal) then gen0(94(*vbe*));
             lcp := next
           end;
-        if option[29] then
-          svsvoff := parmspc7(fprocp^.pflist)
-        else svsvoff := fprocp^.locpar;
-        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),svsvoff)
+        if amd64_sysv then
+          sysvoff := parmspc7(fprocp^.pflist)
+        else sysvoff := fprocp^.locpar;
+        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),sysvoff)
         else if fprocp^.idtype^.form in [records, arrays] then
-          gen2t(42(*ret*),svsvoff,fprocp^.idtype^.size,basetype(fprocp^.idtype))
-        else gen1t(42(*ret*),svsvoff,fprocp^.idtype);
+          gen2t(42(*ret*),sysvoff,fprocp^.idtype^.size,basetype(fprocp^.idtype))
+        else gen1t(42(*ret*),sysvoff,fprocp^.idtype);
         alignd(parmptr,lc);
         if prcode then
           begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
@@ -10776,7 +10804,7 @@ end;
         errfval := true
       end;
       setflg('mal', 'mrkasslin', option[28], options[28]);
-      setflg('amd64_svsv', 'amd64_svsv', option[29], options[29]);
+      setflg('amd64_sysv', 'amd64_sysv', option[29], options[29]);
       if not optfnd then begin
         writeln('*** Unknown option ', w:*); goto 99
       end;
@@ -10805,9 +10833,10 @@ end;
         24: dodmplex := option[oi];
         25: dodmpdsp := option[oi];
         26: dolineinfo := option[oi];
+        29: amd64_sysv := option[oi];
         { these are backend options }
         1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:;
-        17:; 23:; 27:; 28:; 29:;
+        17:; 23:; 27:; 28:;
       end
   end;
 
@@ -10831,7 +10860,7 @@ end;
     opts[23] := 'w         '; opts[24] := 'x         ';
     opts[25] := 'y         '; opts[26] := 'z         ';
     opts[27] := 'md        '; opts[28] := 'mal       ';
-    opts[29] := 'amd64_svsv';
+    opts[29] := 'amd64_sysv';
     optsl[1]  := 'debugflt  '; optsl[2]  := 'prtlab    ';
     optsl[3]  := 'lstcod    '; optsl[4]  := 'chk       ';
     optsl[5]  := 'machdeck  '; optsl[6]  := 'debugsrc  ';
@@ -10846,13 +10875,14 @@ end;
     optsl[23] := 'debug     '; optsl[24] := 'prtlex    ';
     optsl[25] := 'prtdisplay'; optsl[26] := 'lineinfo  ';
     optsl[27] := 'modules   '; optsl[28] := 'mrkasslin ';
-    optsl[29] := 'amd64_svsv';
+    optsl[29] := 'amd64_sysv';
     prtables := false; option[20] := false; list := false; option[12] := false;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
     chkudtc := true; option[21] := true; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     chkvbk := false; option[9] := false; experr := true; option[10] := true;
+    amd64_sysv := false; option[29] := false;
     dolineinfo := true; option[26] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;

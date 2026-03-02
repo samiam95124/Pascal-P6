@@ -865,7 +865,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     List is reversed (rightmost first). pn is total param count.
     Params 7+ are pushed to stack, params 1-6 just evaluated into registers
     (asspar already assigned the correct parameter registers). }
-  procedure pshparsvsv(pp: expptr; pn: integer);
+  procedure pshparsysv(pp: expptr; pn: integer);
   var ipc, fpc: integer; p: expptr; stk: boolean;
   begin
     { pre-count total int and float params (list is reversed) }
@@ -1754,7 +1754,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         12, 246: begin
           { 16-byte alignment for SYS V ABI user calls }
           callaln := false;
-          if doamd64 then begin
+          if amd64_sysv then begin
             if ep^.op = 246{cuf} then ls := ep^.q3 else ls := 0;
             ps := cmpparmspc(ep^.pl, ep^.pn);
             if (stkadr - ls - ps) mod 16 <> 0 then begin
@@ -1765,7 +1765,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          if doamd64 then begin
+          if amd64_sysv then begin
             { reverse param list for right-to-left evaluation }
             rvpl := nil;
             while ep^.pl <> nil do begin
@@ -1773,7 +1773,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
               rvpp^.next := rvpl; rvpl := rvpp
             end;
             ep^.pl := rvpl;
-            pshparsvsv(ep^.pl, ep^.pn) { stack 7+, eval 1-6 into regs }
+            pshparsysv(ep^.pl, ep^.pn) { stack 7+, eval 1-6 into regs }
           end else
             pshpar(ep^.pl); { process parameters first }
           if ep^.blk <> nil then begin
@@ -1805,7 +1805,16 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             end else begin
               if ep^.r1 <> rgrax then
                 wrtins(' movq %rax,%1 # place result', ep^.r1);
-            end
+            end;
+            { for single-word results with amd64_sysv, the result is loaded
+              from the register pad by reti/retr, not popped from SFR.
+              Remove the SFR space that was allocated by sfr. }
+            if amd64_sysv then
+              if ep^.rc <> 2 then
+                if ep^.rc <> 3 then
+                  if ep^.sl <> nil then
+                    if ep^.sl^.lb <> nil then
+                      wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
           stkadr := stkadrs; { restore stack position }
           if callaln then begin
@@ -1818,7 +1827,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         113,247: begin
           { 16-byte alignment for SYS V ABI user calls }
           callaln := false;
-          if doamd64 then begin
+          if amd64_sysv then begin
             if ep^.op = 247{cif} then ls := ep^.q3 else ls := 0;
             ps := cmpparmspc(ep^.pl, ep^.pn);
             if (stkadr - ls - ps) mod 16 <> 0 then begin
@@ -1829,7 +1838,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          if doamd64 then begin
+          if amd64_sysv then begin
             { reverse param list for right-to-left evaluation }
             rvpl := nil;
             while ep^.pl <> nil do begin
@@ -1837,7 +1846,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
               rvpp^.next := rvpl; rvpl := rvpp
             end;
             ep^.pl := rvpl;
-            pshparsvsv(ep^.pl, ep^.pn)
+            pshparsysv(ep^.pl, ep^.pn)
           end else
             pshpar(ep^.pl); { process parameters first }
           genexp(ep^.l); { load procedure address }
@@ -1868,7 +1877,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             end else begin
               if ep^.r1 <> rgrax then
                 wrtins(' movq %rax,%1 # place result', ep^.r1)
-            end
+            end;
+            { for single-word results with amd64_sysv, remove SFR space }
+            if amd64_sysv then
+              if ep^.rc <> 2 then
+                if ep^.rc <> 3 then
+                  if ep^.sl <> nil then
+                    if ep^.sl^.lb <> nil then
+                      wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
           wrtins(' movq %r15,%rbp # restore our frame pointer');
           stkadr := stkadrs; { restore stack position }
@@ -2772,14 +2788,18 @@ begin { assemble }
       wrtins(' enterq $1,$0 # enter frame', p+1);
       writeln(prr, '        .cfi_def_cfa rbp, 40');
       writeln(prr, '        .cfi_offset rbp, -40');
-      if doamd64 then begin
-        { save integer parameter registers to known frame slots }
-        wrtins(' pushq %rdi # save int param reg 1');
-        wrtins(' pushq %rsi # save int param reg 2');
-        wrtins(' pushq %rdx # save int param reg 3');
-        wrtins(' pushq %rcx # save int param reg 4');
-        wrtins(' pushq %r8 # save int param reg 5');
+      if amd64_sysv then begin
+        { save integer parameter registers to known frame slots.
+          Push in reverse order so that reg 1 (rdi) ends up at
+          the lowest address, giving ascending layout for
+          multi-slot params (e.g., container arrays via ldp). }
         wrtins(' pushq %r9 # save int param reg 6');
+        wrtins(' pushq %r8 # save int param reg 5');
+        wrtins(' pushq %rcx # save int param reg 4');
+        wrtins(' pushq %rdx # save int param reg 3');
+        wrtins(' pushq %rsi # save int param reg 2');
+        wrtins(' pushq %rdi # save int param reg 1');
+        wrtins(' pushq %rax # save function result');
         { save float parameter registers to known frame slots }
         wrtins(' subq $0,%rsp # allocate float param save area', 6*realsize);
         wrtins(' movsd %xmm0,^0(%rsp) # save float param reg 1', 5*realsize);
@@ -2787,7 +2807,7 @@ begin { assemble }
         wrtins(' movsd %xmm2,^0(%rsp) # save float param reg 3', 3*realsize);
         wrtins(' movsd %xmm3,^0(%rsp) # save float param reg 4', 2*realsize);
         wrtins(' movsd %xmm4,^0(%rsp) # save float param reg 5', 1*realsize);
-        wrtins(' movsd %xmm5,^0(%rsp) # save float param reg 6', 0*realsize);
+        wrtins(' movsd %xmm5,^0(%rsp) # save float param reg 6', 0*realsize)
       end;
       wrtins(' movq %rsp,%rax # copy sp');
       { find sp-locals }
@@ -3037,6 +3057,13 @@ begin { assemble }
     128,132,204,130,131: begin parq;
       frereg := allreg;
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
+      if amd64_sysv then begin
+        { load function result from register pad before frame teardown }
+        wrtins(' movq ^0(%rbp),%rax # load function result',
+               -(blkstk^.lvl*ptrsize + 7*ptrsize));
+        if op in [204{retx},130{retc},131{retb}] then
+          wrtins(' andq $0,%rax # mask byte result', 255)
+      end;
       wrtins(' popq %r15 # undo alignment push');
       wrtins(' popq %r15 # restore protected registers');
       wrtins(' popq %r14');
@@ -3050,9 +3077,11 @@ begin { assemble }
       writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', q);
-      wrtins(' popq %rax # get qword result');
-      if op in [204{retx},130{retc},131{retb}] then
-        wrtins(' andq $0,%rax # mask byte result', 255);
+      if not amd64_sysv then begin
+        wrtins(' popq %rax # get qword result');
+        if op in [204{retx},130{retc},131{retb}] then
+          wrtins(' andq $0,%rax # mask byte result', 255)
+      end;
       wrtins(' pushq %rcx # replace return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');
@@ -3066,6 +3095,11 @@ begin { assemble }
     129: begin parq;
       frereg := allreg;
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
+      if amd64_sysv then begin
+        { load function result from register pad before frame teardown }
+        wrtins(' movsd ^0(%rbp),%xmm0 # load float result',
+               -(blkstk^.lvl*ptrsize + 7*ptrsize))
+      end;
       { restore protected registers }
       wrtins(' popq %r15 # undo alignment push');
       wrtins(' popq %r15 # restore protected registers');
@@ -3080,8 +3114,10 @@ begin { assemble }
       writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', q);
-      wrtins(' movsd (%rsp),%xmm0 # move real from stack to xmm0');
-      wrtins(' addq $0,%rsp # remove real from stack', realsize);
+      if not amd64_sysv then begin
+        wrtins(' movsd (%rsp),%xmm0 # move real from stack to xmm0');
+        wrtins(' addq $0,%rsp # remove real from stack', realsize)
+      end;
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');

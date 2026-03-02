@@ -1,27 +1,15 @@
 #
 # Wrapper series for services module
 #
-# These wrappers are required for three reasons:
-#
-# 1. Translate module coining to the final names.
-# 2. Perform any parameter translations required.
-# 3. Remove input parameters from stack.
-# 4. Compensate for differences in function returns.
-# 5. Align stack.
-#
-# The name coining is translation from the format:
+# With amd64sysv, the Pascaline calling convention matches the AMD64 System V
+# ABI. Parameters are passed in registers (%rdi, %rsi, %rdx, %rcx, %r8, %r9),
+# the stack is aligned, and function results return in %rax. The only remaining
+# task for this wrapper is name coining: translating from the Pascaline mangled
+# symbol format:
 #
 # <module name>.<routine>$<type signature>
 #
-# To the C name of the function. The <type signature> is covered in the 
-# Pascal-P6 manual under "intermediate language: Symbols".
-#
-# The #5 requirement is that pgen is cavalier about aligning the stack on calls.
-# The AMD64 System V requirement is 16 byte alignment, but this only faults on
-# use of vector/128 bit operations. These are used in glibc.
-#
-# Some or all of these requirements hopefully will be removed in future 
-# versions.
+# To the C name of the function. Each entry is a simple jmp (tail call).
 #
 
     .globl  services.list$p_vc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$atsys$atdir$atloop$$create$56$i$modify$64$i$access$72$i$backup$80$i$user$88$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$group$120$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$other$152$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$next$184$p2$
@@ -126,512 +114,514 @@
     .global services.timesep$f
     .global services.currchr$f
 
-#
-# Procedure/function preamble
-#
-# Gives the preamble to procedures and functions. Removes the input parameters,
-# and any function result. Aligns the stack, then places the original stack
-# pointer and the return address on it.
-#
-    .macro  preamble func, numpar
-    popq    %r12                # get return address
-    .if      \func
-    popq    %r11                # dump function result
-    .endif
-    .if     \numpar >= 1
-    popq    %r11                # dump parameters
-    .if     \numpar >= 2
-    popq    %r11
-    .if     \numpar >= 3
-    popq    %r11
-    .if     \numpar >= 4
-    popq    %r11
-    .if     \numpar >= 5
-    popq    %r11
-    .if     \numpar >= 6
-    popq    %r11
-    .if     \numpar >= 7
-    popq    %r11
-    .if     \numpar >= 8
-    popq    %r11
-    .endif
-    .endif
-    .endif
-    .endif
-    .endif
-    .endif
-    .endif
-    .endif
-    movq    %rsp,%r11           # save original stack
-    andq    $0xfffffffffffffff0,%rsp # align stack
-    pushq   %r11                # save original stack on stack
-    pushq   %r12                # save return address
-    .endm
-
-#
-# Procedure/function postable
-#
-# Gives the postamble to procedures and functions. The return address is fetched
-# from the stack, and the original stack pointer recovered. Then the
-# return address is branched to.
-#
-    .macro  postamble
-    popq     %r12               # get return address
-    popq    %r11                # get original stack
-    movq    %r11,%rsp           # restore original stack
-    jmp     *%r12               # return
-    .endm
-#
-# Macro to call a procedure.
-#
-# Takes the target function and the number of parameters. Note that the number
-# of parameters is in terms of registers occupied, and not source parameters.
-#
-    .macro  procedure func, numpar
-    preamble    0, \numpar
-    call    \func               # call C function
-    postamble
-    .endm
-
-#
-# Macro to call a function.
-#
-# Takes the target function and the number of parameters. Note that the number
-# of parameters is in terms of registers occupied, and not source parameters.
-#
-    .macro  function func, numpar
-    preamble    1, \numpar
-    call    \func               # call C function
-    postamble
-    .endm
-
     .text
 
-    jmp     1f      # skip stack sequence
+    jmp     1f      # skip wrapper sequence
 
 # procedure list(view f: string; var l: filptr); external;
 
 services.list$p_vc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$atsys$atdir$atloop$$create$56$i$modify$64$i$access$72$i$backup$80$i$user$88$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$group$120$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$other$152$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$next$184$p2$:
-    procedure   wrapper_list, 3
+    jmp     wrapper_list
 
 # procedure list(view f: pstring; var  l: filptr); external;
 
 services.list$p_pvc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$atsys$atdir$atloop$$create$56$i$modify$64$i$access$72$i$backup$80$i$user$88$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$group$120$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$other$152$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$next$184$p2$:
-    procedure   wrapper_listp, 3
+    jmp     wrapper_listp
 
 # procedure times(var s: string; t: integer); external;
 
-services.times$p_vc_i: procedure wrapper_times, 3
+services.times$p_vc_i:
+    jmp     wrapper_times
 
 # function times(t: integer): pstring; external;
 
-services.times$f_i: function wrapper_timesp, 3
+services.times$f_i:
+    jmp     wrapper_timesp
 
 # procedure dates(var s: string; t: integer); external;
 
-services.dates$p_vc_i: procedure wrapper_dates, 3
+services.dates$p_vc_i:
+    jmp     wrapper_dates
 
 # function dates(t: integer): pstring; external;
 
-services.dates$f_i: function wrapper_datesp, 3
+services.dates$f_i:
+    jmp     wrapper_datesp
 
 # procedure writetime(var f: text; t: integer); external;
 
-services.writetime$p_fc_i: procedure wrapper_writetimef, 2
+services.writetime$p_fc_i:
+    jmp     wrapper_writetimef
 
 # procedure writetime(t: integer); external;
 
-services.writetime$p_i: procedure wrapper_writetime, 2
+services.writetime$p_i:
+    jmp     wrapper_writetime
 
 # procedure writedate(var f: text; t: integer); external;
 
-services.writedate$p_fc_i: procedure wrapper_writedatef, 2
+services.writedate$p_fc_i:
+    jmp     wrapper_writedatef
 
 # procedure writedate(t: integer); external;
 
-services.writedate$p_i: procedure wrapper_writedate, 2
+services.writedate$p_i:
+    jmp     wrapper_writedate
 
 # function time: integer; external;
 
-services.time$f: function wrapper_time, 0
+services.time$f:
+    jmp     wrapper_time
 
 # function local(t: integer): integer; external;
 
-services.local$f_i: function wrapper_local, 1
+services.local$f_i:
+    jmp     wrapper_local
 
 # function clock: integer; external;
 
-services.clock$f: function wrapper_clock, 0
+services.clock$f:
+    jmp     wrapper_clock
 
 # function elapsed(r: integer): integer; external;
 
-services.elapsed$f_i: function pa_elapsed, 1
+services.elapsed$f_i:
+    jmp     pa_elapsed
 
 # function validfile(view s: string): boolean; external;
 
-services.validfile$f_vc: function wrapper_validfile, 2
+services.validfile$f_vc:
+    jmp     wrapper_validfile
 
 # function validfile(view s: pstring): boolean; external;
 
-services.validfile$f_pvc: procedure wrapper_validfilep, 1
+services.validfile$f_pvc:
+    jmp     wrapper_validfilep
 
 # function validpath(view s: string): boolean; external;
 
-services.validpath$f_vc: function wrapper_validpath, 2
+services.validpath$f_vc:
+    jmp     wrapper_validpath
 
 # function validpath(view s: pstring): boolean; external;
 
-services.validpath$f_pvc: function wrapper_validpathp, 1
+services.validpath$f_pvc:
+    jmp     wrapper_validpathp
 
 # function wild(view s: string): boolean; external;
 
-services.wild$f_vc: function wrapper_wild, 2
+services.wild$f_vc:
+    jmp     wrapper_wild
 
 # function wild(view s: pstring): boolean; external;
 
-services.wild$f_pvc: function wrapper_wildp, 1
+services.wild$f_pvc:
+    jmp     wrapper_wildp
 
 # procedure getenv(view ls: string; var ds: string); external;
 
-services.getenv$p_vc_vc: procedure wrapper_getenv, 4
+services.getenv$p_vc_vc:
+    jmp     wrapper_getenv
 
 # function getenv(view ls: string): pstring; external;
 
-services.getenv$f_vc: function wrapper_getenvp, 2
+services.getenv$f_vc:
+    jmp     wrapper_getenvp
 
 # procedure setenv(view sn, sd: string); external;
 
-services.setenv$p_vc_vc: procedure wrapper_setenv, 4
+services.setenv$p_vc_vc:
+    jmp     wrapper_setenv
 
 # procedure setenv(sn: pstring; view sd: string); external;
 
-services.setenv$p_pvc_vc: procedure wrapper_setenvps, 3
+services.setenv$p_pvc_vc:
+    jmp     wrapper_setenvps
 
 # procedure setenv(view sn: string; sd: pstring); external;
 
-services.setenv$p_vc_pvc: procedure wrapper_setenvsp, 3
+services.setenv$p_vc_pvc:
+    jmp     wrapper_setenvsp
 
 # procedure setenv(sn, sd: pstring); external;
 
-services.setenv$p_pvc_pvc: procedure wrapper_setenvpp, 2
+services.setenv$p_pvc_pvc:
+    jmp     wrapper_setenvpp
 
 # procedure allenv(var el: envptr); external;
 
-services.allenv$p_pr$name$0$pvc$data$8$p12$next$16$p2$: procedure wrapper_allenv, 1
+services.allenv$p_pr$name$0$pvc$data$8$p12$next$16$p2$:
+    jmp     wrapper_allenv
 
 # procedure remenv(view sn: string); external;
 
-services.remenv$p_vc: procedure wrapper_remenv, 2
+services.remenv$p_vc:
+    jmp     wrapper_remenv
 
 # procedure remenv(view sn: pstring); external;
 
-services.remenv$p_pvc: procedure wrapper_remenvp, 2
+services.remenv$p_pvc:
+    jmp     wrapper_remenvp
 
 # procedure exec(view cmd: string); external;
 
-services.exec$p_vc: procedure wrapper_exec, 2
+services.exec$p_vc:
+    jmp     wrapper_exec
 
 # procedure exec(cmd: pstring); external;
 
-services.exec$p_pvc: procedure wrapper_execp, 1
+services.exec$p_pvc:
+    jmp     wrapper_execp
 
 # procedure exece(view cmd: string; el: envptr); external;
 
-services.exece$p_vc_pr$name$0$pvc$data$8$p12$next$16$p2$: procedure wrapper_exece, 3
+services.exece$p_vc_pr$name$0$pvc$data$8$p12$next$16$p2$:
+    jmp     wrapper_exece
 
 # procedure exece(cmd: pstring; el: envptr); external;
 
-services.exece$p_pvc_pr$name$0$pvc$data$8$p12$next$16$p2$: procedure wrapper_execep, 2
+services.exece$p_pvc_pr$name$0$pvc$data$8$p12$next$16$p2$:
+    jmp     wrapper_execep
 
 # procedure execw(view cmd: string; var e: integer); external;
 
-services.execw$p_vc_i: procedure wrapper_execw, 3
+services.execw$p_vc_i:
+    jmp     wrapper_execw
 
 # procedure execw(cmd: pstring; var e: integer); external;
 
-services.execw$p_pvc_i: procedure wrapper_execwp, 2
+services.execw$p_pvc_i:
+    jmp     wrapper_execwp
 
 # procedure execew(view cmd: string; el: envptr; var e: integer); external;
 
-services.execew$p_vc_pr$name$0$pvc$data$8$p12$next$16$p2$_i: procedure wrapper_execew, 4
+services.execew$p_vc_pr$name$0$pvc$data$8$p12$next$16$p2$_i:
+    jmp     wrapper_execew
 
 # procedure execew(cmd: pstring; el: envptr; var e: integer); external;
 
-services.execew$p_pvc_pr$name$0$pvc$data$8$p12$next$16$p2$_i: procedure wrapper_execewp, 3
+services.execew$p_pvc_pr$name$0$pvc$data$8$p12$next$16$p2$_i:
+    jmp     wrapper_execewp
 
 # procedure getcur(var fn: string); external;
 
-services.getcur$p_vc: procedure wrapper_getcur, 2
+services.getcur$p_vc:
+    jmp     wrapper_getcur
 
 # function getcur: pstring; external;
 
-services.getcur$f: function wrapper_getcurp, 0
+services.getcur$f:
+    jmp     wrapper_getcurp
 
 # procedure setcur(view fn: string); external;
 
-services.setcur$p_vc: procedure wrapper_setcur, 2
+services.setcur$p_vc:
+    jmp     wrapper_setcur
 
 # procedure setcur(fn: pstring); external;
 
-services.setcur$f_pvc: procedure wrapper_setcur, 1
+services.setcur$f_pvc:
+    jmp     wrapper_setcurp
 
 # procedure brknam(view fn: string; var p, n, e: string); external;
 
 services.brknam$p_vc_vc_vc_vc:
-    movq    8(%rsp),%r13        # save onstack 7 and 8
-    movq    16(%rsp),%r14
-    preamble 0, 8
-    pushq   %r14                # replace parameters in reverse order
-    pushq   %r13
-    call    wrapper_brknam
-    popq    %r11                # dispose of 7 and 8
-    popq    %r11
-    postamble
+    jmp     wrapper_brknam
 
 # procedure brknam(view fn: string; var p, n, e: pstring); external;
 
-services.brknam$p_vc_pvc_pvc_pvc: procedure wrapper_brknamsp, 5
+services.brknam$p_vc_pvc_pvc_pvc:
+    jmp     wrapper_brknamsp
 
 # procedure brknam(fn: pstring; var p, n, e: pstring); external;
 
-services.brknam$p_pvc_pvc_pvc_pvc: procedure wrapper_brknampp, 4
+services.brknam$p_pvc_pvc_pvc_pvc:
+    jmp     wrapper_brknampp
 
 # procedure maknam(var fn: string; view p, n, e: string); external;
 
 services.maknam$p_vc_vc_vc_vc:
-    movq    8(%rsp),%r13        # save onstack 7 and 8
-    movq    16(%rsp),%r14
-    preamble 0, 8
-    pushq   %r14                # replace parameters in reverse order
-    pushq   %r13
-    call    wrapper_maknam
-    popq    %r11                # dispose of 7 and 8
-    popq    %r11
-    postamble
+    jmp     wrapper_maknam
 
 # function maknam(view p, n, e: string): pstring; external;
 
-services.maknam$f_vc_vc_vc: function wrapper_maknamp, 6
+services.maknam$f_vc_vc_vc:
+    jmp     wrapper_maknamp
 
 # function maknam(view p: string; view n: string; e: pstring): pstring; external;
 
-services.maknam$f_vc_vc_pvc: function wrapper_maknamppsp, 5
+services.maknam$f_vc_vc_pvc:
+    jmp     wrapper_maknamppsp
 
 # function maknam(view p: string; n: pstring; view e: string): pstring; external;
 
-services.maknam$f_vc_pvc_vc: function wrapper_maknamppsp, 5
+services.maknam$f_vc_pvc_vc:
+    jmp     wrapper_maknamppsp
 
 # function maknam(view p: string; n: pstring; e: pstring): pstring; external;
 
-services.maknam$f_vc_pvc_pvc: function wrapper_maknampspp, 4
+services.maknam$f_vc_pvc_pvc:
+    jmp     wrapper_maknampspp
 
 # function maknam(p: pstring; view n: string; view e: string): pstring; external;
 
-services.maknam$f_pvc_vc_vc: function wrapper_maknamppss, 5
+services.maknam$f_pvc_vc_vc:
+    jmp     wrapper_maknamppss
 
 # function maknam(p: pstring; view n: string; e: pstring): pstring; external;
 
-services.maknam$f_pvc_vc_pvc: function wrapper_maknamppsp, 4
+services.maknam$f_pvc_vc_pvc:
+    jmp     wrapper_maknamppsp
 
 # function maknam(p: pstring; n: pstring; view e: string): pstring; external;
 
-services.maknam$f_pvc_pvc_vc: function wrapper_maknamppps, 4
+services.maknam$f_pvc_pvc_vc:
+    jmp     wrapper_maknamppps
 
 # function maknam(p: pstring; n: pstring; e: pstring): pstring; external;
 
-services.maknam$f_pvc_pvc_pvc: function wrapper_maknampppp, 3
+services.maknam$f_pvc_pvc_pvc:
+    jmp     wrapper_maknampppp
 
 # procedure fulnam(var fn: string); external;
 
-services.fulnam$p_vc: procedure wrapper_fulnam, 2
+services.fulnam$p_vc:
+    jmp     wrapper_fulnam
 
 # function fulnam(view fn: string): pstring; external;
 
-services.fulnam$f_vc: function wrapper_fulnamp, 2
+services.fulnam$f_vc:
+    jmp     wrapper_fulnamp
 
 # procedure getpgm(out p: string); external;
 
-services.getpgm$p_vc: procedure wrapper_getpgm, 2
+services.getpgm$p_vc:
+    jmp     wrapper_getpgm
 
 # function getpgm: pstring; external;
 
-services.getpgm$f: function wrapper_getpgmp, 1
+services.getpgm$f:
+    jmp     wrapper_getpgmp
 
 # procedure getusr(out fn: string); external;
 
-services.getusr$p_vc: function wrapper_getusr, 2
+services.getusr$p_vc:
+    jmp     wrapper_getusr
 
 # function getusr: pstring; external;
 
-services.getusr$f: function wrapper_getusrp, 1
+services.getusr$f:
+    jmp     wrapper_getusrp
 
 # procedure setatr(view fn: string; a: attrset); external;
 
-services.setatr$p_vc_sx$atexec$atarc$atsys$atdir$atloop$: procedure wrapper_setatr, 3
+services.setatr$p_vc_sx$atexec$atarc$atsys$atdir$atloop$:
+    jmp     wrapper_setatr
 
 # procedure setatr(fn: pstring; a: attrset); external;
 
-services.setatr$p_pvc_sx$atexec$atarc$atsys$atdir$atloop$: procedure wrapper_setatrp, 2
+services.setatr$p_pvc_sx$atexec$atarc$atsys$atdir$atloop$:
+    jmp     wrapper_setatrp
 
 # procedure resatr(view fn: string; a: attrset); external;
 
-services.resatr$p_vc_sx$atexec$atarc$atsys$atdir$atloop$: procedure wrapper_resatr, 3
+services.resatr$p_vc_sx$atexec$atarc$atsys$atdir$atloop$:
+    jmp     wrapper_resatr
 
 # procedure resatr(fn: pstring; a: attrset); external;
 
-services.resatr$p_pvc_sx$atexec$atarc$atsys$atdir$atloop$: procedure wrapper_resatrp, 2
+services.resatr$p_pvc_sx$atexec$atarc$atsys$atdir$atloop$:
+    jmp     wrapper_resatrp
 
 # procedure bakupd(view fn: string); external;
 
-services.bakupd$p_vc: procedure wrapper_bakupd, 2
+services.bakupd$p_vc:
+    jmp     wrapper_bakupd
 
 # procedure bakupd(fn: pstring); external;
 
-services.bakupd$p_pvc: procedure wrapper_bakupdp, 1
+services.bakupd$p_pvc:
+    jmp     wrapper_bakupdp
 
 # procedure setuper(view fn: string; p: permset); external;
 
-services.setuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setuper, 3
+services.setuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_setuper
 
 # procedure setuper(fn: pstring; p: permset); external;
 
-services.setuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setuperp, 2
+services.setuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_setuperp
 
 # procedure resuper(view fn: string; p: permset); external;
 
-services.resuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resuper, 3
+services.resuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_resuper
 
 # procedure resuper(fn: pstring; p: permset); external;
 
-services.resuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resuperp, 2
+services.resuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_resuperp
 
 # procedure setgper(view fn: string; p: permset); external;
 
-services.setgper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setgper, 3
+services.setgper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_setgper
 
 # procedure setgper(fn: pstring; p: permset); external;
 
-services.setgper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setgperp, 2
+services.setgper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_setgperp
 
 # procedure resgper(view fn: string; p: permset); external;
 
-services.resgper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resgper, 3
+services.resgper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_resgper
 
 # procedure resgper(fn: pstring; p: permset); external;
 
-services.resgper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resgperp, 2
+services.resgper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_resgperp
 
 # procedure setoper(view fn: string; p: permset); external;
 
-services.setoper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setoper, 3
+services.setoper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_setoper
 
 # procedure setoper(fn: pstring; p: permset); external;
 
-services.setoper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setoperp, 2
+services.setoper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_setoperp
 
 # procedure resoper(view fn: string; p: permset); external;
 
-services.resoper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resoper, 3
+services.resoper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_resoper
 
 # procedure resoper(fn: pstring; p: permset); external;
 
-services.resoper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resoperp, 2
+services.resoper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$:
+    jmp     wrapper_resoperp
 
 # procedure makpth(view fn: string); external;
 
-services.makpth$p_vc: procedure wrapper_makpth, 2
+services.makpth$p_vc:
+    jmp     wrapper_makpth
 
 # procedure makpth(fn: pstring); external;
 
-services.makpth$p_pvc: procedure wrapper_makpthp, 1
+services.makpth$p_pvc:
+    jmp     wrapper_makpthp
 
 # procedure rempth(view fn: string); external;
 
-services.rempth$p_vc: procedure wrapper_rempth, 2
+services.rempth$p_vc:
+    jmp     wrapper_rempth
 
 # procedure rempth(fn: pstring); external;
 
-services.rempth$p_pvc: procedure wrapper_rempthp, 1
+services.rempth$p_pvc:
+    jmp     wrapper_rempthp
 
 # procedure filchr(out fc: schar); external;
 
-services.filchr$p_sc: procedure wrapper_filchr, 1
+services.filchr$p_sc:
+    jmp     wrapper_filchr
 
 # function optchr: char; external;
 
-services.optchr$f: function wrapper_optchr, 0
+services.optchr$f:
+    jmp     wrapper_optchr
 
 # function pthchr: char; external;
 
-services.pthchr$f: function wrapper_pthchr, 0
+services.pthchr$f:
+    jmp     wrapper_pthchr
 
 # function latitude: integer; external;
 
-services.latitude$f: function wrapper_latitude, 0
+services.latitude$f:
+    jmp     wrapper_latitude
 
 # function longitude: integer; external;
 
-services.longitude$f: function wrapper_longitude, 0
+services.longitude$f:
+    jmp     wrapper_longitude
 
 # function altitude: integer; external;
 
-services.altitude$f: function wrapper_altitude, 0
+services.altitude$f:
+    jmp     wrapper_altitude
 
 # function country: integer; external;
 
-services.country$f: function wrapper_country, 0
+services.country$f:
+    jmp     wrapper_country
 
 # procedure countrys(view s: string; len: integer; c: integer); external;
 
-services.countrys$p_vc_i: function wrapper_countrys, 4
+services.countrys$p_vc_i:
+    jmp     wrapper_countrys
 
 # function timezone: integer; external;
 
-services.timezone$f: function wrapper_timezone, 0
+services.timezone$f:
+    jmp     wrapper_timezone
 
 # function daysave: boolean; external;
 
-services.daysave$f: function wrapper_daysave, 0
+services.daysave$f:
+    jmp     wrapper_daysave
 
 # function time24hour: boolean; external;
 
-services.time24hour$f: function wrapper_time24hour, 0
+services.time24hour$f:
+    jmp     wrapper_time24hour
 
 # function language: integer; external;
 
-services.language$f: function wrapper_language, 0
+services.language$f:
+    jmp     wrapper_language
 
 # procedure languages(view s: string; len: integer; l: integer);  external;
 
-services.languages$p_vc_i: function wrapper_languages, 4
+services.languages$p_vc_i:
+    jmp     wrapper_languages
 
 # function decimal: char; external;
 
-services.decimal$f: function wrapper_decimal, 0
+services.decimal$f:
+    jmp     wrapper_decimal
 
 # function numbersep: char; external;
 
-services.numbersep$f: function wrapper_numbersep, 0
+services.numbersep$f:
+    jmp     wrapper_numbersep
 
 # function timeorder: integer; external;
 
-services.timeorder$f: function wrapper_timeorder, 0
+services.timeorder$f:
+    jmp     wrapper_timeorder
 
 # function dateorder: integer; external;
 
-services.dateorder$f: function wrapper_dateorder, 0
+services.dateorder$f:
+    jmp     wrapper_dateorder
 
 # function datesep: char; external;
 
-services.datesep$f: function wrapper_datesep, 0
+services.datesep$f:
+    jmp     wrapper_datesep
 
 # function timesep: char; external;
 
-services.timesep$f: function wrapper_timesep, 0
+services.timesep$f:
+    jmp     wrapper_timesep
 
 # function currchr: char; external;
 
-services.currchr$f: function wrapper_currchr, 0
+services.currchr$f:
+    jmp     wrapper_currchr
 
 #
 # Next module in series
