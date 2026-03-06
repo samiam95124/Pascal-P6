@@ -8547,6 +8547,11 @@ end;
               alignu(parmptr, off);
               p^.vaddr := off;
               off := off+sz
+            end else begin
+              { isloc: structured value param stored locally, but its
+                address occupies ptrsize on the overflow stack }
+              alignu(parmptr, off);
+              off := off+ptrsize
             end
           end else if (p^.klass = proc) or (p^.klass = func) then begin
             alignu(parmptr, off);
@@ -10882,7 +10887,7 @@ end;
     chkudtc := true; option[21] := true; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     chkvbk := false; option[9] := false; experr := true; option[10] := true;
-    amd64_sysv := false; option[29] := false;
+    amd64_sysv := true{false}; option[29] := true{false};
     dolineinfo := true; option[26] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
