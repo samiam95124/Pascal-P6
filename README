@@ -20,11 +20,17 @@ can generate AMD64 binaries in addition to being an interpreter.
 The full instructions for running and setting up the Pascal-P6 compiler/interpreter
 have all been incorporated into the document:
 
-doc/the_p6_compiler.docx
+doc/the_p6_compiler
 
-Which is a Microsoft Word document, 2007 or later.
+In various formats (html, pdf).
 
 Please consult this documents for full instructions on how to use Pascal-P6.
+
+================================ Documentation =================================
+
+The Pascal-P6 documentation index is available online at:
+
+https://samiam95124.github.io/Pascal-P6/
 
 ============================== Quick start =====================================
 
@@ -78,12 +84,6 @@ include a copy you can compile, or you can simply go find it. It is a widely
 available program. You can install it on your Linux via:
 
 sudo apt install flip
-
-================================ Documentation =================================
-
-The Pascal-P6 documentation index is available online at:
-
-https://samiam95124.github.io/Pascal-P6/
 
 ================================== Feedback ====================================
 
