@@ -8484,8 +8484,9 @@ end;
     function isflt(p: ctp): boolean;
     begin isflt := false;
       if p^.klass = vars then
-        if p^.idtype <> nil then
-          if p^.idtype = realptr then isflt := true
+        if p^.vkind = actual then { only value params; VAR passes address }
+          if p^.idtype <> nil then
+            if p^.idtype = realptr then isflt := true
     end;
 
     begin
