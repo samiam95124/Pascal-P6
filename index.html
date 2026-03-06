@@ -6,7 +6,9 @@
 <title>Pascal-P6</title>
 <style>
 body { font-family: "Lucida Grande", Geneva, Helvetica, Arial, sans-serif; font-size: 14px; margin: 0; padding: 0; background: #fff; color: #333; line-height: 1.6; }
-.page-header { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-bottom: 1px solid #A3B4D7; padding: 20px 40px; }
+.page-header { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-bottom: 1px solid #A3B4D7; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+.header-text { flex: 1; }
+.header-logo { flex-shrink: 0; margin-left: 20px; }
 .page-title { font-size: 280%; color: #1C2941; font-weight: bold; margin: 0; }
 .page-subtitle { font-size: 15px; color: #364D7C; margin-top: 4px; }
 .content { max-width: 900px; margin: 0 auto; padding: 30px 40px; }
@@ -20,12 +22,22 @@ h2 { color: #253555; font-size: 150%; border-bottom: 2px solid #879ECB; padding-
 p { margin: 10px 0; }
 .overview { background: #F9FAFC; border: 1px solid #C4CFE5; border-radius: 4px; padding: 15px 20px; margin: 20px 0; }
 .page-footer { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-top: 1px solid #A3B4D7; color: #364D7C; padding: 8px 40px; font-size: 11px; text-align: center; margin-top: 40px; }
+h3 { color: #253555; font-size: 120%; margin-top: 25px; }
+.faq-q { font-weight: bold; color: #253555; margin-top: 15px; margin-bottom: 2px; }
+.faq-a { margin-top: 2px; margin-bottom: 15px; }
+.wiki-img { max-width: 100%; height: auto; margin: 15px 0; border: 1px solid #C4CFE5; border-radius: 4px; }
+ul { margin: 10px 0; padding-left: 25px; }
+li { margin: 4px 0; }
+pre { background: #F5F7FA; border: 1px solid #C4CFE5; border-radius: 4px; padding: 12px 16px; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; overflow-x: auto; }
 </style>
 </head>
 <body>
 <div class="page-header">
+<div class="header-text">
 <div class="page-title">Pascal-P6</div>
 <div class="page-subtitle">A public domain Pascaline compiler and development system</div>
+</div>
+<div class="header-logo"><img src="doc/pascal_smile.bmp" alt="Pascal"></div>
 </div>
 <div class="content">
 
@@ -44,6 +56,14 @@ for quick start instructions and setup details.</p>
 
 <h2>Standards and Manuals</h2>
 <div class="section">
+<div class="link-item">
+<a href="doc/pascaline.html">Pascaline Language Manual</a>
+<span class="link-desc">The Pascaline language specification and reference manual</span>
+</div>
+<div class="link-item">
+<a href="doc/the_p6_compiler.html">The P6 Compiler</a>
+<span class="link-desc">Documentation for the sixth-generation Pascal-P compiler</span>
+</div>
 <div class="link-item">
 <a href="doc/iso7185.html">ISO 7185 Pascal Standard</a>
 <span class="link-desc">The ISO 7185 Standard Pascal language specification</span>
@@ -92,23 +112,199 @@ for quick start instructions and setup details.</p>
 <a href="sample_programs/hello.html">hello &mdash; Hello World</a>
 <span class="link-desc">A simple introductory Pascaline program</span>
 </div>
+<div class="link-item">
+<a href="sample_programs/basics.pas">basics &mdash; BASIC Interpreter</a>
+<span class="link-desc">A tiny BASIC language interpreter written in Pascal</span>
+</div>
+<div class="link-item">
+<a href="sample_programs/roman.pas">roman &mdash; Roman Numerals</a>
+<span class="link-desc">Converts integers to Roman numeral notation</span>
+</div>
+<div class="link-item">
+<a href="sample_programs/prime.pas">prime &mdash; Sieve of Eratosthenes</a>
+<span class="link-desc">Prime number sieve benchmark from BYTE magazine, January 1983</span>
+</div>
+<div class="link-item">
+<a href="sample_programs/qsort.pas">qsort &mdash; Quicksort</a>
+<span class="link-desc">Quicksort algorithm implementation</span>
+</div>
+<div class="link-item">
+<a href="sample_programs/match.pas">match &mdash; Match Snatch Game</a>
+<span class="link-desc">A game where the player competes against the computer to take matches</span>
+</div>
+<div class="link-item">
+<a href="sample_programs/startrek.pas">startrek &mdash; Star Trek</a>
+<span class="link-desc">Star Trek game commanding a starship in a galaxy battling Klingons</span>
+</div>
+<div class="link-item">
+<a href="sample_programs/pascals.pas">pascals &mdash; Pascal-S Compiler</a>
+<span class="link-desc">Wirth&rsquo;s Pascal-S subset compiler and interpreter</span>
+</div>
+<div class="link-item">
+<a href="sample_programs/drystone.pas">drystone &mdash; Dhrystone Benchmark</a>
+<span class="link-desc">Dhrystone 2.1 CPU performance benchmark</span>
+</div>
+<div class="link-item">
+<a href="sample_programs/fbench.pas">fbench &mdash; Floating-Point Benchmark</a>
+<span class="link-desc">John Walker&rsquo;s optical design raytracing floating-point benchmark</span>
+</div>
 </div>
 
-<h2>P5 Compiler Documentation</h2>
+<h2>About Pascal-P6</h2>
 <div class="section">
-<div class="link-item">
-<a href="p5/doc/the_p5_compiler.html">The P5 Compiler</a>
-<span class="link-desc">Documentation for the fifth-generation Pascal-P compiler</span>
+
+<img src="doc/chess_screenshot.png" alt="Chess program running in Pascal-P6" class="wiki-img">
+
+<img src="doc/manuals.jpg" alt="Pascal-P6 printed manuals" class="wiki-img">
+
+<h3>Pascal-P6 Open Source/Public Domain Project</h3>
+
+<p>Hi and welcome to the project. This is the GIT public repository for Pascal-P6.</p>
+
+<p>Pascal-P was a series of compilers starting at Zurich. The last of the series from Zurich was the Pascal-P4 compiler, which is available at:
+<a href="https://github.com/samiam95124/Pascal-P4">https://github.com/samiam95124/Pascal-P4</a></p>
+
+<p>It compiles and runs a subset of the Revised Pascal language. That subset was designed to be the minimum language required to self compile for a new machine implementation. It was part of a &ldquo;bootstrapping&rdquo; kit designed to facilitate porting Pascal to new machines.</p>
+
+<p>Pascal-P5 is the next increment beyond Pascal-P4, and is extended to include all of the ISO 7185 Pascal language, as well as incorporate a series of ISO 7185 Pascal test services. It also includes the ability to self compile &ldquo;out of the box&rdquo;, that is, it can compile and interpret itself as is (with only a few one line changes), something the original Pascal-P could not do. It is also a full language compiler, not a subset. It is available at:
+<a href="https://github.com/samiam95124/Pascal-P5">https://github.com/samiam95124/Pascal-P5</a></p>
+
+<p>Pascal-P6 is the next step beyond Pascal-P5. P6 is the place for all of the things that didn&rsquo;t really belong in P5:</p>
+<ul>
+<li>To also compile to a target machine, the 80386 (and perhaps other machines), as well as interpret.</li>
+<li>To support language extensions.</li>
+</ul>
+
+<h3>Language of Pascal-P6</h3>
+
+<p>Pascal-P6 implements a language based on ISO 7185 called &ldquo;Pascaline&rdquo;, named after the calculating machine Blaise Pascal was famous for inventing.</p>
+
+<p>Most extended Pascals are based on ad-hoc additions to the language. I wanted to create a new language that was not just a shopping cart of features, and so I put a lot of work into coming up with a language that fit together as a whole, and still maintained the style of Pascal.</p>
+
+<p>What&rsquo;s the difference between Pascaline and other extended Pascals?
+When Pascal debuted in the 1970s, it was extended by several variants of the language to look like Basic (UCSD and Borland), and then in the 1980s and beyond extended to look like C, while retaining Basic string handling (Borland). This language family is well represented by Borland products and the great FPC or &ldquo;Free Pascal&rdquo; project today.</p>
+
+<p>What Pascaline does is extend the array handling to cover dynamically created arrays (including of char), and create a type system based on classes (objects). At the same time Pascaline heavily covers modularity and especially multitasking/parallel tasking.</p>
+
+<p>The basis for Pascaline is type safety/security. However, type safety and security made a comeback with languages such as Java, C# (designed by the same author as Borland Pascal) and others. Thus, Pascaline is a type secure language that was always so, back through ISO 7185 Pascal.</p>
+
+<h3>Brief History of Pascaline</h3>
+
+<p>In 1980, I created a Z80 compiler (with no specific name). It was ISO 7185 compliant, and added a series of file handling functions like assign, close, etc., and also modularity along the lines of C. Procedures and functions used the &ldquo;external&rdquo; word-symbol, and Pascal components such as procedures, functions, variables, etc., could be put into separately compiled files. This compiler was written in Z80 assembly language.</p>
+
+<p>In 1987, I started a second implementation on 80386 processors, entirely re-written in Pascal using the SVS 32 bit compiler (now defunct). This had the file handling of the old compiler, a new system of modular components, and variable length arrays. In 1993, that became operational. This was IP Pascal.</p>
+
+<p>In 2003, I created a new specification that used the existing language of IP Pascal and greatly extended it. This was implemented on IP Pascal, and became the basis of the Pascaline specification.</p>
+
+<h3>Implementation Language of Pascal-P6</h3>
+
+<p>Pascal-P6 is implemented in Pascaline with support libraries in ANSI C.</p>
+
+<h3>What the Repository Contains</h3>
+
+<p>This repository contains the working set of files for the Pascal-P6 project. It contains all files, including source for the compiler, scripts to build, run and test it, and a full set of tests.</p>
+
+<p>See the file &ldquo;the_p6_compiler&rdquo; in several document formats for all information on the project.</p>
+
+<h3>Releases</h3>
+
+<p>The procedure to distribute Pascal-P6 is to zip up a &ldquo;release&rdquo; with a new version number. This exists in the &ldquo;release&rdquo; area here on Github. In the meantime, you can get a file set from the code tree. Getting your code directly from GIT is essentially Alpha testing.</p>
+
+<h3>Goals of the Project</h3>
+<ul>
+<li>Upgrade Pascal-P5, an ISO 7185 standard compiler, to fully implement Pascaline, an extended Pascal language.</li>
+<li>Be a model of the implementation of a Pascaline compiler.</li>
+</ul>
+
 </div>
-<div class="link-item">
-<a href="p5/doc/iso7185.html">P5 ISO 7185 Standard</a>
-<span class="link-desc">ISO 7185 standard reference for P5</span>
+
+<h2>FAQs</h2>
+<div class="section">
+
+<p class="faq-q">Q. Is Pascal-P6 compatible with Borland Delphi?</p>
+<p class="faq-a">A. Pascal-P6 is based on the original compiler and language from 1973, Delphi, or rather its parent project Turbo Pascal, was created in 1983 and wasn&rsquo;t compatible with Pascal.</p>
+
+<p class="faq-q">Q. Is Pascal-P6 compatible with FPC or Free Pascal?</p>
+<p class="faq-a">A. Some part of it. FPC accepts programs from the ISO 7185 1983 Pascal standard with appropriate options.</p>
+
+<p class="faq-q">Q. How old is the language Pascal?</p>
+<p class="faq-a">A. The language originated in 1973, and was standardized by ISO 7185 in 1983.</p>
+
+<p class="faq-q">Q. Isn&rsquo;t the original language Pascal dead?</p>
+<p class="faq-a">A. Original, standard Pascal still had widespread support in commercial compilers up to about 1995. It was supported further by GPC (GNU Pascal) up to about 2010. It is true that commercial compiler support for the language fell off in about 1995, but then most commercial compilers for all languages stopped about that time, in preference to open source compilers.</p>
+
+<p class="faq-q">Q. What&rsquo;s the major difference between original Pascal and the FPC/Delphi dialects?</p>
+<p class="faq-a">A. Original Pascal was, and is, a very type secure language that lacks the type casts and loose type conversions of FPC/Delphi. There is nothing wrong with that, but FPC/Delphi became a mix of the Pascal and C languages. In later years, with the rise of Java, C#, and of late languages like Go, Rust and similar languages, type safety has had a renaissance, largely due to C and similar languages&rsquo; reputation for lack of such security.</p>
+
+<p class="faq-q">Q. What are the major themes of Pascaline?</p>
+<p class="faq-a">A. Pascaline addresses all of the original weaknesses of Pascal, such as reliance on fixed array sizes and lack of modularity. It adds emphasis on parallel tasking, classes, and a standard library reaching graphical presentation, networking and more. It does this while maintaining full compatibility with original Pascal and fully maintaining type security.</p>
+
+<p class="faq-q">Q. What is the Pascal-P6 compiler?</p>
+<p class="faq-a">A. The Pascal-P6 compiler is the original compiler from Zurich in the 1970&rsquo;s extended to process the full Pascaline language.</p>
+
+<p class="faq-q">Q. How can you access C language routines in a language without C style typecasts?</p>
+<p class="faq-a">A. In other Pascal dialects, you are given a series of type cast operations, and you use routines to convert types to and from C routines. The Pascal-P6 compiler will automate all of that, including automated conversion of C language headers to Pascaline. There are no cast operators because you don&rsquo;t need them. You call C routines using Pascaline regular calls, and those calls are automatically converted for you. No need to manually convert operands. Linux, Windows, Mac OS/X and the world speaks C, and Pascal-P6 integrates with the C language to an extent far above previous compilers, including FPC and Delphi.</p>
+
+<p class="faq-q">Q. How old is Pascaline?</p>
+<p class="faq-a">A. I created my first Pascal compiler in 1980 (yes, years before Turbo Pascal). The language Pascaline dates from that time, with major advances in 1995 and 2010.</p>
+
+<p class="faq-q">Q. What is the Pascal-P6 implementation language?</p>
+<p class="faq-a">A. Pascal-P6, and the entire Pascal-P series, is written in Pascal, with later Pascal-P6 adding extensions from Pascaline. There are considerable support sections in C, but an effort was made to use only the most common C standards, namely C89.</p>
+
+<p class="faq-q">Q. Will Pascal-P6 support other dialects? FPC or Delphi?</p>
+<p class="faq-a">A. In my opinion, GPC (GNU Pascal) was killed in part by trying to be everything to everyone, including supporting multiple dialects. The FPC and Delphi dialects are well covered by FPC and Delphi. The aim of those dialects was to combine Pascal with C. There is nothing wrong with that, but it is in opposition to type safety, and therefore in opposition to the ideas behind Pascal-P6 and Pascaline. The best advice I can give FPC and Delphi users is to use and enjoy FPC or Delphi.</p>
+
+<p class="faq-q">Q. How tied into the GNU/GCC toolset is Pascal-P6?</p>
+<p class="faq-a">A. Quite a bit, however, the main dependency is on the GAS or GCC assembler. This can be changed with moderate effort. Also clang is compatible at the assembly and C language level with GCC, and so that is an alternate toolset.</p>
+
+<p class="faq-q">Q. Didn&rsquo;t overdependence on GCC toolset kill GPC? Why is Pascal-P6 different?</p>
+<p class="faq-a">A. GPC was dependent on the intermediate format of GCC, which is very complex and very dependent on GCC. Pascal-P6 does not use that, but rather the AMD64 assembly language. Also the major part of Pascal-P6 is written in Pascal-P6&rsquo;s own language, Pascaline.</p>
+
+<p class="faq-q">Q. Why Pascal (and not another language)?</p>
+<p class="faq-a">A. As the common quote goes &ldquo;Pascal is a teaching language&rdquo;. Pascal was a very sparse language that relied on simple fixed rules, but was still very much in the Algol family (as is C and most other languages). I agree that original Pascal was not ready for professional programming tasks, but it actually made a better starting point than many other languages that resemble dumping grounds for language features. Original Pascal was also very type secure, a feature that only after decades gained wide appreciation. Another factor is that the original fixed allocation method of Pascal is a useful optimization technique even today, since it can create arrays with less overhead.</p>
+
+<p class="faq-q">Q. Why Pascal and not further languages from Niklaus Wirth (Modula, Oberon)?</p>
+<p class="faq-a">A. As a working professional, I can&rsquo;t change languages as often as they arrive from designers. Niklaus Wirth designed a new language about every 10 years. Throwing everything out and starting over is a common feature and problem in the software profession. However, our profession relies on a wide library of existing stable programs. This is evidenced by the staying power of C from the 1970&rsquo;s to today. Pascal is a very good starting point for language extensions.</p>
+
 </div>
-<div class="link-item">
-<a href="p5/doc/iso7185rules.html">P5 ISO 7185 Rules</a>
-<span class="link-desc">ISO 7185 compliance rules for P5</span>
+
+<h2>Project</h2>
+<div class="section">
+
+<h3>Project Members</h3>
+<p>Scott Franco (admin)</p>
+
+<h3>Who am I?</h3>
+<p>I&rsquo;m Scott Franco. I wrote my first compiler in about 1978, a basic compiler, at the tender age of 19. At that time, in the microprocessor industry, compiled languages were not widespread, but I was eager to get my hands on one. We programmed almost exclusively in assembly language. I asked one of the senior staff programmers what language he would prefer if he had a compiler, and he answered &ldquo;Pascal&rdquo;, which was pretty new at that time.</p>
+
+<p>By 1980, I had my first Pascal compiler running, a Z80 (8 bit microprocessor) compiler. Since then I have worked on Pascal issues and compilers. This work slowed down in the early 1990&rsquo;s, because I used other&rsquo;s existing compilers, but came back in the late 1990&rsquo;s when ISO 7185 compilers began to disappear.</p>
+
+<h3>Printed Manuals</h3>
+
+<p>For anyone with the interest, I can provide a set of printed and perfect bound manuals, 9 by 7 inches. See the photo above. I use bound material here locally, and would be happy to provide manuals for others at my materials cost (non-profit). I used a calculation based on 3 cents per page, which many sources list as the net printing cost per page of black and white laser copy, considering paper, toner, printer maintenance, etc. There is also Cafe press perfect binding at 10 cents per page, in case you want to print and bind by an outside service.</p>
+
+<p>The manuals shipped will be identical to the electronic copies in the archive at the time I receive the request. You can get as many versions as you want by reordering. I recommend waiting for new versions to come out.</p>
+
+<p>The costs are:</p>
+<pre>
+$6.92   Postage, media mail
+$1.34   Envelope
+808     Total pages in manual
+$0.03   Cost per page
+$24.24  Total cost to print
+
+$32.50  Total cost
+</pre>
+
+<p>If you want a copy, please contact me at: samiam@moorecad.com</p>
+
+<p>The US postal service gives a special &ldquo;media mail&rdquo; rate that is the same regardless of location in the USA (I suppose to encourage reading). For addresses outside the USA, please email me and given the destination address, and I will find a rate and reply with it.</p>
+
+<p>The pocket edition!</p>
+<img src="doc/pocket.jpg" alt="Pocket edition of Pascal-P6 manuals" class="wiki-img">
+
 </div>
-</div>
+
 
 </div>
 <div class="page-footer">
