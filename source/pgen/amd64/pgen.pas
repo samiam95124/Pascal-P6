@@ -165,20 +165,31 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   { assign registers to parameters in call }
   procedure asspar(ep: expptr; mi: integer);
   var pp: expptr; pc: integer; fpc: integer; r1, r2: reg; fr: reg;
+      setfound: boolean;
   begin
     refer(mi);
-    pp := ep^.pl; pc := 1; fpc := 1;
+    pp := ep^.pl; pc := 1; fpc := 1; setfound := false;
     while pp <> nil do begin
-      if isfltres(pp) then begin { floating result }
+      { set value param forces it and all following int params to overflow }
+      if not setfound then
+        if instab[pp^.op].inss then setfound := true;
+      if isfltres(pp) then begin { floating result: independent of set cutoff }
         if fpc <= maxfltparreg then begin
           resreg(parregf[fpc]); assreg(pp, rf, parregf[fpc], rgnull)
         end else begin
           getfreg(fr, rf); assreg(pp, rf, rgnull, rgnull)
         end;
         fpc := fpc+1
+      end else if setfound then begin { set cutoff: use generic registers }
+        if instab[pp^.op].insr = 2 then begin
+          getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2)
+        end else begin
+          getreg(r1, rf); assreg(pp, rf, r1, rgnull)
+        end
+        { do not advance pc to match pcom parmoffsysv }
       end else if instab[pp^.op].insr = 2 then begin { double register }
         if pc <= maxintparreg-1 then begin
-          resreg(parreg[pc]); resreg(parreg[pc+1]); 
+          resreg(parreg[pc]); resreg(parreg[pc+1]);
           assreg(pp, rf, parreg[pc], parreg[pc+1])
         end else begin
           getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2)
@@ -187,11 +198,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end else begin { single register }
         if pc <= maxintparreg then begin
           resreg(parreg[pc]); assreg(pp, rf, parreg[pc], rgnull)
-        end else begin 
-          getreg(r1, rf); assreg(pp, rf, r1, rgnull) 
+        end else begin
+          getreg(r1, rf); assreg(pp, rf, r1, rgnull)
         end;
         pc := pc+1
-      end;            
+      end;
       pp := pp^.next
     end
   end;
@@ -864,9 +875,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   { push parameters SYS V style.
     List is reversed (rightmost first). pn is total param count.
     Params 7+ are pushed to stack, params 1-6 just evaluated into registers
-    (asspar already assigned the correct parameter registers). }
+    (asspar already assigned the correct parameter registers).
+    When a set value param exists, it and all params to its right in the
+    original order become overflow. Params to its left may use registers. }
   procedure pshparsysv(pp: expptr; pn: integer);
-  var ipc, fpc: integer; p: expptr; stk: boolean;
+  var ipc, fpc, regipc, tmpregipc: integer; p: expptr; stk: boolean;
+      setfound: boolean;
   begin
     { pre-count total int and float params (list is reversed) }
     ipc := 0; fpc := 0; p := pp;
@@ -876,6 +890,26 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       else ipc := ipc+1;
       p := p^.next
     end;
+    { compute regipc: int params registerable before first set.
+      List is reversed, so scan tracks int params since last set.
+      After scan, tmpregipc = params after last set in reversed order
+      = params before first set in original order. }
+    regipc := maxintparreg; tmpregipc := 0; setfound := false; p := pp;
+    while p <> nil do begin
+      if not isfltres(p) then begin
+        if instab[p^.op].inss then begin
+          setfound := true; tmpregipc := 0
+        end else begin
+          if instab[p^.op].insr = 2 then tmpregipc := tmpregipc+2
+          else tmpregipc := tmpregipc+1
+        end
+      end;
+      p := p^.next
+    end;
+    if setfound then begin
+      regipc := tmpregipc;
+      if regipc > maxintparreg then regipc := maxintparreg
+    end;
     { walk reversed list: rightmost param first, counting down }
     while pp <> nil do begin
       genexp(pp);
@@ -883,7 +917,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       if isfltres(pp) then begin
         stk := fpc > 6; fpc := fpc-1
       end else begin
-        stk := ipc > maxintparreg;
+        stk := ipc > regipc;
         if instab[pp^.op].insr = 2 then ipc := ipc-2
         else ipc := ipc-1
       end;
@@ -923,24 +957,35 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   end;
 
   { compute overflow parameter stack space for alignment pre-check.
-    pp = param list in original order, pn = total param count. }
+    pp = param list in original order, pn = total param count.
+    When a set value param is found, it and all following int params
+    are overflow regardless of register count. }
   function cmpparmspc(pp: expptr; pn: integer): integer;
-  var sz, ipc, fpc: integer; p: expptr;
+  var sz, ipc, fpc: integer; p: expptr; setfound: boolean;
   begin
-    sz := 0; ipc := 0; fpc := 0; p := pp;
+    sz := 0; ipc := 0; fpc := 0; setfound := false; p := pp;
     while p <> nil do begin
       if isfltres(p) then begin
         fpc := fpc + 1;
         if fpc > 6 then sz := sz + realsize
       end else begin
-        if instab[p^.op].insr = 2 then begin
-          ipc := ipc + 2;
-          if ipc > maxintparreg then sz := sz + intsize * 2
+        if not setfound then
+          if instab[p^.op].inss then setfound := true;
+        if setfound then begin
+          { set cutoff: all remaining int params overflow }
+          if instab[p^.op].inss then sz := sz + setsize
+          else if instab[p^.op].insr = 2 then sz := sz + intsize * 2
+          else sz := sz + intsize
         end else begin
-          ipc := ipc + 1;
-          if ipc > maxintparreg then begin
-            if instab[p^.op].inss then sz := sz + setsize
-            else sz := sz + intsize
+          if instab[p^.op].insr = 2 then begin
+            ipc := ipc + 2;
+            if ipc > maxintparreg then sz := sz + intsize * 2
+          end else begin
+            ipc := ipc + 1;
+            if ipc > maxintparreg then begin
+              if instab[p^.op].inss then sz := sz + setsize
+              else sz := sz + intsize
+            end
           end
         end
       end;
