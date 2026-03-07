@@ -2493,6 +2493,8 @@ const
   dwab_variant     = 17; { variant with children }
   dwab_subprogn    = 18; { subprogram without children }
   dwab_unspectyp   = 19; { unspecified type }
+  dwab_subrntyp8   = 20; { subrange type, data8 bounds }
+  dwab_ptrtyp_void = 21; { pointer type, void (no target type) }
 
   { DWARF tag numbers }
   dwtag_cu           = 17;  { DW_TAG_compile_unit: $11 }
@@ -2508,7 +2510,7 @@ const
   dwtag_enumtyp      = 4;   { DW_TAG_enumeration_type: $04 }
   dwtag_enumer       = 40;  { DW_TAG_enumerator: $28 }
   dwtag_settyp       = 32;  { DW_TAG_set_type: $20 }
-  dwtag_filetyp      = 29;  { DW_TAG_file_type: $1d }
+  dwtag_filetyp      = 41;  { DW_TAG_file_type: $29 }
   dwtag_varpart      = 51;  { DW_TAG_variant_part: $33 }
   dwtag_variant      = 25;  { DW_TAG_variant: $19 }
   dwtag_unspectyp    = 59;  { DW_TAG_unspecified_type: $3b }
@@ -2537,6 +2539,7 @@ const
   dwform_addr        = 1;   { DW_FORM_addr: $01 }
   dwform_data1       = 11;  { DW_FORM_data1: $0b }
   dwform_data2       = 5;   { DW_FORM_data2: $05 }
+  dwform_data8       = 7;   { DW_FORM_data8: $07 }
   dwform_sdata       = 13;  { DW_FORM_sdata: $0d }
   dwform_udata       = 15;  { DW_FORM_udata: $0f }
   dwform_ref4        = 19;  { DW_FORM_ref4: $13 }
@@ -2719,6 +2722,18 @@ begin { genabbrev }
   abbattr(dwat_name, dwform_strp);
   abbend;
 
+  { 20: subrange type with 8-byte bounds (for values too large for sdata) }
+  abbhdr(dwab_subrntyp8, dwtag_subrntyp, dw_children_no);
+  abbattr(dwat_type, dwform_ref4);
+  abbattr(dwat_lower_bound, dwform_data8);
+  abbattr(dwat_upper_bound, dwform_data8);
+  abbend;
+
+  { 21: void pointer type (forward-referenced target, no DW_AT_type) }
+  abbhdr(dwab_ptrtyp_void, dwtag_ptrtyp, dw_children_no);
+  abbattr(dwat_byte_size, dwform_data1);
+  abbend;
+
   { terminate abbreviation table }
   writeln(prr, '        .byte   0  # end abbreviation table')
 end; { genabbrev }
@@ -2837,6 +2852,25 @@ begin
   end
 end;
 
+{ emit subrange type DIE, choosing data8 for large bounds }
+procedure dwsubrange(btl: integer; s, e: integer);
+begin
+  if (s < -(maxint div 2)) or (s > maxint div 2) or
+     (e < -(maxint div 2)) or (e > maxint div 2) then begin
+    writeln(prr, '        .uleb128 ', dwab_subrntyp8:1,
+                 ' # DW_TAG_subrange_type');
+    dwlref(btl);
+    writeln(prr, '        .quad   ', s:1, ' # lower_bound');
+    writeln(prr, '        .quad   ', e:1, ' # upper_bound')
+  end else begin
+    writeln(prr, '        .uleb128 ', dwab_subrntyp:1,
+                 ' # DW_TAG_subrange_type');
+    dwlref(btl);
+    writeln(prr, '        .sleb128 ', s:1, ' # lower_bound');
+    writeln(prr, '        .sleb128 ', e:1, ' # upper_bound')
+  end
+end;
+
 { forward declaration }
 procedure dwparsedigest(var pc: dwparctl; var labnum: integer); forward;
 
@@ -2939,11 +2973,7 @@ begin
       dwparsedigest(pc, btl);
       tl := dwlnxt; labnum := tl;
       dwldef(tl); writeln(prr);
-      writeln(prr, '        .uleb128 ', dwab_subrntyp:1,
-                   ' # DW_TAG_subrange_type');
-      dwlref(btl);
-      writeln(prr, '        .sleb128 ', s:1, ' # lower_bound');
-      writeln(prr, '        .sleb128 ', e:1, ' # upper_bound')
+      dwsubrange(btl, s, e)
     end
   end
   else if c = 'p' then begin { pointer }
@@ -2952,9 +2982,8 @@ begin
     if dwchk(pc) in ['0'..'9'] then begin
       dwgetnum(pc, vi);
       dwldef(tl); writeln(prr);
-      writeln(prr, '        .uleb128 ', dwab_ptrtyp:1,
-                   ' # DW_TAG_pointer_type');
-      dwlref(tl);
+      writeln(prr, '        .uleb128 ', dwab_ptrtyp_void:1,
+                   ' # DW_TAG_pointer_type (void, fwd ref)');
       writeln(prr, '        .byte   ', ptrsize:1, ' # byte_size')
     end else begin
       dwparsedigest(pc, btl);
@@ -2967,8 +2996,8 @@ begin
   end
   else if c = 's' then begin { set }
     dwnxt(pc);
-    dwparsedigest(pc, btl);
     tl := dwlnxt; labnum := tl;
+    dwparsedigest(pc, btl);
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_settyp:1,
                  ' # DW_TAG_set_type');
@@ -2977,6 +3006,7 @@ begin
   end
   else if c = 'a' then begin { array }
     dwnxt(pc);
+    tl := dwlnxt; labnum := tl;
     dwgetrng(pc, enum, s, e, enumlab);
     if enum then ixl := enumlab
     else begin
@@ -2985,23 +3015,18 @@ begin
     end;
     dwparsedigest(pc, btl);
     el := dwlnxt;
-    tl := dwlnxt; labnum := tl;
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_arrtyp:1,
                  ' # DW_TAG_array_type');
     dwlref(btl);
     dwldef(el); writeln(prr);
-    writeln(prr, '        .uleb128 ', dwab_subrntyp:1,
-                 ' # DW_TAG_subrange_type');
-    dwlref(ixl);
-    writeln(prr, '        .sleb128 ', s:1, ' # lower_bound');
-    writeln(prr, '        .sleb128 ', e:1, ' # upper_bound');
+    dwsubrange(ixl, s, e);
     writeln(prr, '        .byte   0  # end array children')
   end
   else if c = 'v' then begin { variable-length array }
     dwnxt(pc);
-    dwparsedigest(pc, btl);
     tl := dwlnxt; labnum := tl;
+    dwparsedigest(pc, btl);
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_arrtyp:1,
                  ' # DW_TAG_array_type');
@@ -3085,8 +3110,8 @@ begin
   end
   else if c = 'f' then begin { file }
     dwnxt(pc);
-    dwparsedigest(pc, btl);
     tl := dwlnxt; labnum := tl;
+    dwparsedigest(pc, btl);
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_filetyp:1,
                  ' # DW_TAG_file_type');

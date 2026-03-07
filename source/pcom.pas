@@ -2968,10 +2968,13 @@ end;
   end;
 
   procedure wrtint(i: integer);
-  var p, d: integer;
+  var p, d: integer; ai: integer;
   begin
-     p := 10; d := 1;
-     while (i >= p) and (p < maxpow10) do begin p := p*10; d := d+1 end;
+     if i < 0 then begin d := 1; ai := -i end { count minus sign }
+     else begin d := 0; ai := i end;
+     p := 10; d := d+1;
+     while (ai >= p) and (p < maxpow10) do begin p := p*10; d := d+1 end;
+     if ai >= p then d := d+1; { handle 19-digit numbers }
      write(f, i:1);
      nxtctis(d)
   end;
@@ -11490,8 +11493,8 @@ begin
       { exclude pint options and unused }
       if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26,27,28]) or 
          options[oi] then begin 
-      for oni :=  1 to optlen do 
-        if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
+        for oni :=  1 to optlen do 
+          if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
       if option[oi] then write(prr, '+') else write(prr, '-');
       write(prr, ' ')
     end;
