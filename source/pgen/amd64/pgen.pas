@@ -1839,6 +1839,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl); 
             lftjst(cmtspc-fl); writeln(prr, '# call user procedure')
           end else wrtins(' call @s # call user procedure', ep^.fn^);
+          { remove overflow parameters pushed by caller (SysV ABI) }
+          if ps > 0 then
+            wrtins(' addq $0,%rsp # remove overflow parameters', ps);
           if ep^.op = 246{cuf} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgxmm0 then
@@ -1898,6 +1901,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' movq %rbp,%r15 # move our frame pointer to preserved register');
           wrtins(' movq ^0(%1),%rbp # set callee frame pointer', 1*ptrsize, ep^.l^.r1);
           wrtins(' call *(%1) # call indirect', ep^.l^.r1);
+          { remove overflow parameters pushed by caller (SysV ABI) }
+          if ps > 0 then
+            wrtins(' addq $0,%rsp # remove overflow parameters', ps);
           if ep^.op = 247{cif} then begin 
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgxmm0 then
@@ -3083,7 +3089,7 @@ begin { assemble }
       wrtins(' addq $0,%rsp # remove frame data', marksize);
       writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
-      wrtins(' addq $0,%rsp # remove caller parameters', q);
+      wrtins(' addq $0,%rsp # remove caller parameters', 0);
       if op = 237{retm} then
         wrtins(' movq %rsp,%rax # index result in rax');
       wrtins(' pushq %rcx # replace return address');
@@ -3116,7 +3122,7 @@ begin { assemble }
       wrtins(' addq $0,%rsp # remove frame data', marksize);
       writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
-      wrtins(' addq $0,%rsp # remove caller parameters', q);
+      wrtins(' addq $0,%rsp # remove caller parameters', 0);
       wrtins(' pushq %rcx # replace return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');
@@ -3146,7 +3152,7 @@ begin { assemble }
       wrtins(' addq $0,%rsp # remove frame data', marksize);
       writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
-      wrtins(' addq $0,%rsp # remove caller parameters', q);
+      wrtins(' addq $0,%rsp # remove caller parameters', 0);
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');
@@ -3173,7 +3179,7 @@ begin { assemble }
       wrtins(' addq $0,%rsp # remove frame data', marksize);
       writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
-      wrtins(' addq $0,%rsp # remove caller parameters', q);
+      wrtins(' addq $0,%rsp # remove caller parameters', 0);
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');
