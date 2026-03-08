@@ -835,7 +835,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
   procedure genexp(ep: expptr);
   var r: reg; ep2: expptr; stkadrs: integer; fl: integer;
-      rvpl, rvpp: expptr; { for inline param list reversal }
       callaln: boolean; ls, ps: integer; { call alignment for SYS V }
 
   { push parameters in order }
@@ -933,6 +932,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     end;
 
   begin
+    refer(pn);
     { pre-count total int and float params }
     ipc := 0; fpc := 0; p := pp;
     while p <> nil do begin
@@ -987,6 +987,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   function cmpparmspc(pp: expptr; pn: integer): integer;
   var sz, ipc, fpc: integer; p: expptr; setfound: boolean;
   begin
+    refer(pn);
     sz := 0; ipc := 0; fpc := 0; setfound := false; p := pp;
     while p <> nil do begin
       if isfltres(p) then begin
