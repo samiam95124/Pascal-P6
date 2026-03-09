@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Restore essential binaries for AMD64
+#
+# Used to reset critical binary files used in building the system to their previously stable
+# state. Note this is redundant with the ./configure script, which does the same job,
+# but allows for operating system and CPU autodetection. This script is just used to get
+# the home AMD64 support to "surgically clean" state.
+#
+cp hosts/pascaline/linux_X86/bin/* bin
+cp hosts/pascaline/linux_X86/libs/* libs
