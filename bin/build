@@ -13,6 +13,11 @@
 #
 function compprog {
 
+   echo ""
+   echo "**********************************************************************"
+   echo "Building $1..."
+   echo "**********************************************************************"
+   echo ""
    pc $1 $OPTIONS
    if [ $? -ne 0 ]; then
 
@@ -40,6 +45,11 @@ fi
 # We build an interpretive deck here only as a dummy to satisfy
 # pc builds.
 #
+echo ""
+echo "**********************************************************************"
+echo "Building Services..."
+echo "**********************************************************************"
+echo ""
 pc libs/source/services -pint
 cp libs/source/services.p6 libs
 
@@ -48,11 +58,21 @@ cp libs/source/services.p6 libs
 # These are compiled to objects and intermediates both because they can be used
 # in executables and interpretation.
 #
+echo ""
+echo "**********************************************************************"
+echo "Building Strings..."
+echo "**********************************************************************"
+echo ""
 pc libs/source/strings -r
 cp libs/source/strings.o libs
 pc libs/source/strings -pint
 cp libs/source/strings.p6 libs
 
+echo ""
+echo "**********************************************************************"
+echo "Building Parse..."
+echo "**********************************************************************"
+echo ""
 pc libs/source/parse -r
 cp libs/source/parse.o libs
 pc libs/source/parse -pint
@@ -68,8 +88,8 @@ compprog source/genobj
 compprog libs/tests/strtst
 compprog libs/tests/services_test
 compprog libs/tests/services_test1
+compprog source/pgen/amd64/pgen
+cp source/pgen/amd64/pgen bin/pgen_amd64
 compprog source/pcom
 compprog source/pint
 compprog source/pmach
-compprog source/pgen/amd64/pgen
-cp source/pgen/amd64/pgen bin/pgen_amd64

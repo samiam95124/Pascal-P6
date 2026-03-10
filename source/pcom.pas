@@ -182,7 +182,7 @@ const
 
    { command line parsing }
    maxlin     = 20000; { size of source line buffer }
-   maxopt     = 28;    { number of options }
+   maxopt     = 29;    { number of options }
    optlen     = 10;    { maximum length of option words }
 
    { standard exceptions. Used for extension routines, this is a subset. }
@@ -503,8 +503,10 @@ var
     doprtlab: boolean;              { -- b: print labels }
     dodmpdsp: boolean;              { -- y: dump the display }
     chkvbk: boolean;                { -- i: check VAR block violations }
-    experr: boolean;                { -- ee/experror: expanded error 
+    experr: boolean;                { -- ee/experror: expanded error
                                          descriptions }
+    amd64_sysv: boolean;            { -- amd64_sysv: use SYS V AMD64 ABI
+                                         calling convention }
 
     { switches passed through to pint }
 
@@ -1879,9 +1881,9 @@ end;
       nextch;
       repeat
         oni := 1; optst := '          ';
-        while ch in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
-          ch1 := lcase(ch); 
-          if optst[oni] = ' ' then optst[oni] := ch1; 
+        while ch in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
+          ch1 := lcase(ch);
+          if optst[oni] = ' ' then optst[oni] := ch1;
           if oni < optlen then oni := oni+1;
           nextch
         end;
@@ -1918,6 +1920,8 @@ end;
           25: switch(dodmpdsp);
           26: switch(dummy);
           27: switch(dummy);
+          28: switch(dummy);
+          29: switch(amd64_sysv);
         end else begin
           { skip all likely option chars }
           while ch in ['a'..'z','A'..'Z','+','-','0'..'9','_'] do
@@ -10604,6 +10608,7 @@ end;
         errfval := true
       end;
       setflg('mal', 'mrkasslin', option[28], options[28]);
+      setflg('amd64_sysv', 'amd64_sysv', option[29], options[29]);
       if not optfnd then begin
         writeln('*** Unknown option ', w:*); goto 99
       end;
@@ -10632,8 +10637,9 @@ end;
         24: dodmplex := option[oi];
         25: dodmpdsp := option[oi];
         26: dolineinfo := option[oi];
+        29: amd64_sysv := option[oi];
         { these are backend options }
-        1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:; 
+        1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:;
         17:; 23:; 27:; 28:;
       end
   end;
@@ -10658,6 +10664,7 @@ end;
     opts[23] := 'w         '; opts[24] := 'x         ';
     opts[25] := 'y         '; opts[26] := 'z         ';
     opts[27] := 'md        '; opts[28] := 'mal       ';
+    opts[29] := 'amd64_sysv';
     optsl[1]  := 'debugflt  '; optsl[2]  := 'prtlab    ';
     optsl[3]  := 'lstcod    '; optsl[4]  := 'chk       ';
     optsl[5]  := 'machdeck  '; optsl[6]  := 'debugsrc  ';
@@ -10672,12 +10679,14 @@ end;
     optsl[23] := 'debug     '; optsl[24] := 'prtlex    ';
     optsl[25] := 'prtdisplay'; optsl[26] := 'lineinfo  ';
     optsl[27] := 'modules   '; optsl[28] := 'mrkasslin ';
+    optsl[29] := 'amd64_sysv';
     prtables := false; option[20] := false; list := false; option[12] := false;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
     chkudtc := true; option[21] := true; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     chkvbk := false; option[9] := false; experr := true; option[10] := true;
+    amd64_sysv := false; option[29] := false;
     dolineinfo := true; option[26] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
