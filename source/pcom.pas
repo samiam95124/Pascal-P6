@@ -4624,8 +4624,8 @@ end;
                                gen1t(34(*inc*),idplmt,nilptr);
                      inxd:   error(404)
                    end;
-            expr:  begin
-                     gettmp(tmpoff, typtr^.size, true); lsize := typtr^.size; 
+            expr:  if not sett(typtr) then begin
+                     gettmp(tmpoff, typtr^.size, true); lsize := typtr^.size;
                      gen2(50(*lda*),level,tmpoff);
                      alignau(stackal,lsize);
                      gen2(128(*sfs*),typtr^.size,lsize);
