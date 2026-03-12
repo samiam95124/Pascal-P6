@@ -227,10 +227,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {lods}
-      107: begin 
-        resreg(rgrsi); resreg(rgrdi); 
-        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        gettmp(ep^.r1a, setsize)
+      107: begin
+        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       {adr,sbr}
@@ -307,10 +305,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {ldos,ltcs}
-      67,230: begin 
-        resreg(rgrsi); resreg(rgrdi); 
-        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        gettmp(ep^.r1a, setsize)
+      67,230: begin
+        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       {ind,inda,indb,indc,indx}
@@ -326,12 +322,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {inds}
-      87: begin 
-        dstreg(rgrsi); dstreg(rgrdi);
-        assreg(ep^.l, rf, rgrsi, rgnull);
+      87: begin
         ep^.r1 := r1;
         if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        gettmp(ep^.r1a, setsize)
+        assreg(ep^.l, rf, ep^.r1, rgnull)
       end;
 
       {inc,dec}
@@ -408,11 +402,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
 
       {ldcs}
-      7: begin 
-        dstreg(rgrsi); dstreg(rgrdi);
-        ep^.r1 := r1; 
-        if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        gettmp(ep^.r1a, setsize) 
+      7: begin
+        ep^.r1 := r1;
+        if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       {chki,chkb,chkc,chkx}
@@ -434,12 +426,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {chks}
-      97: begin 
+      97: begin
         asscall;
-        assreg(ep^.l, rf, rgrdx, rgnull);
+        assreg(ep^.l, rf, rgnull, rgnull);
         ep^.r1 := r1;
-        if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        ep^.r1a := ep^.l^.r1a
+        if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       {ckla}
@@ -468,10 +459,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {sgs}
-      32: begin 
-        asscall; assreg(ep^.l, rf, rgrdi, rgnull);
-        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        gettmp(ep^.r1a, setsize)
+      32: begin
+        asscall;
+        assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
+        assreg(ep^.r, rf, rgnull, rgnull);
+        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
  
       {flt,flo}
@@ -546,13 +538,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {dif,int,uni}
-      45,46,47: begin 
-        asscall; 
-        assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
-        assreg(ep^.r, rf, rgrsi, rgnull);
+      45,46,47: begin
+        asscall;
+        assreg(ep^.l, rf, rgnull, rgnull); resreg(ep^.l^.r1);
+        assreg(ep^.r, rf, rgnull, rgnull); resreg(ep^.r^.r1);
+        assreg(ep^.x1, rf, rgnull, rgnull);
+        dstreg(rgrsi); dstreg(rgrdi);
         ep^.r1 := r1;
-        if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        ep^.r1a := ep^.l^.r1a
+        if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       {inn}
@@ -608,11 +601,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {rgs}
-      110: begin 
-        asscall; 
-        assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
-        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        gettmp(ep^.r1a, setsize)
+      110: begin
+        asscall;
+        assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
+        assreg(ep^.r, rf, rgrsi, rgnull); resreg(rgrsi);
+        assreg(ep^.x1, rf, rgnull, rgnull);
+        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       { dupi, dupa, dupr, dups, dupb, dupc }
@@ -641,13 +635,15 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {cuf}
-      246: begin 
+      246: begin
         asscall;
         if ep^.rc = 1 then begin
           if r1 = rgnull then begin
             if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
           end else ep^.r1 := r1
-        end else if (ep^.rc = 2) or (ep^.rc = 3) then begin 
+        end else if ep^.rc = 2 then begin
+          ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf)
+        end else if ep^.rc = 3 then begin
           ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
           gettmp(ep^.r1a, setsize)
         end else begin
@@ -675,11 +671,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if r1 = rgnull then begin
             if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
           end else ep^.r1 := r1
-        end else if (ep^.rc = 2) or (ep^.rc = 3) then begin 
+        end else if ep^.rc = 2 then begin
+          ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf)
+        end else if ep^.rc = 3 then begin
           ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
           gettmp(ep^.r1a, setsize)
         end else begin
-          if r1 = rgnull then begin 
+          if r1 = rgnull then begin
             if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
           end else ep^.r1 := r1
         end;
@@ -692,13 +690,15 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {cvf}
-      249: begin 
+      249: begin
         asscall;
         if ep^.rc = 1 then begin
           if r1 = rgnull then begin
             if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
           end else ep^.r1 := r1
-        end else if (ep^.rc = 2) or (ep^.rc = 3) then begin 
+        end else if ep^.rc = 2 then begin
+          ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf)
+        end else if ep^.rc = 3 then begin
           ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
           gettmp(ep^.r1a, setsize)
         end else begin
@@ -976,16 +976,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {lods}
         107: begin
           if ep^.p <> blkstk^.lvl then begin
-            wrtins(' movq ^0(%rbp),%rsi # get display pointer', ep^.q1);
-            wrtins(' lea @l(%rsi),%rsi # index local set', ep^.q, ep^.p)
+            wrtins(' movq ^0(%rbp),%1 # get display pointer', ep^.q1, ep^.r1);
+            wrtins(' leaq @l(%1),%1 # index local set', ep^.q, ep^.p, ep^.r1)
           end else
-            wrtins(' lea @l(%rbp),%rsi # index local set', ep^.q, ep^.p);
-          wrtins(' leaq ^-@s^0(%rbp),%rdi # index destination temp', ep^.r1a, lclspc^);
-          wrtins(' movsq # move');
-          wrtins(' movsq');
-          wrtins(' movsq');
-          wrtins(' movsq');
-          wrtins(' leaq ^-@s^0(%rbp),%1 # index temp again', ep^.r1a, ep^.r1, lclspc^);
+            wrtins(' leaq @l(%rbp),%1 # index local set', ep^.q, ep^.p, ep^.r1)
         end;
 
         {lda}
@@ -1118,15 +1112,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {ldos,ltcs}
         67,230: begin
           if ep^.fl <> nil then
-            wrtins(' leaq @s(%rip),%rsi # load address of global set', ep^.fl^)
+            wrtins(' leaq @s(%rip),%1 # load address of global set', ep^.r1, ep^.fl^)
           else
-            wrtins(' leaq @g(%rip),%rsi # load address of global set', ep^.q);
-          wrtins(' leaq ^-@s^0(%rbp),%rdi # load temp destination', ep^.r1a, lclspc^);
-          wrtins(' movsq # move');
-          wrtins(' movsq');
-          wrtins(' movsq');
-          wrtins(' movsq');
-          wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^)
+            wrtins(' leaq @g(%rip),%1 # load address of global set', ep^.q, ep^.r1)
         end;
 
         {indi,inda}
@@ -1141,14 +1129,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         88,89,198: wrtins(' movzx ^0(%1),%1 # load byte from address', ep^.q, ep^.l^.r1);
 
         {inds}
-        87: begin 
-          wrtins(' addq $0,%rsi # offset', ep^.q);
-          wrtins(' leaq ^-@s^0(%rbp),%rdi # load temp destination', ep^.r1a, lclspc^);
-          wrtins(' movsq # move');
-          wrtins(' movsq');
-          wrtins(' movsq');
-          wrtins(' movsq');
-          wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^)
+        87: begin
+          if ep^.q <> 0 then
+            wrtins(' addq $0,%1 # offset set address', ep^.q, ep^.r1)
         end;
 
         {inci,incb,incc,incx}
@@ -1263,13 +1246,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {ldcs}
         7: begin
-          wrtins(' leaq set^0(%rip),%rsi # index constant set', ep^.setn);
-          wrtins(' leaq ^-@s^0(%rbp),%rdi # index temp', ep^.r1a, lclspc^);
-          wrtins(' movsq # move');
-          wrtins(' movsq');
-          wrtins(' movsq');
-          wrtins(' movsq');
-          wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, ep^.r1, lclspc^);
+          wrtins(' leaq set^0(%rip),%1 # index constant set', ep^.setn, ep^.r1);
         end;
 
         {chki,chkb,chkc,chkx}
@@ -1307,8 +1284,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         97: begin
           wrtins(' movq $0,%rdi # load low bound', ep^.vi);
           wrtins(' movq $0,%rsi # load high bound', ep^.vi2);
+          if ep^.l^.r1 <> rgrdx then
+            wrtins(' movq %1,%rdx # set addr to rdx', ep^.l^.r1);
           wrtins(' call psystem_chksetbnd # check set in bounds');
-          wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp set', ep^.r1a, ep^.r1, lclspc^)
+          if ep^.r1 <> ep^.l^.r1 then
+            wrtins(' movq %1,%2 # move addr to result', ep^.l^.r1, ep^.r1)
         end;
 
         {ckla}
@@ -1330,7 +1310,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         158,170: ; { are invalid }
 
         {equs,neqs,geqs,leqs}
-        140,146,152,164: begin 
+        140,146,152,164: begin
           case ep^.op of
             140: wrtins(' call psystem_setequ # check set equal');
             146: begin
@@ -1340,8 +1320,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             152,164: wrtins(' call psystem_setinc # check set inclusion');
           end;
           if ep^.r1 <> rgrax then
-            wrtins(' movq %rax,%1 # move result to final register', ep^.r1);
-          puttmp(ep^.l^.r1a); puttmp(ep^.r^.r1a)
+            wrtins(' movq %rax,%1 # move result to final register', ep^.r1)
         end;
 
         {equa,equi,equb,equc}
@@ -1379,9 +1358,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {sgs}
         32: begin
-          wrtins(' leaq ^-@s^0(%rbp),%rsi # index temp', ep^.r1a, lclspc^);
+          if ep^.r^.r1 <> rgrsi then
+            wrtins(' movq %1,%rsi # set destination', ep^.r^.r1);
           wrtins(' call psystem_setsgl # make singleton set');
-          wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^);
+          if ep^.r1 <> ep^.r^.r1 then
+            wrtins(' movq %1,%2 # move dest addr to result', ep^.r^.r1, ep^.r1);
         end;
 
         {flt,flo}
@@ -1536,21 +1517,30 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {dif,int,uni}
         45,46,47: begin
-          case ep^.op of 
+          { copy src1 to dest }
+          wrtins(' movq %1,%rdi # set dest', ep^.x1^.r1);
+          wrtins(' movq %1,%rsi # set src1', ep^.l^.r1);
+          wrtins(' movsq # copy src1 to dest');
+          wrtins(' movsq');
+          wrtins(' movsq');
+          wrtins(' movsq');
+          { call psystem op with dest, src2 }
+          wrtins(' movq %1,%rdi # set dest', ep^.x1^.r1);
+          wrtins(' movq %1,%rsi # set src2', ep^.r^.r1);
+          case ep^.op of
             45: wrtins(' call psystem_setdif # find set difference');
             46: wrtins(' call psystem_setint # find set intersection');
             47: wrtins(' call psystem_setuni # find set union');
           end;
-          wrtins(' leaq ^-@s^0(%rbp),%1 # reindex the temp', ep^.r1a, ep^.r1, lclspc^);
-          puttmp(ep^.r^.r1a)
+          if ep^.r1 <> ep^.x1^.r1 then
+            wrtins(' movq %1,%2 # move dest addr to result', ep^.x1^.r1, ep^.r1)
         end;
 
         {inn}
         48: begin
           wrtins(' call psystem_setsin # find set membership');
           if ep^.r1 <> rgrax then
-            wrtins(' movq %rax,%1 # move result to target reg', ep^.r1);
-          puttmp(ep^.r^.r1a)
+            wrtins(' movq %rax,%1 # move result to target reg', ep^.r1)
         end;
 
         {mod}
@@ -1625,10 +1615,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         end;
 
         {rgs}
-        110: begin 
-          wrtins(' leaq ^-@s^0(%rbp),%rdx # index temp', ep^.r1a, lclspc^);
+        110: begin
+          if ep^.x1^.r1 <> rgrdx then
+            wrtins(' movq %1,%rdx # set destination', ep^.x1^.r1);
           wrtins(' call psystem_setrgs # set range of values');
-          wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^);
+          if ep^.r1 <> ep^.x1^.r1 then
+            wrtins(' movq %1,%2 # move dest addr to result', ep^.x1^.r1, ep^.r1);
         end;
 
         { dupi, dupa, dupr, dups, dupb, dupc }
@@ -1674,15 +1666,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgxmm0 then
                 wrtins(' movq %xmm0,%1 # place result', ep^.r1)
-            end else if ep^.rc = 2 then begin { move set from stack to temp }
-                wrtins(' movq %rsp,%rsi # index set on stack');
-                wrtins(' leaq ^-@s^0(%rbp),%rdi # load temp destination', ep^.r1a, lclspc^);
-                wrtins(' movsq # move');
-                wrtins(' movsq');
-                wrtins(' movsq');
-                wrtins(' movsq');
-                wrtins(' addq $0,%rsp # remove set from stack', setsize);
-                wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^) 
+            end else if ep^.rc = 2 then begin { set result on stack, sfs handles copy }
+                wrtins(' movq %rsp,%1 # capture set result address', ep^.r1)
             end else if ep^.rc = 3 then begin { move structure from stack to temp }
                 wrtins(' movq %rsp,%rsi # index structure on stack');
                 wrtins(' leaq ^-@s^0(%rbp),%rdi # load temp destination', ep^.r1a, lclspc^);
@@ -1708,19 +1693,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' movq %rbp,%r15 # move our frame pointer to preserved register');
           wrtins(' movq ^0(%1),%rbp # set callee frame pointer', 1*ptrsize, ep^.l^.r1);
           wrtins(' call *(%1) # call indirect', ep^.l^.r1);
-          if ep^.op = 247{cif} then begin 
+          if ep^.op = 247{cif} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgxmm0 then
                 wrtins(' movq %xmm0,%1 # place result', ep^.r1)
-            end else if ep^.rc = 2 then begin { move set from stack to temp }
-                wrtins(' movq %rsp,%rsi # index set on stack');
-                wrtins(' leaq ^-@s^0(%rbp),%rdi # load temp destination', ep^.r1a, lclspc^);
-                wrtins(' movsq # move');
-                wrtins(' movsq');
-                wrtins(' movsq');
-                wrtins(' movsq');
-                wrtins(' addq $0,%rsp # remove set from stack', setsize);
-                wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^) 
+            end else if ep^.rc = 2 then begin { set result on stack, sfs handles copy }
+                wrtins(' movq %rsp,%1 # capture set result address', ep^.r1)
             end else if ep^.rc = 3 then begin { move structure from stack to temp }
                 wrtins(' movq %rsp,%rsi # index structure on stack');
                 wrtins(' leaq ^-@s^0(%rbp),%rdi # load temp destination', ep^.r1a, lclspc^);
@@ -1749,15 +1727,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgxmm0 then
               wrtins(' movq %xmm0,%1 # place result', ep^.r1)
-            end else if ep^.rc = 2 then begin { move set from stack to temp }
-                wrtins(' movq %rsp,%rsi # index set on stack');
-                wrtins(' leaq ^-@s^0(%rbp),%rdi # load temp destination', ep^.r1a, lclspc^);
-                wrtins(' movsq # move');
-                wrtins(' movsq');
-                wrtins(' movsq');
-                wrtins(' movsq');
-                wrtins(' addq $0,%rsp # remove set from stack', setsize);
-                wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^) 
+            end else if ep^.rc = 2 then begin { set result on stack, sfs handles copy }
+                wrtins(' movq %rsp,%1 # capture set result address', ep^.r1)
             end else if ep^.rc = 3 then begin { move structure from stack to temp }
                 wrtins(' movq %rsp,%rsi # index structure on stack');
                 wrtins(' leaq ^-@s^0(%rbp),%rdi # load temp destination', ep^.r1a, lclspc^);
@@ -2277,7 +2248,7 @@ begin { assemble }
 
     {sgs}
     32: begin
-      getexp(ep); popstk(ep^.l); pshstk(ep) 
+      getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep)
     end;
 
     {flt}
@@ -2316,9 +2287,14 @@ begin { assemble }
       getexp(ep); popstk(ep^.l); pshstk(ep)
     end;
 
-    {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
-    43,44,45,46,47,48,49,51,52,53,54,110,206: begin
-      getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) 
+    {and,ior,xor,inn,mod,mpi,mpr,dvi,dvr}
+    43,44,48,49,51,52,53,54,206: begin
+      getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep)
+    end;
+
+    {dif,int,uni,rgs}
+    45,46,47,110: begin
+      getexp(ep); popstk(ep^.x1); popstk(ep^.r); popstk(ep^.l); pshstk(ep)
     end;
 
     { At this level we just duplicate the tree. At lower levels we can
@@ -2578,9 +2554,9 @@ begin { assemble }
       deltre(ep)
     end;
 
-    {strs} 
+    {strs}
     72:begin parpq;
-      frereg := allreg; popstk(ep); attach(ep); assreg(ep, frereg, rgrsi, rgnull); 
+      frereg := allreg; popstk(ep); attach(ep); assreg(ep, frereg, rgrsi, rgnull);
       dmptre(ep); genexp(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       if p <> blkstk^.lvl then
@@ -2592,7 +2568,7 @@ begin { assemble }
       wrtins(' movsq');
       wrtins(' movsq');
       wrtins(' movsq');
-      puttmp(ep^.r1a); deltre(ep)
+      deltre(ep)
     end;
 
     {sev}
@@ -2712,10 +2688,9 @@ begin { assemble }
       sp := nil;
       if ch = 'l' then labelsearch(def, val, sp, blk) else parq;
       frereg := allreg;
-      popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
+      popstk(ep); attach(ep); assreg(ep, frereg, rgrsi, rgnull); dmptre(ep);
       genexp(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' leaq ^-@s^0(%rbp),%rsi # index temp set', ep^.r1a, lclspc^);
       if sp <> nil then
         wrtins(' leaq @s(%rip),%rdi # index global destination', ep^.r1, sp^)
       else
@@ -2724,7 +2699,7 @@ begin { assemble }
       wrtins(' movsq');
       wrtins(' movsq');
       wrtins(' movsq');
-      puttmp(ep^.r1a); deltre(ep)
+      deltre(ep)
     end;
 
     {aps}
@@ -2991,11 +2966,10 @@ begin { assemble }
       wrtins(' movsq');
       wrtins(' movsq');
       wrtins(' movsq');
-      puttmp(ep2^.r1a);
       deltre(ep); deltre(ep2)
     end;
 
-    {stom} 
+    {stom}
     235: begin parqq; 
       frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
       assreg(ep, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
@@ -3245,7 +3219,7 @@ begin { assemble }
     240: parqq; { this is a no-op to us }
 
     {sfs}
-    252: begin parqq; 
+    252: begin parqq;
       frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
       assreg(ep2, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
       assreg(ep, frereg, rgrsi,  rgnull);
@@ -3255,7 +3229,6 @@ begin { assemble }
       wrtins(' movq $0,%rcx # set length', q);
       wrtins(' repnz # move structure to address');
       wrtins(' movsb');
-      puttmp(ep^.r1a);
       deltre(ep); deltre(ep2)
     end;
 
