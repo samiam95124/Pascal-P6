@@ -2573,7 +2573,7 @@ void sinins()
     case 193 /*lodx*/: getp(); getq(); pshint(getbyt(getadr(mp-p*PTRSIZE) + q)); break;
     case 105 /*loda*/: getp(); getq(); pshadr(getadr(getadr(mp-p*PTRSIZE) + q)); break;
     case 106 /*lodr*/: getp(); getq(); pshrel(getrel(getadr(mp-p*PTRSIZE) + q)); break;
-    case 107 /*lods*/: getp(); getq(); getset(getadr(mp-p*PTRSIZE) + q, s1); pshset(s1); break;
+    case 107 /*lods*/: getp(); getq(); pshadr(getadr(mp-p*PTRSIZE) + q); break;
     case 108 /*lodb*/: getp(); getq(); pshint(getbol(getadr(mp-p*PTRSIZE) + q)); break;
     case 109 /*lodc*/: getp(); getq(); pshint(getchr(getadr(mp-p*PTRSIZE) + q)); break;
 
@@ -2581,7 +2581,7 @@ void sinins()
     case 194 /*ldox*/: getq(); pshint(getbyt(q)); break;
     case 65  /*ldoa*/: getq(); pshadr(getadr(q)); break;
     case 66  /*ldor*/: getq(); pshrel(getrel(q)); break;
-    case 67  /*ldos*/: getq(); getset(q, s1); pshset(s1); break;
+    case 67  /*ldos*/: getq(); pshadr(q); break;
     case 68  /*ldob*/: getq(); pshint(getbol(q)); break;
     case 69  /*ldoc*/: getq(); pshint(getchr(q)); break;
 
@@ -2589,7 +2589,7 @@ void sinins()
     case 195 /*strx*/: getp(); getq(); popint(i); putbyt(getadr(mp-p*PTRSIZE)+q, i); break;
     case 70  /*stra*/: getp(); getq(); popadr(ad); putadr(getadr(mp-p*PTRSIZE)+q, ad); break;
     case 71  /*strr*/: getp(); getq(); poprel(r1); putrel(getadr(mp-p*PTRSIZE)+q, r1); break;
-    case 72  /*strs*/: getp(); getq(); popset(s1); putset(getadr(mp-p*PTRSIZE)+q, s1); break;
+    case 72  /*strs*/: getp(); getq(); popadr(ad); getset(ad, s1); putset(getadr(mp-p*PTRSIZE)+q, s1); break;
     case 73  /*strb*/: getp(); getq(); popint(i1); b1 = i1 != 0;
                        putbol(getadr(mp-p*PTRSIZE)+q, b1); break;
     case 74  /*strc*/: getp(); getq(); popint(i1); c1 = i1;
@@ -2599,7 +2599,7 @@ void sinins()
     case 196 /*srox*/: getq(); popint(i); putbyt(q, i); break;
     case 75  /*sroa*/: getq(); popadr(ad); putadr(q, ad); break;
     case 76  /*sror*/: getq(); poprel(r1); putrel(q, r1); break;
-    case 77  /*sros*/: getq(); popset(s1); putset(q, s1); break;
+    case 77  /*sros*/: getq(); popadr(ad); getset(ad, s1); putset(q, s1); break;
     case 78  /*srob*/: getq(); popint(i1); b1 = i1 != 0; putbol(q, b1); break;
     case 79  /*sroc*/: getq(); popint(i1); c1 = i1; putchr(q, c1); break;
 
@@ -2610,7 +2610,7 @@ void sinins()
     case 197 /*stox*/: popint(i); popadr(ad); putbyt(ad, i); break;
     case 80  /*stoa*/: popadr(ad1); popadr(ad); putadr(ad, ad1); break;
     case 81  /*stor*/: poprel(r1); popadr(ad); putrel(ad, r1); break;
-    case 82  /*stos*/: popset(s1); popadr(ad); putset(ad, s1); break;
+    case 82  /*stos*/: popadr(ad); getset(ad, s1); popadr(ad1); putset(ad1, s1); break;
     case 83  /*stob*/: popint(i1); b1 = i1 != 0; popadr(ad); putbol(ad, b1);
                        break;
     case 84  /*stoc*/: popint(i1); c1 = i1; popadr(ad); putchr(ad, c1);
@@ -2640,13 +2640,13 @@ void sinins()
     case 123 /*ldci*/: i = getint(pc); pc = pc+INTSIZE; pshint(i); break;
     case 125 /*ldcn*/: pshadr(NILVAL); break; /* load nil */
     case 124 /*ldcr*/: getq(); pshrel(getrel(q)); break;
-    case 7   /*ldcs*/: getq(); getset(q, s1); pshset(s1); break;
+    case 7   /*ldcs*/: getq(); pshadr(q); break;
 
     case 9   /*indi*/: getq(); popadr(ad); pshint(getint(ad+q)); break;
     case 198 /*indx*/: getq(); popadr(ad); pshint(getbyt(ad+q)); break;
     case 85  /*inda*/: getq(); popadr(ad); ad1 = getadr(ad+q); pshadr(ad1); break;
     case 86  /*indr*/: getq(); popadr(ad); pshrel(getrel(ad+q)); break;
-    case 87  /*inds*/: getq(); popadr(ad); getset(ad+q, s1); pshset(s1); break;
+    case 87  /*inds*/: getq(); popadr(ad); pshadr(ad+q); break;
     case 88  /*indb*/: getq(); popadr(ad); pshint(getbol(ad+q)); break;
     case 89  /*indc*/: getq(); popadr(ad); pshint(getchr(ad+q)); break;
     case 93 /*incb*/:
@@ -2754,7 +2754,8 @@ void sinins()
     case 141 /* equc */:
     case 137 /* equi */: popint(i2); popint(i1); pshint(i1==i2); break;
     case 138 /* equr */: poprel(r2); poprel(r1); pshint(r1==r2); break;
-    case 140 /* equs */: popset(s2); popset(s1); pshint(sequ(s1,s2)); break;
+    case 140 /* equs */: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
+                        pshint(sequ(s1,s2)); break;
     case 142 /* equm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(b); break;
     case 215 /* equv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
@@ -2765,7 +2766,8 @@ void sinins()
     case 147 /* neqc */:
     case 143 /* neqi */: popint(i2); popint(i1); pshint(i1!=i2); break;
     case 144 /* neqr */: poprel(r2); poprel(r1); pshint(r1!=r2); break;
-    case 146 /* neqs */: popset(s2); popset(s1); pshint(!sequ(s1,s2)); break;
+    case 146 /* neqs */: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
+                        pshint(!sequ(s1,s2)); break;
     case 148 /* neqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(!b); break;
     case 216 /* neqv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
@@ -2775,7 +2777,8 @@ void sinins()
     case 153 /* geqc */:
     case 149 /* geqi */: popint(i2); popint(i1); pshint(i1>=i2); break;
     case 150 /* geqr */: poprel(r2); poprel(r1); pshint(r1>=r2); break;
-    case 152 /* geqs */: popset(s2); popset(s1); pshint(sinc(s1,s2)); break;
+    case 152 /* geqs */: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
+                        pshint(sinc(s1,s2)); break;
     case 154 /* geqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] >= store[a2])); break;
@@ -2799,7 +2802,8 @@ void sinins()
     case 165 /* leqc */:
     case 161 /* leqi */: popint(i2); popint(i1); pshint(i1<=i2); break;
     case 162 /* leqr */: poprel(r2); poprel(r1); pshint(r1<=r2); break;
-    case 164 /* leqs */: popset(s2); popset(s1); pshint(sinc(s2,s1)); break;
+    case 164 /* leqs */: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
+                        pshint(sinc(s2,s1)); break;
     case 166 /* leqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] <= store[a2])); break;
@@ -2847,7 +2851,7 @@ void sinins()
                            errorv(POINTERUSEDAFTERDISPOSE);
                        }
                        break;
-    case 97 /*chks*/: getq(); popset(s1); pshset(s1);
+    case 97 /*chks*/: getq(); popadr(ad); getset(ad, s1); pshadr(ad);
                       for (j = SETLOW; j <= getint(q)-1; j++)
                         if (sisin(j, s1)) errorv(SETELEMENTOUTOFRANGE);
                       for (j = getint(q+INTSIZE)+1; j <= SETHIGH; j++)
@@ -2878,7 +2882,7 @@ void sinins()
     case 181 /* dupi */: popint(i1); pshint(i1); pshint(i1); break;
     case 182 /* dupa */: popadr(a1); pshadr(a1); pshadr(a1); break;
     case 183 /* dupr */: poprel(r1); pshrel(r1); pshrel(r1); break;
-    case 184 /* dups */: popset(s1); pshset(s1); pshset(s1); break;
+    case 184 /* dups */: popadr(ad); pshadr(ad); pshadr(ad); break;
 
     case 189 /* inv */: popadr(ad); putdef(ad, FALSE); break;
 
@@ -2892,7 +2896,8 @@ void sinins()
                     if (LONG_MAX-labs(i1) < labs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1-i2); break;
     case 31 /*sbr*/: poprel(r2); poprel(r1); pshrel(r1-r2); break;
-    case 32 /*sgs*/: popint(i1); sset(s1, i1); pshset(s1); break;
+    case 32 /*sgs*/: popadr(ad); popint(i1); sset(s1, i1); putset(ad, s1);
+                     pshadr(ad); break;
     case 33 /*flt*/: popint(i1); pshrel(i1); break;
 
     /* note that flo implies the tos is float as well */
@@ -2931,13 +2936,17 @@ void sinins()
                       popint(i1); b1 = i1 != 0;
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(i1 ^ i2); break;
-    case 45 /*dif*/: popset(s2); popset(s1); sdif(s1, s2); pshset(s1);
+    case 45 /*dif*/: popadr(ad); popadr(ad1); getset(ad1, s2);
+                     popadr(ad1); getset(ad1, s1); sdif(s1, s2);
+                     putset(ad, s1); pshadr(ad); break;
+    case 46 /*int*/: popadr(ad); popadr(ad1); getset(ad1, s2);
+                     popadr(ad1); getset(ad1, s1); sint(s1, s2);
+                     putset(ad, s1); pshadr(ad); break;
+    case 47 /*uni*/: popadr(ad); popadr(ad1); getset(ad1, s2);
+                     popadr(ad1); getset(ad1, s1); suni(s1, s2);
+                     putset(ad, s1); pshadr(ad);
                      break;
-    case 46 /*int*/: popset(s2); popset(s1); sint(s1, s2); pshset(s1);
-                     break;
-    case 47 /*uni*/: popset(s2); popset(s1); suni(s1, s2); pshset(s1);
-                     break;
-    case 48 /*inn*/: popset(s1); popint(i1); pshint(sisin(i1, s1)); break;
+    case 48 /*inn*/: popadr(ad); getset(ad, s1); popint(i1); pshint(sisin(i1, s1)); break;
     case 49 /*mod*/: popint(i2); popint(i1);
                   if (dochkovf) if (i2 <= 0) errore(INVALIDDIVISORTOMOD);
                   pshint(i1 % i2); break;
@@ -3002,7 +3011,8 @@ void sinins()
                     a3 = a3+1;
                  } break;
 
-    case 110 /*rgs*/: popint(i2); popint(i1); rset(s1, i1, i2); pshset(s1);
+    case 110 /*rgs*/: popadr(ad); popint(i2); popint(i1); rset(s1, i1, i2);
+                      putset(ad, s1); pshadr(ad);
                       break;
     case 112 /*ipj*/: getp(); getq(); pc = q;
                  mp = getadr(mp-p*PTRSIZE); /* index the mark to restore */
