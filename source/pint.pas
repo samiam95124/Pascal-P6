@@ -4810,12 +4810,7 @@ begin
                    popadr(mp); { restore old mp }
                    sp := sp+marksize; { skip mark }
                    popadr(pc); { load return address }
-                   sp := sp+q; { remove parameters }
-                   { convert on-stack set result to heap temp address }
-                   getset(sp, s1); { read 32-byte set from stack }
-                   newspc(setsize, ad); putset(ad, s1);
-                   sp := sp+setsize; { pop raw set data }
-                   pshadr(ad) { push address of heap temp }
+                   sp := sp+q { remove parameters, leave set result on stack }
                  end;
 
     237 (*retm*): begin getq; evict(ep, mp);
@@ -4986,8 +4981,8 @@ begin
                       errore(IntegerValueOverflow);
                 pshint(i1-i2) end;
     31 (*sbr*): begin poprel(r2); poprel(r1); pshrel(r1-r2) end;
-    32 (*sgs*): begin popint(i1);
-                        newspc(setsize, ad); putset(ad, [i1]);
+    32 (*sgs*): begin popadr(ad); popint(i1);
+                        putset(ad, [i1]);
                         pshadr(ad) end;
     33 (*flt*): begin popint(i1); pshrel(i1) end;
 
@@ -5027,15 +5022,15 @@ begin
                       popint(i1); b1 := i1 <> 0;
                       if i1 < 0 then errore(BooleanOperatorOfNegative);
                       pshint(bxor(i1, i2)) end;
-    45 (*dif*): begin popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
-                        newspc(setsize, ad); putset(ad, s1-s2);
-                        pshadr(ad) end;
-    46 (*int*): begin popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
-                        newspc(setsize, ad); putset(ad, s1*s2);
-                        pshadr(ad) end;
-    47 (*uni*): begin popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
-                        newspc(setsize, ad); putset(ad, s1+s2);
-                        pshadr(ad) end;
+    45 (*dif*): begin popadr(ad); popadr(ad1); getset(ad1, s2);
+                        popadr(ad1); getset(ad1, s1);
+                        putset(ad, s1-s2); pshadr(ad) end;
+    46 (*int*): begin popadr(ad); popadr(ad1); getset(ad1, s2);
+                        popadr(ad1); getset(ad1, s1);
+                        putset(ad, s1*s2); pshadr(ad) end;
+    47 (*uni*): begin popadr(ad); popadr(ad1); getset(ad1, s2);
+                        popadr(ad1); getset(ad1, s1);
+                        putset(ad, s1+s2); pshadr(ad) end;
     48 (*inn*): begin popadr(ad); getset(ad, s1); popint(i1);
                         pshint(ord(i1 in s1)) end;
     49 (*mod*): begin popint(i2); popint(i1);
@@ -5103,8 +5098,8 @@ begin
                  end
                end;
 
-    110 (*rgs*): begin popint(i2); popint(i1);
-                        newspc(setsize, ad); putset(ad, [i1..i2]);
+    110 (*rgs*): begin popadr(ad); popint(i2); popint(i1);
+                        putset(ad, [i1..i2]);
                         pshadr(ad) end;
     112 (*ipj*): begin getp; getq; pc := q;
                  mp := getadr(mp-p*ptrsize); { index the mark to restore }

@@ -4624,7 +4624,7 @@ end;
                                gen1t(34(*inc*),idplmt,nilptr);
                      inxd:   error(404)
                    end;
-            expr:  if not sett(typtr) then begin
+            expr:  begin
                      gettmp(tmpoff, typtr^.size, true); lsize := typtr^.size;
                      gen2(50(*lda*),level,tmpoff);
                      alignau(stackal,lsize);
@@ -6133,7 +6133,7 @@ end;
           locpar, llc, soff: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
-          riplbl: integer; rp: ripptr;
+          riplbl: integer; rp: ripptr; tmpoff: stkoff; lsize2: addrrange;
     { This overload does not match, sequence to the next, same parameter.
       Set sets fcp -> new proc/func, nxt -> next parameter in new list. 
       fcp = nil, nxt = nil for no next found. }
@@ -6339,7 +6339,8 @@ end;
             test := sy <> comma;
             if sy = comma then insymbol;
           until test;
-          lc := llc;
+          { keep gettmp allocations from parameter evaluation in dataseg }
+          if llc < lc then lc := llc;
           if sy = rparent then insymbol else error(4)
         end (*if lparent*);
       { not out of proto parameters, sequence until we are or there are no
@@ -6390,10 +6391,16 @@ end;
                   else
                     gencupcuf(46(*cup*),locpar,pfname,fcp)
                 end;
-                { set functions: rets converts on-stack set to heap
-                  temp address, so only ptrsize ends up on stack }
-                if sett(fcp^.idtype) then mesl(-ptrsize)
-                else mesl(-lsize)
+                mesl(-lsize);
+                { for set function results, convert sfr stack data to temp address }
+                if sett(fcp^.idtype) then begin
+                  gettmp(tmpoff, lsize, true);
+                  lsize2 := lsize; alignau(stackal, lsize2);
+                  gen2(50(*lda*),level,tmpoff);
+                  gen2(128(*sfs*),lsize,lsize2);
+                  mesl(lsize2+ptrsize);
+                  gen2(50(*lda*),level,tmpoff)
+                end
               end
             end
         end
@@ -6407,7 +6414,16 @@ end;
         rp^.off := lcs+lsize+soff; riplst := rp;
         gen1(32(*rip*),riplbl);
         mesl(locpar); { remove stack parameters }
-        mesl(-lsize)
+        mesl(-lsize);
+        { for set function results, convert sfr stack data to temp address }
+        if sett(fcp^.idtype) then begin
+          gettmp(tmpoff, lsize, true);
+          lsize2 := lsize; alignau(stackal, lsize2);
+          gen2(50(*lda*),level,tmpoff);
+          gen2(128(*sfs*),lsize,lsize2);
+          mesl(lsize2+ptrsize);
+          gen2(50(*lda*),level,tmpoff)
+        end
       end;
       gattr.typtr := fcp^.idtype
     end (*callnonstandard*) ;
@@ -6581,13 +6597,15 @@ end;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
+          tmpoff: stkoff;
 
       procedure term(fsys: setofsys; threaten: boolean);
-        var lattr: attr; lop: operatort; fcp: ctp;
+        var lattr: attr; lop: operatort; fcp: ctp; tmpoff: stkoff;
 
         procedure factor(fsys: setofsys; threaten: boolean);
           var lcp,fcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
               cstpart: setty; lsp: stp; tattr, rattr: attr; test: boolean;
+              tmpoff: stkoff;
         begin
           if not (sy in facbegsys) then
             begin error(58); skip(fsys + facbegsys);
@@ -6609,9 +6627,13 @@ end;
                       begin call(fsys,lcp, inherit, true);
                         with gattr do
                           begin kind := expr;
-                            if typtr <> nil then
+                            if typtr <> nil then begin
                               if typtr^.form=subrange then
-                                typtr := typtr^.rangetype
+                                typtr := typtr^.rangetype;
+                              { set function results are address-based (temp addr on stack) }
+                              if sett(typtr) then
+                                begin kind := varbl; access := indrct; idplmt := 0 end
+                            end
                           end
                       end
                     else begin if inherit then error(233);
@@ -6776,9 +6798,18 @@ end;
                                               gattr := tattr;
                                               if not comptypes(rattr.typtr,intptr)
                                               then gen0t(58(*ord*),rattr.typtr);
+                                              gettmp(tmpoff,setsize,true);
+                                              gen2(50(*lda*),level,tmpoff);
                                               gen0(64(*rgs*));
-                                              if varpart then gen0(28(*uni*))
-                                              else varpart := true
+                                              if varpart then begin
+                                                gettmp(tmpoff,setsize,true);
+                                                gen2(50(*lda*),level,tmpoff);
+                                                gen0(28(*uni*))
+                                              end
+                                              else varpart := true;
+                                              gattr.kind := varbl;
+                                              gattr.access := indrct;
+                                              gattr.idplmt := 0
                                             end
                                         end
                                       else error(137)
@@ -6793,9 +6824,18 @@ end;
                                       begin load;
                                         if not comptypes(gattr.typtr,intptr)
                                         then gen0t(58(*ord*),gattr.typtr);
+                                        gettmp(tmpoff,setsize,true);
+                                        gen2(50(*lda*),level,tmpoff);
                                         gen0(23(*sgs*));
-                                        if varpart then gen0(28(*uni*))
-                                        else varpart := true
+                                        if varpart then begin
+                                          gettmp(tmpoff,setsize,true);
+                                          gen2(50(*lda*),level,tmpoff);
+                                          gen0(28(*uni*))
+                                        end
+                                        else varpart := true;
+                                        gattr.kind := varbl;
+                                        gattr.access := indrct;
+                                        gattr.idplmt := 0
                                       end
                                   end;
                                   lsp^.elset := gattr.typtr;
@@ -6818,7 +6858,11 @@ end;
                               begin cstptrix := cstptrix + 1;
                                 cstptr[cstptrix] := lvp;
                                 gen2(51(*ldc*),5,cstptrix);
-                                gen0(28(*uni*)); gattr.kind := expr
+                                gettmp(tmpoff,setsize,true);
+                                gen2(50(*lda*),level,tmpoff);
+                                gen0(28(*uni*));
+                                gattr.kind := varbl; gattr.access := indrct;
+                                gattr.idplmt := 0
                               end
                           end
                       end
@@ -6876,8 +6920,13 @@ end;
                             if (lattr.typtr = realptr) and
                                (gattr.typtr=realptr) then gen0(16(*mpr*))
                             else if (lattr.typtr^.form=power) and
-                                    comptypes(lattr.typtr,gattr.typtr) then
-                              gen0(12(*int*))
+                                    comptypes(lattr.typtr,gattr.typtr) then begin
+                              gettmp(tmpoff,setsize,true);
+                              gen2(50(*lda*),level,tmpoff);
+                              gen0(12(*int*));
+                              gattr.kind := varbl; gattr.access := indrct;
+                              gattr.idplmt := 0
+                            end
                             else begin error(134); gattr.typtr:=nil end
                           end
                   end
@@ -6975,7 +7024,11 @@ end;
                        if lop = plus then gen0(3(*adr*)) else gen0(22(*sbr*))
                      end else if (lattr.typtr^.form=power) and
                                  comptypes(lattr.typtr,gattr.typtr) then begin
-                       if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*))
+                       gettmp(tmpoff,setsize,true);
+                       gen2(50(*lda*),level,tmpoff);
+                       if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*));
+                       gattr.kind := varbl; gattr.access := indrct;
+                       gattr.idplmt := 0
                      end else begin error(134); gattr.typtr:=nil end
                    end
                  end
@@ -10978,19 +11031,19 @@ end;
         entries marked with * go to secondary table }
       cdx[  0] :=  0;                    cdx[  1] :=  0;
       cdx[  2] := +intsize;              cdx[  3] := +realsize;
-      cdx[  4] := +intsize;              cdx[  5] := +ptrsize;
+      cdx[  4] := +intsize;              cdx[  5] := +ptrsize*2;
       cdx[  6] := +intsize;              cdx[  7] := +realsize;
       cdx[  8] :=  4{*};                 cdx[  9] := +intsize-realsize;
       cdx[ 10] := -realsize+intsize;     cdx[ 11] := +ptrsize;
-      cdx[ 12] := +ptrsize;              cdx[ 13] := +intsize;
+      cdx[ 12] := +ptrsize*2;              cdx[ 13] := +intsize;
       cdx[ 14] := +intsize;              cdx[ 15] := +intsize;
       cdx[ 16] := +realsize;             cdx[ 17] :=  0;
       cdx[ 18] :=  0;                    cdx[ 19] :=  2{*};
       cdx[ 20] :=  0;                    cdx[ 21] := +intsize;
-      cdx[ 22] := +realsize;             cdx[ 23] := +intsize-ptrsize;
+      cdx[ 22] := +realsize;             cdx[ 23] := +intsize;
       cdx[ 24] :=  0;                    cdx[ 25] :=  0;
       cdx[ 26] := 1{*};                  cdx[ 27] := +realsize-intsize;
-      cdx[ 28] := +ptrsize;              cdx[ 29] :=  0;
+      cdx[ 28] := +ptrsize*2;              cdx[ 29] :=  0;
       cdx[ 30] :=  0;                    cdx[ 31] :=  2{*};
       cdx[ 32] :=  0;                    cdx[ 33] := +intsize;
       cdx[ 34] :=  2{*};                 cdx[ 35] :=  3{*};
@@ -11008,7 +11061,7 @@ end;
       cdx[ 58] :=  2{*};                 cdx[ 59] :=  0;
       cdx[ 60] :=  0;                    cdx[ 61] :=  +realsize-intsize;
       cdx[ 62] := +adrsize*3;            cdx[ 63] := +adrsize*3;
-      cdx[ 64] := +intsize*2-ptrsize;    cdx[ 65] :=  0;
+      cdx[ 64] := +intsize*2;    cdx[ 65] :=  0;
       cdx[ 66] :=  0;                    cdx[ 67] := +ptrsize;
       cdx[ 68] := -adrsize*2;            cdx[ 69] :=  0;
       cdx[ 70] :=  0;                    cdx[ 71] := +ptrsize;
