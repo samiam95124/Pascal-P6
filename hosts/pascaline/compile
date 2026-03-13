@@ -42,6 +42,7 @@ fails="0"
 thisfail="0"
 iso7185="0"
 iso7185option=""
+amd64_sysvoption=""
 
 #echo "compile: command line: $@"
 
@@ -90,6 +91,7 @@ do
         pmach=0
         cmach=0
         package=0
+        amd64_sysvoption="-amd64_sysv"
 
     elif [ "$param" = "--noerrmsg" ]; then
     
@@ -146,8 +148,8 @@ do
 		fi
 		echo Compiling $param...
         thisfail=0
-        #echo "Will execute: pcom $param.pas $param.p6 $options"
-        pcom $param.pas $param.p6 $options > temp
+        #echo "Will execute: pcom $param.pas $param.p6 $options $amd64_sysvoption"
+        pcom $param.pas $param.p6 $options $amd64_sysvoption > temp
         if [ "$?" != "0" ]; then
 
             fails=1

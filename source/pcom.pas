@@ -3565,6 +3565,13 @@ end;
     else sett := fsp^.form = power
   end;
 
+  { check structured type (set, array, record, file, etc.) }
+  function structt(fsp: stp): boolean;
+  begin
+    if fsp = nil then structt := false
+    else structt := fsp^.form >= power
+  end;
+
   { check pointer type }
   function ptrt(fsp: stp): boolean;
   begin
@@ -3920,8 +3927,7 @@ end;
           if fop = 122(*cuf*) then if fcp <> nil then if fcp^.idtype <> nil then
             begin write(prr, ' ');
               if realt(fcp^.idtype) then write(prr, '1')
-              else if sett(fcp^.idtype) then write(prr, '2')
-              else if fcp^.idtype^.form > power then write(prr, '3')
+              else if structt(fcp^.idtype) then write(prr, '3')
               else write(prr, '0');
               sizalg := fcp^.idtype^.size; alignau(stackal, sizalg);
               write(prr, ' ', fcp^.idtype^.size:1, ' ', sizalg:1);
@@ -3942,11 +3948,10 @@ end;
       write(prr,mn[fop]:11,' ':4); fl := 0;
       if fcp <> nil then begin
         write(prr, ' ', fcp^.pfnum:1); fl := fl+digits(fcp^.pfnum);
-        if fop = 123(*cif*) then 
+        if fop = 123(*cif*) then
           begin write(prr, ' ');
             if realt(fcp^.idtype) then write(prr, '1')
-            else if sett(fcp^.idtype) then write(prr, '2')
-            else if fcp^.idtype^.form > power then write(prr, '3')
+            else if structt(fcp^.idtype) then write(prr, '3')
             else write(prr, '0');
             sizalg := fcp^.idtype^.size; alignau(stackal, sizalg);
             write(prr, ' ', fcp^.idtype^.size:1, ' ', sizalg:1);
@@ -3968,11 +3973,10 @@ end;
         if chkext(fcp2) then prtflabelc(fcp2, fl)
         else begin write(prr,fp2:1); fl := digits(fp2) end;
         write(prr, ' ', fcp^.pfnum:1); fl := fl+digits(fcp^.pfnum);
-        if fop = 125(*cvf*) then 
+        if fop = 125(*cvf*) then
           begin write(prr, ' ');
             if realt(fcp^.idtype) then write(prr, '1')
-            else if sett(fcp^.idtype) then write(prr, '2')
-            else if fcp^.idtype^.form > power then write(prr, '3')
+            else if structt(fcp^.idtype) then write(prr, '3')
             else write(prr, '0');
             sizalg := fcp^.idtype^.size; alignau(stackal, sizalg);
             write(prr, ' ', fcp^.idtype^.size:1, ' ', sizalg:1);
@@ -4600,6 +4604,13 @@ end;
                          cstptr[cstptrix] := cval.valp;
                          gen1(38(*lca*),cstptrix)
                        end
+                   else if sett(typtr) then
+                     if cstptrix >= cstoccmax then error(254)
+                     else
+                       begin cstptrix := cstptrix + 1;
+                         cstptr[cstptrix] := cval.valp;
+                         gen2(51(*ldc*),5,cstptrix)
+                       end
                    else error(403);
             varbl: case access of
                      drct:   if vlevel <= 1 then begin
@@ -4617,7 +4628,7 @@ end;
                      inxd:   error(404)
                    end;
             expr:  begin
-                     gettmp(tmpoff, typtr^.size, true); lsize := typtr^.size; 
+                     gettmp(tmpoff, typtr^.size, true); lsize := typtr^.size;
                      gen2(50(*lda*),level,tmpoff);
                      alignau(stackal,lsize);
                      gen2(128(*sfs*),typtr^.size,lsize);
@@ -4647,11 +4658,13 @@ end;
           drct:   if vlevel <= 1 then gen1ts(43(*sro*),dplmt,typtr,symptr)
                   else gen2t(56(*str*),level-(level-vlevel),dplmt,typtr);
           indrct: if idplmt <> 0 then error(401)
-                  else if typtr^.form in [records,arrays] then begin
+                  else if typtr^.form in [power,records,arrays] then begin
                     lsize := typtr^.size;
                     alignu(parmptr,lsize);
                     gen2t(26(*sto*),typtr^.size, lsize,typtr);
-                    mesl(adrsize+lsize)
+                    { gen2t already accounts for set sto via cdxs;
+                      records/arrays need explicit adjustment }
+                    if not sett(typtr) then mesl(adrsize+lsize)
                   end else
                     gen0t(26(*sto*),typtr);
           inxd:   error(402)
@@ -6173,7 +6186,7 @@ end;
           locpar, llc, soff: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
-          riplbl: integer; rp: ripptr;
+          riplbl: integer; rp: ripptr; tmpoff: stkoff; lsize2: addrrange;
     { This overload does not match, sequence to the next, same parameter.
       Set sets fcp -> new proc/func, nxt -> next parameter in new list. 
       fcp = nil, nxt = nil for no next found. }
@@ -6327,7 +6340,7 @@ end;
                                  (comptypes(realptr,lsp) and 
                                   (gattr.typtr = intptr)) then 
                                 if not e then error(142);
-                              if lsp^.form <= power then
+                              if not structt(lsp) then
                                 begin load;
                                   if debug then checkbnds(lsp);
                                   if comptypes(realptr,lsp)
@@ -6380,7 +6393,8 @@ end;
             test := sy <> comma;
             if sy = comma then insymbol;
           until test;
-          lc := llc;
+          { keep gettmp allocations from parameter evaluation in dataseg }
+          if llc < lc then lc := llc;
           if sy = rparent then insymbol else error(4)
         end (*if lparent*);
       { not out of proto parameters, sequence until we are or there are no
@@ -6431,7 +6445,16 @@ end;
                   else
                     gencupcuf(46(*cup*),locpar,pfname,fcp)
                 end;
-                mesl(-lsize)
+                mesl(-lsize);
+                { for set function results, convert sfr stack data to temp address }
+                if sett(fcp^.idtype) then begin
+                  gettmp(tmpoff, lsize, true);
+                  lsize2 := lsize; alignau(stackal, lsize2);
+                  gen2(50(*lda*),level,tmpoff);
+                  gen2(128(*sfs*),lsize,lsize2);
+                  mesl(lsize2+ptrsize);
+                  gen2(50(*lda*),level,tmpoff)
+                end
               end
             end
         end
@@ -6445,7 +6468,16 @@ end;
         rp^.off := lcs+lsize+soff; riplst := rp;
         gen1(32(*rip*),riplbl);
         mesl(locpar); { remove stack parameters }
-        mesl(-lsize)
+        mesl(-lsize);
+        { for set function results, convert sfr stack data to temp address }
+        if sett(fcp^.idtype) then begin
+          gettmp(tmpoff, lsize, true);
+          lsize2 := lsize; alignau(stackal, lsize2);
+          gen2(50(*lda*),level,tmpoff);
+          gen2(128(*sfs*),lsize,lsize2);
+          mesl(lsize2+ptrsize);
+          gen2(50(*lda*),level,tmpoff)
+        end
       end;
       gattr.typtr := fcp^.idtype
     end (*callnonstandard*) ;
@@ -6516,7 +6548,7 @@ end;
   begin ps := 0;
     if sp <> nil then begin
       if sp^.form = arrayc then ps := ptrsize*2
-      else if sp^.form <= power then ps := sp^.size
+      else if not structt(sp) then ps := sp^.size
       else ps := ptrsize;
       alignu(parmptr, ps)
     end;
@@ -6541,7 +6573,7 @@ end;
       not formatted the same way as function calls, so we hoist the parameters
       over the mark, call and then drop the function result downwards. }
     if gattr.typtr <> nil then
-        if (gattr.kind = expr) and (gattr.typtr^.form > power) then
+        if (gattr.kind = expr) and structt(gattr.typtr) then
           gen1(118(*lsa*),lsize)
         else gen2(116(*cpp*),lsize,locpars);
     { do coercions }
@@ -6590,7 +6622,7 @@ end;
        fungible(rsp, gattr.typtr) or (gattr.kind = expr) then begin
       { bring the parameters up and convert them one by one }
       if lattr.typtr <> nil then
-        if (lattr.kind = expr) and (lattr.typtr^.form > power) then
+        if (lattr.kind = expr) and structt(lattr.typtr) then
           gen1(118(*lsa*),lsize+lprs)
         else gen2(116(*cpp*),lsize+lprs,lpls);
       { do coercions }
@@ -6598,7 +6630,7 @@ end;
         begin gen0(10(*flt*)); lattr.typtr := realptr end;
       fixpar(lsp,lattr.typtr);
       if gattr.typtr <> nil then
-        if (gattr.kind = expr) and (gattr.typtr^.form > power) then
+        if (gattr.kind = expr) and structt(gattr.typtr) then
           gen1(118(*lsa*),lsize+lpl)
         else gen2(116(*cpp*),lsize+lpl,lprs);
       { do coercions }
@@ -6619,13 +6651,15 @@ end;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
+          tmpoff: stkoff;
 
       procedure term(fsys: setofsys; threaten: boolean);
-        var lattr: attr; lop: operatort; fcp: ctp;
+        var lattr: attr; lop: operatort; fcp: ctp; tmpoff: stkoff;
 
         procedure factor(fsys: setofsys; threaten: boolean);
           var lcp,fcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
               cstpart: setty; lsp: stp; tattr, rattr: attr; test: boolean;
+              tmpoff: stkoff;
         begin
           if not (sy in facbegsys) then
             begin error(58); skip(fsys + facbegsys);
@@ -6647,9 +6681,13 @@ end;
                       begin call(fsys,lcp, inherit, true);
                         with gattr do
                           begin kind := expr;
-                            if typtr <> nil then
+                            if typtr <> nil then begin
                               if typtr^.form=subrange then
-                                typtr := typtr^.rangetype
+                                typtr := typtr^.rangetype;
+                              { set function results are address-based (temp addr on stack) }
+                              if sett(typtr) then
+                                begin kind := varbl; access := indrct; idplmt := 0 end
+                            end
                           end
                       end
                     else begin if inherit then error(233);
@@ -6736,7 +6774,7 @@ end;
                   begin insymbol; factor(fsys, false);
                     if gattr.kind <> expr then
                       if gattr.typtr <> nil then
-                        if gattr.typtr^.form <= power then load else loadaddress;
+                        if not structt(gattr.typtr) then load else loadaddress;
                     fndopr1(notop, fcp);
                     if fcp <> nil then callop1(fcp) else begin
                       if (gattr.typtr = boolptr) or
@@ -6814,9 +6852,18 @@ end;
                                               gattr := tattr;
                                               if not comptypes(rattr.typtr,intptr)
                                               then gen0t(58(*ord*),rattr.typtr);
+                                              gettmp(tmpoff,setsize,true);
+                                              gen2(50(*lda*),level,tmpoff);
                                               gen0(64(*rgs*));
-                                              if varpart then gen0(28(*uni*))
-                                              else varpart := true
+                                              if varpart then begin
+                                                gettmp(tmpoff,setsize,true);
+                                                gen2(50(*lda*),level,tmpoff);
+                                                gen0(28(*uni*))
+                                              end
+                                              else varpart := true;
+                                              gattr.kind := varbl;
+                                              gattr.access := indrct;
+                                              gattr.idplmt := 0
                                             end
                                         end
                                       else error(137)
@@ -6831,9 +6878,18 @@ end;
                                       begin load;
                                         if not comptypes(gattr.typtr,intptr)
                                         then gen0t(58(*ord*),gattr.typtr);
+                                        gettmp(tmpoff,setsize,true);
+                                        gen2(50(*lda*),level,tmpoff);
                                         gen0(23(*sgs*));
-                                        if varpart then gen0(28(*uni*))
-                                        else varpart := true
+                                        if varpart then begin
+                                          gettmp(tmpoff,setsize,true);
+                                          gen2(50(*lda*),level,tmpoff);
+                                          gen0(28(*uni*))
+                                        end
+                                        else varpart := true;
+                                        gattr.kind := varbl;
+                                        gattr.access := indrct;
+                                        gattr.idplmt := 0
                                       end
                                   end;
                                   lsp^.elset := gattr.typtr;
@@ -6856,7 +6912,11 @@ end;
                               begin cstptrix := cstptrix + 1;
                                 cstptr[cstptrix] := lvp;
                                 gen2(51(*ldc*),5,cstptrix);
-                                gen0(28(*uni*)); gattr.kind := expr
+                                gettmp(tmpoff,setsize,true);
+                                gen2(50(*lda*),level,tmpoff);
+                                gen0(28(*uni*));
+                                gattr.kind := varbl; gattr.access := indrct;
+                                gattr.idplmt := 0
                               end
                           end
                       end
@@ -6887,12 +6947,12 @@ end;
           begin
             if gattr.kind <> expr then
               if gattr.typtr <> nil then
-                if gattr.typtr^.form <= power then load else loadaddress;
+                if not structt(gattr.typtr) then load else loadaddress;
             lattr := gattr; lop := op;
             insymbol; factor(fsys + [mulop], threaten);
             if gattr.kind <> expr then
               if gattr.typtr <> nil then
-                if gattr.typtr^.form <= power then load else loadaddress;
+                if not structt(gattr.typtr) then load else loadaddress;
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
               case lop of
       (***)     mul: begin fndopr2(lop, lattr, fcp);
@@ -6914,8 +6974,13 @@ end;
                             if (lattr.typtr = realptr) and
                                (gattr.typtr=realptr) then gen0(16(*mpr*))
                             else if (lattr.typtr^.form=power) and
-                                    comptypes(lattr.typtr,gattr.typtr) then
-                              gen0(12(*int*))
+                                    comptypes(lattr.typtr,gattr.typtr) then begin
+                              gettmp(tmpoff,setsize,true);
+                              gen2(50(*lda*),level,tmpoff);
+                              gen0(12(*int*));
+                              gattr.kind := varbl; gattr.access := indrct;
+                              gattr.idplmt := 0
+                            end
                             else begin error(134); gattr.typtr:=nil end
                           end
                   end
@@ -6966,7 +7031,7 @@ end;
       if (fsy = addop) and (fop in [plus, minus]) then begin
         if gattr.kind <> expr then
             if gattr.typtr <> nil then
-              if gattr.typtr^.form <= power then load else loadaddress;
+              if not structt(gattr.typtr) then load else loadaddress;
         fndopr1(fop, fcp);
         if fcp <> nil then callop1(fcp) else begin
           if fop = minus then begin
@@ -6985,12 +7050,12 @@ end;
         begin
           if gattr.kind <> expr then
             if gattr.typtr <> nil then
-              if gattr.typtr^.form <= power then load else loadaddress;
+              if not structt(gattr.typtr) then load else loadaddress;
           lattr := gattr; lop := op;
           insymbol; term(fsys + [addop], threaten);
           if gattr.kind <> expr then
             if gattr.typtr <> nil then
-              if gattr.typtr^.form <= power then load else loadaddress;
+              if not structt(gattr.typtr) then load else loadaddress;
           if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
             case lop of
     (*+,-*)    plus,minus: begin fndopr2(lop, lattr, fcp);
@@ -7013,7 +7078,11 @@ end;
                        if lop = plus then gen0(3(*adr*)) else gen0(22(*sbr*))
                      end else if (lattr.typtr^.form=power) and
                                  comptypes(lattr.typtr,gattr.typtr) then begin
-                       if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*))
+                       gettmp(tmpoff,setsize,true);
+                       gen2(50(*lda*),level,tmpoff);
+                       if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*));
+                       gattr.kind := varbl; gattr.access := indrct;
+                       gattr.idplmt := 0
                      end else begin error(134); gattr.typtr:=nil end
                    end
                  end
@@ -7039,18 +7108,18 @@ end;
       if lschrcst then lc := chr(gattr.cval.ival);
     if sy = relop then begin
       if gattr.typtr <> nil then
-        if gattr.typtr^.form <= power then load
+        if not structt(gattr.typtr) then load
         else loadaddress;
       lattr := gattr; lop := op;
       if (lop = inop) and (gattr.typtr <> nil) then
-        if not comptypes(gattr.typtr,intptr) and 
+        if not comptypes(gattr.typtr,intptr) and
           (gattr.typtr^.form <= subrange) then
             gen0t(58(*ord*),gattr.typtr);
       insymbol; simpleexpression(fsys, threaten);
       rschrcst := ischrcst(gattr);
       if rschrcst then rc := chr(gattr.cval.ival);
       if gattr.typtr <> nil then
-        if gattr.typtr^.form <= power then load
+        if not structt(gattr.typtr) then load
         else loadaddress;
       if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
         fndopr2(lop, lattr, fcp);
@@ -8281,7 +8350,7 @@ end;
                                 if lsp <> nil then begin
                                   if lsp^.form = arrayc then lsize := ptrsize*2;
                                   if lkind=actual then begin
-                                    if lsp^.form<=power then lsize := lsp^.size
+                                    if not structt(lsp) then lsize := lsp^.size
                                     else if lsp^.form=files then error(121);
                                     { type containing file not allowed either }
                                     if filecomponent(lsp) then error(121)
@@ -8301,7 +8370,7 @@ end;
                                         { if the type is structured, and is
                                           a view parameter, promote to formal }
                                         if lsp <> nil then
-                                          if (lsp^.form > power) and
+                                          if structt(lsp) and
                                              (part = ptview) then
                                             vkind := formal
                                       end;
@@ -8344,7 +8413,7 @@ end;
                       { if value variable, and structured, we make a copy to
                         play with. However, structured is treated as var if
                         it is view, since that is protected }
-                      if (vkind=actual) and (idtype^.form>power) and
+                      if (vkind=actual) and structt(idtype) and
                          (idtype^.form <> arrayc) then
                         begin
                           lc := lc-idtype^.size;
@@ -8447,7 +8516,7 @@ end;
       while plst <> nil do begin
         if (plst^.idtype <> nil) and (plst^.klass = vars) then begin
           if (plst^.part = ptval) or (plst^.part = ptview) then begin
-            if plst^.idtype^.form <= power then 
+            if not structt(plst^.idtype) then
               locpar := locpar+plst^.idtype^.size
             else if plst^.idtype^.form = arrayc then
               locpar := locpar+ptrsize*2
@@ -8960,14 +9029,14 @@ end;
               tagasc := gattr.tagfield and (debug or chkvbk);
             lattr2 := gattr; { save access before load }
             if gattr.typtr <> nil then
-              if (gattr.access<>drct) or (gattr.typtr^.form>power) or
+              if (gattr.access<>drct) or structt(gattr.typtr) or
                  tagasc then { if tag checking, force address load }
                 if gattr.kind <> expr then loadaddress;
             lattr := gattr;
             insymbol; expression(fsys, false); schrcst := ischrcst(gattr);
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
               { process expression rights as load }
-              if (gattr.typtr^.form <= power) or (gattr.kind = expr) then begin
+              if not structt(gattr.typtr) or (gattr.kind = expr) then begin
                 if (lattr.typtr^.form = arrayc) and schrcst then begin
                   { load as string pointer }
                   gen2(51(*ldc*),1,1);
@@ -9007,7 +9076,10 @@ end;
                     subrange,
                     power: begin
                                 if debug then checkbnds(lattr.typtr);
-                                store(lattr)
+                                { onstack from expr }
+                                if gattr.kind = expr then store(lattr)
+                                { addressed }
+                                else gen1(40(*mov*),lattr.typtr^.size)
                               end;
                     pointer: begin
                                if debug then begin
@@ -9796,7 +9868,7 @@ end;
               if klass = vars then
                 if idtype <> nil then begin
                   { compute param frame size }
-                  if idtype^.form > power then begin
+                  if structt(idtype) then begin
                     if idtype^.form = arrayc then psz := ptrsize*2
                     else psz := ptrsize
                   end else begin
@@ -9833,7 +9905,7 @@ end;
                     llc1 := llc1-psz;
                     alignd(parmptr,llc1)
                   end;
-                  if idtype^.form > power then begin
+                  if structt(idtype) then begin
                     if vkind = actual then
                       if idtype^.form = arrayc then begin
                         { Container array. These are not preallocated, so we
@@ -11166,19 +11238,19 @@ end;
         entries marked with * go to secondary table }
       cdx[  0] :=  0;                    cdx[  1] :=  0;
       cdx[  2] := +intsize;              cdx[  3] := +realsize;
-      cdx[  4] := +intsize;              cdx[  5] := +setsize;
+      cdx[  4] := +intsize;              cdx[  5] := +ptrsize*2;
       cdx[  6] := +intsize;              cdx[  7] := +realsize;
       cdx[  8] :=  4{*};                 cdx[  9] := +intsize-realsize;
-      cdx[ 10] := -realsize+intsize;     cdx[ 11] := +setsize;
-      cdx[ 12] := +setsize;              cdx[ 13] := +intsize;
+      cdx[ 10] := -realsize+intsize;     cdx[ 11] := +ptrsize;
+      cdx[ 12] := +ptrsize*2;              cdx[ 13] := +intsize;
       cdx[ 14] := +intsize;              cdx[ 15] := +intsize;
       cdx[ 16] := +realsize;             cdx[ 17] :=  0;
       cdx[ 18] :=  0;                    cdx[ 19] :=  2{*};
       cdx[ 20] :=  0;                    cdx[ 21] := +intsize;
-      cdx[ 22] := +realsize;             cdx[ 23] := +intsize-setsize;
+      cdx[ 22] := +realsize;             cdx[ 23] := +intsize;
       cdx[ 24] :=  0;                    cdx[ 25] :=  0;
       cdx[ 26] := 1{*};                  cdx[ 27] := +realsize-intsize;
-      cdx[ 28] := +setsize;              cdx[ 29] :=  0;
+      cdx[ 28] := +ptrsize*2;              cdx[ 29] :=  0;
       cdx[ 30] :=  0;                    cdx[ 31] :=  2{*};
       cdx[ 32] :=  0;                    cdx[ 33] := +intsize;
       cdx[ 34] :=  2{*};                 cdx[ 35] :=  3{*};
@@ -11196,7 +11268,7 @@ end;
       cdx[ 58] :=  2{*};                 cdx[ 59] :=  0;
       cdx[ 60] :=  0;                    cdx[ 61] :=  +realsize-intsize;
       cdx[ 62] := +adrsize*3;            cdx[ 63] := +adrsize*3;
-      cdx[ 64] := +intsize*2-setsize;    cdx[ 65] :=  0;
+      cdx[ 64] := +intsize*2;    cdx[ 65] :=  0;
       cdx[ 66] :=  0;                    cdx[ 67] := +ptrsize;
       cdx[ 68] := -adrsize*2;            cdx[ 69] :=  0;
       cdx[ 70] :=  0;                    cdx[ 71] := +ptrsize;
@@ -11237,7 +11309,7 @@ end;
       cdxs[1][3] := +(adrsize+intsize);  { stob }
       cdxs[1][4] := +(adrsize+intsize);  { stoc }
       cdxs[1][5] := +(adrsize+adrsize);  { stoa }
-      cdxs[1][6] := +(adrsize+setsize);  { stos }
+      cdxs[1][6] := +(adrsize+ptrsize);  { stos }
       cdxs[1][7] := 0;
       cdxs[1][8] := 0;
 
@@ -11255,7 +11327,7 @@ end;
       cdxs[3][3] := +adrsize-intsize;  { indb }
       cdxs[3][4] := +adrsize-intsize;  { indc }
       cdxs[3][5] := +adrsize-adrsize;  { inda }
-      cdxs[3][6] := +adrsize-setsize;  { inds }
+      cdxs[3][6] := +adrsize-ptrsize;  { inds }
       cdxs[3][7] := 0;
       cdxs[3][8] := 0;
 
@@ -11264,7 +11336,7 @@ end;
       cdxs[4][3] := -intsize;  { ldob/ldc/lodb/dupb/ltc }
       cdxs[4][4] := -intsize;  { ldoc/ldc/lodc/dupc/ltc }
       cdxs[4][5] := -adrsize;  { ldoa/ldc/loda/dupa/ltc }
-      cdxs[4][6] := -setsize;  { ldos/ldc/lods/dups/ltc }
+      cdxs[4][6] := -ptrsize;  { ldos/ldc/lods/dups/ltc }
       cdxs[4][7] := 0;
       cdxs[4][8] := 0;
 
@@ -11273,7 +11345,7 @@ end;
       cdxs[5][3] := +intsize;  { srob/strb }
       cdxs[5][4] := +intsize;  { sroc/strc }
       cdxs[5][5] := +adrsize;  { sroa/stra }
-      cdxs[5][6] := +setsize;  { sros/strs }
+      cdxs[5][6] := +ptrsize;  { sros/strs }
       cdxs[5][7] := 0;
       cdxs[5][8] := 0;
 
@@ -11283,7 +11355,7 @@ end;
       cdxs[6][3] := +(intsize+intsize)-intsize; { equb/neqb/geqb/grtb/leqb/lesb }
       cdxs[6][4] := +(intsize+intsize)-intsize; { equc/neqc/geqc/grtc/leqc/lesc }
       cdxs[6][5] := +(adrsize+intsize)-adrsize; { equa/neqa/geqa/grta/leqa/lesa }
-      cdxs[6][6] := +(setsize+setsize)-intsize; { equs/neqs/geqs/grts/leqs/less }
+      cdxs[6][6] := +(ptrsize+ptrsize)-intsize; { equs/neqs/geqs/grts/leqs/less }
       cdxs[6][7] := +(adrsize+adrsize)-intsize; { equm/neqm/geqm/grtm/leqm/lesm }
       cdxs[6][8] := +(adrsize*2+adrsize*2)-intsize; { equv/neqv/geqv/grtv/leqv/lesv }
 

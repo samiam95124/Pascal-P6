@@ -183,7 +183,6 @@ clean:
 	find . -name "*.p6o" -type f -delete
 	find . -name "*.mpp.pas" -type f -delete
 	find . -name "*.s" -type f -delete
-	find . -name "*.o" -type f -delete
 	
 help:
 	@echo
