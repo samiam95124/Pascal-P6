@@ -88,8 +88,18 @@ compprog source/genobj
 compprog libs/tests/strtst
 compprog libs/tests/services_test
 compprog libs/tests/services_test1
+#
+# pgen and pcom must be a matched set
+#
+cp bin/pgen pgen.old
 compprog source/pgen/amd64/pgen
 cp source/pgen/amd64/pgen bin/pgen_amd64
+cp bin/pgen pgen.new
+cp pgen.old bin/pgen
 compprog source/pcom
+#
+# Now regular
+#
+cp pgen.new bin/pgen
 compprog source/pint
 compprog source/pmach
