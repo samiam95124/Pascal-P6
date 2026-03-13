@@ -53,11 +53,9 @@ CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 EXTERNAL=libs
-EXTERNALLIBS=$(EXTERNAL)/services.o
 
-all: bin/cmach bin/pgen bin/spew \
-	$(LIBS)/psystem.a $(LIBS)/psystem_asm.o main $(BUILD)/pgen/main.o \
-	libs/services.a $(LIBS)/services.a
+all: bin/cmach bin/spew \
+	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a
 
 ################################################################################
 #
@@ -72,7 +70,7 @@ all: bin/cmach bin/pgen bin/spew \
 #
 # Build psystem for AMD64, the Pascaline support library in C.
 #
-$(LIBS)/psystem.a $(LIBS)/psystem_asm.o: $(SOURCE)/pgen/psystem.c \
+$(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	$(SOURCE)/pgen/amd64/psystem.asm
 	@echo
 	@echo "Building psystem..."
@@ -89,8 +87,7 @@ $(LIBS)/psystem.a $(LIBS)/psystem_asm.o: $(SOURCE)/pgen/psystem.c \
 #
 # Build main for AMD64, the program stack startup shim.
 #
-main: $(SOURCE)/pgen/amd64/main.asm
-$(BUILD)/pgen/main.o: $(SOURCE)/pgen/amd64/main.asm
+main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 	@echo
 	@echo "Building main..."
 	@echo
@@ -111,13 +108,13 @@ $(BUILD)/pgen/main.o: $(SOURCE)/pgen/amd64/main.asm
 # Services is built from components since it is an external C library in
 # Petit-Ami. The result is an archive services.a.
 #
-libs/services.a $(LIBS)/services.a: $(AMI)/services.c \
+$(LIBS)/services.a: $(AMI)/services.c \
 	$(LIBS)/source/services_wrapper.asm
 	@echo
 	@echo "Building services..."
 	@echo
 	mkdir -p $(BUILD)/libs
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source\
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
 		-o $(BUILD)/libs/services_support.o -c $(LIBS)/source/services_support.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/services_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/services_wrapper.asm
@@ -194,21 +191,7 @@ help:
 	@echo
 	@echo All	Make all binaries
 	@echo
-	@echo pcom	Make pcom, the Pascal compiler.
-	@echo
-	@echo pcom_immerr	Make pcom with print error immediate option. This causes
-	@echo               errors to be printed immediately instead of waiting to
-	@echo               collect an entire line. This is for debugging.
-	@echo
-	@echo pint          Make pint, the interpreter/debugger.
-	@echo
-	@echo pmach         Make pmach, the stand-alone interpreter.
-	@echo
 	@echo cmach         Make cmach, the stand-alone interpreter written in C.
-	@echo
-	@echo pgen			Make pgen, a intermediate to AMD64 assembly language generator.
-	@echo
-	@echo genobj        Make genobj, the binary deck to C file generator.
 	@echo
 	@echo spew          Make spew, a fault generator test program.
 	@echo
