@@ -4531,7 +4531,7 @@ begin
   (*execute*)
 
   { trace executed instructions }
-  if dotrcins then begin wrtnewline; ad := pcs;
+  if true or dotrcins then begin wrtnewline; ad := pcs;
     if isbrk(ad) then write('b')
     else if istrc(ad) then write('t')
     else write(' ');

@@ -10910,7 +10910,7 @@ end;
     chkudtc := true; option[21] := true; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     chkvbk := false; option[9] := false; experr := true; option[10] := true;
-    amd64_sysv := true{false}; option[29] := true{false};
+    amd64_sysv := false; option[29] := false;
     dolineinfo := true; option[26] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;

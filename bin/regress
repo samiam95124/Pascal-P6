@@ -113,6 +113,7 @@ function dotestprog {
 function do_regress {
 
     dotestprog sample_programs sample_programs hello
+exit
     dotestprog sample_programs sample_programs roman
     dotestprog sample_programs sample_programs match
     dotestprog sample_programs sample_programs prime

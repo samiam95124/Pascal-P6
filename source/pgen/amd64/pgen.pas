@@ -1975,7 +1975,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             end else begin
               if ep^.r1 <> rgrax then
                 wrtins(' movq %rax,%1 # place result', ep^.r1);
-            end
+            end;
+            { the result is loaded from the register, not popped from SFR.
+              Remove the SFR space that was allocated by sfr. }
+            if ep^.rc <> 2 then
+                if ep^.rc <> 3 then
+                  if ep^.sl <> nil then
+                    if ep^.sl^.lb <> nil then
+                      wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
           stkadr := stkadrs { restore stack position }
         end;

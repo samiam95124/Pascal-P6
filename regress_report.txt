@@ -1,43 +1,5 @@
 ************ Regression Summary *************
-Sat 07 Mar 2026 03:07:44 PM PST
+Mon 09 Mar 2026 09:05:35 AM PDT
 Line counts should be 0 for pass
-pgen run ***************************************
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 standard_tests/iso7185pat.dif
-Pascal-s run
-0 sample_programs/roman.dif
-Pascal-P2 run
-0 p2/roman.dif
-Pascal-P4 run
-0 p4/standardp.dif
-PRT run
-0 standard_tests/iso7185prt.dif
-Pascaline run
-0 pascaline_tests/pascaline.dif
-
-Total differences: 0
-Fails: 0
-Sat 07 Mar 2026 03:08:55 PM PST
-Files sha256sum ***************************************
-Source files
-3758fe1f11c739e7f12f576ebcff31c6a84cd1093a6a55bc8cbbb32744161970  -
-batch files
-e0a81de1dd0ee5a5165726ea01a71962bd475dd7f2bc9c74a2f3271e9c713d79  -
-P2 files
-1819a8af789d297fb86a16ebe290c7cc374da196d826c1be78ba384ff9311fbb  -
-p4 files
-c63ca632ff252538ab56aedcf0cce0493ae9b7932c7dcf18c8b3c4fe8d76f839  -
-Sample program test files
-5b47bf6e8560a88ce46b393e863dd51a28aa3e10d86e51910cdedd34c35b948b  -
-standard test files
-85681dea5220b4d1baf2fbb1069305ff321278f26d6f7e1f87ddb2d125b536b3  -
-other files
-6c3a1eea811717d85b43900a9a2566c1f5dbb5fc8a71587940c0e050856b02e0  -
+pint run ***************************************
+*** sample_programs/hello: compile/run fail
