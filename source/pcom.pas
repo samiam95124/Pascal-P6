@@ -8482,7 +8482,7 @@ end;
     procedure parmoffsysv(plst: ctp; lev: levrange);
     var p: ctp; ipc: integer; fpc: integer;
         off: addrrange; sz: addrrange; inreg: boolean;
-        n: integer; noreg: boolean;
+        n: integer;
 
     function isflt(p: ctp): boolean;
     begin isflt := false;
@@ -8490,15 +8490,6 @@ end;
         if p^.vkind = actual then { only value params; VAR passes address }
           if p^.idtype <> nil then
             if p^.idtype = realptr then isflt := true
-    end;
-
-    { check if param is a set value/view parameter }
-    function issetval(p: ctp): boolean;
-    begin issetval := false;
-      if p^.klass = vars then
-        if p^.vkind = actual then
-          if p^.idtype <> nil then
-            if p^.idtype^.form = power then issetval := true
     end;
 
     begin
@@ -8514,18 +8505,12 @@ end;
         Function result slot: rbp - lev*8 - 7*8 (rax save)
         Float saves (up to 6): rbp - lev*8 - 7*8 - fpc*8
         Overflow params: ascending from marksize+ptrsize+adrsize = 40
-        When a set value param is encountered, it and all following
-        integer params are forced to overflow (the callee reads 32 bytes
-        from the slot, which would corrupt adjacent int register pad
-        entries). Float params are independent (separate xmm pad area). }
-      p := plst; ipc := 0; fpc := 0; noreg := false;
+        Float params are independent (separate xmm pad area). }
+      p := plst; ipc := 0; fpc := 0;
       off := marksize+ptrsize+adrsize; { = 40, for stacked overflow params }
       while p <> nil do begin
         inreg := false;
-        { set value param forces int overflow for it and all following }
-        if not noreg then
-          if issetval(p) then noreg := true;
-        { floats use separate pad, unaffected by set cutoff }
+        { floats use separate pad }
         if isflt(p) then begin
           if fpc < 6 then begin
             fpc := fpc+1; inreg := true;
@@ -8533,8 +8518,6 @@ end;
               if not p^.isloc then
                 p^.vaddr := -(lev*ptrsize + 7*ptrsize + fpc*ptrsize)
           end
-        end else if noreg then begin
-          { set cutoff: skip register assignment, do not advance ipc }
         end else begin
           { determine number of register slots needed }
           n := 1;

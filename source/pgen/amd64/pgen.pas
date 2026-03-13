@@ -167,28 +167,17 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   { assign registers to parameters in call }
   procedure asspar(ep: expptr; mi: integer);
   var pp: expptr; pc: integer; fpc: integer; r1, r2: reg; fr: reg;
-      setfound: boolean;
   begin
     refer(mi);
-    pp := ep^.pl; pc := 1; fpc := 1; setfound := false;
+    pp := ep^.pl; pc := 1; fpc := 1;
     while pp <> nil do begin
-      { set value param forces it and all following int params to overflow }
-      if not setfound then
-        if instab[pp^.op].inss then setfound := true;
-      if isfltres(pp) then begin { floating result: independent of set cutoff }
+      if isfltres(pp) then begin { floating result }
         if fpc <= maxfltparreg then begin
           resreg(parregf[fpc]); assreg(pp, rf, parregf[fpc], rgnull)
         end else begin
           getfreg(fr, rf); assreg(pp, rf, rgnull, rgnull)
         end;
         fpc := fpc+1
-      end else if setfound then begin { set cutoff: use generic registers }
-        if instab[pp^.op].insr = 2 then begin
-          getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2)
-        end else begin
-          getreg(r1, rf); assreg(pp, rf, r1, rgnull)
-        end
-        { do not advance pc to match pcom parmoffsysv }
       end else if instab[pp^.op].insr = 2 then begin { double register }
         if pc <= maxintparreg-1 then begin
           resreg(parreg[pc]); resreg(parreg[pc+1]);
@@ -846,22 +835,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         wrtins(' pushq %1 # place 2nd register on stack', pp^.r2); 
         stkadr := stkadr-intsize
       end;
-      if instab[pp^.op].inss then begin
-        wrtins(' subq $0,%rsp # allocate set', setsize);
-        wrtins(' pushq %rsi # save source');
-        wrtins(' pushq %rdi # save destination');
-        if pp^.r1 <> rgrsi then
-          wrtins(' movq %1,%rsi # place source', pp^.r1);
-        wrtins(' movq %rsp,%rdi # destination is stack');
-        wrtins(' addq $0,%rdi # index over saved', ptrsize*2);
-        wrtins(' movsq # move set');
-        wrtins(' movsq');
-        wrtins(' movsq');
-        wrtins(' movsq');  
-        wrtins(' popq %rdi # restore');          
-        wrtins(' popq %rsi');
-        stkadr := stkadr-setsize
-      end else if pp^.r1 in [rgrax..rgr15] then begin
+      if pp^.r1 in [rgrax..rgr15] then begin
         wrtins(' pushq %1 # save parameter', pp^.r1); 
         stkadr := stkadr-intsize
       end else if pp^.r1 in [rgxmm0..rgxmm15] then begin
@@ -881,8 +855,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     When a set value param exists, it and all params to its right in the
     original order become overflow. Params to its left may use registers. }
   procedure pshparsysv(pp: expptr; pn: integer);
-  var ipc, fpc, tipc, tfpc, regipc: integer; p: expptr;
-      stk: boolean; setfound: boolean;
+  var ipc, fpc, tipc, tfpc: integer; p: expptr;
+      stk: boolean;
 
     { recursively traverse list to process overflow params right-to-left }
     procedure pshovf(p: expptr; var ipc, fpc: integer);
@@ -894,7 +868,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         if isfltres(p) then begin
           stk := fpc > 6; fpc := fpc-1
         end else begin
-          stk := ipc > regipc;
+          stk := ipc > maxintparreg;
           if instab[p^.op].insr = 2 then ipc := ipc-2
           else ipc := ipc-1
         end;
@@ -904,22 +878,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' pushq %1 # place 2nd register on stack', p^.r2);
             stkadr := stkadr-intsize
           end;
-          if instab[p^.op].inss then begin
-            wrtins(' subq $0,%rsp # allocate set', setsize);
-            wrtins(' pushq %rsi # save source');
-            wrtins(' pushq %rdi # save destination');
-            if p^.r1 <> rgrsi then
-              wrtins(' movq %1,%rsi # place source', p^.r1);
-            wrtins(' movq %rsp,%rdi # destination is stack');
-            wrtins(' addq $0,%rdi # index over saved', ptrsize*2);
-            wrtins(' movsq # move set');
-            wrtins(' movsq');
-            wrtins(' movsq');
-            wrtins(' movsq');
-            wrtins(' popq %rdi # restore');
-            wrtins(' popq %rsi');
-            stkadr := stkadr-setsize
-          end else if p^.r1 in [rgrax..rgr15] then begin
+          if p^.r1 in [rgrax..rgr15] then begin
             wrtins(' pushq %1 # save parameter', p^.r1);
             stkadr := stkadr-intsize
           end else if p^.r1 in [rgxmm0..rgxmm15] then begin
@@ -942,24 +901,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       p := p^.next
     end;
     tipc := ipc; tfpc := fpc; { save totals }
-    { compute regipc: int params registerable before first set.
-      Scan left-to-right, count int params before first set. }
-    regipc := maxintparreg; ipc := 0; setfound := false; p := pp;
-    while p <> nil do begin
-      if not isfltres(p) then begin
-        if instab[p^.op].inss then
-          setfound := true
-        else if not setfound then begin
-          if instab[p^.op].insr = 2 then ipc := ipc+2
-          else ipc := ipc+1
-        end
-      end;
-      p := p^.next
-    end;
-    if setfound then begin
-      regipc := ipc;
-      if regipc > maxintparreg then regipc := maxintparreg
-    end;
     { Pass 1: evaluate register params left-to-right }
     ipc := 0; fpc := 0; p := pp;
     while p <> nil do begin
@@ -967,9 +908,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         fpc := fpc+1; stk := fpc > 6
       end else begin
         if instab[p^.op].insr = 2 then begin
-          ipc := ipc+2; stk := ipc > regipc
+          ipc := ipc+2; stk := ipc > maxintparreg
         end else begin
-          ipc := ipc+1; stk := ipc > regipc
+          ipc := ipc+1; stk := ipc > maxintparreg
         end
       end;
       if not stk then genexp(p);
@@ -985,33 +926,21 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     When a set value param is found, it and all following int params
     are overflow regardless of register count. }
   function cmpparmspc(pp: expptr; pn: integer): integer;
-  var sz, ipc, fpc: integer; p: expptr; setfound: boolean;
+  var sz, ipc, fpc: integer; p: expptr;
   begin
     refer(pn);
-    sz := 0; ipc := 0; fpc := 0; setfound := false; p := pp;
+    sz := 0; ipc := 0; fpc := 0; p := pp;
     while p <> nil do begin
       if isfltres(p) then begin
         fpc := fpc + 1;
         if fpc > 6 then sz := sz + realsize
       end else begin
-        if not setfound then
-          if instab[p^.op].inss then setfound := true;
-        if setfound then begin
-          { set cutoff: all remaining int params overflow }
-          if instab[p^.op].inss then sz := sz + setsize
-          else if instab[p^.op].insr = 2 then sz := sz + intsize * 2
-          else sz := sz + intsize
+        if instab[p^.op].insr = 2 then begin
+          ipc := ipc + 2;
+          if ipc > maxintparreg then sz := sz + intsize * 2
         end else begin
-          if instab[p^.op].insr = 2 then begin
-            ipc := ipc + 2;
-            if ipc > maxintparreg then sz := sz + intsize * 2
-          end else begin
-            ipc := ipc + 1;
-            if ipc > maxintparreg then begin
-              if instab[p^.op].inss then sz := sz + setsize
-              else sz := sz + intsize
-            end
-          end
+          ipc := ipc + 1;
+          if ipc > maxintparreg then sz := sz + intsize
         end
       end;
       p := p^.next
