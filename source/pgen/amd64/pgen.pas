@@ -832,22 +832,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         wrtins(' pushq %1 # place 2nd register on stack', pp^.r2); 
         stkadr := stkadr-intsize
       end;
-      if instab[pp^.op].inss then begin
-        wrtins(' subq $0,%rsp # allocate set', setsize);
-        wrtins(' pushq %rsi # save source');
-        wrtins(' pushq %rdi # save destination');
-        if pp^.r1 <> rgrsi then
-          wrtins(' movq %1,%rsi # place source', pp^.r1);
-        wrtins(' movq %rsp,%rdi # destination is stack');
-        wrtins(' addq $0,%rdi # index over saved', ptrsize*2);
-        wrtins(' movsq # move set');
-        wrtins(' movsq');
-        wrtins(' movsq');
-        wrtins(' movsq');  
-        wrtins(' popq %rdi # restore');          
-        wrtins(' popq %rsi');
-        stkadr := stkadr-setsize
-      end else if pp^.r1 in [rgrax..rgr15] then begin
+      if pp^.r1 in [rgrax..rgr15] then begin
         wrtins(' pushq %1 # save parameter', pp^.r1); 
         stkadr := stkadr-intsize
       end else if pp^.r1 in [rgxmm0..rgxmm15] then begin

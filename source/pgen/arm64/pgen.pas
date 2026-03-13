@@ -818,16 +818,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         wrtins(' str %1, [sp, #-16]! // place 2nd register on stack', pp^.r2);
         stkadr := stkadr-intsize
       end;
-      if instab[pp^.op].inss then begin
-        wrtins(' sub sp, sp, #0 // allocate set', setsize);
-        wrtins(' mov x9, %1 // copy source', pp^.r1);
-        wrtins(' mov x10, sp // destination is stack');
-        wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
-        wrtins(' stp x11, x12, [x10], #16 // store set part 1');
-        wrtins(' ldp x11, x12, [x9] // load set part 2');
-        wrtins(' stp x11, x12, [x10] // store set part 2');
-        stkadr := stkadr-setsize
-      end else if pp^.r1 in [rgx0..rgx28] then begin
+      if pp^.r1 in [rgx0..rgx28] then begin
         wrtins(' str %1, [sp, #-16]! // save parameter', pp^.r1);
         stkadr := stkadr-intsize
       end else if pp^.r1 in [rgv0..rgv31] then begin
