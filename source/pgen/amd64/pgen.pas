@@ -1860,8 +1860,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           cvfps := stkadrs - stkadr; { compute parameter space pushed }
           if ep^.qs <> nil then wrtins(' call *@s(%rip) # call vectored', ep^.qs^)
           else wrtins(' call *@g(%rip) # call vectored', ep^.q);
-          { remove caller-pushed parameters (callee does not clean up) }
-          if cvfps > 0 then
+          { When registers were saved before the SFR (rs non-empty),
+            the SFR removal addq would pop the wrong stack entry.
+            Remove the pushed parameters first so SFR removal and
+            register restores work correctly. When rs is empty,
+            parameters become dead data (cleared by stkadr reset). }
+          if (ep^.rs <> []) and (cvfps > 0) then
             wrtins(' addq $0,%rsp # remove parameters', cvfps);
           if ep^.op = 249{cvf} then begin
             if ep^.rc = 1 then begin
