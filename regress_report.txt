@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Thu 12 Mar 2026 09:35:48 PM PDT
+Sat 14 Mar 2026 09:37:17 AM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -11,118 +11,35 @@ pint run ***************************************
 0 sample_programs/drystone.dif
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
-0 standard_tests/iso7185pat.dif
+*** standard_tests/iso7185pat: compile/run fail
 Pascal-s run
 0 sample_programs/roman.dif
 Pascal-P2 run
 0 p2/roman.dif
 Pascal-P4 run
-0 p4/standardp.dif
+*** p4/standardp: compile/run fail
 PRT run
-0 standard_tests/iso7185prt.dif
+57 standard_tests/iso7185prt.dif
 Pascaline run
-0 pascaline_tests/pascaline.dif
+1146 pascaline_tests/pascaline.dif
 Debug test run
-0 pascaline_tests/debug_test.dif
-pmach run ***************************************
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 standard_tests/iso7185pat.dif
-Pascal-s run
-0 sample_programs/roman.dif
-Pascal-P2 run
-0 p2/roman.dif
-Pascal-P4 run
-0 p4/standardp.dif
-PRT run
-0 standard_tests/iso7185prt.dif
-Pascaline run
-0 pascaline_tests/pascaline.dif
-cmach run ***************************************
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 standard_tests/iso7185pat.dif
-Pascal-s run
-0 sample_programs/roman.dif
-Pascal-P2 run
-0 p2/roman.dif
-Pascal-P4 run
-0 p4/standardp.dif
-PRT run
-0 standard_tests/iso7185prt.dif
-Pascaline run
-0 pascaline_tests/pascaline.dif
-package run ***************************************
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 standard_tests/iso7185pat.dif
-Pascal-s run
-0 sample_programs/roman.dif
-Pascal-P2 run
-0 p2/roman.dif
-Pascal-P4 run
-0 p4/standardp.dif
-PRT run
-0 standard_tests/iso7185prt.dif
-Pascaline run
-0 pascaline_tests/pascaline.dif
-pgen run ***************************************
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 standard_tests/iso7185pat.dif
-Pascal-s run
-0 sample_programs/roman.dif
-Pascal-P2 run
-0 p2/roman.dif
-Pascal-P4 run
-0 p4/standardp.dif
-PRT run
-0 standard_tests/iso7185prt.dif
-Pascaline run
-0 pascaline_tests/pascaline.dif
+14 pascaline_tests/debug_test.dif
 
-Total differences: 0
-Fails: 0
-Thu 12 Mar 2026 09:42:35 PM PDT
+Total differences: 1217
+Fails: 2
+*** Regression fails
+Sat 14 Mar 2026 09:39:00 AM PDT
 Files sha256sum ***************************************
 Source files
-c5443751afeaf0b042c708ee05b28db2eeac70923a7d120b6cd2cb851e9001d1  -
+f9d507d2cd60db570441c2de1d701e7118433b8a5dfbedcbaaa6aa812a1a60fb  -
 batch files
-763a6a337db0e3827b800abdfb00fc4f1bfd198c584d23e2efaf999cbc4a3674  -
+f7c87759c41883e9530e219a10784a4caaa58ee0667d3736c669f797cb46363e  -
 P2 files
 1819a8af789d297fb86a16ebe290c7cc374da196d826c1be78ba384ff9311fbb  -
 p4 files
 c63ca632ff252538ab56aedcf0cce0493ae9b7932c7dcf18c8b3c4fe8d76f839  -
 Sample program test files
-3cffca8b51a0fcbc553ec7fbf49b829073a4350d4acce401306e41b515e88563  -
+5b47bf6e8560a88ce46b393e863dd51a28aa3e10d86e51910cdedd34c35b948b  -
 standard test files
 85681dea5220b4d1baf2fbb1069305ff321278f26d6f7e1f87ddb2d125b536b3  -
 other files

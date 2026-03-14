@@ -8,12 +8,16 @@ echo "Compiling pcomp to intermediate code"
 compile --list- $1 p2/pcomp
 cat p2/pcomp.err
 #
-# Run the p2 interpreter via pint to get p2 intermediate
+# Run the p2 compiler to get p2 intermediate
 #
-# Note temp is unused (prr out), and roman.p2 is read from the command line 
+# Note temp is unused (prr out), and roman.p2 is read from the command line
 # at the second level.
 #
-pint p2/pcomp.p6 temp p2/roman.p2 < p2/roman.pas
+if [ "$1" = "--pgen" ]; then
+    p2/pcomp p2/roman.p2 < p2/roman.pas
+else
+    pint p2/pcomp.p6 temp p2/roman.p2 < p2/roman.pas
+fi
 #
 # Compile pasint to intermediate code
 #

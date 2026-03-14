@@ -9,3 +9,7 @@
 #
 cp hosts/pascaline/linux_X86/bin/* bin
 cp hosts/pascaline/linux_X86/libs/* libs
+#
+# Restore new pc, we don't need to change it for the old toolset
+#
+cp pc/pc bin

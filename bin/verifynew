@@ -1,0 +1,281 @@
+#!/bin/bash
+#
+# Verify new system binaries by comparing build products against old binaries.
+#
+# For each component, builds with old tools (from bin), saves products,
+# then builds with new tools (from source), and compares .p6, .s, .o,
+# and executables.
+#
+
+FAIL=0
+TOTAL=0
+PASS=0
+FAILCNT=0
+REPORT=""
+
+# $1 = file path, $2 = diff lines (0 for pass)
+result_pass() {
+    TOTAL=$((TOTAL + 1))
+    PASS=$((PASS + 1))
+    REPORT="${REPORT}  $1 0 pass
+"
+}
+
+# $1 = file path, $2 = reason, $3 = diff lines or empty
+result_fail() {
+    TOTAL=$((TOTAL + 1))
+    FAIL=1
+    FAILCNT=$((FAILCNT + 1))
+    local DIFFS=${3:-"-"}
+    REPORT="${REPORT}  $1 $DIFFS FAIL ($2)
+"
+}
+
+# Get all build commands for a program
+# $1 = program path for pc
+getcmds() {
+    pc $1 -nv -r -d -a 2>&1
+}
+
+# Verify .p6 output (old pcom vs new pcom)
+# $1 = program path, $2 = .p6 path, $3 = display name, $4 = pcom line number
+verify_p6() {
+    local PROG=$1 P6=$2 NAME=$3 LINE=$4
+    local CMDLINE
+
+    CMDLINE=$(getcmds $PROG | grep '^pcom ' | sed -n "${LINE}p")
+    if [ -z "$CMDLINE" ]; then
+        result_fail "$P6" "no command line"
+        return 1
+    fi
+
+    echo "=== $NAME.p6: compiling with old pcom ==="
+    $CMDLINE
+    if [ $? -ne 0 ]; then
+        result_fail "$P6" "old pcom error"
+        return 1
+    fi
+    cp $P6 ${P6}.save
+
+    echo "=== $NAME.p6: compiling with new pcom ==="
+    source/$CMDLINE
+    if [ $? -ne 0 ]; then
+        result_fail "$P6" "new pcom error"
+        return 1
+    fi
+
+    local DIFFS
+    DIFFS=$(diff $P6 ${P6}.save 2>&1 | wc -l)
+    if [ "$DIFFS" -eq 0 ]; then
+        echo "=== $NAME.p6: match ==="
+        result_pass "$P6"
+        return 0
+    else
+        echo "*** $NAME.p6: MISMATCH ***"
+        result_fail "$P6" "mismatch" "$DIFFS"
+        return 1
+    fi
+}
+
+# Verify .s output (old pgen vs new pgen)
+# $1 = program path, $2 = .s path, $3 = display name, $4 = pgen line number
+verify_s() {
+    local PROG=$1 S=$2 NAME=$3 LINE=$4
+    local CMDLINE
+
+    CMDLINE=$(getcmds $PROG | grep '^pgen ' | sed -n "${LINE}p")
+    if [ -z "$CMDLINE" ]; then
+        result_fail "$S" "no command line"
+        return 1
+    fi
+
+    echo "=== $NAME.s: generating with old pgen ==="
+    $CMDLINE
+    if [ $? -ne 0 ]; then
+        result_fail "$S" "old pgen error"
+        return 1
+    fi
+    cp $S ${S}.save
+
+    echo "=== $NAME.s: generating with new pgen ==="
+    source/pgen/amd64/$CMDLINE
+    if [ $? -ne 0 ]; then
+        result_fail "$S" "new pgen error"
+        return 1
+    fi
+
+    local DIFFS
+    DIFFS=$(diff $S ${S}.save 2>&1 | wc -l)
+    if [ "$DIFFS" -eq 0 ]; then
+        echo "=== $NAME.s: match ==="
+        result_pass "$S"
+        return 0
+    else
+        echo "*** $NAME.s: MISMATCH ***"
+        result_fail "$S" "mismatch" "$DIFFS"
+        return 1
+    fi
+}
+
+# Verify .o output (gcc -c on old .s vs new .s)
+# $1 = program path, $2 = .o path, $3 = .s path, $4 = display name,
+# $5 = gcc -c line number
+verify_o() {
+    local PROG=$1 O=$2 S=$3 NAME=$4 LINE=$5
+    local CMDLINE
+
+    CMDLINE=$(getcmds $PROG | grep '^gcc .* -c ' | sed -n "${LINE}p")
+    if [ -z "$CMDLINE" ]; then
+        result_fail "$O" "no command line"
+        return 1
+    fi
+
+    echo "=== $NAME.o: assembling old .s ==="
+    cp $S ${S}.new
+    cp ${S}.save $S
+    $CMDLINE
+    if [ $? -ne 0 ]; then
+        cp ${S}.new $S
+        result_fail "$O" "gcc error on old .s"
+        return 1
+    fi
+    cp $O ${O}.save
+
+    echo "=== $NAME.o: assembling new .s ==="
+    cp ${S}.new $S
+    $CMDLINE
+    if [ $? -ne 0 ]; then
+        result_fail "$O" "gcc error on new .s"
+        return 1
+    fi
+
+    diff $O ${O}.save > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        echo "=== $NAME.o: match ==="
+        result_pass "$O"
+        return 0
+    else
+        echo "*** $NAME.o: MISMATCH ***"
+        result_fail "$O" "mismatch" "-"
+        return 1
+    fi
+}
+
+# Verify executable (link with old .o files vs new .o files)
+# $1 = program path, $2 = executable path, $3 = display name
+verify_link() {
+    local PROG=$1 EXE=$2 NAME=$3
+    local CMDLINE OFILES
+
+    CMDLINE=$(getcmds $PROG | grep '^gcc ' | grep -v ' -c ' | tail -1)
+    if [ -z "$CMDLINE" ]; then
+        result_fail "$EXE" "no link command"
+        return 1
+    fi
+
+    # Collect component .o files from the link line and swap in saved copies
+    OFILES=$(echo "$CMDLINE" | grep -oP '[^ ]+\.o\b' | grep -v 'main\.o\|psystem\.\|strings\.\|parse\.\|services\.')
+
+    echo "=== $NAME: linking with old .o files ==="
+    for F in $OFILES; do
+        if [ -f ${F}.save ]; then
+            cp $F ${F}.new
+            cp ${F}.save $F
+        fi
+    done
+    $CMDLINE
+    local RC=$?
+    for F in $OFILES; do
+        if [ -f ${F}.new ]; then
+            cp ${F}.new $F
+            rm -f ${F}.new
+        fi
+    done
+    if [ $RC -ne 0 ]; then
+        result_fail "$EXE" "link error on old .o"
+        return 1
+    fi
+    cp $EXE ${EXE}.save
+
+    echo "=== $NAME: linking with new .o files ==="
+    $CMDLINE
+    if [ $? -ne 0 ]; then
+        result_fail "$EXE" "link error on new .o"
+        return 1
+    fi
+
+    diff $EXE ${EXE}.save > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        echo "=== $NAME: match ==="
+        result_pass "$EXE"
+        return 0
+    else
+        echo "*** $NAME: MISMATCH ***"
+        result_fail "$EXE" "mismatch" "-"
+        return 1
+    fi
+}
+
+# Verify a complete component: .p6, .s, .o
+# $1 = program path, $2 = base path (without extension), $3 = display name,
+# $4 = component line number (same for pcom, pgen, gcc -c)
+verify_component() {
+    local PROG=$1 BASE=$2 NAME=$3 LINE=$4
+    verify_p6  $PROG ${BASE}.p6 $NAME $LINE
+    verify_s   $PROG ${BASE}.s  $NAME $LINE
+    verify_o   $PROG ${BASE}.o ${BASE}.s $NAME $LINE
+}
+
+#
+# pcom
+#
+verify_component source/pcom source/pcom pcom 1
+
+#
+# pgen components: registers, parcmd, independent, pgen
+#
+verify_component source/pgen/amd64/pgen source/pgen/amd64/registers registers 1
+verify_component source/pgen/amd64/pgen source/parcmd parcmd 2
+verify_component source/pgen/amd64/pgen source/pgen/independent independent 3
+verify_component source/pgen/amd64/pgen source/pgen/amd64/pgen pgen 4
+
+#
+# pint components: extend, parcmd, pint_mem, extlink, pint
+# (parcmd already verified above)
+#
+verify_component source/pint source/extend extend 1
+verify_component source/pint source/pint_mem pint_mem 3
+verify_component source/pint source/extlink extlink 4
+verify_component source/pint source/pint pint 5
+
+#
+# pmach components: pint_mem, extlink, pmach
+# (pint_mem and extlink already verified above)
+#
+verify_component source/pmach source/pmach pmach 3
+
+#
+# Executables
+#
+verify_link source/pcom source/pcom pcom
+verify_link source/pgen/amd64/pgen source/pgen/amd64/pgen pgen
+verify_link source/pint source/pint pint
+verify_link source/pmach source/pmach pmach
+
+echo ""
+echo "================ Verification Report ================"
+echo ""
+echo "$REPORT"
+echo "------------------------------------------------------"
+echo "  Total: $TOTAL  Pass: $PASS  Fail: $FAILCNT"
+echo "------------------------------------------------------"
+if [ $FAIL -eq 0 ]; then
+    echo "  Result: ALL PASS"
+else
+    echo "  Result: FAIL"
+fi
+echo "======================================================"
+
+if [ $FAIL -ne 0 ]; then
+    exit 1
+fi
