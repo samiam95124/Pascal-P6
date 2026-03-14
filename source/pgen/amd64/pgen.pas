@@ -825,6 +825,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   procedure genexp(ep: expptr);
   var r: reg; ep2: expptr; stkadrs: integer; fl: integer;
       callaln: boolean; ls, ps: integer; { call alignment for SYS V }
+      cvfps: integer; { virtual call parameter space }
 
   { push parameters in order }
   procedure pshpar(pp: expptr);
@@ -1856,8 +1857,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
           pshpar(ep^.pl); { process parameters first }
+          cvfps := stkadrs - stkadr; { compute parameter space pushed }
           if ep^.qs <> nil then wrtins(' call *@s(%rip) # call vectored', ep^.qs^)
           else wrtins(' call *@g(%rip) # call vectored', ep^.q);
+          { remove caller-pushed parameters (callee does not clean up) }
+          if cvfps > 0 then
+            wrtins(' addq $0,%rsp # remove parameters', cvfps);
           if ep^.op = 249{cvf} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgxmm0 then
