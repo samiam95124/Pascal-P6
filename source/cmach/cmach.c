@@ -3328,13 +3328,11 @@ int main (int argc, char *argv[])
         printf("*** Usage: cmach <codefile> [<params>]...\n");
         finish(1);
     }
-    if (!strchr(*argv, '.')) {
-      strcpy(fname, *argv);
-      strcat(fname, ".p6");
-      fp = fopen(fname, "r");
-    } else fp = fopen(*argv, "r");
+    strcpy(fname, *argv);
+    if (!strchr(fname, '.')) strcat(fname, ".p6o");
+    fp = fopen(fname, "r");
     if (!fp) {
-        printf("*** Cannot open file %s\n", *argv);
+        printf("*** Cannot open file %s\n", fname);
         finish(1);
     }
     argv++; argc--; /* skip that parameter */

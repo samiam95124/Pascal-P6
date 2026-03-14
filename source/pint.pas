@@ -2417,7 +2417,10 @@ procedure load;
                       6:  dodbgsrc   := option[oi];
                       5:  dodckout   := option[oi];
                       9:  dochkvbk   := option[oi];
-                      29: amd64_sysv := option[oi];
+                      29: begin amd64_sysv := option[oi];
+                            if amd64_sysv then
+                              errorl('Call convention mismatch ')
+                          end;
                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
                       24:; 25:; 26:; 10:; 18:; 27:; 28:;
                     end
@@ -7512,7 +7515,12 @@ begin
       6:  dodbgsrc   := option[oi];
       5:  dodckout   := option[oi];
       9:  dochkvbk   := option[oi];
-      29: amd64_sysv := option[oi];
+      29: begin amd64_sysv := option[oi];
+            if amd64_sysv then begin
+              writeln('*** Calling convention mismatch');
+              goto 99
+            end
+          end;
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:; 27:; 28:;
     end
