@@ -59,8 +59,6 @@ end;
 
 override procedure preamble;
 begin
-  if not amd64_sysv then
-    error('Calling convention mismatch');
   { see how much of this is really required }
   write(prr, '        .globl  '); write(prr, modnam^); writeln(prr);
   write(prr, '        .type   '); write(prr, modnam^); writeln(prr, ', @function');
@@ -824,8 +822,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
   procedure genexp(ep: expptr);
   var r: reg; ep2: expptr; stkadrs: integer; fl: integer;
-      callaln: boolean; ls, ps: integer; { call alignment for SYS V }
-      cvfps: integer; { virtual call parameter space }
+      callalnsysv: boolean; ls, ps: integer; { call alignment for SYS V }
 
   { push parameters in order }
   procedure pshpar(pp: expptr);
@@ -849,13 +846,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   end;
 
   { push parameters SYS V style.
-    List is in left-to-right order. pn is total param count.
+    List is in left-to-right order.
     Register params (1-6) are evaluated left-to-right to match the
     allocation order in asspar. Overflow params (7+) are evaluated
     right-to-left and pushed to the stack.
     When a set value param exists, it and all params to its right in the
     original order become overflow. Params to its left may use registers. }
-  procedure pshparsysv(pp: expptr; pn: integer);
+  procedure pshparsysv(pp: expptr);
   var ipc, fpc, tipc, tfpc: integer; p: expptr;
       stk: boolean;
 
@@ -892,7 +889,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     end;
 
   begin
-    refer(pn);
     { pre-count total int and float params }
     ipc := 0; fpc := 0; p := pp;
     while p <> nil do begin
@@ -923,13 +919,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   end;
 
   { compute overflow parameter stack space for alignment pre-check.
-    pp = param list in original order, pn = total param count.
+    pp = param list in original order.
     When a set value param is found, it and all following int params
     are overflow regardless of register count. }
-  function cmpparmspc(pp: expptr; pn: integer): integer;
+  function cmpparmspc(pp: expptr): integer;
   var sz, ipc, fpc: integer; p: expptr;
   begin
-    refer(pn);
     sz := 0; ipc := 0; fpc := 0; p := pp;
     while p <> nil do begin
       if isfltres(p) then begin
@@ -1745,17 +1740,17 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {cup,cuf}
         12, 246: begin
           { 16-byte alignment for SYS V ABI user calls }
-          callaln := false;
+          callalnsysv := false;
           if ep^.op = 246{cuf} then ls := ep^.q3 else ls := 0;
-          ps := cmpparmspc(ep^.pl, ep^.pn);
+          ps := cmpparmspc(ep^.pl);
           if (stkadr - ls - ps) mod 16 <> 0 then begin
             wrtins(' subq $0,%rsp # align for user call', ptrsize);
             stkadr := stkadr - ptrsize;
-            callaln := true
+            callalnsysv := true
           end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshparsysv(ep^.pl, ep^.pn); { eval 1-6 l-r, stack 7+ r-l }
+          pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
           if ep^.blk <> nil then begin
             write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc; 
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl); 
@@ -1792,7 +1787,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                       wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
           stkadr := stkadrs; { restore stack position }
-          if callaln then begin
+          if callalnsysv then begin
             wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
             stkadr := stkadr + ptrsize
           end
@@ -1801,17 +1796,17 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {cip,cif}
         113,247: begin
           { 16-byte alignment for SYS V ABI user calls }
-          callaln := false;
+          callalnsysv := false;
           if ep^.op = 247{cif} then ls := ep^.q3 else ls := 0;
-          ps := cmpparmspc(ep^.pl, ep^.pn);
+          ps := cmpparmspc(ep^.pl);
           if (stkadr - ls - ps) mod 16 <> 0 then begin
             wrtins(' subq $0,%rsp # align for user call', ptrsize);
             stkadr := stkadr - ptrsize;
-            callaln := true
+            callalnsysv := true
           end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshparsysv(ep^.pl, ep^.pn); { eval 1-6 l-r, stack 7+ r-l }
+          pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
           genexp(ep^.l); { load procedure address }
           wrtins(' movq %rbp,%r15 # move our frame pointer to preserved register');
           wrtins(' movq ^0(%1),%rbp # set callee frame pointer', 1*ptrsize, ep^.l^.r1);
@@ -1846,7 +1841,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end;
           wrtins(' movq %r15,%rbp # restore our frame pointer');
           stkadr := stkadrs; { restore stack position }
-          if callaln then begin
+          if callalnsysv then begin
             wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
             stkadr := stkadr + ptrsize
           end
@@ -1855,17 +1850,17 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {cuv,cvf}
         27,249: begin
           { 16-byte alignment for SYS V ABI virtual calls }
-          callaln := false;
+          callalnsysv := false;
           if ep^.op = 249{cvf} then ls := ep^.q3 else ls := 0;
-          ps := cmpparmspc(ep^.pl, ep^.pn);
+          ps := cmpparmspc(ep^.pl);
           if (stkadr - ls - ps) mod 16 <> 0 then begin
             wrtins(' subq $0,%rsp # align for virtual call', ptrsize);
             stkadr := stkadr - ptrsize;
-            callaln := true
+            callalnsysv := true
           end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshparsysv(ep^.pl, ep^.pn); { eval 1-6 l-r, stack 7+ r-l }
+          pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
           if ep^.qs <> nil then wrtins(' call *@s(%rip) # call vectored', ep^.qs^)
           else wrtins(' call *@g(%rip) # call vectored', ep^.q);
           { remove overflow parameters pushed by caller (SysV ABI) }
@@ -1898,7 +1893,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                       wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
           stkadr := stkadrs; { restore stack position }
-          if callaln then begin
+          if callalnsysv then begin
             wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
             stkadr := stkadr + ptrsize
           end
@@ -3448,6 +3443,8 @@ begin (* main *)
   writeln(prr);
 
   xlate; (* assembles and stores code *)
+
+  if not amd64_sysv then error('Calling convention mismatch');
 
   99 : { abort run }
 

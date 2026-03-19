@@ -3383,7 +3383,7 @@ begin (*xlate*)
 
    if dodmplab then dmplabs { Debug: dump label definitions }
 
-end; (*load*)
+end; (*xlate*)
 
 procedure fndpow(var m: integer; p: integer; var d: integer);
 begin
@@ -3485,7 +3485,6 @@ begin
   refer(dodckout);
   refer(dochkvbk);
   refer(dodbgchk);
-  refer(amd64_sysv);
 
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }

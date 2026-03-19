@@ -163,7 +163,7 @@ elif [ "$cmach" = "1" ]; then
 
 	echo Running with cmach
     pint $progfile.p6 $progfile.p6o --machdeck > temp
-    echo "Will execute: cmach $progfile.p6o $options $progfile.dat $progfile.out < $progfile.inp &> $progfile.lst"
+    #echo "Will execute: cmach $progfile.p6o $options $progfile.dat $progfile.out < $progfile.inp &> $progfile.lst"
     cmach $progfile.p6o $options $progfile.dat $progfile.out < $progfile.inp &> $progfile.lst
     rm temp
 

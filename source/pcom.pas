@@ -2324,7 +2324,14 @@ end;
     end
   end;
 
- function digits(i: integer): integer; forward;
+  function digits(i: integer): integer;
+  var dc: integer;
+  begin
+    dc := 0; if i < 0 then begin i := -i; dc := dc+1 end;
+    if i = 0 then dc := 1
+    else while i > 0 do begin i := i div 10; dc := dc+1 end;
+    digits := dc
+  end;
 
   procedure prtlvlsym;
   var di: disprange; lc: integer;
@@ -2968,15 +2975,9 @@ end;
   end;
 
   procedure wrtint(i: integer);
-  var p, d: integer; ai: integer;
   begin
-     if i < 0 then begin d := 1; ai := -i end { count minus sign }
-     else begin d := 0; ai := i end;
-     p := 10; d := d+1;
-     while (ai >= p) and (p < maxpow10) do begin p := p*10; d := d+1 end;
-     if ai >= p then d := d+1; { handle 19-digit numbers }
      write(f, i:1);
-     nxtctis(d)
+     nxtctis(digits(i))
   end;
 
   procedure wrtrfd(fld: ctp);
@@ -3068,15 +3069,6 @@ end;
   var fl: integer;
   begin
     fl := 0; wrttypc(f, tp, fl)
-  end;
-
-  function digits(i: integer): integer;
-  var dc: integer;
-  begin
-    dc := 0; if i < 0 then begin i := -i; dc := dc+1 end;
-    if i = 0 then dc := 1
-    else while i > 0 do begin i := i div 10; dc := dc+1 end;
-    digits := dc
   end;
 
   procedure prtlabelu(labname: integer);
@@ -8962,7 +8954,7 @@ end;
         ilp: ctp;
         rp: ripptr; { for rip label resolution }
         pcnt: integer; ipc, fpc, n: integer;
-        sysvoff: addrrange; psz: addrrange;
+        amd64_sysvoff: addrrange; psz: addrrange;
 
     { add statement level }
     procedure addlvl;
@@ -9860,7 +9852,7 @@ end;
     if fprocp <> nil then (*copy multiple values into local cells*)
       begin llc1 := marksize+ptrsize+adrsize+fprocp^.locpar; { index params }
         ipc := 0; fpc := 0;
-        sysvoff := marksize+ptrsize+adrsize; { for sysv mode }
+        amd64_sysvoff := marksize+ptrsize+adrsize; { for sysv mode }
         lcp := fprocp^.pflist;
         while lcp <> nil do
           with lcp^ do
@@ -9883,9 +9875,9 @@ end;
                       if fpc <= 6 then
                         llc1 := -(level*ptrsize + 7*ptrsize + fpc*ptrsize)
                       else begin
-                        alignu(parmptr, sysvoff);
-                        llc1 := sysvoff;
-                        sysvoff := sysvoff+psz
+                        alignu(parmptr, amd64_sysvoff);
+                        llc1 := amd64_sysvoff;
+                        amd64_sysvoff := amd64_sysvoff+psz
                       end
                     end else begin
                       { integer parameter }
@@ -9895,9 +9887,9 @@ end;
                         ipc := ipc + n
                       end else begin
                         ipc := ipc + n;
-                        alignu(parmptr, sysvoff);
-                        llc1 := sysvoff;
-                        sysvoff := sysvoff+psz
+                        alignu(parmptr, amd64_sysvoff);
+                        llc1 := amd64_sysvoff;
+                        amd64_sysvoff := amd64_sysvoff+psz
                       end
                     end
                   end else begin
@@ -9937,9 +9929,9 @@ end;
                     ipc := ipc + 2
                   end else begin
                     ipc := ipc + 2;
-                    alignu(parmptr, sysvoff);
-                    llc1 := sysvoff;
-                    sysvoff := sysvoff+ptrsize*2
+                    alignu(parmptr, amd64_sysvoff);
+                    llc1 := amd64_sysvoff;
+                    amd64_sysvoff := amd64_sysvoff+ptrsize*2
                   end
                 end else begin
                   llc1 := llc1-ptrsize*2;
@@ -10007,12 +9999,12 @@ end;
             lcp := next
           end;
         if amd64_sysv then
-          sysvoff := parmspc7(fprocp^.pflist)
-        else sysvoff := fprocp^.locpar;
-        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),sysvoff)
+          amd64_sysvoff := parmspc7(fprocp^.pflist)
+        else amd64_sysvoff := fprocp^.locpar;
+        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),amd64_sysvoff)
         else if fprocp^.idtype^.form in [records, arrays] then
-          gen2t(42(*ret*),sysvoff,fprocp^.idtype^.size,basetype(fprocp^.idtype))
-        else gen1t(42(*ret*),sysvoff,fprocp^.idtype);
+          gen2t(42(*ret*),amd64_sysvoff,fprocp^.idtype^.size,basetype(fprocp^.idtype))
+        else gen1t(42(*ret*),amd64_sysvoff,fprocp^.idtype);
         alignd(parmptr,lc);
         { SysV ABI requires 16-byte stack alignment at call sites }
         if amd64_sysv then
