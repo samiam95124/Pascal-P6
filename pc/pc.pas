@@ -187,6 +187,7 @@ fprtlex,     sprtlex:     boolean;
 fprtdisplay, sprtdisplay: boolean;
 flineinfo,   slineinfo:   boolean;
 fmrklin,     smrklin:     boolean;
+famd64sysv,  samd64sysv:  boolean;
 { error file passthrough }
 errfil:      filnam;
 serrfil:     boolean;
@@ -414,6 +415,7 @@ begin
       setflg('prtdisplay',      fprtdisplay, sprtdisplay);
       setflg('lineinfo',        flineinfo,   slineinfo);
       setflg('mrkasslin',       fmrklin,     smrklin);
+      setflg('amd64_sysv',      famd64sysv,  samd64sysv);
       { non-flag options }
       if compp(w, 'modulepath') or
          compp(w, 'mp') then begin
@@ -1720,6 +1722,7 @@ begin
       putflg('prtdisplay', sprtdisplay, fprtdisplay, prefix);
       putflg('lineinfo', slineinfo, flineinfo, prefix);
       putflg('mrkasslin', smrklin, fmrklin, prefix);
+      putflg('amd64_sysv', samd64sysv, famd64sysv, prefix);
       { error file: pcom only }
       if prefix and serrfil then begin
          putstr(' -errfile=');
@@ -2609,6 +2612,8 @@ begin
    slineinfo := false;   
    fmrklin := false;
    smrklin := false;
+   famd64sysv := false;
+   samd64sysv := false;
    serrfil := false;
 
    fngwin := false; { do not override graphical windows switch }
@@ -2660,6 +2665,7 @@ begin
       writeln('       -chk                 Enable checking');
       writeln('       -debug               Enable debug mode');
       writeln('       -reference           Check references');
+      writeln('       -amd64_sysv         Use SYS V AMD64 ABI calling convention');
       goto 99
 
    end;
@@ -2716,6 +2722,10 @@ begin
    services.maknam(tmpnam, tarpath, n, 'ins');
    services.fulnam(tmpnam); { normalize }
    if exists(tmpnam) then parinst(tmpnam);
+   { auto-enable amd64_sysv in pgen mode unless user overrode }
+   if fpgen and not samd64sysv then begin
+      famd64sysv := true; samd64sysv := true
+   end;
    { now check the file itself exists }
    if not exists(prgnam) then { file not found }
       error('Target file "%" not found', prgnam);

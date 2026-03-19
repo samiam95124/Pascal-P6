@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# Update new binaries
+#
+# Go back to original toolset, old programs, old libraries
+#
+flush
+#
+# Override flush's pc restore with the old hosts pc for bootstrapping
+#
+cp hosts/pascaline/linux_X86/bin/pc bin
+
+#
+# Rebuild Pascal libraries with old tools so old-convention binaries link
+#
+pc libs/source/strings -r
+cp libs/source/strings.o libs
+pc libs/source/parse -r
+cp libs/source/parse.o libs
+
+#
+# Build new programs with old libraries
+#
+pc source/pcom -r
+pc pc/pc -r
+pc source/pint -r
+pc source/pmach -r
+pc source/pgen/amd64/pgen -r
+
+#
+# Update new programs to bin
+#
+cp source/pcom bin
+cp pc/pc bin
+cp source/pint bin
+cp source/pmach bin
+cp source/pgen/amd64/pgen bin
+
+#
+# Remake base libraries with amd64_sysv, which is permanently on in pcom
+#
+make -B
+
+#
+# Rebuild Pascal libraries with new tools (amd64_sysv calling convention)
+#
+pc libs/source/strings -r
+cp libs/source/strings.o libs
+pc libs/source/parse -r
+cp libs/source/parse.o libs
+
+#
+# Rebuild programs with new SysV-convention libraries so they link correctly
+#
+pc source/pcom -r
+#pc pc/pc -r
+pc source/pint -r
+pc source/pmach -r
+pc source/pgen/amd64/pgen -r
+
+#
+# Update final programs to bin
+#
+cp source/pcom bin
+cp source/pint bin
+cp source/pmach bin
+cp source/pgen/amd64/pgen bin
+#cp pc/pc bin
+
+#
+# Now programs compile with amd64_sysv option
+#

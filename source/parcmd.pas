@@ -126,7 +126,7 @@ begin
         halt
       end;
       oni := 1; optst := '          ';
-      while bufcommand in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
+      while bufcommand in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
         ch1 := lcase(bufcommand); 
         if optst[oni] = ' ' then optst[oni] := ch1; 
         if oni < optlen then oni := oni+1;

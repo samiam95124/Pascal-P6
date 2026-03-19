@@ -8,12 +8,16 @@ echo "Compiling pcom to intermediate code"
 compile --list- $1 p4/pcom
 cat p4/pcom.err
 #
-# Run the p2 interpreter via pint to get p2 intermediate
+# Run the p4 compiler to get p4 intermediate
 #
-# Note temp is unused (prr out), and roman.p2 is read from the command line 
+# Note temp is unused (prr out), and standardp.p4 is read from the command line
 # at the second level.
 #
-pint p4/pcom.p6 temp p4/standardp.p4 < p4/standardp.pas
+if [ "$1" = "--pgen" ]; then
+    p4/pcom p4/standardp.p4 < p4/standardp.pas
+else
+    pint p4/pcom.p6 temp p4/standardp.p4 < p4/standardp.pas
+fi
 #
 # Compile pint
 #
