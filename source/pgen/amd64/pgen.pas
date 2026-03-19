@@ -1854,19 +1854,23 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {cuv,cvf}
         27,249: begin
+          { 16-byte alignment for SYS V ABI virtual calls }
+          callaln := false;
+          if ep^.op = 249{cvf} then ls := ep^.q3 else ls := 0;
+          ps := cmpparmspc(ep^.pl, ep^.pn);
+          if (stkadr - ls - ps) mod 16 <> 0 then begin
+            wrtins(' subq $0,%rsp # align for virtual call', ptrsize);
+            stkadr := stkadr - ptrsize;
+            callaln := true
+          end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshpar(ep^.pl); { process parameters first }
-          cvfps := stkadrs - stkadr; { compute parameter space pushed }
+          pshparsysv(ep^.pl, ep^.pn); { eval 1-6 l-r, stack 7+ r-l }
           if ep^.qs <> nil then wrtins(' call *@s(%rip) # call vectored', ep^.qs^)
           else wrtins(' call *@g(%rip) # call vectored', ep^.q);
-          { When registers were saved before the SFR (rs non-empty),
-            the SFR removal addq would pop the wrong stack entry.
-            Remove the pushed parameters first so SFR removal and
-            register restores work correctly. When rs is empty,
-            parameters become dead data (cleared by stkadr reset). }
-          if (ep^.rs <> []) and (cvfps > 0) then
-            wrtins(' addq $0,%rsp # remove parameters', cvfps);
+          { remove overflow parameters pushed by caller (SysV ABI) }
+          if ps > 0 then
+            wrtins(' addq $0,%rsp # remove overflow parameters', ps);
           if ep^.op = 249{cvf} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgxmm0 then
@@ -1880,7 +1884,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' repnz # move');
                 wrtins(' movsb');
                 wrtins(' addq $0,%rsp # remove structure from stack', ep^.q3);
-                wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^)                
+                wrtins(' leaq ^-@s^0(%rbp),%1 # reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else begin
               if ep^.r1 <> rgrax then
                 wrtins(' movq %rax,%1 # place result', ep^.r1);
@@ -1893,7 +1897,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                     if ep^.sl^.lb <> nil then
                       wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
-          stkadr := stkadrs { restore stack position }
+          stkadr := stkadrs; { restore stack position }
+          if callaln then begin
+            wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
+            stkadr := stkadr + ptrsize
+          end
         end;
 
         {cke}

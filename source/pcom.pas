@@ -10014,6 +10014,9 @@ end;
           gen2t(42(*ret*),sysvoff,fprocp^.idtype^.size,basetype(fprocp^.idtype))
         else gen1t(42(*ret*),sysvoff,fprocp^.idtype);
         alignd(parmptr,lc);
+        { SysV ABI requires 16-byte stack alignment at call sites }
+        if amd64_sysv then
+          if (-level*ptrsize-lc) mod 16 <> 0 then lc := lc-8;
         if prcode then
           begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
             prtlabel(stackbot); writeln(prr,'=',-topmin:1);
@@ -10029,6 +10032,9 @@ end;
     else
       begin gen2(42(*ret*),ord('p'),0);
         alignd(parmptr,lc);
+        { SysV ABI requires 16-byte stack alignment at call sites }
+        if amd64_sysv then
+          if (-level*ptrsize-lc) mod 16 <> 0 then lc := lc-8;
         if prcode then
           begin
             prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
