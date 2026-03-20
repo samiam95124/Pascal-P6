@@ -551,7 +551,7 @@ begin
 
    end;
    if exp <> 0 then exp := exp - 1; { adjust exponent }
-   f^.nxttlk := cinteger; { place type }
+   f^.nxttlk := c_integer; { place type }
    if searchreal then begin { search for real specification }
 
       f^.nxtflt := f^.nxtint; { move integer to real }
@@ -579,7 +579,7 @@ begin
                getchrb { next }
 
             end;
-            f^.nxttlk := creal { place tolken }
+            f^.nxttlk := c_real { place tolken }
 
          end
 
@@ -602,7 +602,7 @@ begin
             else f^.nxtflt := f^.nxtflt * pwrten(f^.nxtint)
 
          end;
-         f^.nxttlk := creal { place tolken }
+         f^.nxttlk := c_real { place tolken }
 
       end
 
@@ -687,7 +687,7 @@ begin
    end;
    error(f, euntstr); { unterminated string }
    1: { terminate }
-   f^.nxttlk := cstring; { place tolken }
+   f^.nxttlk := c_string; { place tolken }
    if (f^.nxtlen = 0) and fansi then error(f, enulstr) { null string }
 
 end;
@@ -738,7 +738,7 @@ begin
 
    end;
    ri := hash(f^.nxtlab, hashoff, resmax); { find initial hash function }
-   if restbl[ri].lab = nil then f^.nxttlk := cidentifier { not found}
+   if restbl[ri].lab = nil then f^.nxttlk := c_identifier { not found}
    else if compp(f^.nxtlab, restbl[ri].lab^) then { found 1st try }
       f^.nxttlk := restbl[ri].tolk
    else begin { search chained }
@@ -748,18 +748,18 @@ begin
             not compp(f^.nxtlab, restbl[ri].lab^) do ri := restbl[ri].chn;
       if compp(f^.nxtlab, restbl[ri].lab^) then { found }
          f^.nxttlk := restbl[ri].tolk
-      else f^.nxttlk := cidentifier { place tolken is identifier }
+      else f^.nxttlk := c_identifier { place tolken is identifier }
 
    end;
    { if ansi mode, serveral tolkens are invalid }
-   if fansi and (f^.nxttlk in [cxor, cforward, cmodule, cuses, cjoins, cprivate,
-                            cexternal, cview, cfixed, cprocess, cmonitor,
-                            cshare, cclass, cis, catom, coverload, coverride,
-                            creference, cthread, cjoins, cstatic, cinherited,
-                            cself, cvirtual, ctry, cexcept, cextends, con,
-                            cresult, coperator, ctask, cproperty, cchannel,
-                            cstream, cout]) then
-      f^.nxttlk := cidentifier { not tolkens }
+   if fansi and (f^.nxttlk in [c_xor, c_forward, c_module, c_uses, c_joins, c_private,
+                            c_external, c_view, c_fixed, c_process, c_monitor,
+                            c_share, c_class, c_is, c_atom, c_overload, c_override,
+                            c_reference, c_thread, c_joins, c_static, c_inherited,
+                            c_self, c_virtual, c_try, c_except, c_extends, c_on,
+                            c_result, c_operator, c_task, c_property, c_channel,
+                            c_stream, c_out]) then
+      f^.nxttlk := c_identifier { not tolkens }
 
 end;
 
@@ -814,7 +814,7 @@ begin
             not (hold = spctbl[ci].lab) do ci := spctbl[ci].chn;
       if hold = spctbl[ci].lab then { found }
          f^.nxttlk := spctbl[ci].tolk
-      else f^.nxttlk := cundefined { set not found }
+      else f^.nxttlk := c_undefined { set not found }
 
    end
 
@@ -829,7 +829,7 @@ begin
    f^.nxtlab[1] := hold[1];
    f^.nxtlab[2] := hold[2];
    search; { try that }
-   if f^.nxttlk <> cundefined then begin { found }
+   if f^.nxttlk <> c_undefined then begin { found }
 
       { found 2 character sequence, or perhaps single with
         a trailing space. It really makes no difference,
@@ -842,7 +842,7 @@ begin
       hold[2] := ' '; { knock out 2nd character }
       f^.nxtlab[2] := ' ';
       search; { try that }
-      if f^.nxttlk = cundefined then error(f, einvsch) { Invalid symbol/char }
+      if f^.nxttlk = c_undefined then error(f, einvsch) { Invalid symbol/char }
 
    end
 
@@ -871,7 +871,7 @@ var ls: integer; { line position save }
 begin
 
    skpspc(f); { skip spaces }
-   if seof(f) then f^.nxttlk := ceof { eof }
+   if seof(f) then f^.nxttlk := c_eof { eof }
    else begin
 
       if chkchr(f) = '''' then
@@ -894,9 +894,9 @@ begin
 
          end else case c of
 
-           '$': f^.nxttlk := chex;
-           '&': f^.nxttlk := coct;
-           '%': f^.nxttlk := cbin
+           '$': f^.nxttlk := c_hex;
+           '&': f^.nxttlk := c_oct;
+           '%': f^.nxttlk := c_bin
 
          end
 
@@ -924,9 +924,9 @@ var c: char;    { holding }
 begin
 
    partlk(f); { parse tolken }
-   while (f^.nxttlk = clct) or (f^.nxttlk = clinc) do begin
+   while (f^.nxttlk = c_lct) or (f^.nxttlk = c_linc) do begin
 
-      if f^.nxttlk = clct then begin { comment }
+      if f^.nxttlk = c_lct then begin { comment }
 
          repeat
 
@@ -949,7 +949,7 @@ begin
          if (c <> '}') and (c <> '*') and seof(f) then 
             error(f, euntcmt) { unterminated comment }
 
-      end else if f^.nxttlk = clinc then { line comment }
+      end else if f^.nxttlk = c_linc then { line comment }
          { skip to line end }
          while not endlin(f) do getchr(f);
       partlk(f) { parse next tolken }
@@ -961,21 +961,21 @@ begin
    if false then begin
 
       write('*');	
-      if f^.nxttlk in [clct, crct, cinteger, cidentifier, cstring, 
-                       creal, cundefined, ceof] then
+      if f^.nxttlk in [c_lct, c_rct, c_integer, c_identifier, c_string, 
+                       c_real, c_undefined, c_eof] then
          case f^.nxttlk of { special tolken }
    
-         clct:        write('left comment');
-         crct:        write('right comment');
-         clinc:       write('line comment');
-         cinteger:    write('unsigned integer constant: ', f^.nxtint);
-         cidentifier: begin write('identifier: '); 
+         c_lct:        write('left comment');
+         c_rct:        write('right comment');
+         c_linc:       write('line comment');
+         c_integer:    write('unsigned integer constant: ', f^.nxtint);
+         c_identifier: begin write('identifier: '); 
                             write(output, f^.nxtlab:*) end;
-         cstring:     begin write('string constant: '); 
+         c_string:     begin write('string constant: '); 
                             for i := 1 to f^.nxtlen do write(f^.nxtlab[i]) end;
-         creal:       write('real constant: ', f^.nxtflt);
-         cundefined:  write('undefined');
-         ceof:        write('end of file');
+         c_real:       write('real constant: ', f^.nxtflt);
+         c_undefined:  write('undefined');
+         c_eof:        write('end of file');
    
       end else write(output, deftbl[f^.nxttlk]^);
       writeln('*')
@@ -1038,112 +1038,114 @@ begin
      This table is used to translate tolkens back to 
      ASCII. It is used for diagnostics and spelling correction }
 
-   deftbl[cplus]       := copy('+');
-   deftbl[cminus]      := copy('-');
-   deftbl[ctimes]      := copy('*');
-   deftbl[crdiv]       := copy('/');
-   deftbl[cequ]        := copy('=');
-   deftbl[cnequ]       := copy('<>');
-   deftbl[cnequa]      := copy('><');
-   deftbl[cltn]        := copy('<');
-   deftbl[cgtn]        := copy('>');
-   deftbl[clequ]       := copy('<=');
-   deftbl[clequa]      := copy('=<');
-   deftbl[cgequ]       := copy('>=');
-   deftbl[cgequa]      := copy('=>');
-   deftbl[clparen]     := copy('(');
-   deftbl[crparen]     := copy(')');
-   deftbl[clbrkt]      := copy('[');
-   deftbl[crbrkt]      := copy(']');
-   deftbl[clct]        := copy('{');
-   deftbl[crct]        := copy('}');
-   deftbl[cbcms]       := copy(':=');
-   deftbl[cperiod]     := copy('.');
-   deftbl[ccma]        := copy(',');
-   deftbl[cscn]        := copy(';');
-   deftbl[ccln]        := copy(':');
-   deftbl[ccmf]        := copy('^');
-   deftbl[crange]      := copy('..');
-   deftbl[chex]        := copy('$');
-   deftbl[coct]        := copy('&');
-   deftbl[cbin]        := copy('%');
-   deftbl[cnum]        := copy('#');
-   deftbl[clinc]       := copy('!');
-   deftbl[cdiv]        := copy('div');
-   deftbl[cmod]        := copy('mod');
-   deftbl[cnil]        := copy('nil');
-   deftbl[cin]         := copy('in');
-   deftbl[cor]         := copy('or');
-   deftbl[cand]        := copy('and');
-   deftbl[cxor]        := copy('xor');
-   deftbl[cnot]        := copy('not');
-   deftbl[cif]         := copy('if');
-   deftbl[cthen]       := copy('then');
-   deftbl[celse]       := copy('else');
-   deftbl[ccase]       := copy('case');
-   deftbl[cof]         := copy('of');
-   deftbl[crepeat]     := copy('repeat');
-   deftbl[cuntil]      := copy('until');
-   deftbl[cwhile]      := copy('while');
-   deftbl[cdo]         := copy('do');
-   deftbl[cfor]        := copy('for');
-   deftbl[cto]         := copy('to');
-   deftbl[cdownto]     := copy('downto');
-   deftbl[cbegin]      := copy('begin');
-   deftbl[cend]        := copy('end');
-   deftbl[cwith]       := copy('with');
-   deftbl[cgoto]       := copy('goto');
-   deftbl[cconst]      := copy('const');
-   deftbl[cvar]        := copy('var');
-   deftbl[ctype]       := copy('type');
-   deftbl[carray]      := copy('array');
-   deftbl[crecord]     := copy('record');
-   deftbl[cset]        := copy('set');
-   deftbl[cfile]       := copy('file');
-   deftbl[cfunction]   := copy('function');
-   deftbl[cprocedure]  := copy('procedure');
-   deftbl[clabel]      := copy('label');
-   deftbl[cpacked]     := copy('packed');
-   deftbl[cprogram]    := copy('program');
-   deftbl[cforward]    := copy('forward');
-   deftbl[cmodule]     := copy('module');
-   deftbl[cuses]       := copy('uses');
-   deftbl[cprivate]    := copy('private');
-   deftbl[cexternal]   := copy('external');
-   deftbl[cview]       := copy('view');
-   deftbl[cfixed]      := copy('fixed');
-   deftbl[cprocess]    := copy('process');
-   deftbl[cmonitor]    := copy('monitor');
-   deftbl[cshare]      := copy('share');
-   deftbl[cclass]      := copy('class');
-   deftbl[cis]         := copy('is');
-   deftbl[catom]       := copy('atom');
-   deftbl[coverload]   := copy('overload');
-   deftbl[coverride]   := copy('override');
-   deftbl[creference]  := copy('reference');
-   deftbl[cthread]     := copy('thread');
-   deftbl[cjoins]      := copy('joins');
-   deftbl[cstatic]     := copy('static');
-   deftbl[cinherited]  := copy('inherited');
-   deftbl[cself]       := copy('self');
-   deftbl[cvirtual]    := copy('virtual');
-   deftbl[ctry]        := copy('try');
-   deftbl[cexcept]     := copy('except');
-   deftbl[cextends]    := copy('extends');
-   deftbl[con]         := copy('on');
-   deftbl[cresult]     := copy('result');
-   deftbl[coperator]   := copy('operator');
-   deftbl[ctask]       := copy('task');
-   deftbl[cproperty]   := copy('property');
-   deftbl[cchannel]    := copy('channel');
-   deftbl[cstream]     := copy('stream');
-   deftbl[cout]        := copy('out');
-   deftbl[cinteger]    := copy('<integer>');
-   deftbl[cidentifier] := copy('<identifier>');
-   deftbl[cstring]     := copy('<string>');
-   deftbl[creal]       := copy('<real>');
-   deftbl[cundefined]  := copy('<undefined>');
-   deftbl[ceof]        := copy('<eof>');
+   deftbl[c_plus]       := copy('+');
+   deftbl[c_minus]      := copy('-');
+   deftbl[c_times]      := copy('*');
+   deftbl[c_rdiv]       := copy('/');
+   deftbl[c_equ]        := copy('=');
+   deftbl[c_nequ]       := copy('<>');
+   deftbl[c_nequa]      := copy('><');
+   deftbl[c_ltn]        := copy('<');
+   deftbl[c_gtn]        := copy('>');
+   deftbl[c_lequ]       := copy('<=');
+   deftbl[c_lequa]      := copy('=<');
+   deftbl[c_gequ]       := copy('>=');
+   deftbl[c_gequa]      := copy('=>');
+   deftbl[c_lparen]     := copy('(');
+   deftbl[c_rparen]     := copy(')');
+   deftbl[c_lbrkt]      := copy('[');
+   deftbl[c_rbrkt]      := copy(']');
+   deftbl[c_lct]        := copy('{');
+   deftbl[c_rct]        := copy('}');
+   deftbl[c_bcms]       := copy(':=');
+   deftbl[c_period]     := copy('.');
+   deftbl[c_cma]        := copy(',');
+   deftbl[c_scn]        := copy(';');
+   deftbl[c_cln]        := copy(':');
+   deftbl[c_cmf]        := copy('^');
+   deftbl[c_range]      := copy('..');
+   deftbl[c_hex]        := copy('$');
+   deftbl[c_oct]        := copy('&');
+   deftbl[c_bin]        := copy('%');
+   deftbl[c_num]        := copy('#');
+   deftbl[c_linc]       := copy('!');
+   deftbl[c_div]        := copy('div');
+   deftbl[c_mod]        := copy('mod');
+   deftbl[c_nil]        := copy('nil');
+   deftbl[c_in]         := copy('in');
+   deftbl[c_or]         := copy('or');
+   deftbl[c_and]        := copy('and');
+   deftbl[c_xor]        := copy('xor');
+   deftbl[c_not]        := copy('not');
+   deftbl[c_if]         := copy('if');
+   deftbl[c_then]       := copy('then');
+   deftbl[c_else]       := copy('else');
+   deftbl[c_case]       := copy('case');
+   deftbl[c_of]         := copy('of');
+   deftbl[c_repeat]     := copy('repeat');
+   deftbl[c_until]      := copy('until');
+   deftbl[c_while]      := copy('while');
+   deftbl[c_do]         := copy('do');
+   deftbl[c_for]        := copy('for');
+   deftbl[c_to]         := copy('to');
+   deftbl[c_downto]     := copy('downto');
+   deftbl[c_begin]      := copy('begin');
+   deftbl[c_end]        := copy('end');
+   deftbl[c_with]       := copy('with');
+   deftbl[c_goto]       := copy('goto');
+   deftbl[c_const]      := copy('const');
+   deftbl[c_var]        := copy('var');
+   deftbl[c_type]       := copy('type');
+   deftbl[c_array]      := copy('array');
+   deftbl[c_record]     := copy('record');
+   deftbl[c_set]        := copy('set');
+   deftbl[c_file]       := copy('file');
+   deftbl[c_function]   := copy('function');
+   deftbl[c_procedure]  := copy('procedure');
+   deftbl[c_label]      := copy('label');
+   deftbl[c_packed]     := copy('packed');
+   deftbl[c_program]    := copy('program');
+   deftbl[c_forward]    := copy('forward');
+   deftbl[c_module]     := copy('module');
+   deftbl[c_uses]       := copy('uses');
+   deftbl[c_private]    := copy('private');
+   deftbl[c_external]   := copy('external');
+   deftbl[c_cexternal]  := copy('cexternal');
+   deftbl[c_mexternal]  := copy('mexternal');
+   deftbl[c_view]       := copy('view');
+   deftbl[c_fixed]      := copy('fixed');
+   deftbl[c_process]    := copy('process');
+   deftbl[c_monitor]    := copy('monitor');
+   deftbl[c_share]      := copy('share');
+   deftbl[c_class]      := copy('class');
+   deftbl[c_is]         := copy('is');
+   deftbl[c_atom]       := copy('atom');
+   deftbl[c_overload]   := copy('overload');
+   deftbl[c_override]   := copy('override');
+   deftbl[c_reference]  := copy('reference');
+   deftbl[c_thread]     := copy('thread');
+   deftbl[c_joins]      := copy('joins');
+   deftbl[c_static]     := copy('static');
+   deftbl[c_inherited]  := copy('inherited');
+   deftbl[c_self]       := copy('self');
+   deftbl[c_virtual]    := copy('virtual');
+   deftbl[c_try]        := copy('try');
+   deftbl[c_except]     := copy('except');
+   deftbl[c_extends]    := copy('extends');
+   deftbl[c_on]         := copy('on');
+   deftbl[c_result]     := copy('result');
+   deftbl[c_operator]   := copy('operator');
+   deftbl[c_task]       := copy('task');
+   deftbl[c_property]   := copy('property');
+   deftbl[c_channel]    := copy('channel');
+   deftbl[c_stream]     := copy('stream');
+   deftbl[c_out]        := copy('out');
+   deftbl[c_integer]    := copy('<integer>');
+   deftbl[c_identifier] := copy('<identifier>');
+   deftbl[c_string]     := copy('<string>');
+   deftbl[c_real]       := copy('<real>');
+   deftbl[c_undefined]  := copy('<undefined>');
+   deftbl[c_eof]        := copy('<eof>');
 
    { flags }
   

@@ -272,42 +272,42 @@ begin { hash }
                           ressym[i].reschn:3, ';');
          writeln(outfile); { terminate line }
          write(outfile, '    spctbl[', i:3, '].tolk := ');
-         if ressym[i].reslab = '+ ' then write(outfile, 'cplus')
-         else if ressym[i].reslab = '- ' then write(outfile, 'cminus')
-         else if ressym[i].reslab = '* ' then write(outfile, 'ctimes')
-         else if ressym[i].reslab = '/ ' then write(outfile, 'crdiv')
-         else if ressym[i].reslab = '= ' then write(outfile, 'cequ')
-         else if ressym[i].reslab = '<>' then write(outfile, 'cnequ')
-         else if ressym[i].reslab = '><' then write(outfile, 'cnequa')
-         else if ressym[i].reslab = '< ' then write(outfile, 'cltn')
-         else if ressym[i].reslab = '> ' then write(outfile, 'cgtn')
-         else if ressym[i].reslab = '<=' then write(outfile, 'clequ')
-         else if ressym[i].reslab = '=<' then write(outfile, 'clequa')
-         else if ressym[i].reslab = '>=' then write(outfile, 'cgequ')
-         else if ressym[i].reslab = '=>' then write(outfile, 'cgequa')
-         else if ressym[i].reslab = '( ' then write(outfile, 'clparen')
-         else if ressym[i].reslab = ') ' then write(outfile, 'crparen')
-         else if ressym[i].reslab = '[ ' then write(outfile, 'clbrkt')
-         else if ressym[i].reslab = '(.' then write(outfile, 'clbrkt')
-         else if ressym[i].reslab = '] ' then write(outfile, 'crbrkt')
-         else if ressym[i].reslab = '.)' then write(outfile, 'crbrkt')
-         else if ressym[i].reslab = '{ ' then write(outfile, 'clct')
-         else if ressym[i].reslab = '(*' then write(outfile, 'clct')
-         else if ressym[i].reslab = '} ' then write(outfile, 'crct')
-         else if ressym[i].reslab = '*)' then write(outfile, 'crct')
-         else if ressym[i].reslab = ':=' then write(outfile, 'cbcms')
-         else if ressym[i].reslab = '. ' then write(outfile, 'cperiod')
-         else if ressym[i].reslab = ', ' then write(outfile, 'ccma')
-         else if ressym[i].reslab = '; ' then write(outfile, 'cscn')
-         else if ressym[i].reslab = ': ' then write(outfile, 'ccln')
-         else if ressym[i].reslab = '^ ' then write(outfile, 'ccmf')
-         else if ressym[i].reslab = '@ ' then write(outfile, 'ccmf')
-         else if ressym[i].reslab = '..' then write(outfile, 'crange')
-         else if ressym[i].reslab = '$ ' then write(outfile, 'chex')
-         else if ressym[i].reslab = '& ' then write(outfile, 'coct')
-         else if ressym[i].reslab = '% ' then write(outfile, 'cbin')
-         else if ressym[i].reslab = '# ' then write(outfile, 'cnum')
-         else if ressym[i].reslab = '! ' then write(outfile, 'clinc');
+         if ressym[i].reslab = '+ ' then write(outfile, 'c_plus')
+         else if ressym[i].reslab = '- ' then write(outfile, 'c_minus')
+         else if ressym[i].reslab = '* ' then write(outfile, 'c_times')
+         else if ressym[i].reslab = '/ ' then write(outfile, 'c_rdiv')
+         else if ressym[i].reslab = '= ' then write(outfile, 'c_equ')
+         else if ressym[i].reslab = '<>' then write(outfile, 'c_nequ')
+         else if ressym[i].reslab = '><' then write(outfile, 'c_nequa')
+         else if ressym[i].reslab = '< ' then write(outfile, 'c_ltn')
+         else if ressym[i].reslab = '> ' then write(outfile, 'c_gtn')
+         else if ressym[i].reslab = '<=' then write(outfile, 'c_lequ')
+         else if ressym[i].reslab = '=<' then write(outfile, 'c_lequa')
+         else if ressym[i].reslab = '>=' then write(outfile, 'c_gequ')
+         else if ressym[i].reslab = '=>' then write(outfile, 'c_gequa')
+         else if ressym[i].reslab = '( ' then write(outfile, 'c_lparen')
+         else if ressym[i].reslab = ') ' then write(outfile, 'c_rparen')
+         else if ressym[i].reslab = '[ ' then write(outfile, 'c_lbrkt')
+         else if ressym[i].reslab = '(.' then write(outfile, 'c_lbrkt')
+         else if ressym[i].reslab = '] ' then write(outfile, 'c_rbrkt')
+         else if ressym[i].reslab = '.)' then write(outfile, 'c_rbrkt')
+         else if ressym[i].reslab = '{ ' then write(outfile, 'c_lct')
+         else if ressym[i].reslab = '(*' then write(outfile, 'c_lct')
+         else if ressym[i].reslab = '} ' then write(outfile, 'c_rct')
+         else if ressym[i].reslab = '*)' then write(outfile, 'c_rct')
+         else if ressym[i].reslab = ':=' then write(outfile, 'c_bcms')
+         else if ressym[i].reslab = '. ' then write(outfile, 'c_period')
+         else if ressym[i].reslab = ', ' then write(outfile, 'c_cma')
+         else if ressym[i].reslab = '; ' then write(outfile, 'c_scn')
+         else if ressym[i].reslab = ': ' then write(outfile, 'c_cln')
+         else if ressym[i].reslab = '^ ' then write(outfile, 'c_cmf')
+         else if ressym[i].reslab = '@ ' then write(outfile, 'c_cmf')
+         else if ressym[i].reslab = '..' then write(outfile, 'c_range')
+         else if ressym[i].reslab = '$ ' then write(outfile, 'c_hex')
+         else if ressym[i].reslab = '& ' then write(outfile, 'c_oct')
+         else if ressym[i].reslab = '% ' then write(outfile, 'c_bin')
+         else if ressym[i].reslab = '# ' then write(outfile, 'c_num')
+         else if ressym[i].reslab = '! ' then write(outfile, 'c_linc');
          write(outfile, ';');
          writeln(outfile) { terminate line }
 
@@ -320,7 +320,7 @@ begin { hash }
             write(outfile, ' spctbl[', i:3, '].chn := ',
                           ressym[i].reschn:3, ';');
          writeln(outfile); { terminate line }
-         writeln(outfile, '    spctbl[', i:3, '].tolk := cundefined;');
+         writeln(outfile, '    spctbl[', i:3, '].tolk := c_undefined;');
 
       end
 

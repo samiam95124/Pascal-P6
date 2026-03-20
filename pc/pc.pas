@@ -778,11 +778,11 @@ begin
    while not (f^.nxttlk in s) do begin
 
       { perform block nest/unnest }
-      if f^.nxttlk = scanner.cbegin then blkcnt := blkcnt+1 { nest blocks }
+      if f^.nxttlk = scanner.c_begin then blkcnt := blkcnt+1 { nest blocks }
       { 'begin' is unambiguous, but 'end' has multiple uses, it can also appear
         in a record. However, these are never declared inside a block. So we
         just ignore attempts to go negative on block nesting. }
-      else if (f^.nxttlk = scanner.cend) and (blkcnt > 0) then 
+      else if (f^.nxttlk = scanner.c_end) and (blkcnt > 0) then 
          blkcnt := blkcnt-1 { denest }
       { now, ANYTHING within an active begin..end block can be considered code.
         We only have to do this because an empty block is required on a 
@@ -790,7 +790,7 @@ begin
       else if blkcnt > 0 then fp^.code := true;
       { Note that "var" can appear in two places, but they both imply code is
         generated. }
-      if f^.nxttlk in [scanner.cvar, scanner.cfixed] then
+      if f^.nxttlk in [scanner.c_var, scanner.c_fixed] then
          fp^.code := true; { coding structure found }
       scanner.gettlk(f) { get next tolken }
 
@@ -803,16 +803,16 @@ begin
    scanner.fansi := fiso7185; { set standard mode for scan }
    scanner.opnscn(f, fn); { open scan instance }
    { if it is a program, indicate }
-   if f^.nxttlk = scanner.cprogram then fp^.pgm := true;
+   if f^.nxttlk = scanner.c_program then fp^.pgm := true;
    { skip until file end or "uses" or "joins" }
-   skpsrc([scanner.cuses, scanner.cjoins, scanner.ceof]); 
-   while (f^.nxttlk = scanner.cuses) or (f^.nxttlk = scanner.cjoins) do begin
+   skpsrc([scanner.c_uses, scanner.c_joins, scanner.c_eof]); 
+   while (f^.nxttlk = scanner.c_uses) or (f^.nxttlk = scanner.c_joins) do begin
 
       { we found it }
       scanner.gettlk(f); { skip 'uses'/'joins' }
       repeat { process 'uses' files }
 
-         if f^.nxttlk <> scanner.cidentifier then { bad syntax }
+         if f^.nxttlk <> scanner.c_identifier then { bad syntax }
             error('Bad ''uses''/''joins'' syntax in %', fn);
          copy(w, f^.nxtlab); { copy name }
          fndfil(w, false); { find it }
@@ -824,16 +824,16 @@ begin
          fp^.link := p;
          scanner.gettlk(f); { get next tolken }
          t := f^.nxttlk; { save next tolken }
-         if f^.nxttlk = scanner.ccma then scanner.gettlk(f) { skip ',' }
+         if f^.nxttlk = scanner.c_cma then scanner.gettlk(f) { skip ',' }
 
-      until t <> scanner.ccma; { until no more }
-      if f^.nxttlk <> scanner.cscn then { bad syntax }
+      until t <> scanner.c_cma; { until no more }
+      if f^.nxttlk <> scanner.c_scn then { bad syntax }
          error('Bad ''uses'' syntax in %', fn);
       { find next file end or "uses" or "joins" }
-      skpsrc([scanner.cuses, scanner.cjoins, scanner.ceof])
+      skpsrc([scanner.c_uses, scanner.c_joins, scanner.c_eof])
      
    end;
-   skpsrc([scanner.ceof]); { skip until file end }
+   skpsrc([scanner.c_eof]); { skip until file end }
    scanner.clsscn(f) { close scan instance }
 
 end;

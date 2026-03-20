@@ -267,7 +267,7 @@ begin { hash }
                      ''');');
          write(outfile, ' restbl[', i:3, '].chn := ', ressym[i].reschn:3, ';');
          writeln(outfile); { terminate line }
-         write(outfile, '    restbl[', i:3, '].tolk := c', 'undefined', ';');
+         write(outfile, '    restbl[', i:3, '].tolk := c_', 'undefined', ';');
          writeln(outfile) { terminate line }
 
       end else begin
@@ -276,7 +276,7 @@ begin { hash }
                      ''');');
          write(outfile, ' restbl[', i:3, '].chn := ', ressym[i].reschn:3, ';');
          writeln(outfile); { terminate line }
-         write(outfile, '    restbl[', i:3, '].tolk := c', ressym[i].reslab:*, ';');
+         write(outfile, '    restbl[', i:3, '].tolk := c_', ressym[i].reslab:*, ';');
          writeln(outfile) { terminate line }
 
       end
