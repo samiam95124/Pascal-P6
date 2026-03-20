@@ -1313,13 +1313,21 @@ end;
 procedure parlab(var x: integer; var fl: pstring);
 var j: integer; cs: packed array [1..1] of char;
 begin fl := nil;
-  getlab; if ch <> '.' then error('Symbols format error');
-  getnxt; 
-  if ch in ['0'..'9'] then getint(x) { near label }
-  else begin { far label }
-    fl := cat(extract(sn, 1, len(sn)), '.');
+  getlab;
+  if ch = '.' then begin
+    getnxt;
+    if ch in ['0'..'9'] then getint(x) { near label }
+    else begin { far label: module.symbol }
+      fl := cat(extract(sn, 1, len(sn)), '.');
+      getsds; cvtsds;
+      for j := 1 to snl do begin cs[1] := sn[j]; fl := cat(fl, cs) end
+    end
+  end else if ch <> ' ' then begin { far label with type suffix (mexternal) }
+    fl := extract(sn, 1, snl);
     getsds; cvtsds;
     for j := 1 to snl do begin cs[1] := sn[j]; fl := cat(fl, cs) end
+  end else begin { far label: bare name (cexternal) }
+    fl := extract(sn, 1, snl)
   end
 end;
 
