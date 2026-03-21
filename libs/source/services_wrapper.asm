@@ -18,14 +18,10 @@
     .globl  services.times$f_i
     .globl  services.dates$p_vc_i
     .globl  services.dates$f_i
-    .globl  services.time$f
-    .globl  services.local$f_i
     .globl  services.writetime$p_fc_i
     .global services.writetime$p_i
     .global services.writedate$p_fc_i
     .global services.writedate$p_i
-    .global services.clock$f
-    .global services.elapsed$f_i
     .global services.validfile$f_vc
     .global services.validfile$f_pvc
     .global services.validpath$f_vc
@@ -93,26 +89,8 @@
     .global services.makpth$p_pvc
     .global services.rempth$p_vc
     .global services.rempth$p_pvc
-    .global services.filchr$p_sc
-    .global services.optchr$f
-    .global services.pthchr$f
-    .global services.latitude$f
-    .global services.longitude$f
-    .global services.altitude$f
-    .global services.country$f
     .global services.countrys$p_vc_i
-    .global services.timezone$f
-    .global services.daysave$f
-    .global services.time24hour$f
-    .global services.language$f
     .global services.languages$p_vc_i
-    .global services.decimal$f
-    .global services.numbersep$f
-    .global services.timeorder$f
-    .global services.dateorder$f
-    .global services.datesep$f
-    .global services.timesep$f
-    .global services.currchr$f
 
     .text
 
@@ -167,26 +145,6 @@ services.writedate$p_fc_i:
 
 services.writedate$p_i:
     jmp     wrapper_writedate
-
-# function time: integer; external;
-
-services.time$f:
-    jmp     wrapper_time
-
-# function local(t: integer): integer; external;
-
-services.local$f_i:
-    jmp     wrapper_local
-
-# function clock: integer; external;
-
-services.clock$f:
-    jmp     wrapper_clock
-
-# function elapsed(r: integer): integer; external;
-
-services.elapsed$f_i:
-    jmp     services_elapsed
 
 # function validfile(view s: string): boolean; external;
 
@@ -523,105 +481,15 @@ services.rempth$p_vc:
 services.rempth$p_pvc:
     jmp     wrapper_rempthp
 
-# procedure filchr(out fc: schar); external;
-
-services.filchr$p_sc:
-    jmp     wrapper_filchr
-
-# function optchr: char; external;
-
-services.optchr$f:
-    jmp     wrapper_optchr
-
-# function pthchr: char; external;
-
-services.pthchr$f:
-    jmp     wrapper_pthchr
-
-# function latitude: integer; external;
-
-services.latitude$f:
-    jmp     wrapper_latitude
-
-# function longitude: integer; external;
-
-services.longitude$f:
-    jmp     wrapper_longitude
-
-# function altitude: integer; external;
-
-services.altitude$f:
-    jmp     wrapper_altitude
-
-# function country: integer; external;
-
-services.country$f:
-    jmp     wrapper_country
-
 # procedure countrys(view s: string; len: integer; c: integer); external;
 
 services.countrys$p_vc_i:
     jmp     wrapper_countrys
 
-# function timezone: integer; external;
-
-services.timezone$f:
-    jmp     wrapper_timezone
-
-# function daysave: boolean; external;
-
-services.daysave$f:
-    jmp     wrapper_daysave
-
-# function time24hour: boolean; external;
-
-services.time24hour$f:
-    jmp     wrapper_time24hour
-
-# function language: integer; external;
-
-services.language$f:
-    jmp     wrapper_language
-
 # procedure languages(view s: string; len: integer; l: integer);  external;
 
 services.languages$p_vc_i:
     jmp     wrapper_languages
-
-# function decimal: char; external;
-
-services.decimal$f:
-    jmp     wrapper_decimal
-
-# function numbersep: char; external;
-
-services.numbersep$f:
-    jmp     wrapper_numbersep
-
-# function timeorder: integer; external;
-
-services.timeorder$f:
-    jmp     wrapper_timeorder
-
-# function dateorder: integer; external;
-
-services.dateorder$f:
-    jmp     wrapper_dateorder
-
-# function datesep: char; external;
-
-services.datesep$f:
-    jmp     wrapper_datesep
-
-# function timesep: char; external;
-
-services.timesep$f:
-    jmp     wrapper_timesep
-
-# function currchr: char; external;
-
-services.currchr$f:
-    jmp     wrapper_currchr
 
 #
 # Next module in series
