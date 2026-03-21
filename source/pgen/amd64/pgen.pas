@@ -1755,7 +1755,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc; 
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl); 
             lftjst(cmtspc-fl); writeln(prr, '# call user procedure')
-          end else wrtins(' call @s # call user procedure', ep^.fn^);
+          end else begin
+            write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc;
+            wrtextnam(prr, ep^.fn, fl);
+            lftjst(cmtspc-fl); writeln(prr, '# call user procedure')
+          end;
           { remove overflow parameters pushed by caller (SysV ABI) }
           if ps > 0 then
             wrtins(' addq $0,%rsp # remove overflow parameters', ps);

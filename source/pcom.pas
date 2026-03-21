@@ -3112,22 +3112,11 @@ end;
   begin
     if prcode then begin
       write(prr, 'l ');
-      if extk(fcp) = extc then
-        { cexternal: bare symbol name, no module prefix }
-        writevp(prr, fcp^.name)
-      else if extk(fcp) = extmodule then begin
-        { mexternal: module_symbol with underscore }
-        writevp(prr, fcp^.pmod^.mn);
-        write(prr, '_');
-        writevp(prr, fcp^.name)
-      end else begin
-        { external/vars/fixedt: module.symbol with dot }
-        if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn)
-        else if fcp^.klass = fixedt then writevp(prr, fcp^.fmod^.mn)
-        else writevp(prr, fcp^.pmod^.mn);
-        write(prr, '.');
-        writevp(prr, fcp^.name)
-      end
+      if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn)
+      else if fcp^.klass = fixedt then writevp(prr, fcp^.fmod^.mn)
+      else writevp(prr, fcp^.pmod^.mn);
+      write(prr, '.');
+      writevp(prr, fcp^.name)
     end
   end;
 
@@ -3152,16 +3141,10 @@ end;
   function lenflabel(fcp: ctp): integer;
   var ll: integer;
   begin
-    if extk(fcp) = extc then
-      ll := 2+lenpv(fcp^.name)
-    else if extk(fcp) = extmodule then
-      ll := 2+lenpv(fcp^.pmod^.mn)+1+lenpv(fcp^.name)
-    else begin
-      ll := 2+1+lenpv(fcp^.name);
-      if fcp^.klass = vars then ll := ll+lenpv(fcp^.vmod^.mn)
-      else if fcp^.klass = fixedt then ll := ll+lenpv(fcp^.fmod^.mn)
-      else ll := ll+lenpv(fcp^.pmod^.mn)
-    end;
+    ll := 2+1+lenpv(fcp^.name);
+    if fcp^.klass = vars then ll := ll+lenpv(fcp^.vmod^.mn)
+    else if fcp^.klass = fixedt then ll := ll+lenpv(fcp^.fmod^.mn)
+    else ll := ll+lenpv(fcp^.pmod^.mn);
     lenflabel := ll
   end;
 
@@ -3940,15 +3923,12 @@ end;
         write(prr,mn[fop]:11, ' ':5); fl := 0;
         if chkext(fcp) then begin
           prtflabelc(fcp, fl);
-          { cexternal: bare C name, no type decoration }
-          if extk(fcp) <> extc then begin
-            write(prr, '@'); { this keeps the user from aliasing it }
-            if fcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
-            fl := fl+2;
-            if fcp^.pflist <> nil then begin
-              write(prr, '_'); fl := fl+1;
-              prtpartypc(fcp, fl)
-            end
+          write(prr, '@'); { this keeps the user from aliasing it }
+          if fcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
+          fl := fl+2;
+          if fcp^.pflist <> nil then begin
+            write(prr, '_'); fl := fl+1;
+            prtpartypc(fcp, fl)
           end
         end else prtlabelc(fp2, fl);
         if fcp <> nil then begin
@@ -8197,7 +8177,7 @@ end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2,lcp3: ctp; lsp: stp;
-          forw,forwn,extn,opr,isvirt, form: boolean; 
+          forw,forwn,extn,opr,isvirt, form, sprcode: boolean; 
           oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean; 
           fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
 
@@ -8828,6 +8808,29 @@ end;
         if sy = semicolon then insymbol else error(14);
         if not (sy in fsys) then
           begin error(6); skip(fsys) end
+      end;
+      { emit external descriptor to intermediate }
+      if extn and prrval then begin
+        sprcode := prcode; prcode := true;
+        write(prr, 'z ');
+        case lcp^.extern of
+          extpascal: write(prr, '0 ');
+          extc:      write(prr, '1 ');
+          extmodule: write(prr, '2 ')
+        end;
+        write(prr, '0 '); { conversion: none for now }
+        if incact then writevp(prr, incstk^.mn)
+        else writevp(prr, nammod);
+        write(prr, '.');
+        writevp(prr, lcp^.name);
+        write(prr, '@');
+        if lcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
+        if lcp^.pflist <> nil then begin
+          write(prr, '_');
+          prtpartyp(lcp)
+        end;
+        writeln(prr);
+        prcode := sprcode
       end;
       { now the proc/func is completely defined }
       forw := false; { set not forwarded }

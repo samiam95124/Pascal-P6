@@ -360,6 +360,14 @@ dwparctl     = record
                  l: integer; { length }
                  p: integer; { current position }
                end;
+{ external descriptor }
+pextdsc      = ^extdsc;
+extdsc       = record
+                 next:  pextdsc; { next in list }
+                 name:  pstring; { full qualified name (module.symbol@type) }
+                 etyp:  integer; { external type: 0=external, 1=cexternal, 2=mexternal }
+                 conv:  integer; { conversion type: 0=none }
+               end;
 { intermediate instruction table }
 inspar = array [instyp] of record
   instr: alfa;    { mnemonic instruction codes }
@@ -896,6 +904,7 @@ errret      : boolean; { error flagged }
 { DWARF debug info state }
 dwtyps      : pdwtyp;  { type deduplication list }
 dwstrs      : pdwstr;  { string table list }
+extlst      : pextdsc; { external descriptor list }
 dwlabnum    : integer; { DWARF label counter }
 fnendcnt    : integer; { function end label counter }
 { pre-assigned label numbers for base types }
@@ -1313,21 +1322,13 @@ end;
 procedure parlab(var x: integer; var fl: pstring);
 var j: integer; cs: packed array [1..1] of char;
 begin fl := nil;
-  getlab;
-  if ch = '.' then begin
-    getnxt;
-    if ch in ['0'..'9'] then getint(x) { near label }
-    else begin { far label: module.symbol }
-      fl := cat(extract(sn, 1, len(sn)), '.');
-      getsds; cvtsds;
-      for j := 1 to snl do begin cs[1] := sn[j]; fl := cat(fl, cs) end
-    end
-  end else if ch <> ' ' then begin { far label with type suffix (mexternal) }
-    fl := extract(sn, 1, snl);
+  getlab; if ch <> '.' then error('Symbols format error');
+  getnxt;
+  if ch in ['0'..'9'] then getint(x) { near label }
+  else begin { far label }
+    fl := cat(extract(sn, 1, len(sn)), '.');
     getsds; cvtsds;
     for j := 1 to snl do begin cs[1] := sn[j]; fl := cat(fl, cs) end
-  end else begin { far label: bare name (cexternal) }
-    fl := extract(sn, 1, snl)
   end
 end;
 
@@ -1576,6 +1577,47 @@ begin
   end
 end;
 
+{ find external descriptor for a far label name }
+function fndext(s: pstring): pextdsc;
+var ep: pextdsc;
+begin fndext := nil;
+  ep := extlst;
+  while ep <> nil do begin
+    if compcp(ep^.name^, s^) then begin fndext := ep; ep := nil end
+    else ep := ep^.next
+  end
+end;
+
+{ transform far label for assembly output based on external type }
+procedure wrtextnam(var f: text; s: pstring; var fl: integer);
+var ep: pextdsc; i: integer; c: char;
+begin
+  ep := fndext(s);
+  if ep = nil then begin { not external, write as-is }
+    write(f, s^); fl := fl+max(s^)
+  end else case ep^.etyp of
+    0: begin { external: module.name, no change }
+      write(f, s^); fl := fl+max(s^)
+    end;
+    1: begin { cexternal: strip module prefix and type digest }
+      i := 1;
+      while (i <= max(s^)) and (s^[i] <> '.') do i := i+1;
+      i := i+1; { skip dot }
+      while (i <= max(s^)) and (s^[i] <> '$') do begin
+        write(f, s^[i]); fl := fl+1; i := i+1
+      end
+    end;
+    2: begin { mexternal: replace first dot with underscore }
+      for i := 1 to max(s^) do begin
+        c := s^[i];
+        if c = '.' then write(f, '_')
+        else write(f, c);
+        fl := fl+1
+      end
+    end
+  end
+end;
+
 procedure wrtgbl(var f: text; a: address; var fl: integer);
 var bp, fbp: pblock; sp, fsp: psymbol;
 begin
@@ -1640,6 +1682,7 @@ procedure generate; (*generate segment of code*)
        i, l: integer;   
        bp: pblock;
        sp: psymbol;
+       ep: pextdsc;
        sgn: boolean;
        sn2: labbuf;
        snl2: 1..lablen;
@@ -1665,7 +1708,7 @@ begin
    while again and not eofinp do begin
      getlin; { load next intermediate line }
      if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b', 'e', 's', 'f',
-                    'v', 't', 'n', 'x', 'c', 'p', 'r']) then
+                    'v', 't', 'n', 'x', 'c', 'p', 'r', 'z']) then
        error('unexpected line start');
      ch1 := ch; getnxt;
      case ch1 of
@@ -1954,7 +1997,7 @@ begin
              skpspc;
              for i := 1 to max(srcfil) do srcfil[i] := ' ';
              skpspc; i := 1;
-             while ch <> ' ' do begin 
+             while ch <> ' ' do begin
                srcfil[i] := ch; getnxt; i := i+1;
                if i = max(srcfil) then error('filename to long')
              end;
@@ -1968,6 +2011,14 @@ begin
              writeln(prr, '        .file   1 "',srcfil:*, '"');
              lindig := true; { set line diagnostic active for gdb }
              end
+           end;
+      'z': begin { external descriptor }
+             skpspc; getint(x); { get external type }
+             skpspc; getint(i); { get conversion type }
+             skpspc; getsds; cvtsds; { get qualified name }
+             new(ep); ep^.name := extract(sn, 1, snl);
+             ep^.etyp := x; ep^.conv := i;
+             ep^.next := extlst; extlst := ep
            end;
     end
   end
@@ -3501,6 +3552,7 @@ begin
   errret := false; { set no error on return }
   dwtyps := nil; { clear DWARF type dedup list }
   dwstrs := nil; { clear DWARF string table }
+  extlst := nil; { clear external descriptor list }
   dwlabnum := 0; { reset DWARF label counter }
   fnendcnt := 0; { reset function end label counter }
 
