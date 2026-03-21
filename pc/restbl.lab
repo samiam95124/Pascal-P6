@@ -39,6 +39,8 @@ module
 uses
 private
 external
+cexternal
+mexternal
 view
 fixed
 process

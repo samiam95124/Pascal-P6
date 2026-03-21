@@ -160,7 +160,7 @@ const
    maxins     = 130;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 84;   { number of standard identifiers }
-   maxres     = 66;   { number of reserved words }
+   maxres     = 68;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
    explen     = 32;   { length of exception names }
    maxrld     = 22;   { maximum length of real in digit form }
@@ -205,7 +205,8 @@ type
                procsy,setsy,packedsy,arraysy,recordsy,filesy,beginsy,ifsy,
                casesy,repeatsy,whilesy,forsy,withsy,gotosy,endsy,elsesy,untilsy,
                ofsy,dosy,tosy,downtosy,thensy,nilsy,forwardsy,modulesy,usessy,
-               privatesy,externalsy,viewsy,fixedsy,processsy,monitorsy,sharesy,
+               privatesy,externalsy,cexternalsy,mexternalsy,viewsy,fixedsy,
+               processsy,monitorsy,sharesy,
                classsy,issy,overloadsy,overridesy,referencesy,joinssy,staticsy,
                inheritedsy,selfsy,virtualsy,trysy,exceptsy,extendssy,onsy,
                resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy,
@@ -300,6 +301,8 @@ type
                      sb: linbuf; si: lininx; sl: 0..maxlin; lo: boolean;
                      fio: boolean; use: boolean; uselist: filptr end;
      partyp = (ptval, ptvar, ptview, ptout);
+     { external declaration kind }
+     extkindt = (extnone, extpascal, extc, extmodule);
      { procedure function attribute }
      fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride);
      identifier = record
@@ -333,7 +336,8 @@ type
                               standard: (key: keyrng);
                               declared: (pflev: levrange; pfname: integer;
                                           case pfkind: idkind of
-                                           actual: (forwdecl, sysrot, extern: boolean);
+                                           actual: (forwdecl, sysrot: boolean;
+                                                    extern: extkindt);
                                            formal: ()));
                      alias: (actid: ctp; { actual id })
                    end;
@@ -1806,7 +1810,8 @@ end;
       downtosy: write('downto'); thensy: write('then');
       forwardsy: write('forward'); modulesy: write('module');
       usessy: write('uses'); privatesy:write('private');
-      externalsy: write('external'); viewsy: write('view');
+      externalsy: write('external'); cexternalsy: write('cexternal');
+      mexternalsy: write('mexternal'); viewsy: write('view');
       fixedsy: write('fixed'); processsy: write('process');
       monitorsy: write('monitor'); sharesy: write('share');
       classsy: write('class'); issy: write('is');
@@ -2759,8 +2764,12 @@ end;
                          else write('not forward':intdig, ' ');
                          if sysrot then write('system routine':intdig)
                          else write('not system routine':intdig);
-                         if extern then write('external':intdig)
-                         else write('not external':intdig)
+                         case extern of
+                           extnone: write('not external':intdig);
+                           extpascal: write('external':intdig);
+                           extc: write('cexternal':intdig);
+                           extmodule: write('mexternal':intdig)
+                         end
                        end
                      else write('formal':intdig)
                    end
@@ -3089,6 +3098,14 @@ end;
   procedure prtlabelc(labname: integer; var fl: integer);
   begin 
     prtlabel(labname); fl := fl+lenlabel(labname)
+  end;
+
+  function extk(fcp: ctp): extkindt;
+  begin extk := extnone;
+    if fcp^.klass in [proc,func] then
+      if fcp^.pfdeckind = declared then
+        if fcp^.pfkind = actual then
+          extk := fcp^.extern
   end;
 
   procedure prtflabel(fcp: ctp);
@@ -8160,7 +8177,7 @@ end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2,lcp3: ctp; lsp: stp;
-          forw,forwn,extn,opr,isvirt, form: boolean; 
+          forw,forwn,extn,opr,isvirt, form, sprcode: boolean; 
           oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean; 
           fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
 
@@ -8705,7 +8722,7 @@ end;
             strassvr(name, ops)
           end else strassvf(name, ids);
           idtype := nil; next := nil;
-          sysrot := false; extern := false; pflev := level; 
+          sysrot := false; extern := extnone; pflev := level; 
           genlabel(lbname); pfdeckind := declared; pfkind := actual; 
           pfname := lbname; pflist := nil; asgn := false;
           pext := incact; pmod := incstk; refer := false;
@@ -8777,15 +8794,43 @@ end;
           end;
       if sy = semicolon then insymbol else error(14);
       forwn := false; extn := false;
-      if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy) or 
-       (sy = externalsy) then begin
-        if sy = externalsy then 
-          begin chkstd; lcp^.extern  := true; extn := true end
+      if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy) or
+       (sy = externalsy) or (sy = cexternalsy) or
+       (sy = mexternalsy) then begin
+        if sy = externalsy then
+          begin chkstd; lcp^.extern := extpascal; extn := true end
+        else if sy = cexternalsy then
+          begin chkstd; lcp^.extern := extc; extn := true end
+        else if sy = mexternalsy then
+          begin chkstd; lcp^.extern := extmodule; extn := true end
         else begin lcp^.forwdecl := true; forwn := true end;
         insymbol;
         if sy = semicolon then insymbol else error(14);
         if not (sy in fsys) then
           begin error(6); skip(fsys) end
+      end;
+      { emit external descriptor to intermediate }
+      if extn and prrval then begin
+        sprcode := prcode; prcode := true;
+        write(prr, 'z ');
+        case lcp^.extern of
+          extpascal: write(prr, '0 ');
+          extc:      write(prr, '1 ');
+          extmodule: write(prr, '2 ')
+        end;
+        write(prr, '0 '); { conversion: none for now }
+        if incact then writevp(prr, incstk^.mn)
+        else writevp(prr, nammod);
+        write(prr, '.');
+        writevp(prr, lcp^.name);
+        write(prr, '@');
+        if lcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
+        if lcp^.pflist <> nil then begin
+          write(prr, '_');
+          prtpartyp(lcp)
+        end;
+        writeln(prr);
+        prcode := sprcode
       end;
       { now the proc/func is completely defined }
       forw := false; { set not forwarded }
@@ -10574,7 +10619,7 @@ end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
           begin klass := func; strassvr(name, na[i]); idtype := realptr;
-            pflist := cp; forwdecl := false; sysrot := true; extern := false; 
+            pflist := cp; forwdecl := false; sysrot := true; extern := extnone; 
             pflev := 0; pfname := i - 12; pfdeckind := declared; 
             pfkind := actual; pfaddr := 0; pext := false; pmod := nil; 
             pfattr := fpanone; grpnxt := nil; grppar := cp1; pfvid := nil
@@ -10739,7 +10784,7 @@ end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
       begin klass := proc; strassvr(name, '         '); idtype := nil;
-        forwdecl := false; next := nil; sysrot := false; extern := false; 
+        forwdecl := false; next := nil; sysrot := false; extern := extnone; 
         pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
         pfkind := actual; pmod := nil; grpnxt := nil; grppar := uprcptr;
         pfvid := nil
@@ -10747,7 +10792,7 @@ end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
       begin klass := func; strassvr(name, '         '); idtype := nil;
-        next := nil; forwdecl := false; sysrot := false; extern := false; 
+        next := nil; forwdecl := false; sysrot := false; extern := extnone; 
         pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
         pfkind := actual; pmod := nil; grpnxt := nil; grppar := ufctptr;
         pfvid := nil
@@ -11038,6 +11083,7 @@ end;
       rw[58] := 'extends  '; rw[59] := 'on       '; rw[60] := 'result   ';
       rw[61] := 'operator '; rw[62] := 'out      '; rw[63] := 'property ';
       rw[64] := 'channel  '; rw[65] := 'stream   '; rw[66] := 'xor      ';
+      rw[67] := 'cexternal'; rw[68] := 'mexternal';
     end (*reswords*) ;
 
     procedure symbols;
@@ -11065,6 +11111,7 @@ end;
       rsy[58] := extendssy;  rsy[59] := onsy;        rsy[60] := resultsy;
       rsy[61] := operatorsy; rsy[62] := outsy;       rsy[63] := propertysy;
       rsy[64] := channelsy;  rsy[65] := streamsy;    rsy[66] := addop;
+      rsy[67] := cexternalsy; rsy[68] := mexternalsy;
 
       for i := ordminchar to ordmaxchar do ssy[chr(i)] := othersy;
       ssy['+'] := addop ;   ssy['-'] := addop;    ssy['*'] := mulop;
