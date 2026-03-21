@@ -1577,13 +1577,20 @@ begin
   end
 end;
 
-{ find external descriptor for a far label name }
+{ find external descriptor for a far label name.
+  Matches z name as prefix: z has module.name$t, cup has module.name$t_params.
+  We match up to and including the $ type marker. }
 function fndext(s: pstring): pextdsc;
-var ep: pextdsc;
+var ep: pextdsc; i, el: integer; m: boolean;
 begin fndext := nil;
   ep := extlst;
   while ep <> nil do begin
-    if compcp(ep^.name^, s^) then begin fndext := ep; ep := nil end
+    el := max(ep^.name^);
+    m := true;
+    if el > max(s^) then m := false
+    else for i := 1 to el do
+      if ep^.name^[i] <> s^[i] then m := false;
+    if m then begin fndext := ep; ep := nil end
     else ep := ep^.next
   end
 end;
@@ -1607,12 +1614,13 @@ begin
         write(f, s^[i]); fl := fl+1; i := i+1
       end
     end;
-    2: begin { mexternal: replace first dot with underscore }
-      for i := 1 to max(s^) do begin
+    2: begin { mexternal: replace dot with underscore, strip type digest }
+      i := 1;
+      while (i <= max(s^)) and (s^[i] <> '$') do begin
         c := s^[i];
         if c = '.' then write(f, '_')
         else write(f, c);
-        fl := fl+1
+        fl := fl+1; i := i+1
       end
     end
   end
