@@ -186,7 +186,7 @@ services.clock$f:
 # function elapsed(r: integer): integer; external;
 
 services.elapsed$f_i:
-    jmp     pa_elapsed
+    jmp     services_elapsed
 
 # function validfile(view s: string): boolean; external;
 

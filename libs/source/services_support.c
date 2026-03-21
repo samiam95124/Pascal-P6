@@ -184,7 +184,7 @@ filename entries to a new structure and disposing of the old.
 ********************************************************************************/
 
 void cfilelist2pascaline(
-    /** file record list head */ pa_filptr* fla
+    /** file record list head */ services_filptr* fla
 )
 
 {
@@ -192,8 +192,8 @@ void cfilelist2pascaline(
     /* pointer for pascaline string */ pstring ps;
     /* length */                       int l;
     /* pointer to string */            char* s;
-    /* pointer to old list */          pa_filptr fl;
-    /* pointer to last old entry */    pa_filptr np;
+    /* pointer to old list */          services_filptr fl;
+    /* pointer to last old entry */    services_filptr np;
     /* new list */                     filptr nl;
     /* last entry */                   filptr lp;
     /* new list pointer */             filptr p;
@@ -241,7 +241,7 @@ void cfilelist2pascaline(
 
     }
     /* set address of converted list */
-    *fla = (pa_filptr)nl;
+    *fla = (services_filptr)nl;
 
 }
 
@@ -255,12 +255,12 @@ data constained into C zero terminated string form.
 ********************************************************************************/
 
 void cenvlist2pascaline(
-    /** file record list head */ pa_envptr* eva
+    /** file record list head */ services_envptr* eva
 )
 
 {
 
-    /* pointer to old list */ pa_envptr el;
+    /* pointer to old list */ services_envptr el;
     /* C sring pointer */      char*cs;
 
     el = *eva; /* index list */
@@ -288,21 +288,21 @@ Preserves the original list. Returns C copy list.
 
 ********************************************************************************/
 
-pa_envptr cenvlist2c(
+services_envptr cenvlist2c(
     /** environment record list head */ envptr el
 )
 
 {
 
     /* pstring */ pstring ps;
-    /* new copy list in C */ pa_envptr cl;
-    /* new entry */ pa_envptr cp;
-    /* last entry */ pa_envptr lp;
+    /* new copy list in C */ services_envptr cl;
+    /* new entry */ services_envptr cp;
+    /* last entry */ services_envptr lp;
 
     lp = NULL; /* set no last entry */
     while (el) { /* traverse */
 
-        cp = malloc(sizeof(pa_envrec)); /* get new C entry */
+        cp = malloc(sizeof(services_envrec)); /* get new C entry */
         cp->name = pstr2cstr((pstring)el->name); /* convert name */
         cp->data = pstr2cstr((pstring)el->data); /* convert data */
         cp->next = NULL;
@@ -324,12 +324,12 @@ Frees both strins and the entry for the entire list.
 ********************************************************************************/
 
 void freenvl(
-    /** environment record list head */ pa_envptr el
+    /** environment record list head */ services_envptr el
 )
 
 {
 
-    /* element pointer */ pa_envptr ep;
+    /* element pointer */ services_envptr ep;
 
     while (el) { /* drain */
 
