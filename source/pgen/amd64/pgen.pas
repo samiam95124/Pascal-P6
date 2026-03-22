@@ -346,6 +346,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {suv}
       91: ;
 
+      {s2c}
+      173: begin
+        asscall;
+        ep^.r1 := rgrax;
+        resreg(ep^.r1);
+        assreg(ep^.l, rf, rgrdi, rgnull)
+      end;
+
       {ckvi,ckvb,ckvc,ckvx}
       175, 179, 180, 203: ;
 
@@ -1247,6 +1255,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' call psystem_errore # process error');
             wrtins('1:')
           end
+        end;
+
+        {s2c}
+        173: begin
+          genexp(ep^.l); { evaluate string address into rdi }
+          wrtins(' movq $0,%rsi # load string size', ep^.q);
+          wrtins(' call psystem_s2c # convert string to C string');
+          { result in rax }
         end;
 
         {mdc}
@@ -2266,9 +2282,14 @@ begin { assemble }
       getexp(ep); attach(ep); popstk(ep^.l); pshstk(ep) 
     end;
 
+    {s2c}
+    173: begin parq;
+      getexp(ep); popstk(ep^.l); pshstk(ep)
+    end;
+
     {ckvi,ckvb,ckvc,ckvx}
     175, 179, 180, 203: begin parq;
-      getexp(ep); pshstk(ep) 
+      getexp(ep); pshstk(ep)
     end;
 
     {cpc}

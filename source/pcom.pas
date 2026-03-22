@@ -157,7 +157,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 115;  { number of standard procedures/functions }
-   maxins     = 130;  { maximum number of instructions }
+   maxins     = 131;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 84;   { number of standard identifiers }
    maxres     = 68;   { number of reserved words }
@@ -337,7 +337,8 @@ type
                               declared: (pflev: levrange; pfname: integer;
                                           case pfkind: idkind of
                                            actual: (forwdecl, sysrot: boolean;
-                                                    extern: extkindt);
+                                                    extern: extkindt;
+                                                    cconv: boolean);
                                            formal: ()));
                      alias: (actid: ctp; { actual id })
                    end;
@@ -1643,6 +1644,7 @@ end;
     296: write(f, 'Cannot apply field to constant string on read');
     297: write(f, 'No procedure or function found to overload');
     298: write(f, 'No matching forwarded overload');
+    299: write(f, 'External/mexternal call has no module');
 
     300: write(f, 'Division by zero');
     301: write(f, 'No case provided for this value');
@@ -2904,7 +2906,10 @@ end;
       if fcp^.klass = vars then chkext := fcp^.vext
       else if fcp^.klass = fixedt then chkext := fcp^.fext
       else if (fcp^.klass = proc) or (fcp^.klass = func) then
-        chkext := fcp^.pext
+        if fcp^.pext then chkext := true
+        else if fcp^.pfdeckind = declared then
+          if fcp^.pfkind = actual then
+            chkext := fcp^.extern in [extc, extmodule]
     end
   end;
 
@@ -3108,13 +3113,22 @@ end;
           extk := fcp^.extern
   end;
 
+  function iscconv(fcp: ctp): boolean;
+  begin iscconv := false;
+    if fcp^.klass in [proc,func] then
+      if fcp^.pfdeckind = declared then
+        if fcp^.pfkind = actual then
+          iscconv := fcp^.cconv
+  end;
+
   procedure prtflabel(fcp: ctp);
   begin
     if prcode then begin
       write(prr, 'l ');
       if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn)
       else if fcp^.klass = fixedt then writevp(prr, fcp^.fmod^.mn)
-      else writevp(prr, fcp^.pmod^.mn);
+      else if fcp^.pext then writevp(prr, fcp^.pmod^.mn)
+      else writevp(prr, nammod);
       write(prr, '.');
       writevp(prr, fcp^.name)
     end
@@ -3144,7 +3158,8 @@ end;
     ll := 2+1+lenpv(fcp^.name);
     if fcp^.klass = vars then ll := ll+lenpv(fcp^.vmod^.mn)
     else if fcp^.klass = fixedt then ll := ll+lenpv(fcp^.fmod^.mn)
-    else ll := ll+lenpv(fcp^.pmod^.mn);
+    else if fcp^.pext then ll := ll+lenpv(fcp^.pmod^.mn)
+    else ll := ll+lenpv(nammod);
     lenflabel := ll
   end;
 
@@ -3366,6 +3381,7 @@ end;
         128: write(prr, 'Store structured value from stack');
         129: write(prr, 'Store exception vector');
         130: write(prr, 'Make dynamic complex pointer');
+        131: write(prr, 'Convert string to C string');
       end
     end
   end;
@@ -6370,6 +6386,10 @@ end;
                                 end else begin
                                   loadaddress;
                                   fixpar(lsp,gattr.typtr);
+                                  if iscconv(fcp) then
+                                    if stringt(lsp) then
+                                      if gattr.typtr <> nil then
+                                        gen1(131(*s2c*),gattr.typtr^.size);
                                   if lsp^.form = arrayc then
                                     locpar := locpar+ptrsize*2
                                   else locpar := locpar+ptrsize;
@@ -6449,6 +6469,11 @@ end;
                   end
                 end else begin
                   if inherit then error(234);
+                  if not fcp^.pext then
+                    if fcp^.pfdeckind = declared then
+                      if fcp^.pfkind = actual then
+                        if fcp^.extern in [extpascal, extmodule] then
+                          error(299);
                   if fcp^.klass = func then
                     gencupcuf(122(*cuf*),locpar,pfname,fcp)
                   else
@@ -8177,8 +8202,8 @@ end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2,lcp3: ctp; lsp: stp;
-          forw,forwn,extn,opr,isvirt, form, sprcode: boolean; 
-          oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean; 
+          forw,forwn,extn,opr,isvirt, form, sprcode, ccv: boolean;
+          oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean;
           fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
 
       procedure pushlvl(lcp: ctp);
@@ -8673,7 +8698,13 @@ end;
         else fsy := sy; insymbol
       end;
       { set parameter address start to zero, offset later }
-      llc := lc; lc := 0; ids := id; opr := false; lcp1 := nil;
+      llc := lc; lc := 0; opr := false; lcp1 := nil;
+      { check for cout noise word }
+      ccv := false;
+      if sy = ident then
+        if strequri('cout     ', id) then
+          begin ccv := true; insymbol end;
+      ids := id;
       { lcp = current proc/func, lcp1 = previous proc/func, lcp2 = parm list }
       if (sy = ident) or (fsy = operatorsy) then begin
         if fsy = operatorsy then begin { process operator definition }
@@ -8722,11 +8753,12 @@ end;
             strassvr(name, ops)
           end else strassvf(name, ids);
           idtype := nil; next := nil;
-          sysrot := false; extern := extnone; pflev := level; 
-          genlabel(lbname); pfdeckind := declared; pfkind := actual; 
+          sysrot := false; extern := extnone; cconv := false;
+          pflev := level;
+          genlabel(lbname); pfdeckind := declared; pfkind := actual;
           pfname := lbname; pflist := nil; asgn := false;
           pext := incact; pmod := incstk; refer := false;
-          pfattr := fpat; grpnxt := nil; grppar := lcp; 
+          pfattr := fpat; cconv := ccv; grpnxt := nil; grppar := lcp;
           if lcp1 <> nil then grppar := lcp1^.grppar;
           if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
             if pfattr = fpavirtual then begin
@@ -8809,29 +8841,6 @@ end;
         if not (sy in fsys) then
           begin error(6); skip(fsys) end
       end;
-      { emit external descriptor to intermediate }
-      if extn and prrval then begin
-        sprcode := prcode; prcode := true;
-        write(prr, 'z ');
-        case lcp^.extern of
-          extpascal: write(prr, '0 ');
-          extc:      write(prr, '1 ');
-          extmodule: write(prr, '2 ')
-        end;
-        write(prr, '0 '); { conversion: none for now }
-        if incact then writevp(prr, incstk^.mn)
-        else writevp(prr, nammod);
-        write(prr, '.');
-        writevp(prr, lcp^.name);
-        write(prr, '@');
-        if lcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
-        if lcp^.pflist <> nil then begin
-          write(prr, '_');
-          prtpartyp(lcp)
-        end;
-        writeln(prr);
-        prcode := sprcode
-      end;
       { now the proc/func is completely defined }
       forw := false; { set not forwarded }
       form := false; { set no matching entry }
@@ -8894,7 +8903,30 @@ end;
         parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
         if amd64_sysv then
           parmoffsysv(lcp^.pflist, level);
-        lcp^.locstr := lc { save locals counter }
+        lcp^.locstr := lc; { save locals counter }
+        { emit external descriptor to intermediate }
+        if extn and prrval then begin
+          sprcode := prcode; prcode := true;
+          write(prr, 'z ');
+          case lcp^.extern of
+            extpascal: write(prr, '0 ');
+            extc:      write(prr, '1 ');
+            extmodule: write(prr, '2 ')
+          end;
+          if lcp^.cconv then write(prr, '1 ') else write(prr, '0 ');
+          if incact then writevp(prr, incstk^.mn)
+          else writevp(prr, nammod);
+          write(prr, '.');
+          writevp(prr, lcp^.name);
+          write(prr, '@');
+          if lcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
+          if lcp^.pflist <> nil then begin
+            write(prr, '_');
+            prtpartyp(lcp)
+          end;
+          writeln(prr);
+          prcode := sprcode
+        end
       end else begin
         parmrg(lcp1^.pflist); { merge back the forwarded parameter list }
         if plst and not (lcp^.pfattr = fpaoverload) then 
@@ -10619,8 +10651,8 @@ end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
           begin klass := func; strassvr(name, na[i]); idtype := realptr;
-            pflist := cp; forwdecl := false; sysrot := true; extern := extnone; 
-            pflev := 0; pfname := i - 12; pfdeckind := declared; 
+            pflist := cp; forwdecl := false; sysrot := true; extern := extnone;
+            cconv := false; pflev := 0; pfname := i - 12; pfdeckind := declared;
             pfkind := actual; pfaddr := 0; pext := false; pmod := nil; 
             pfattr := fpanone; grpnxt := nil; grppar := cp1; pfvid := nil
           end;
@@ -10784,7 +10816,8 @@ end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
       begin klass := proc; strassvr(name, '         '); idtype := nil;
-        forwdecl := false; next := nil; sysrot := false; extern := extnone; 
+        forwdecl := false; next := nil; sysrot := false; extern := extnone;
+        cconv := false;
         pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
         pfkind := actual; pmod := nil; grpnxt := nil; grppar := uprcptr;
         pfvid := nil
@@ -10792,7 +10825,8 @@ end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
       begin klass := func; strassvr(name, '         '); idtype := nil;
-        next := nil; forwdecl := false; sysrot := false; extern := extnone; 
+        next := nil; forwdecl := false; sysrot := false; extern := extnone;
+        cconv := false;
         pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
         pfkind := actual; pmod := nil; grpnxt := nil; grppar := ufctptr;
         pfvid := nil
@@ -11208,7 +11242,7 @@ end;
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
       mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
       mn[124] :='mpc'; mn[125] :='cvf'; mn[126] :='lsp'; mn[127] :='cpl';
-      mn[128] :='sfs'; mn[129] :='sev'; mn[130] :='mdc';
+      mn[128] :='sfs'; mn[129] :='sev'; mn[130] :='mdc'; mn[131] :='s2c';
 
     end (*instrmnemonics*) ;
 

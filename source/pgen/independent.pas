@@ -628,7 +628,7 @@ instab: inspar = array
   record 'less      ', 1, false end,
   record 'lesc      ', 1, false end,
   record 'lesm      ', 1, false end,
-  record '---       ', 0, false end,
+  record 's2c       ', 1, false end,
   record 'mrkl*     ', 0, false end,
   record 'ckvi      ', 2, false end,
   record 'cps       ', 3, false end,
@@ -2127,7 +2127,7 @@ begin
  for i := 1 to maxalfa do word[i] := ' ';
  i := 1; { set 1st character of word }
  if not (ch in ['a'..'z']) then error('No operation label');
- while ch in ['a'..'z'] do begin
+ while ch in ['a'..'z','0'..'9'] do begin
    if i = maxalfa then error('Opcode label is too long');
    word[i] := ch;
    i := i+1;

@@ -2008,6 +2008,7 @@ procedure load;
          { sev is an alias for stra in pint. It has meaning to pgen. }
          instr[253]:='sev       '; insp[253] := true;  insq[253] := intsize;
          instr[254]:='mdc       '; insp[254] := false; insq[254] := intsize;
+         instr[255]:='s2c       '; insp[255] := false; insq[255] := intsize;
 
          sptable[ 0]  :='get       ';     sptable[ 1]  :='put       ';
          sptable[ 2]  :='thw       ';     sptable[ 3]  :='rln       ';
@@ -2778,10 +2779,10 @@ procedure load;
           (*ixa,mov,dmp,swp*)
           16,55,117,118,
 
-          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max,retm,lsa,mdc*)
+          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max,retm,lsa,mdc,s2c*)
           198, 9, 85, 86, 87, 88, 89,10, 90, 93, 94,57,103,104,175,177,178,
           179, 180, 201, 202,203,211,214,237,241,
-          92,254: begin read(prd,q); storeop; storeq end;
+          92,254,255: begin read(prd,q); storeop; storeq end;
 
           (*ldo,sro,lao*)
           1, 194, 65, 66, 67, 68, 69,
@@ -5345,6 +5346,7 @@ begin
     251 (*cpl*): begin popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
                        pshadr(ad2) end;
     254 (*mdc*): begin getq; popint(i1); pshint(i1); pshint(i1+q) end;
+    255 (*s2c*): getq; { no-op in interpreter, skip operand }
 
     242 (*eext*): begin
                     i1 := sp+adrsize; { index parameters }
@@ -5354,8 +5356,8 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 250,
-    255: errorv(InvalidInstruction)
+    173, 228, 229, 230, 231, 232, 233, 234, 248,
+    250: errorv(InvalidInstruction)
 
   end
 end;
