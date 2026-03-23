@@ -153,11 +153,11 @@ var
 { no graphical windows mode }              fngwin:  boolean;
 { default to terminal mode }               fdeftrm: boolean;
 { default to graphical mode }              fdefgra: boolean;
-{ compile for pint (interpreter) }         fpint:   boolean;
-{ compile for pmach (interpreter) }        fpmach:  boolean;
-{ compile for cmach (compiler) }           fcmach:  boolean;
-{ compile for package mode }               fpack:   boolean;
-{ compile for pgen mode (executable) }     fpgen:   boolean;
+{ compile for pint (interpreter) }         fpint, spint:   boolean;
+{ compile for pmach (interpreter) }        fpmach, spmach:  boolean;
+{ compile for cmach (compiler) }           fcmach, scmach:  boolean;
+{ compile for package mode }               fpack, spack:   boolean;
+{ compile for pgen mode (executable) }     fpgen, spgen:   boolean;
 { these are "pass through" options, options meant for programs we execute }
 { generate coff symbols }                  fsymcof: boolean;
 { passthrough options: these have "set/not set indicators }
@@ -376,12 +376,27 @@ begin
       setflg('doc', 'document', fdoc); { generate documentation }
       setflg('html', fhtml); { generate html documentation }
       setflg('h', 'help', fhelp); { print help }
-      setflg('pint', fpint); { compile for pint (interpreter) }
-      setflg('pmach', fpmach); { compile for pmach (interpreter) }
-      setflg('cmach', fcmach); { compile for cmach (interpreter) }
-      setflg('package', fpack); { compile for package mode }
-      { note: pgen is the default, and so is a no-op }
-      setflg('pgen', fpgen); { compile for package mode }
+      { set output modes }
+      spint := false; spmach := false; scmach := false; spack := false; 
+      spgen := false;
+      setflg('pint', fpint, spint); { compile for pint (interpreter) }
+      setflg('pmach', fpmach, spmach); { compile for pmach (interpreter) }
+      setflg('cmach', fcmach, scmach); { compile for cmach (interpreter) }
+      setflg('package', fpack, spack); { compile for package mode }
+      setflg('pgen', fpgen, spgen); { compile for package mode }
+      { output modes need to be exclusive }
+      if spint then begin fpint := true; fpmach := false; fcmach := false; 
+                          fpack := false; fpgen := false end;
+      if spmach then begin fpint := false; fpmach := true; fcmach := false; 
+                           fpack := false; fpgen := false end;
+      if scmach then begin fpint := false; fpmach := false; fcmach := true; 
+                           fpack := false; fpgen := false end;
+      if spack then begin fpint := false; fpmach := false; fcmach := false; 
+                          fpack := true; fpgen := false end;
+      if spgen then begin fpint := false; fpmach := false; fcmach := false; 
+                          fpack := false; fpgen := true end;
+      spint := false; spmach := false; scmach := false; spack := false; 
+      spgen := false;
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
@@ -2557,10 +2572,15 @@ begin
    fdeftrm := false; { set no default to terminal mode }
    fdefgra := false; { set no default to graphical mode }
    fpint := false; { set no pint (interpreter) }
+   spint := false;
    fpmach := false; { set no pmach (interpreter) }
+   spmach := false;
    fcmach := false; { set no cmach (interpreter) }
+   scmach := false;
    fpack := false; { set no package (interpreter) }
+   spack := false;
    fpgen := true; { set executable mode by default }
+   spgen := false;
    { passthrough }
    fprtlabdef := false;  
    sprtlabdef := false;  
