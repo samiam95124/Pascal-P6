@@ -38,12 +38,18 @@ Please note that to set up all features of the system, you need to clone
 submodules as well:
 
 git clone --recurse-submodules https://github.com/samiam95124/Pascal-P6.git
+cd Pascal-P6
+git submodule foreach git checkout master
+
+The clone fetches the submodules at a pinned commit. The foreach command
+puts each submodule on its master branch so you have the latest version.
 
 If you already cloned the repo without submodules, don't worry. Just execute:
 
 git submodule update --init --recursive
+git submodule foreach git checkout master
 
-And you will get the submodules.
+And you will get the submodules on their master branches.
 
 Pascal-p6 uses the standard GNU release layout. You execute:
 
