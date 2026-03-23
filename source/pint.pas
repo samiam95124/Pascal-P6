@@ -468,7 +468,11 @@ type
                      pi_cuf,     { 246 } pi_cif,     { 247 } pi_mpc,     { 248 }
                      pi_cvf,     { 249 } pi_lsp,     { 250 } pi_cpl,     { 251 }
                      pi_sfs,     { 252 } pi_sev,     { 253 } pi_mdc,     { 254 }
-                     pi_ph2      { 255 });
+                     pi_ph2      { 255 }
+                     { past the 255 instruction, these instructions don't fit
+                       into a single byte. Thus after this, these are pseudo
+                       instructions that don't end up as machine instructions. }
+                    );
       beta        = packed array[1..25] of char; (*error message*)
       alfainx     = 1..maxalfa; { index for alfa type }
       alfa        = packed array[alfainx] of char;
@@ -554,6 +558,268 @@ type
                 dcret, dchelp, dch, dclistline, dcdumpsymbo);
       filext = packed array [1..4] of char; { filename extension }
 
+fixed
+
+      { instruction table }
+      ins: array[instyp] of insrec = array
+        record 'lodi      ', true , intsize, pi_lodi end,
+        record 'ldoi      ', false, intsize, pi_ldoi end,
+        record 'stri      ', true , intsize, pi_stri end,
+        record 'sroi      ', false, intsize, pi_sroi end,
+        record 'lda       ', true , intsize, pi_lda end,
+        record 'lao       ', false, intsize, pi_lao end,
+        record 'stoi      ', false, 0, pi_stoi end,
+        record 'ldcs      ', false, intsize, pi_ldcs end,
+        record 'cjp       ', false, intsize*2, pi_cjp end,
+        record 'indi      ', false, intsize, pi_indi end,
+        record 'inci      ', false, intsize, pi_inci end,
+        record 'mst       ', true , intsize*2, pi_mst end,
+        record 'cup       ', false, intsize, pi_cup end,
+        record 'rip       ', false, adrsize, pi_rip end,
+        record 'retp      ', false, intsize, pi_retp end,
+        record 'csp       ', false, 1, pi_csp end,
+        record 'ixa       ', false, intsize, pi_ixa end,
+        record 'equa      ', false, 0, pi_equa end,
+        record 'neqa      ', false, 0, pi_neqa end,
+        record 'brk*      ', false, 0, pi_brk end,
+        record 'lnp*      ', false, intsize, pi_lnp end,
+        record 'cal       ', false, intsize, pi_cal end,
+        record 'ret       ', false, 0, pi_ret end,
+        record 'ujp       ', false, intsize, pi_ujp end,
+        record 'fjp       ', false, intsize, pi_fjp end,
+        record 'xjp       ', false, intsize, pi_xjp end,
+        record 'chki      ', false, intsize, pi_chki end,
+        record 'cuv       ', false, intsize, pi_cuv end,
+        record 'adi       ', false, 0, pi_adi end,
+        record 'adr       ', false, 0, pi_adr end,
+        record 'sbi       ', false, 0, pi_sbi end,
+        record 'sbr       ', false, 0, pi_sbr end,
+        record 'sgs       ', false, 0, pi_sgs end,
+        record 'flt       ', false, 0, pi_flt end,
+        record 'flo       ', false, 0, pi_flo end,
+        record 'trc       ', false, 0, pi_trc end,
+        record 'ngi       ', false, 0, pi_ngi end,
+        record 'ngr       ', false, 0, pi_ngr end,
+        record 'sqi       ', false, 0, pi_sqi end,
+        record 'sqr       ', false, 0, pi_sqr end,
+        record 'abi       ', false, 0, pi_abi end,
+        record 'abr       ', false, 0, pi_abr end,
+        record 'notb      ', false, 0, pi_notb end,
+        record 'and       ', false, 0, pi_and end,
+        record 'ior       ', false, 0, pi_ior end,
+        record 'dif       ', false, 0, pi_dif end,
+        record 'int       ', false, 0, pi_int end,
+        record 'uni       ', false, 0, pi_uni end,
+        record 'inn       ', false, 0, pi_inn end,
+        record 'mod       ', false, 0, pi_mod end,
+        record 'odd       ', false, 0, pi_odd end,
+        record 'mpi       ', false, 0, pi_mpi end,
+        record 'mpr       ', false, 0, pi_mpr end,
+        record 'dvi       ', false, 0, pi_dvi end,
+        record 'dvr       ', false, 0, pi_dvr end,
+        record 'mov       ', false, intsize, pi_mov end,
+        record 'lca       ', false, intsize, pi_lca end,
+        record 'deci      ', false, intsize, pi_deci end,
+        record 'stp*      ', false, 0, pi_stp end,
+        record 'ordi      ', false, 0, pi_ordi end,
+        record 'chr       ', false, 0, pi_chr end,
+        record 'ujc       ', false, intsize, pi_ujc end,
+        record 'rnd       ', false, 0, pi_rnd end,
+        record 'pck       ', false, intsize*2, pi_pck end,
+        record 'upk       ', false, intsize*2, pi_upk end,
+        record 'ldoa      ', false, intsize, pi_ldoa end,
+        record 'ldor      ', false, intsize, pi_ldor end,
+        record 'ldos      ', false, intsize, pi_ldos end,
+        record 'ldob      ', false, intsize, pi_ldob end,
+        record 'ldoc      ', false, intsize, pi_ldoc end,
+        record 'stra      ', true , intsize, pi_stra end,
+        record 'strr      ', true , intsize, pi_strr end,
+        record 'strs      ', true , intsize, pi_strs end,
+        record 'strb      ', true , intsize, pi_strb end,
+        record 'strc      ', true , intsize, pi_strc end,
+        record 'sroa      ', false, intsize, pi_sroa end,
+        record 'sror      ', false, intsize, pi_sror end,
+        record 'sros      ', false, intsize, pi_sros end,
+        record 'srob      ', false, intsize, pi_srob end,
+        record 'sroc      ', false, intsize, pi_sroc end,
+        record 'stoa      ', false, 0, pi_stoa end,
+        record 'stor      ', false, 0, pi_stor end,
+        record 'stos      ', false, 0, pi_stos end,
+        record 'stob      ', false, 0, pi_stob end,
+        record 'stoc      ', false, 0, pi_stoc end,
+        record 'inda      ', false, intsize, pi_inda end,
+        record 'indr      ', false, intsize, pi_indr end,
+        record 'inds      ', false, intsize, pi_inds end,
+        record 'indb      ', false, intsize, pi_indb end,
+        record 'indc      ', false, intsize, pi_indc end,
+        record 'inca      ', false, intsize, pi_inca end,
+        record 'suv       ', false, intsize*2, pi_suv end,
+        record 'vbs       ', false, intsize, pi_vbs end,
+        record 'incb      ', false, intsize, pi_incb end,
+        record 'incc      ', false, intsize, pi_incc end,
+        record 'chka      ', false, intsize, pi_chka end,
+        record 'vbe       ', false, 0, pi_vbe end,
+        record 'chks      ', false, intsize, pi_chks end,
+        record 'chkb      ', false, intsize, pi_chkb end,
+        record 'chkc      ', false, intsize, pi_chkc end,
+        record 'cvbi      ', false, intsize*3, pi_cvbi end,
+        record 'ivtx      ', false, intsize*3, pi_ivtx end,
+        record 'ivtb      ', false, intsize*3, pi_ivtb end,
+        record 'decb      ', false, intsize, pi_decb end,
+        record 'decc      ', false, intsize, pi_decc end,
+        record 'loda      ', true , intsize, pi_loda end,
+        record 'lodr      ', true , intsize, pi_lodr end,
+        record 'lods      ', true , intsize, pi_lods end,
+        record 'lodb      ', true , intsize, pi_lodb end,
+        record 'lodc      ', true , intsize, pi_lodc end,
+        record 'rgs       ', false, 0, pi_rgs end,
+        record 'ivtc      ', false, intsize*3, pi_ivtc end,
+        record 'ipj       ', true , intsize, pi_ipj end,
+        record 'cip       ', false, 0, pi_cip end,
+        record 'lpa       ', true , intsize, pi_lpa end,
+        record 'cvbx      ', false, intsize*3, pi_cvbx end,
+        record 'cvbb      ', false, intsize*3, pi_cvbb end,
+        record 'dmp       ', false, intsize, pi_dmp end,
+        record 'swp       ', false, intsize, pi_swp end,
+        record 'tjp       ', false, intsize, pi_tjp end,
+        record 'lip       ', true , intsize, pi_lip end,
+        record 'cvbc      ', false, intsize*3, pi_cvbc end,
+        record 'vis       ', false, intsize*2, pi_vis end,
+        record 'ldci      ', false, intsize, pi_ldci end,
+        record 'ldcr      ', false, intsize, pi_ldcr end,
+        record 'ldcn      ', false, 0, pi_ldcn end,
+        record 'ldcb      ', false, boolsize, pi_ldcb end,
+        record 'ldcc      ', false, charsize, pi_ldcc end,
+        record 'reti      ', false, intsize, pi_reti end,
+        record 'retr      ', false, intsize, pi_retr end,
+        record 'retc      ', false, intsize, pi_retc end,
+        record 'retb      ', false, intsize, pi_retb end,
+        record 'reta      ', false, intsize, pi_reta end,
+        record 'vip       ', false, intsize*2, pi_vip end,
+        record 'ordb      ', false, 0, pi_ordb end,
+        record 'lcp       ', false, 0, pi_lcp end,
+        record 'ordc      ', false, 0, pi_ordc end,
+        record 'equi      ', false, 0, pi_equi end,
+        record 'equr      ', false, 0, pi_equr end,
+        record 'equb      ', false, 0, pi_equb end,
+        record 'equs      ', false, 0, pi_equs end,
+        record 'equc      ', false, 0, pi_equc end,
+        record 'equm      ', false, intsize, pi_equm end,
+        record 'neqi      ', false, 0, pi_neqi end,
+        record 'neqr      ', false, 0, pi_neqr end,
+        record 'neqb      ', false, 0, pi_neqb end,
+        record 'neqs      ', false, 0, pi_neqs end,
+        record 'neqc      ', false, 0, pi_neqc end,
+        record 'neqm      ', false, intsize, pi_neqm end,
+        record 'geqi      ', false, 0, pi_geqi end,
+        record 'geqr      ', false, 0, pi_geqr end,
+        record 'geqb      ', false, 0, pi_geqb end,
+        record 'geqs      ', false, 0, pi_geqs end,
+        record 'geqc      ', false, 0, pi_geqc end,
+        record 'geqm      ', false, intsize, pi_geqm end,
+        record 'grti      ', false, 0, pi_grti end,
+        record 'grtr      ', false, 0, pi_grtr end,
+        record 'grtb      ', false, 0, pi_grtb end,
+        record 'grts      ', false, 0, pi_grts end,
+        record 'grtc      ', false, 0, pi_grtc end,
+        record 'grtm      ', false, intsize, pi_grtm end,
+        record 'leqi      ', false, 0, pi_leqi end,
+        record 'leqr      ', false, 0, pi_leqr end,
+        record 'leqb      ', false, 0, pi_leqb end,
+        record 'leqs      ', false, 0, pi_leqs end,
+        record 'leqc      ', false, 0, pi_leqc end,
+        record 'leqm      ', false, intsize, pi_leqm end,
+        record 'lesi      ', false, 0, pi_lesi end,
+        record 'lesr      ', false, 0, pi_lesr end,
+        record 'lesb      ', false, 0, pi_lesb end,
+        record 'less      ', false, 0, pi_less end,
+        record 'lesc      ', false, 0, pi_lesc end,
+        record 'lesm      ', false, intsize, pi_lesm end,
+        record '---       ', false, 0, pi_ph1 end,
+        record 'mrkl*     ', false, intsize, pi_mrkl end,
+        record 'ckvi      ', false, intsize, pi_ckvi end,
+        record 'cps       ', false, 0, pi_cps end,
+        record 'cpc       ', false, intsize, pi_cpc end,
+        record 'aps       ', false, intsize, pi_aps end,
+        record 'ckvb      ', false, intsize, pi_ckvb end,
+        record 'ckvc      ', false, intsize, pi_ckvc end,
+        record 'dupi      ', false, 0, pi_dupi end,
+        record 'dupa      ', false, 0, pi_dupa end,
+        record 'dupr      ', false, 0, pi_dupr end,
+        record 'dups      ', false, 0, pi_dups end,
+        record 'dupb      ', false, 0, pi_dupb end,
+        record 'dupc      ', false, 0, pi_dupc end,
+        record 'cks       ', false, 0, pi_cks end,
+        record 'cke       ', false, 0, pi_cke end,
+        record 'inv       ', false, 0, pi_inv end,
+        record 'ckla      ', false, intsize, pi_ckla end,
+        record 'cta       ', false, intsize*3, pi_cta end,
+        record 'ivti      ', false, intsize*3, pi_ivti end,
+        record 'lodx      ', true , intsize, pi_lodx end,
+        record 'ldox      ', false, intsize, pi_ldox end,
+        record 'strx      ', true , intsize, pi_strx end,
+        record 'srox      ', false, intsize, pi_srox end,
+        record 'stox      ', false, 0, pi_stox end,
+        record 'indx      ', false, intsize, pi_indx end,
+        record 'chkx      ', false, intsize, pi_chkx end,
+        record 'ordx      ', false, 0, pi_ordx end,
+        record 'incx      ', false, intsize, pi_incx end,
+        record 'decx      ', false, intsize, pi_decx end,
+        record 'ckvx      ', false, intsize, pi_ckvx end,
+        record 'retx      ', false, intsize, pi_retx end,
+        record 'noti      ', false, 0, pi_noti end,
+        record 'xor       ', false, 0, pi_xor end,
+        record 'bge       ', false, intsize, pi_bge end,
+        record 'ede       ', false, 0, pi_ede end,
+        record 'mse       ', false, 0, pi_mse end,
+        record 'apc       ', false, intsize*2, pi_apc end,
+        record 'cxs       ', false, intsize, pi_cxs end,
+        record 'cxc       ', false, intsize*2, pi_cxc end,
+        record 'lft       ', false, intsize, pi_lft end,
+        record 'max       ', false, intsize, pi_max end,
+        record 'equv      ', false, 0, pi_equv end,
+        record 'neqv      ', false, 0, pi_neqv end,
+        record 'lesv      ', false, 0, pi_lesv end,
+        record 'grtv      ', false, 0, pi_grtv end,
+        record 'leqv      ', false, 0, pi_leqv end,
+        record 'geqv      ', false, 0, pi_geqv end,
+        record 'vdp       ', false, 0, pi_vdp end,
+        record 'spc       ', false, 0, pi_spc end,
+        record 'ccs       ', false, intsize*2, pi_ccs end,
+        record 'scp       ', false, 0, pi_scp end,
+        record 'ldp       ', false, 0, pi_ldp end,
+        record 'vin       ', false, intsize*2, pi_vin end,
+        record 'vdd       ', false, 0, pi_vdd end,
+        record 'ltci      ', false, intsize, pi_ltci end,
+        record 'ltcr      ', false, intsize, pi_ltcr end,
+        record 'ltcs      ', false, intsize, pi_ltcs end,
+        record 'ltcb      ', false, intsize, pi_ltcb end,
+        record 'ltcc      ', false, intsize, pi_ltcc end,
+        record 'ltcx      ', false, intsize, pi_ltcx end,
+        record 'lto       ', false, intsize, pi_lto end,
+        record 'stom      ', false, intsize*2, pi_stom end,
+        record 'rets      ', false, intsize, pi_rets end,
+        record 'retm      ', false, intsize*2, pi_retm end,
+        record 'ctb       ', false, intsize*2, pi_ctb end,
+        record 'cpp       ', false, intsize*2, pi_cpp end,
+        record 'cpr       ', false, intsize*2, pi_cpr end,
+        record 'lsa       ', false, intsize, pi_lsa end,
+        record 'eext*     ', false, 0, pi_eext end,
+        record 'wbs       ', false, 0, pi_wbs end,
+        record 'wbe       ', false, 0, pi_wbe end,
+        record 'sfr       ', false, intsize, pi_sfr end,
+        record 'cuf       ', false, intsize, pi_cuf end,
+        record 'cif       ', false, 0, pi_cif end,
+        record 'mpc       ', false, 0, pi_mpc end,
+        record 'cvf       ', false, intsize, pi_cvf end,
+        record 'lsp       ', false, 0, pi_lsp end,
+        record 'cpl       ', false, 0, pi_cpl end,
+        record 'sfs       ', false, intsize*2, pi_sfs end,
+        record 'sev       ', true , intsize, pi_sev end,
+        record 'mdc       ', false, intsize, pi_mdc end,
+        record '          ', false, 0, pi_ph2 end
+      end;
+
 var   pc, pcs     : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
       gbtop, gbsiz: address;   { top of globals, size of globals }
@@ -618,7 +884,6 @@ var   pc, pcs     : address;   (*program address register*)
 
       prd,prr     : text; (*prd for read only, prr for write only *)
 
-      ins         : array[instyp] of insrec; { instruction table }
       sptable     : array[0..maxsp] of alfa; (*standard functions and procedures*)
       srclin      : integer; { current source line executing }
       brktbl      : array [brkinx] of break; { breakpoint table }
@@ -1829,276 +2094,7 @@ procedure load;
 
    procedure init;
       var i: integer;
-   begin for i := 0 to maxins do ins[i].mn := '          ';
-         {
-
-           Notes:
-
-           1. Instructions marked with "*" are for internal use only.
-              The "*" mark both shows in the listing, and also prevents
-              their use in the intermediate file, since only alpha
-              characters are allowed as opcode labels.
-           2. Instructions marked with "---" are unused.
-
-         }
-         ins[  0].mn:='lodi      '; ins[  0].mi := pi_lodi;     ins[  0].p := true;  ins[  0].q := intsize;
-         ins[  1].mn:='ldoi      '; ins[  1].mi := pi_ldoi;     ins[  1].p := false; ins[  1].q := intsize;
-         ins[  2].mn:='stri      '; ins[  2].mi := pi_stri;     ins[  2].p := true;  ins[  2].q := intsize;
-         ins[  3].mn:='sroi      '; ins[  3].mi := pi_sroi;     ins[  3].p := false; ins[  3].q := intsize;
-         ins[  4].mn:='lda       '; ins[  4].mi := pi_lda;      ins[  4].p := true;  ins[  4].q := intsize;
-         ins[  5].mn:='lao       '; ins[  5].mi := pi_lao;      ins[  5].p := false; ins[  5].q := intsize;
-         ins[  6].mn:='stoi      '; ins[  6].mi := pi_stoi;     ins[  6].p := false; ins[  6].q := 0;
-         ins[  7].mn:='ldcs      '; ins[  7].mi := pi_ldcs;     ins[  7].p := false; ins[  7].q := intsize;
-         ins[  8].mn:='cjp       '; ins[  8].mi := pi_cjp;      ins[  8].p := false; ins[  8].q := intsize*2;
-         ins[  9].mn:='indi      '; ins[  9].mi := pi_indi;     ins[  9].p := false; ins[  9].q := intsize;
-         ins[ 10].mn:='inci      '; ins[ 10].mi := pi_inci;     ins[ 10].p := false; ins[ 10].q := intsize;
-         ins[ 11].mn:='mst       '; ins[ 11].mi := pi_mst;      ins[ 11].p := true;  ins[ 11].q := intsize*2;
-         ins[ 12].mn:='cup       '; ins[ 12].mi := pi_cup;      ins[ 12].p := false; ins[ 12].q := intsize;
-         ins[ 13].mn:='rip       '; ins[ 13].mi := pi_rip;      ins[ 13].p := false; ins[ 13].q := adrsize;
-         ins[ 14].mn:='retp      '; ins[ 14].mi := pi_retp;     ins[ 14].p := false; ins[ 14].q := intsize;
-         ins[ 15].mn:='csp       '; ins[ 15].mi := pi_csp;      ins[ 15].p := false; ins[ 15].q := 1;
-         ins[ 16].mn:='ixa       '; ins[ 16].mi := pi_ixa;      ins[ 16].p := false; ins[ 16].q := intsize;
-         ins[ 17].mn:='equa      '; ins[ 17].mi := pi_equa;     ins[ 17].p := false; ins[ 17].q := 0;
-         ins[ 18].mn:='neqa      '; ins[ 18].mi := pi_neqa;     ins[ 18].p := false; ins[ 18].q := 0;
-         ins[ 19].mn:='brk*      '; ins[ 19].mi := pi_brk;      ins[ 19].p := false; ins[ 19].q := 0;
-         ins[ 20].mn:='lnp*      '; ins[ 20].mi := pi_lnp;      ins[ 20].p := false; ins[ 20].q := intsize;
-         ins[ 21].mn:='cal       '; ins[ 21].mi := pi_cal;      ins[ 21].p := false; ins[ 21].q := intsize;
-         ins[ 22].mn:='ret       '; ins[ 22].mi := pi_ret;      ins[ 22].p := false; ins[ 22].q := 0;
-         ins[ 23].mn:='ujp       '; ins[ 23].mi := pi_ujp;      ins[ 23].p := false; ins[ 23].q := intsize;
-         ins[ 24].mn:='fjp       '; ins[ 24].mi := pi_fjp;      ins[ 24].p := false; ins[ 24].q := intsize;
-         ins[ 25].mn:='xjp       '; ins[ 25].mi := pi_xjp;      ins[ 25].p := false; ins[ 25].q := intsize;
-         ins[ 26].mn:='chki      '; ins[ 26].mi := pi_chki;     ins[ 26].p := false; ins[ 26].q := intsize;
-         ins[ 27].mn:='cuv       '; ins[ 27].mi := pi_cuv;      ins[ 27].p := false; ins[ 27].q := intsize;
-         ins[ 28].mn:='adi       '; ins[ 28].mi := pi_adi;      ins[ 28].p := false; ins[ 28].q := 0;
-         ins[ 29].mn:='adr       '; ins[ 29].mi := pi_adr;      ins[ 29].p := false; ins[ 29].q := 0;
-         ins[ 30].mn:='sbi       '; ins[ 30].mi := pi_sbi;      ins[ 30].p := false; ins[ 30].q := 0;
-         ins[ 31].mn:='sbr       '; ins[ 31].mi := pi_sbr;      ins[ 31].p := false; ins[ 31].q := 0;
-         ins[ 32].mn:='sgs       '; ins[ 32].mi := pi_sgs;      ins[ 32].p := false; ins[ 32].q := 0;
-         ins[ 33].mn:='flt       '; ins[ 33].mi := pi_flt;      ins[ 33].p := false; ins[ 33].q := 0;
-         ins[ 34].mn:='flo       '; ins[ 34].mi := pi_flo;      ins[ 34].p := false; ins[ 34].q := 0;
-         ins[ 35].mn:='trc       '; ins[ 35].mi := pi_trc;      ins[ 35].p := false; ins[ 35].q := 0;
-         ins[ 36].mn:='ngi       '; ins[ 36].mi := pi_ngi;      ins[ 36].p := false; ins[ 36].q := 0;
-         ins[ 37].mn:='ngr       '; ins[ 37].mi := pi_ngr;      ins[ 37].p := false; ins[ 37].q := 0;
-         ins[ 38].mn:='sqi       '; ins[ 38].mi := pi_sqi;      ins[ 38].p := false; ins[ 38].q := 0;
-         ins[ 39].mn:='sqr       '; ins[ 39].mi := pi_sqr;      ins[ 39].p := false; ins[ 39].q := 0;
-         ins[ 40].mn:='abi       '; ins[ 40].mi := pi_abi;      ins[ 40].p := false; ins[ 40].q := 0;
-         ins[ 41].mn:='abr       '; ins[ 41].mi := pi_abr;      ins[ 41].p := false; ins[ 41].q := 0;
-         ins[ 42].mn:='notb      '; ins[ 42].mi := pi_notb;     ins[ 42].p := false; ins[ 42].q := 0;
-         ins[ 43].mn:='and       '; ins[ 43].mi := pi_and;      ins[ 43].p := false; ins[ 43].q := 0;
-         ins[ 44].mn:='ior       '; ins[ 44].mi := pi_ior;      ins[ 44].p := false; ins[ 44].q := 0;
-         ins[ 45].mn:='dif       '; ins[ 45].mi := pi_dif;      ins[ 45].p := false; ins[ 45].q := 0;
-         ins[ 46].mn:='int       '; ins[ 46].mi := pi_int;      ins[ 46].p := false; ins[ 46].q := 0;
-         ins[ 47].mn:='uni       '; ins[ 47].mi := pi_uni;      ins[ 47].p := false; ins[ 47].q := 0;
-         ins[ 48].mn:='inn       '; ins[ 48].mi := pi_inn;      ins[ 48].p := false; ins[ 48].q := 0;
-         ins[ 49].mn:='mod       '; ins[ 49].mi := pi_mod;      ins[ 49].p := false; ins[ 49].q := 0;
-         ins[ 50].mn:='odd       '; ins[ 50].mi := pi_odd;      ins[ 50].p := false; ins[ 50].q := 0;
-         ins[ 51].mn:='mpi       '; ins[ 51].mi := pi_mpi;      ins[ 51].p := false; ins[ 51].q := 0;
-         ins[ 52].mn:='mpr       '; ins[ 52].mi := pi_mpr;      ins[ 52].p := false; ins[ 52].q := 0;
-         ins[ 53].mn:='dvi       '; ins[ 53].mi := pi_dvi;      ins[ 53].p := false; ins[ 53].q := 0;
-         ins[ 54].mn:='dvr       '; ins[ 54].mi := pi_dvr;      ins[ 54].p := false; ins[ 54].q := 0;
-         ins[ 55].mn:='mov       '; ins[ 55].mi := pi_mov;      ins[ 55].p := false; ins[ 55].q := intsize;
-         ins[ 56].mn:='lca       '; ins[ 56].mi := pi_lca;      ins[ 56].p := false; ins[ 56].q := intsize;
-         ins[ 57].mn:='deci      '; ins[ 57].mi := pi_deci;     ins[ 57].p := false; ins[ 57].q := intsize;
-         ins[ 58].mn:='stp*      '; ins[ 58].mi := pi_stp;      ins[ 58].p := false; ins[ 58].q := 0;
-         ins[ 59].mn:='ordi      '; ins[ 59].mi := pi_ordi;     ins[ 59].p := false; ins[ 59].q := 0;
-         ins[ 60].mn:='chr       '; ins[ 60].mi := pi_chr;      ins[ 60].p := false; ins[ 60].q := 0;
-         ins[ 61].mn:='ujc       '; ins[ 61].mi := pi_ujc;      ins[ 61].p := false; ins[ 61].q := intsize;
-         ins[ 62].mn:='rnd       '; ins[ 62].mi := pi_rnd;      ins[ 62].p := false; ins[ 62].q := 0;
-         ins[ 63].mn:='pck       '; ins[ 63].mi := pi_pck;      ins[ 63].p := false; ins[ 63].q := intsize*2;
-         ins[ 64].mn:='upk       '; ins[ 64].mi := pi_upk;      ins[ 64].p := false; ins[ 64].q := intsize*2;
-         ins[ 65].mn:='ldoa      '; ins[ 65].mi := pi_ldoa;     ins[ 65].p := false; ins[ 65].q := intsize;
-         ins[ 66].mn:='ldor      '; ins[ 66].mi := pi_ldor;     ins[ 66].p := false; ins[ 66].q := intsize;
-         ins[ 67].mn:='ldos      '; ins[ 67].mi := pi_ldos;     ins[ 67].p := false; ins[ 67].q := intsize;
-         ins[ 68].mn:='ldob      '; ins[ 68].mi := pi_ldob;     ins[ 68].p := false; ins[ 68].q := intsize;
-         ins[ 69].mn:='ldoc      '; ins[ 69].mi := pi_ldoc;     ins[ 69].p := false; ins[ 69].q := intsize;
-         ins[ 70].mn:='stra      '; ins[ 70].mi := pi_stra;     ins[ 70].p := true;  ins[ 70].q := intsize;
-         ins[ 71].mn:='strr      '; ins[ 71].mi := pi_strr;     ins[ 71].p := true;  ins[ 71].q := intsize;
-         ins[ 72].mn:='strs      '; ins[ 72].mi := pi_strs;     ins[ 72].p := true;  ins[ 72].q := intsize;
-         ins[ 73].mn:='strb      '; ins[ 73].mi := pi_strb;     ins[ 73].p := true;  ins[ 73].q := intsize;
-         ins[ 74].mn:='strc      '; ins[ 74].mi := pi_strc;     ins[ 74].p := true;  ins[ 74].q := intsize;
-         ins[ 75].mn:='sroa      '; ins[ 75].mi := pi_sroa;     ins[ 75].p := false; ins[ 75].q := intsize;
-         ins[ 76].mn:='sror      '; ins[ 76].mi := pi_sror;     ins[ 76].p := false; ins[ 76].q := intsize;
-         ins[ 77].mn:='sros      '; ins[ 77].mi := pi_sros;     ins[ 77].p := false; ins[ 77].q := intsize;
-         ins[ 78].mn:='srob      '; ins[ 78].mi := pi_srob;     ins[ 78].p := false; ins[ 78].q := intsize;
-         ins[ 79].mn:='sroc      '; ins[ 79].mi := pi_sroc;     ins[ 79].p := false; ins[ 79].q := intsize;
-         ins[ 80].mn:='stoa      '; ins[ 80].mi := pi_stoa;     ins[ 80].p := false; ins[ 80].q := 0;
-         ins[ 81].mn:='stor      '; ins[ 81].mi := pi_stor;     ins[ 81].p := false; ins[ 81].q := 0;
-         ins[ 82].mn:='stos      '; ins[ 82].mi := pi_stos;     ins[ 82].p := false; ins[ 82].q := 0;
-         ins[ 83].mn:='stob      '; ins[ 83].mi := pi_stob;     ins[ 83].p := false; ins[ 83].q := 0;
-         ins[ 84].mn:='stoc      '; ins[ 84].mi := pi_stoc;     ins[ 84].p := false; ins[ 84].q := 0;
-         ins[ 85].mn:='inda      '; ins[ 85].mi := pi_inda;     ins[ 85].p := false; ins[ 85].q := intsize;
-         ins[ 86].mn:='indr      '; ins[ 86].mi := pi_indr;     ins[ 86].p := false; ins[ 86].q := intsize;
-         ins[ 87].mn:='inds      '; ins[ 87].mi := pi_inds;     ins[ 87].p := false; ins[ 87].q := intsize;
-         ins[ 88].mn:='indb      '; ins[ 88].mi := pi_indb;     ins[ 88].p := false; ins[ 88].q := intsize;
-         ins[ 89].mn:='indc      '; ins[ 89].mi := pi_indc;     ins[ 89].p := false; ins[ 89].q := intsize;
-         ins[ 90].mn:='inca      '; ins[ 90].mi := pi_inca;     ins[ 90].p := false; ins[ 90].q := intsize;
-         ins[ 91].mn:='suv       '; ins[ 91].mi := pi_suv;      ins[ 91].p := false; ins[ 91].q := intsize*2;
-         ins[ 92].mn:='vbs       '; ins[ 92].mi := pi_vbs;      ins[ 92].p := false; ins[ 92].q := intsize;
-         ins[ 93].mn:='incb      '; ins[ 93].mi := pi_incb;     ins[ 93].p := false; ins[ 93].q := intsize;
-         ins[ 94].mn:='incc      '; ins[ 94].mi := pi_incc;     ins[ 94].p := false; ins[ 94].q := intsize;
-         ins[ 95].mn:='chka      '; ins[ 95].mi := pi_chka;     ins[ 95].p := false; ins[ 95].q := intsize;
-         ins[ 96].mn:='vbe       '; ins[ 96].mi := pi_vbe;      ins[ 96].p := false; ins[ 96].q := 0;
-         ins[ 97].mn:='chks      '; ins[ 97].mi := pi_chks;     ins[ 97].p := false; ins[ 97].q := intsize;
-         ins[ 98].mn:='chkb      '; ins[ 98].mi := pi_chkb;     ins[ 98].p := false; ins[ 98].q := intsize;
-         ins[ 99].mn:='chkc      '; ins[ 99].mi := pi_chkc;     ins[ 99].p := false; ins[ 99].q := intsize;
-         ins[100].mn:='cvbi      '; ins[100].mi := pi_cvbi;     ins[100].p := false; ins[100].q := intsize*3;
-         ins[101].mn:='ivtx      '; ins[101].mi := pi_ivtx;     ins[101].p := false; ins[101].q := intsize*3;
-         ins[102].mn:='ivtb      '; ins[102].mi := pi_ivtb;     ins[102].p := false; ins[102].q := intsize*3;
-         ins[103].mn:='decb      '; ins[103].mi := pi_decb;     ins[103].p := false; ins[103].q := intsize;
-         ins[104].mn:='decc      '; ins[104].mi := pi_decc;     ins[104].p := false; ins[104].q := intsize;
-         ins[105].mn:='loda      '; ins[105].mi := pi_loda;     ins[105].p := true;  ins[105].q := intsize;
-         ins[106].mn:='lodr      '; ins[106].mi := pi_lodr;     ins[106].p := true;  ins[106].q := intsize;
-         ins[107].mn:='lods      '; ins[107].mi := pi_lods;     ins[107].p := true;  ins[107].q := intsize;
-         ins[108].mn:='lodb      '; ins[108].mi := pi_lodb;     ins[108].p := true;  ins[108].q := intsize;
-         ins[109].mn:='lodc      '; ins[109].mi := pi_lodc;     ins[109].p := true;  ins[109].q := intsize;
-         ins[110].mn:='rgs       '; ins[110].mi := pi_rgs;      ins[110].p := false; ins[110].q := 0;
-         ins[111].mn:='ivtc      '; ins[111].mi := pi_ivtc;     ins[111].p := false; ins[111].q := intsize*3;
-         ins[112].mn:='ipj       '; ins[112].mi := pi_ipj;      ins[112].p := true;  ins[112].q := intsize;
-         ins[113].mn:='cip       '; ins[113].mi := pi_cip;      ins[113].p := false; ins[113].q := 0;
-         ins[114].mn:='lpa       '; ins[114].mi := pi_lpa;      ins[114].p := true;  ins[114].q := intsize;
-         ins[115].mn:='cvbx      '; ins[115].mi := pi_cvbx;     ins[115].p := false; ins[115].q := intsize*3;
-         ins[116].mn:='cvbb      '; ins[116].mi := pi_cvbb;     ins[116].p := false; ins[116].q := intsize*3;
-         ins[117].mn:='dmp       '; ins[117].mi := pi_dmp;      ins[117].p := false; ins[117].q := intsize;
-         ins[118].mn:='swp       '; ins[118].mi := pi_swp;      ins[118].p := false; ins[118].q := intsize;
-         ins[119].mn:='tjp       '; ins[119].mi := pi_tjp;      ins[119].p := false; ins[119].q := intsize;
-         ins[120].mn:='lip       '; ins[120].mi := pi_lip;      ins[120].p := true;  ins[120].q := intsize;
-         ins[121].mn:='cvbc      '; ins[121].mi := pi_cvbc;     ins[121].p := false; ins[121].q := intsize*3;
-         ins[122].mn:='vis       '; ins[122].mi := pi_vis;      ins[122].p := false; ins[122].q := intsize*2;
-         ins[123].mn:='ldci      '; ins[123].mi := pi_ldci;     ins[123].p := false; ins[123].q := intsize;
-         ins[124].mn:='ldcr      '; ins[124].mi := pi_ldcr;     ins[124].p := false; ins[124].q := intsize;
-         ins[125].mn:='ldcn      '; ins[125].mi := pi_ldcn;     ins[125].p := false; ins[125].q := 0;
-         ins[126].mn:='ldcb      '; ins[126].mi := pi_ldcb;     ins[126].p := false; ins[126].q := boolsize;
-         ins[127].mn:='ldcc      '; ins[127].mi := pi_ldcc;     ins[127].p := false; ins[127].q := charsize;
-         ins[128].mn:='reti      '; ins[128].mi := pi_reti;     ins[128].p := false; ins[128].q := intsize;
-         ins[129].mn:='retr      '; ins[129].mi := pi_retr;     ins[129].p := false; ins[129].q := intsize;
-         ins[130].mn:='retc      '; ins[130].mi := pi_retc;     ins[130].p := false; ins[130].q := intsize;
-         ins[131].mn:='retb      '; ins[131].mi := pi_retb;     ins[131].p := false; ins[131].q := intsize;
-         ins[132].mn:='reta      '; ins[132].mi := pi_reta;     ins[132].p := false; ins[132].q := intsize;
-         ins[133].mn:='vip       '; ins[133].mi := pi_vip;      ins[133].p := false; ins[133].q := intsize*2;
-         ins[134].mn:='ordb      '; ins[134].mi := pi_ordb;     ins[134].p := false; ins[134].q := 0;
-         ins[135].mn:='lcp       '; ins[135].mi := pi_lcp;      ins[135].p := false; ins[135].q := 0;
-         ins[136].mn:='ordc      '; ins[136].mi := pi_ordc;     ins[136].p := false; ins[136].q := 0;
-         ins[137].mn:='equi      '; ins[137].mi := pi_equi;     ins[137].p := false; ins[137].q := 0;
-         ins[138].mn:='equr      '; ins[138].mi := pi_equr;     ins[138].p := false; ins[138].q := 0;
-         ins[139].mn:='equb      '; ins[139].mi := pi_equb;     ins[139].p := false; ins[139].q := 0;
-         ins[140].mn:='equs      '; ins[140].mi := pi_equs;     ins[140].p := false; ins[140].q := 0;
-         ins[141].mn:='equc      '; ins[141].mi := pi_equc;     ins[141].p := false; ins[141].q := 0;
-         ins[142].mn:='equm      '; ins[142].mi := pi_equm;     ins[142].p := false; ins[142].q := intsize;
-         ins[143].mn:='neqi      '; ins[143].mi := pi_neqi;     ins[143].p := false; ins[143].q := 0;
-         ins[144].mn:='neqr      '; ins[144].mi := pi_neqr;     ins[144].p := false; ins[144].q := 0;
-         ins[145].mn:='neqb      '; ins[145].mi := pi_neqb;     ins[145].p := false; ins[145].q := 0;
-         ins[146].mn:='neqs      '; ins[146].mi := pi_neqs;     ins[146].p := false; ins[146].q := 0;
-         ins[147].mn:='neqc      '; ins[147].mi := pi_neqc;     ins[147].p := false; ins[147].q := 0;
-         ins[148].mn:='neqm      '; ins[148].mi := pi_neqm;     ins[148].p := false; ins[148].q := intsize;
-         ins[149].mn:='geqi      '; ins[149].mi := pi_geqi;     ins[149].p := false; ins[149].q := 0;
-         ins[150].mn:='geqr      '; ins[150].mi := pi_geqr;     ins[150].p := false; ins[150].q := 0;
-         ins[151].mn:='geqb      '; ins[151].mi := pi_geqb;     ins[151].p := false; ins[151].q := 0;
-         ins[152].mn:='geqs      '; ins[152].mi := pi_geqs;     ins[152].p := false; ins[152].q := 0;
-         ins[153].mn:='geqc      '; ins[153].mi := pi_geqc;     ins[153].p := false; ins[153].q := 0;
-         ins[154].mn:='geqm      '; ins[154].mi := pi_geqm;     ins[154].p := false; ins[154].q := intsize;
-         ins[155].mn:='grti      '; ins[155].mi := pi_grti;     ins[155].p := false; ins[155].q := 0;
-         ins[156].mn:='grtr      '; ins[156].mi := pi_grtr;     ins[156].p := false; ins[156].q := 0;
-         ins[157].mn:='grtb      '; ins[157].mi := pi_grtb;     ins[157].p := false; ins[157].q := 0;
-         ins[158].mn:='grts      '; ins[158].mi := pi_grts;     ins[158].p := false; ins[158].q := 0;
-         ins[159].mn:='grtc      '; ins[159].mi := pi_grtc;     ins[159].p := false; ins[159].q := 0;
-         ins[160].mn:='grtm      '; ins[160].mi := pi_grtm;     ins[160].p := false; ins[160].q := intsize;
-         ins[161].mn:='leqi      '; ins[161].mi := pi_leqi;     ins[161].p := false; ins[161].q := 0;
-         ins[162].mn:='leqr      '; ins[162].mi := pi_leqr;     ins[162].p := false; ins[162].q := 0;
-         ins[163].mn:='leqb      '; ins[163].mi := pi_leqb;     ins[163].p := false; ins[163].q := 0;
-         ins[164].mn:='leqs      '; ins[164].mi := pi_leqs;     ins[164].p := false; ins[164].q := 0;
-         ins[165].mn:='leqc      '; ins[165].mi := pi_leqc;     ins[165].p := false; ins[165].q := 0;
-         ins[166].mn:='leqm      '; ins[166].mi := pi_leqm;     ins[166].p := false; ins[166].q := intsize;
-         ins[167].mn:='lesi      '; ins[167].mi := pi_lesi;     ins[167].p := false; ins[167].q := 0;
-         ins[168].mn:='lesr      '; ins[168].mi := pi_lesr;     ins[168].p := false; ins[168].q := 0;
-         ins[169].mn:='lesb      '; ins[169].mi := pi_lesb;     ins[169].p := false; ins[169].q := 0;
-         ins[170].mn:='less      '; ins[170].mi := pi_less;     ins[170].p := false; ins[170].q := 0;
-         ins[171].mn:='lesc      '; ins[171].mi := pi_lesc;     ins[171].p := false; ins[171].q := 0;
-         ins[172].mn:='lesm      '; ins[172].mi := pi_lesm;     ins[172].p := false; ins[172].q := intsize;
-         ins[173].mn:='---       '; ins[173].mi := pi_ph1;      ins[173].p := false; ins[173].q := 0;
-         ins[174].mn:='mrkl*     '; ins[174].mi := pi_mrkl;     ins[174].p := false; ins[174].q := intsize;
-         ins[175].mn:='ckvi      '; ins[175].mi := pi_ckvi;     ins[175].p := false; ins[175].q := intsize;
-         ins[176].mn:='cps       '; ins[176].mi := pi_cps;      ins[176].p := false; ins[176].q := 0;
-         ins[177].mn:='cpc       '; ins[177].mi := pi_cpc;      ins[177].p := false; ins[177].q := intsize;
-         ins[178].mn:='aps       '; ins[178].mi := pi_aps;      ins[178].p := false; ins[178].q := intsize;
-         ins[179].mn:='ckvb      '; ins[179].mi := pi_ckvb;     ins[179].p := false; ins[179].q := intsize;
-         ins[180].mn:='ckvc      '; ins[180].mi := pi_ckvc;     ins[180].p := false; ins[180].q := intsize;
-         ins[181].mn:='dupi      '; ins[181].mi := pi_dupi;     ins[181].p := false; ins[181].q := 0;
-         ins[182].mn:='dupa      '; ins[182].mi := pi_dupa;     ins[182].p := false; ins[182].q := 0;
-         ins[183].mn:='dupr      '; ins[183].mi := pi_dupr;     ins[183].p := false; ins[183].q := 0;
-         ins[184].mn:='dups      '; ins[184].mi := pi_dups;     ins[184].p := false; ins[184].q := 0;
-         ins[185].mn:='dupb      '; ins[185].mi := pi_dupb;     ins[185].p := false; ins[185].q := 0;
-         ins[186].mn:='dupc      '; ins[186].mi := pi_dupc;     ins[186].p := false; ins[186].q := 0;
-         ins[187].mn:='cks       '; ins[187].mi := pi_cks;      ins[187].p := false; ins[187].q := 0;
-         ins[188].mn:='cke       '; ins[188].mi := pi_cke;      ins[188].p := false; ins[188].q := 0;
-         ins[189].mn:='inv       '; ins[189].mi := pi_inv;      ins[189].p := false; ins[189].q := 0;
-         ins[190].mn:='ckla      '; ins[190].mi := pi_ckla;     ins[190].p := false; ins[190].q := intsize;
-         ins[191].mn:='cta       '; ins[191].mi := pi_cta;      ins[191].p := false; ins[191].q := intsize*3;
-         ins[192].mn:='ivti      '; ins[192].mi := pi_ivti;     ins[192].p := false; ins[192].q := intsize*3;
-         ins[193].mn:='lodx      '; ins[193].mi := pi_lodx;     ins[193].p := true;  ins[193].q := intsize;
-         ins[194].mn:='ldox      '; ins[194].mi := pi_ldox;     ins[194].p := false; ins[194].q := intsize;
-         ins[195].mn:='strx      '; ins[195].mi := pi_strx;     ins[195].p := true;  ins[195].q := intsize;
-         ins[196].mn:='srox      '; ins[196].mi := pi_srox;     ins[196].p := false; ins[196].q := intsize;
-         ins[197].mn:='stox      '; ins[197].mi := pi_stox;     ins[197].p := false; ins[197].q := 0;
-         ins[198].mn:='indx      '; ins[198].mi := pi_indx;     ins[198].p := false; ins[198].q := intsize;
-         ins[199].mn:='chkx      '; ins[199].mi := pi_chkx;     ins[199].p := false; ins[199].q := intsize;
-         ins[200].mn:='ordx      '; ins[200].mi := pi_ordx;     ins[200].p := false; ins[200].q := 0;
-         ins[201].mn:='incx      '; ins[201].mi := pi_incx;     ins[201].p := false; ins[201].q := intsize;
-         ins[202].mn:='decx      '; ins[202].mi := pi_decx;     ins[202].p := false; ins[202].q := intsize;
-         ins[203].mn:='ckvx      '; ins[203].mi := pi_ckvx;     ins[203].p := false; ins[203].q := intsize;
-         ins[204].mn:='retx      '; ins[204].mi := pi_retx;     ins[204].p := false; ins[204].q := intsize;
-         ins[205].mn:='noti      '; ins[205].mi := pi_noti;     ins[205].p := false; ins[205].q := 0;
-         ins[206].mn:='xor       '; ins[206].mi := pi_xor;      ins[206].p := false; ins[206].q := 0;
-         ins[207].mn:='bge       '; ins[207].mi := pi_bge;      ins[207].p := false; ins[207].q := intsize;
-         ins[208].mn:='ede       '; ins[208].mi := pi_ede;      ins[208].p := false; ins[208].q := 0;
-         ins[209].mn:='mse       '; ins[209].mi := pi_mse;      ins[209].p := false; ins[209].q := 0;
-         ins[210].mn:='apc       '; ins[210].mi := pi_apc;      ins[210].p := false; ins[210].q := intsize*2;
-         ins[211].mn:='cxs       '; ins[211].mi := pi_cxs;      ins[211].p := false; ins[211].q := intsize;
-         ins[212].mn:='cxc       '; ins[212].mi := pi_cxc;      ins[212].p := false; ins[212].q := intsize*2;
-         ins[213].mn:='lft       '; ins[213].mi := pi_lft;      ins[213].p := false; ins[213].q := intsize;
-         ins[214].mn:='max       '; ins[214].mi := pi_max;      ins[214].p := false; ins[214].q := intsize;
-         ins[215].mn:='equv      '; ins[215].mi := pi_equv;     ins[215].p := false; ins[215].q := 0;
-         ins[216].mn:='neqv      '; ins[216].mi := pi_neqv;     ins[216].p := false; ins[216].q := 0;
-         ins[217].mn:='lesv      '; ins[217].mi := pi_lesv;     ins[217].p := false; ins[217].q := 0;
-         ins[218].mn:='grtv      '; ins[218].mi := pi_grtv;     ins[218].p := false; ins[218].q := 0;
-         ins[219].mn:='leqv      '; ins[219].mi := pi_leqv;     ins[219].p := false; ins[219].q := 0;
-         ins[220].mn:='geqv      '; ins[220].mi := pi_geqv;     ins[220].p := false; ins[220].q := 0;
-         ins[221].mn:='vdp       '; ins[221].mi := pi_vdp;      ins[221].p := false; ins[221].q := 0;
-         ins[222].mn:='spc       '; ins[222].mi := pi_spc;      ins[222].p := false; ins[222].q := 0;
-         ins[223].mn:='ccs       '; ins[223].mi := pi_ccs;      ins[223].p := false; ins[223].q := intsize*2;
-         ins[224].mn:='scp       '; ins[224].mi := pi_scp;      ins[224].p := false; ins[224].q := 0;
-         ins[225].mn:='ldp       '; ins[225].mi := pi_ldp;      ins[225].p := false; ins[225].q := 0;
-         ins[226].mn:='vin       '; ins[226].mi := pi_vin;      ins[226].p := false; ins[226].q := intsize*2;
-         ins[227].mn:='vdd       '; ins[227].mi := pi_vdd;      ins[227].p := false; ins[227].q := 0;
-         { ltc and lto are aliases to ldo and lao instructions }
-         ins[228].mn:='ltci      '; ins[228].mi := pi_ltci;     ins[228].p := false; ins[228].q := intsize;
-         ins[229].mn:='ltcr      '; ins[229].mi := pi_ltcr;     ins[229].p := false; ins[229].q := intsize;
-         ins[230].mn:='ltcs      '; ins[230].mi := pi_ltcs;     ins[230].p := false; ins[230].q := intsize;
-         ins[231].mn:='ltcb      '; ins[231].mi := pi_ltcb;     ins[231].p := false; ins[231].q := intsize;
-         ins[232].mn:='ltcc      '; ins[232].mi := pi_ltcc;     ins[232].p := false; ins[232].q := intsize;
-         ins[233].mn:='ltcx      '; ins[233].mi := pi_ltcx;     ins[233].p := false; ins[233].q := intsize;
-         ins[234].mn:='lto       '; ins[234].mi := pi_lto;      ins[234].p := false; ins[234].q := intsize;
-         ins[235].mn:='stom      '; ins[235].mi := pi_stom;     ins[235].p := false; ins[235].q := intsize*2;
-         ins[236].mn:='rets      '; ins[236].mi := pi_rets;     ins[236].p := false; ins[236].q := intsize;
-         ins[237].mn:='retm      '; ins[237].mi := pi_retm;     ins[237].p := false; ins[237].q := intsize*2;
-         ins[238].mn:='ctb       '; ins[238].mi := pi_ctb;      ins[238].p := false; ins[238].q := intsize*2;
-         ins[239].mn:='cpp       '; ins[239].mi := pi_cpp;      ins[239].p := false; ins[239].q := intsize*2;
-         ins[240].mn:='cpr       '; ins[240].mi := pi_cpr;      ins[240].p := false; ins[240].q := intsize*2;
-         ins[241].mn:='lsa       '; ins[241].mi := pi_lsa;      ins[241].p := false; ins[241].q := intsize;
-         ins[242].mn:='eext*     '; ins[242].mi := pi_eext;     ins[242].p := false; ins[242].q := 0;
-         ins[243].mn:='wbs       '; ins[243].mi := pi_wbs;      ins[243].p := false; ins[243].q := 0;
-         ins[244].mn:='wbe       '; ins[244].mi := pi_wbe;      ins[244].p := false; ins[244].q := 0;
-         ins[245].mn:='sfr       '; ins[245].mi := pi_sfr;      ins[245].p := false; ins[245].q := intsize;
-         ins[246].mn:='cuf       '; ins[246].mi := pi_cuf;      ins[246].p := false; ins[246].q := intsize;
-         ins[247].mn:='cif       '; ins[247].mi := pi_cif;      ins[247].p := false; ins[247].q := 0;
-         ins[248].mn:='mpc       '; ins[248].mi := pi_mpc;      ins[248].p := false; ins[248].q := 0;
-         ins[249].mn:='cvf       '; ins[249].mi := pi_cvf;      ins[249].p := false; ins[249].q := intsize;
-         ins[250].mn:='lsp       '; ins[250].mi := pi_lsp;      ins[250].p := false; ins[250].q := 0;
-         ins[251].mn:='cpl       '; ins[251].mi := pi_cpl;      ins[251].p := false; ins[251].q := 0;
-         ins[252].mn:='sfs       '; ins[252].mi := pi_sfs;      ins[252].p := false; ins[252].q := intsize*2;
-         { sev is an alias for stra in pint. It has meaning to pgen. }
-         ins[253].mn:='sev       '; ins[253].mi := pi_sev;      ins[253].p := true;  ins[253].q := intsize;
-         ins[254].mn:='mdc       '; ins[254].mi := pi_mdc;      ins[254].p := false; ins[254].q := intsize;
-
+   begin
          sptable[ 0]  :='get       ';     sptable[ 1]  :='put       ';
          sptable[ 2]  :='thw       ';     sptable[ 3]  :='rln       ';
          sptable[ 4]  :='new       ';     sptable[ 5]  :='wln       ';
