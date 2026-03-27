@@ -2581,13 +2581,17 @@ end;
     if fsp <> nil then
       with fsp^ do
         case form of
-          scalar:   if fsp=intptr then alignquot := intal
+          scalar:   
+                    if fsp=intptr then alignquot := intal
                     else if fsp=boolptr then alignquot := boolal
-                    else if scalkind=declared then alignquot := intal
-                    else if fsp=charptr then alignquot := charal
+                    else if scalkind=declared then begin
+                      if isbyte(fsp) then alignquot := 1
+                      else alignquot := intal
+                    end else if fsp=charptr then alignquot := charal
                     else if fsp=realptr then alignquot := realal
                     else (*parmptr*) alignquot := parmal;
-          subrange: alignquot := alignquot(rangetype);
+          subrange: if isbyte(fsp) then alignquot := 1
+                    else alignquot := alignquot(rangetype);
           pointer:  alignquot := adral;
           power:    alignquot := setal;
           files:    alignquot := fileal;
@@ -4995,20 +4999,25 @@ end;
               gattr.vartl := fcp^.vartl;
               if occur = crec then
                 begin access := drct; vlevel := clev;
-                  dplmt := cdspl + fldaddr
+                  dplmt := cdspl
                 end
               else if occur = vrec then
                 begin
                   { override to local for with statement }
                   gen2t(54(*lod*),level,vdspl,nilptr);
-                  access := indrct; idplmt := fldaddr
+                  access := indrct; idplmt := 0
                 end
               else
                 begin
                   if level = 1 then gen1t(39(*ldo*),vdspl,nilptr)
                   else gen2t(54(*lod*),level,vdspl,nilptr);
-                  access := indrct; idplmt := fldaddr
-                end
+                  access := indrct; idplmt := 0
+                end;
+              checkvrnt(fcp);
+              if occur = crec then
+                dplmt := cdspl + fldaddr
+              else
+                idplmt := fldaddr
             end;
           func:
             if pfdeckind = standard then
@@ -8262,11 +8271,12 @@ end;
                         lc := lc-ptrsize*2; { mp and addr }
                         alignd(parmptr,lc);
                         with lcp^ do
-                          begin klass:=proc; strassvf(name, id); idtype := nil;
+                          begin klass:=proc; pfdeckind:=declared; pfkind:=formal;
+                            strassvf(name, id); idtype := nil;
                             next := lcp1;
                             pflev := level (*beware of parameter procedures*);
-                            pfdeckind:=declared; pflist := nil;
-                            pfkind:=formal; pfaddr := lc; pext := false;
+                            pflist := nil;
+                            pfaddr := lc; pext := false;
                             pmod := nil; keep := true; pfattr := fpanone;
                             grpnxt := nil; grppar := lcp; pfvid := nil
                           end;
@@ -8294,11 +8304,12 @@ end;
                             lc := lc-ptrsize*2; { mp and addr }
                             alignd(parmptr,lc);
                             with lcp^ do
-                              begin klass:=func; strassvf(name, id);
+                              begin klass:=func; pfdeckind:=declared;
+                                pfkind:=formal; strassvf(name, id);
                                 idtype := nil; next := lcp1;
                                 pflev := level (*beware param funcs*);
-                                pfdeckind:=declared; pflist := nil;
-                                pfkind:=formal; pfaddr:=lc; pext := false;
+                                pflist := nil;
+                                pfaddr:=lc; pext := false;
                                 pmod := nil; keep := true; pfattr := fpanone;
                                 grpnxt := nil; grppar := lcp; pfvid := nil
                               end;
@@ -8753,9 +8764,10 @@ end;
             strassvr(name, ops)
           end else strassvf(name, ids);
           idtype := nil; next := nil;
+          pfdeckind := declared; pfkind := actual;
           sysrot := false; extern := extnone; cconv := false;
           pflev := level;
-          genlabel(lbname); pfdeckind := declared; pfkind := actual;
+          genlabel(lbname);
           pfname := lbname; pflist := nil; asgn := false;
           pext := incact; pmod := incstk; refer := false;
           pfattr := fpat; cconv := ccv; grpnxt := nil; grppar := lcp;
@@ -8774,7 +8786,7 @@ end;
                   vlev := 0; vaddr := gc; isloc := false; threat := false;
                   forcnt := 0; part := ptval; hdr := false; 
                   vext := incact; vmod := incstk; inilab := -1; 
-                  ininxt := nil; dblptr := false; pfvid := nil
+                  ininxt := nil; dblptr := false
                 end;
                 enterid(lcp3); lcp^.pfvid := lcp3;
                 wrtsym(lcp3, 'g')
@@ -9030,7 +9042,7 @@ end;
         stalvl: integer; { statement nesting level }
         ilp: ctp;
         rp: ripptr; { for rip label resolution }
-        pcnt: integer; ipc, fpc, n: integer;
+        ipc, fpc, n: integer;
         amd64_sysvoff: addrrange; psz: addrrange;
 
     { add statement level }
@@ -10534,9 +10546,10 @@ end;
     else new(cp,func,standard);
     ininam(cp);
     with cp^ do
-      begin klass := idc; strassvr(name, na[sn]); idtype := idt;
+      begin klass := idc; pfdeckind := standard;
+        strassvr(name, na[sn]); idtype := idt;
         pflist := nil; next := nil; key := kn;
-        pfdeckind := standard; pfaddr := 0; pext := false;
+        pfaddr := 0; pext := false;
         pmod := nil; pfattr := fpanone; grpnxt := nil; grppar := cp;
         pfvid := nil; pflist := nil
       end; enterid(cp)
@@ -10651,9 +10664,10 @@ end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
           begin klass := func; strassvr(name, na[i]); idtype := realptr;
-            pflist := cp; forwdecl := false; sysrot := true; extern := extnone;
-            cconv := false; pflev := 0; pfname := i - 12; pfdeckind := declared;
-            pfkind := actual; pfaddr := 0; pext := false; pmod := nil; 
+            pflist := cp; pfdeckind := declared;
+            pfkind := actual; forwdecl := false; sysrot := true; extern := extnone;
+            cconv := false; pflev := 0; pfname := i - 12;
+            pfaddr := 0; pext := false; pmod := nil;
             pfattr := fpanone; grpnxt := nil; grppar := cp1; pfvid := nil
           end;
         enterid(cp1)
@@ -10816,19 +10830,21 @@ end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
       begin klass := proc; strassvr(name, '         '); idtype := nil;
+        pfdeckind := declared; pfkind := actual;
         forwdecl := false; next := nil; sysrot := false; extern := extnone;
         cconv := false;
-        pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
-        pfkind := actual; pmod := nil; grpnxt := nil; grppar := uprcptr;
+        pflev := 0; genlabel(pfname); pflist := nil;
+        pmod := nil; grpnxt := nil; grppar := uprcptr;
         pfvid := nil
       end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
       begin klass := func; strassvr(name, '         '); idtype := nil;
+        pfdeckind := declared; pfkind := actual;
         next := nil; forwdecl := false; sysrot := false; extern := extnone;
         cconv := false;
-        pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
-        pfkind := actual; pmod := nil; grpnxt := nil; grppar := ufctptr;
+        pflev := 0; genlabel(pfname); pflist := nil;
+        pmod := nil; grpnxt := nil; grppar := ufctptr;
         pfvid := nil
       end
   end (*enterundecl*) ;
