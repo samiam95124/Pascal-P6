@@ -126,17 +126,17 @@ i unreferenced at block ending on line: 96 in function/procedure: proc2
     98      203 procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
     99      203 
    100      203 var i, x, i2: integer;
-   101    -2464     c: char;
-   102    -2465     b: boolean;
-   103    -2466     e: enum;
-   104    -2468     sr: sub;
-   105    -2472     f: real;
-   106    -2480     rv: r2;
-   107    -2704     a: a10;
-   108    -2784     ar: a2;
-   109    -4984     ip: ^integer;
-   110    -4992 
-   111    -4992 begin
+   101    -2288     c: char;
+   102    -2289     b: boolean;
+   103    -2290     e: enum;
+   104    -2291     sr: sub;
+   105    -2292     f: real;
+   106    -2300     rv: r2;
+   107    -2504     a: a10;
+   108    -2584     ar: a2;
+   109    -4624     ip: ^integer;
+   110    -4632 
+   111    -4632 begin
    112      209 
    113      209     x := 43;
    114      211     c := 'b';
@@ -2081,7 +2081,7 @@ debug> li $0
 
     Addr    Op Ins         P  Q
 ----------------------------------
-    000000: 14 lnp*           0000000000003D70
+    000000: 14 lnp*           0000000000003CB8
     000009: 15 cal            000000000000004D
     000012: 3A stp*        
     000013: F2 eext*       
@@ -2095,7 +2095,7 @@ debug> li $0 $100
 
     Addr    Op Ins         P  Q
 ----------------------------------
-    000000: 14 lnp*           0000000000003D70
+    000000: 14 lnp*           0000000000003CB8
     000009: 15 cal            000000000000004D
     000012: 3A stp*        
     000013: F2 eext*       
@@ -2180,7 +2180,7 @@ debug> li $0:100
 
     Addr    Op Ins         P  Q
 ----------------------------------
-    000000: 14 lnp*           0000000000003D70
+    000000: 14 lnp*           0000000000003CB8
     000009: 15 cal            000000000000004D
     000012: 3A stp*        
     000013: F2 eext*       
@@ -2859,15 +2859,15 @@ debug> p rv.rec.a[5]
 
 debug> p ar[5].e
 
-one(0)
+three(2)
 
 debug> p ar[6].rec.a[5]
 
-40
+25
 
 debug> p pi$
 
-3D78
+3CC0
 
 debug> p pi^
 
@@ -2877,7 +2877,7 @@ debug>
 debug> d 0
 
 
-000000: 14 70 3D 00 00 00 00 00 00 15 4D 00 00 00 00 00   .p=.......M.....
+000000: 14 B8 3C 00 00 00 00 00 00 15 4D 00 00 00 00 00   ..<.......M.....
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 ******: ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **   ****************
@@ -2898,7 +2898,7 @@ debug> d 0
 debug> d 0 $100
 
 
-000000: 14 70 3D 00 00 00 00 00 00 15 4D 00 00 00 00 00   .p=.......M.....
+000000: 14 B8 3C 00 00 00 00 00 00 15 4D 00 00 00 00 00   ..<.......M.....
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 ******: ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **   ****************
@@ -2920,7 +2920,7 @@ debug> d 0 $100
 debug> d 0:$100
 
 
-000000: 14 70 3D 00 00 00 00 00 00 15 4D 00 00 00 00 00   .p=.......M.....
+000000: 14 B8 3C 00 00 00 00 00 00 15 4D 00 00 00 00 00   ..<.......M.....
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 ******: ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **   ****************
@@ -3719,15 +3719,15 @@ debug> p rv.rec.a[5]
 
 debug> p ar[5].e
 
-one(0)
+three(2)
 
 debug> p ar[6].rec.a[5]
 
-80
+65
 
 debug> p ip$
 
-3D88
+3CD0
 
 debug> p ip^
 
@@ -3738,7 +3738,7 @@ debug> ! Various dumps. Note pl 2 and pp 2 dumps only dump one level since that 
 debug> ! there is.
 debug> pl
 
-Locals for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)
+Locals for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)
 
 ip                   
 ar                   array 
@@ -3953,7 +3953,7 @@ i2                   Undefined
 
 debug> pl 2
 
-Locals for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)
+Locals for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)
 
 ip                   
 ar                   array 
@@ -4168,7 +4168,7 @@ i2                   Undefined
 
 debug> pp
 
-Parameters for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)
+Parameters for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)
 
 pa                   array 
   record 
@@ -4379,7 +4379,7 @@ pi                   83
 
 debug> pp 2
 
-Parameters for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)
+Parameters for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)
 
 pa                   array 
   record 
@@ -4594,15 +4594,15 @@ Storage areas occupied
 
 Program     000000-002C77 (11384)
 Constants   002C78-003313 (1692)
-Globals     003314-003D6F (2652)
-Stack/Heap  003D70-FFFFFF (16761488)
+Globals     003314-003CB7 (2468)
+Stack/Heap  003CB8-FFFFFF (16761672)
 
 debug> dd
 
 Mark @FFFF38
 ep: 00FFFF40: 00FFFF60
-sb: 00FFFF48: 00FFEB98
-et: 00FFFF50: 00FFEB80
+sb: 00FFFF48: 00FFED00
+et: 00FFFF50: 00FFECE8
 
 
 Mark @FFFFC8
@@ -4614,8 +4614,8 @@ debug> dd 1
 
 Mark @FFFF38
 ep: 00FFFF40: 00FFFF60
-sb: 00FFFF48: 00FFEB98
-et: 00FFFF50: 00FFEB80
+sb: 00FFFF48: 00FFED00
+et: 00FFFF50: 00FFECE8
 
 debug> 
 debug> ! go down a level to proc2
@@ -4645,7 +4645,7 @@ b                    '6'(54)
 a                    75
 
 
-Locals for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)
+Locals for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)
 
 ip                   
 ar                   array 
@@ -4866,7 +4866,7 @@ c                    'j'(106)
 i                    74
 
 
-Parameters for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,rec:32:r(i:0:i,c:8:c,b:9:b,e:12:x(one,two,three),sr:16:x(1,10)i,r:20:n,a:28:ax(1,10)ii),a:140:ax(1,10)ii)
+Parameters for block: proc1@p_i_c_b_x(one,two,three)_x(1,10)i_n_r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)_ax(1,10)ir(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,rec:24:r(i:0:i,c:8:c,b:9:b,e:10:x(one,two,three),sr:11:x(1,10)i,r:12:n,a:20:ax(1,10)ii),a:124:ax(1,10)ii)
 
 pa                   array 
   record 
@@ -5077,16 +5077,16 @@ pi                   83
 
 debug> dd
 
-Mark @FFEB60
-ep: 00FFEB68: 00FFEB80
-sb: 00FFEB70: 00FFEB28
-et: 00FFEB78: 00FFEB08
+Mark @FFECC8
+ep: 00FFECD0: 00FFECE8
+sb: 00FFECD8: 00FFEC90
+et: 00FFECE0: 00FFEC70
 
 
 Mark @FFFF38
 ep: 00FFFF40: 00FFFF60
-sb: 00FFFF48: 00FFEB98
-et: 00FFFF50: 00FFEB80
+sb: 00FFFF48: 00FFED00
+et: 00FFFF50: 00FFECE8
 
 
 Mark @FFFFC8
@@ -5096,16 +5096,16 @@ et: 00FFFFE0: 00FFFF60
 
 debug> dd 2
 
-Mark @FFEB60
-ep: 00FFEB68: 00FFEB80
-sb: 00FFEB70: 00FFEB28
-et: 00FFEB78: 00FFEB08
+Mark @FFECC8
+ep: 00FFECD0: 00FFECE8
+sb: 00FFECD8: 00FFEC90
+et: 00FFECE0: 00FFEC70
 
 
 Mark @FFFF38
 ep: 00FFFF40: 00FFFF60
-sb: 00FFFF48: 00FFEB98
-et: 00FFFF50: 00FFEB80
+sb: 00FFFF48: 00FFED00
+et: 00FFFF50: 00FFECE8
 
 debug> ! step over some writes
 debug> s 2
@@ -5172,7 +5172,7 @@ debug> w b
 debug> b stop5
 debug> r
 5
-Watch variable: @000009A9: a@00FFEB48: 75 -> 12
+Watch variable: @000009A9: a@00FFECB0: 75 -> 12
 6
 
 === break ===
@@ -5191,15 +5191,15 @@ debug> lw
 
 Watch table:
 
-1: 00FFEB48
-2: 00FFEB47
+1: 00FFECB0
+2: 00FFECAF
 
 debug> cw 1
 debug> lw
 
 Watch table:
 
-1: 00FFEB47
+1: 00FFECAF
 
 debug> cw
 debug> lw
@@ -5388,10 +5388,10 @@ debug> hs
 
 Heap space breakdown
 
-addr: 003D70:     16: alloc
-addr: 003D80:     16: alloc
-addr: 003D90:     16: alloc
-addr: 003DA0:     16: alloc
+addr: 003CB8:     16: alloc
+addr: 003CC8:     16: alloc
+addr: 003CD8:     16: alloc
+addr: 003CE8:     16: alloc
 debug> s
 
   92:      1:        dispose(d);
@@ -5402,16 +5402,16 @@ debug> hs
 
 Heap space breakdown
 
-addr: 003D70:     16: alloc
-addr: 003D80:     16: alloc
-addr: 003D90:     16: free
-addr: 003DA0:     16: alloc
+addr: 003CB8:     16: alloc
+addr: 003CC8:     16: alloc
+addr: 003CD8:     16: free
+addr: 003CE8:     16: alloc
 debug> tr
 debug> b stop8
 debug> r
-  3207/16771848->  6
+  3207/16772208->  6
 11
-  3219/16771872->  5
+  3219/16772232->  5
 
 
 === break ===
@@ -5879,7 +5879,7 @@ debug> p @mp$
 debug> 
 debug> p @np$
 
-3DB0
+3CF8
 
 debug> st @np $1234
 debug> p @np$
@@ -5894,7 +5894,7 @@ debug> p @constants
 
 debug> p @heapbottom
 
-15728
+15544
 
 debug> 
 debug> ! exit complete
