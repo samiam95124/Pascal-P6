@@ -1906,6 +1906,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {cke}
         188: begin
           wrtins(' movq $0,%1 # start running boolean', ep^.r2);
+          wrtins(' xorq %1,%1 # clear temp register', ep^.t1);
           ep2 := ep^.cl; 
           while ep2 <> nil do begin 
             ep2^.r1 := ep^.r1; ep2^.r2 := ep^.r2; ep2^.t1 := ep^.t1; 

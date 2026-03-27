@@ -899,8 +899,8 @@ PROCEDURE ENDOFLINE;
                 BEGIN
                   NEW(LSP,ARRAYS);
                   WITH LSP^ DO
-                    BEGIN AELTYPE := CHARPTR; INXTYPE := NIL;
-                       SIZE := LGTH*CHARSIZE; FORM := ARRAYS
+                    BEGIN FORM := ARRAYS; AELTYPE := CHARPTR;
+                       INXTYPE := NIL; SIZE := LGTH*CHARSIZE
                     END
                 END;
               FVALU := VAL; INSYMBOL
@@ -1059,8 +1059,8 @@ PROCEDURE ENDOFLINE;
                   IF SY = IDENT THEN
                     BEGIN NEW(LCP,KONST);
                       WITH LCP^ DO
-                        BEGIN NAME := ID; IDTYPE := LSP; NEXT := LCP1;
-                          VALUES.IVAL := LCNT; KLASS := KONST
+                        BEGIN KLASS := KONST; NAME := ID; IDTYPE := LSP;
+                          NEXT := LCP1; VALUES.IVAL := LCNT
                         END;
                       ENTERID(LCP);
                       LCNT := LCNT + 1;
@@ -1081,7 +1081,7 @@ PROCEDURE ENDOFLINE;
                     IF LCP^.KLASS = KONST THEN
                       BEGIN NEW(LSP,SUBRANGE);
                         WITH LSP^, LCP^ DO
-                          BEGIN RANGETYPE := IDTYPE; FORM := SUBRANGE;
+                          BEGIN FORM := SUBRANGE; RANGETYPE := IDTYPE;
                             IF STRING(RANGETYPE) THEN
                               BEGIN ERROR(148); RANGETYPE := NIL END;
                             MIN := VALUES; SIZE := INTSIZE
@@ -1135,8 +1135,8 @@ PROCEDURE ENDOFLINE;
               IF SY = IDENT THEN
                 BEGIN NEW(LCP,FIELD);
                   WITH LCP^ DO
-                    BEGIN NAME := ID; IDTYPE := NIL; NEXT := NXT;
-                      KLASS := FIELD
+                    BEGIN KLASS := FIELD; NAME := ID; IDTYPE := NIL;
+                      NEXT := NXT
                     END;
                   NXT := LCP;
                   ENTERID(LCP);
@@ -1208,8 +1208,8 @@ PROCEDURE ENDOFLINE;
                  IF NOT COMPTYPES(LSP^.TAGFIELDP^.IDTYPE,LSP3)THEN ERROR(111);
                 NEW(LSP3,VARIANT);
                 WITH LSP3^ DO
-                  BEGIN NXTVAR := LSP1; SUBVAR := LSP2; VARVAL := LVALU;
-                    FORM := VARIANT
+                  BEGIN FORM := VARIANT; NXTVAR := LSP1;
+                    SUBVAR := LSP2; VARVAL := LVALU
                   END;
                 LSP1 := LSP3; LSP2 := LSP3;
                 TEST := SY <> COMMA;
@@ -1260,8 +1260,8 @@ PROCEDURE ENDOFLINE;
                     IF LCP = NIL THEN   (*FORWARD REFERENCED TYPE ID*)
                       BEGIN NEW(LCP,TYPES);
                         WITH LCP^ DO
-                          BEGIN NAME := ID; IDTYPE := LSP;
-                            NEXT := FWPTR; KLASS := TYPES
+                          BEGIN KLASS := TYPES; NAME := ID; IDTYPE := LSP;
+                            NEXT := FWPTR
                           END;
                         FWPTR := LCP
                       END
@@ -1340,8 +1340,8 @@ PROCEDURE ENDOFLINE;
                       FIELDLIST(FSYS-[SEMICOLON]+[ENDSY],LSP1);
                       NEW(LSP,RECORDS);
                       WITH LSP^ DO
-                        BEGIN FSTFLD := DISPLAY[TOP].FNAME;
-                          RECVAR := LSP1; SIZE := DISPL; FORM := RECORDS
+                        BEGIN FORM := RECORDS; FSTFLD := DISPLAY[TOP].FNAME;
+                          RECVAR := LSP1; SIZE := DISPL
                         END;
                       TOP := OLDTOP;
                       IF SY = ENDSY THEN INSYMBOL ELSE ERROR(13)
@@ -1433,7 +1433,7 @@ PROCEDURE ENDOFLINE;
       WHILE SY = IDENT DO
         BEGIN NEW(LCP,TYPES);
           WITH LCP^ DO
-            BEGIN NAME := ID; IDTYPE := NIL; KLASS := TYPES END;
+            BEGIN KLASS := TYPES; NAME := ID; IDTYPE := NIL END;
           INSYMBOL;
           IF (SY = RELOP) AND (OP = EQOP) THEN INSYMBOL ELSE ERROR(16);
           TYP(FSYS + [SEMICOLON],LSP,LSIZE);
@@ -1475,7 +1475,7 @@ PROCEDURE ENDOFLINE;
           IF SY = IDENT THEN
             BEGIN NEW(LCP,VARS);
               WITH LCP^ DO
-               BEGIN NAME := ID; NEXT := NXT; KLASS := VARS;
+               BEGIN KLASS := VARS; NAME := ID; NEXT := NXT;
                   IDTYPE := NIL; VKIND := ACTUAL; VLEV := LEVEL
                 END;
               ENTERID(LCP);
@@ -1698,11 +1698,12 @@ PROCEDURE ENDOFLINE;
               IF FSY = PROCSY THEN NEW(LCP,PROC,DECLARED,ACTUAL)
               ELSE NEW(LCP,FUNC,DECLARED,ACTUAL);
               WITH LCP^ DO
-                BEGIN NAME := ID; IDTYPE := NIL;
+                BEGIN IF FSY = PROCSY THEN KLASS := PROC
+                  ELSE KLASS := FUNC;
+                  PFDECKIND := DECLARED; PFKIND := ACTUAL;
+                  NAME := ID; IDTYPE := NIL;
                   EXTERN := FALSE; PFLEV := LEVEL; GENLABEL(LBNAME);
-                  PFDECKIND := DECLARED; PFKIND := ACTUAL; PFNAME := LBNAME;
-                  IF FSY = PROCSY THEN KLASS := PROC
-                  ELSE KLASS := FUNC
+                  PFNAME := LBNAME
                 END;
               ENTERID(LCP)
             END
@@ -3451,22 +3452,22 @@ PROCEDURE ENDOFLINE;
 
     NEW(INTPTR,SCALAR,STANDARD);                              (*INTEGER*)
     WITH INTPTR^ DO
-      BEGIN SIZE := INTSIZE; FORM := SCALAR; SCALKIND := STANDARD END;
+      BEGIN FORM := SCALAR; SCALKIND := STANDARD; SIZE := INTSIZE END;
     NEW(REALPTR,SCALAR,STANDARD);                             (*REAL*)
     WITH REALPTR^ DO
-      BEGIN SIZE := REALSIZE; FORM := SCALAR; SCALKIND := STANDARD END;
+      BEGIN FORM := SCALAR; SCALKIND := STANDARD; SIZE := REALSIZE END;
     NEW(CHARPTR,SCALAR,STANDARD);                             (*CHAR*)
     WITH CHARPTR^ DO
-      BEGIN SIZE := CHARSIZE; FORM := SCALAR; SCALKIND := STANDARD END;
+      BEGIN FORM := SCALAR; SCALKIND := STANDARD; SIZE := CHARSIZE END;
     NEW(BOOLPTR,SCALAR,DECLARED);                             (*BOOLEAN*)
     WITH BOOLPTR^ DO
-      BEGIN SIZE := BOOLSIZE; FORM := SCALAR; SCALKIND := DECLARED END;
+      BEGIN FORM := SCALAR; SCALKIND := DECLARED; SIZE := BOOLSIZE END;
     NEW(NILPTR,POINTER);                                      (*NIL*)
     WITH NILPTR^ DO
-      BEGIN ELTYPE := NIL; SIZE := PTRSIZE; FORM := POINTER END;
+      BEGIN FORM := POINTER; ELTYPE := NIL; SIZE := PTRSIZE END;
     NEW(TEXTPTR,FILES);                                       (*TEXT*)
     WITH TEXTPTR^ DO
-      BEGIN FILTYPE := CHARPTR; SIZE := CHARSIZE; FORM := FILES END
+      BEGIN FORM := FILES; FILTYPE := CHARPTR; SIZE := CHARSIZE END
   END (*ENTERSTDTYPES*) ;
 
   PROCEDURE ENTSTDNAMES;
@@ -3476,40 +3477,40 @@ PROCEDURE ENDOFLINE;
 
     NEW(CP,TYPES);                                            (*INTEGER*)
     WITH CP^ DO
-      BEGIN NAME := 'INTEGER '; IDTYPE := INTPTR; KLASS := TYPES END;
+      BEGIN KLASS := TYPES; NAME := 'INTEGER '; IDTYPE := INTPTR END;
     ENTERID(CP);
     NEW(CP,TYPES);                                            (*REAL*)
     WITH CP^ DO
-      BEGIN NAME := 'REAL    '; IDTYPE := REALPTR; KLASS := TYPES END;
+      BEGIN KLASS := TYPES; NAME := 'REAL    '; IDTYPE := REALPTR END;
     ENTERID(CP);
     NEW(CP,TYPES);                                            (*CHAR*)
     WITH CP^ DO
-      BEGIN NAME := 'CHAR    '; IDTYPE := CHARPTR; KLASS := TYPES END;
+      BEGIN KLASS := TYPES; NAME := 'CHAR    '; IDTYPE := CHARPTR END;
     ENTERID(CP);
     NEW(CP,TYPES);                                            (*BOOLEAN*)
     WITH CP^ DO
-      BEGIN NAME := 'BOOLEAN '; IDTYPE := BOOLPTR; KLASS := TYPES END;
+      BEGIN KLASS := TYPES; NAME := 'BOOLEAN '; IDTYPE := BOOLPTR END;
     ENTERID(CP);
     CP1 := NIL;
     FOR I := 1 TO 2 DO
       BEGIN NEW(CP,KONST);                                    (*FALSE,TRUE*)
         WITH CP^ DO
-          BEGIN NAME := NA[I]; IDTYPE := BOOLPTR;
-            NEXT := CP1; VALUES.IVAL := I - 1; KLASS := KONST
+          BEGIN KLASS := KONST; NAME := NA[I]; IDTYPE := BOOLPTR;
+            NEXT := CP1; VALUES.IVAL := I - 1
           END;
         ENTERID(CP); CP1 := CP
       END;
     BOOLPTR^.FCONST := CP;
     NEW(CP,KONST);                                             (*NIL*)
     WITH CP^ DO
-      BEGIN NAME := 'NIL     '; IDTYPE := NILPTR;
-        NEXT := NIL; VALUES.IVAL := 0; KLASS := KONST
+      BEGIN KLASS := KONST; NAME := 'NIL     '; IDTYPE := NILPTR;
+        NEXT := NIL; VALUES.IVAL := 0
       END;
     ENTERID(CP);
     FOR I := 3 TO 4 DO
       BEGIN NEW(CP,VARS);                                     (*INPUT,OUTPUT*)
         WITH CP^ DO
-          BEGIN NAME := NA[I]; IDTYPE := TEXTPTR; KLASS := VARS;
+          BEGIN KLASS := VARS; NAME := NA[I]; IDTYPE := TEXTPTR;
             VKIND := ACTUAL; NEXT := NIL; VLEV := 1;
             VADDR := LCAFTERMARKSTACK + (I-3)*CHARSIZE
           END;
@@ -3518,7 +3519,7 @@ PROCEDURE ENDOFLINE;
     FOR I:=33 TO 34 DO
       BEGIN NEW(CP,VARS);                                     (*PRD,PRR FILES*)
          WITH CP^ DO
-           BEGIN NAME := NA[I]; IDTYPE := TEXTPTR; KLASS := VARS;
+           BEGIN KLASS := VARS; NAME := NA[I]; IDTYPE := TEXTPTR;
               VKIND := ACTUAL; NEXT := NIL; VLEV := 1;
               VADDR := LCAFTERMARKSTACK + (I-31)*CHARSIZE
            END;
@@ -3527,38 +3528,38 @@ PROCEDURE ENDOFLINE;
     FOR I := 5 TO 16 DO
       BEGIN NEW(CP,PROC,STANDARD);                         (*GET,PUT,RESET*)
         WITH CP^ DO                                           (*REWRITE,READ*)
-          BEGIN NAME := NA[I]; IDTYPE := NIL;                 (*WRITE,PACK*)
-            NEXT := NIL; KEY := I - 4;                        (*UNPACK,PACK*)
-            KLASS := PROC; PFDECKIND := STANDARD
+          BEGIN KLASS := PROC; PFDECKIND := STANDARD;
+            NAME := NA[I]; IDTYPE := NIL;                     (*WRITE,PACK*)
+            NEXT := NIL; KEY := I - 4                         (*UNPACK,PACK*)
           END;
         ENTERID(CP)
       END;
     NEW(CP,PROC,STANDARD);
     WITH CP^ DO
-        BEGIN NAME:=NA[35]; IDTYPE:=NIL;
-              NEXT:= NIL; KEY:=13;
-              KLASS:=PROC; PFDECKIND:= STANDARD
+        BEGIN KLASS:=PROC; PFDECKIND:= STANDARD;
+              NAME:=NA[35]; IDTYPE:=NIL;
+              NEXT:= NIL; KEY:=13
         END; ENTERID(CP);
     FOR I := 17 TO 26 DO
       BEGIN NEW(CP,FUNC,STANDARD);                         (*ABS,SQR,TRUNC*)
         WITH CP^ DO                                           (*ODD,ORD,CHR*)
-          BEGIN NAME := NA[I]; IDTYPE := NIL;              (*PRED,SUCC,EOF*)
-            NEXT := NIL; KEY := I - 16;
-            KLASS := FUNC; PFDECKIND := STANDARD
+          BEGIN KLASS := FUNC; PFDECKIND := STANDARD;
+            NAME := NA[I]; IDTYPE := NIL;                 (*PRED,SUCC,EOF*)
+            NEXT := NIL; KEY := I - 16
           END;
         ENTERID(CP)
       END;
     NEW(CP,VARS);                      (*PARAMETER OF PREDECLARED FUNCTIONS*)
     WITH CP^ DO
-      BEGIN NAME := '        '; IDTYPE := REALPTR; KLASS := VARS;
+      BEGIN KLASS := VARS; NAME := '        '; IDTYPE := REALPTR;
         VKIND := ACTUAL; NEXT := NIL; VLEV := 1; VADDR := 0
       END;
     FOR I := 27 TO 32 DO
       BEGIN NEW(CP1,FUNC,DECLARED,ACTUAL);                    (*SIN,COS,EXP*)
         WITH CP1^ DO                                       (*SQRT,LN,ARCTAN*)
-          BEGIN NAME := NA[I]; IDTYPE := REALPTR; NEXT := CP;
-            FORWDECL := FALSE; EXTERN := TRUE; PFLEV := 0; PFNAME := I - 12;
-            KLASS := FUNC; PFDECKIND := DECLARED; PFKIND := ACTUAL
+          BEGIN KLASS := FUNC; PFDECKIND := DECLARED; PFKIND := ACTUAL;
+            NAME := NA[I]; IDTYPE := REALPTR; NEXT := CP;
+            FORWDECL := FALSE; EXTERN := TRUE; PFLEV := 0; PFNAME := I - 12
           END;
         ENTERID(CP1)
       END
@@ -3568,33 +3569,33 @@ PROCEDURE ENDOFLINE;
   BEGIN
     NEW(UTYPPTR,TYPES);
     WITH UTYPPTR^ DO
-      BEGIN NAME := '        '; IDTYPE := NIL; KLASS := TYPES END;
+      BEGIN KLASS := TYPES; NAME := '        '; IDTYPE := NIL END;
     NEW(UCSTPTR,KONST);
     WITH UCSTPTR^ DO
-      BEGIN NAME := '        '; IDTYPE := NIL; NEXT := NIL;
-        KLASS := KONST; VALUES.IVAL := 0
+      BEGIN KLASS := KONST; NAME := '        '; IDTYPE := NIL;
+        NEXT := NIL; VALUES.IVAL := 0
       END;
     NEW(UVARPTR,VARS);
     WITH UVARPTR^ DO
-      BEGIN NAME := '        '; IDTYPE := NIL; VKIND := ACTUAL;
-        NEXT := NIL; VLEV := 0; VADDR := 0; KLASS := VARS
+      BEGIN KLASS := VARS; NAME := '        '; IDTYPE := NIL;
+        VKIND := ACTUAL; NEXT := NIL; VLEV := 0; VADDR := 0
       END;
     NEW(UFLDPTR,FIELD);
     WITH UFLDPTR^ DO
-      BEGIN NAME := '        '; IDTYPE := NIL; NEXT := NIL; FLDADDR := 0;
-        KLASS := FIELD
+      BEGIN KLASS := FIELD; NAME := '        '; IDTYPE := NIL;
+        NEXT := NIL; FLDADDR := 0
       END;
     NEW(UPRCPTR,PROC,DECLARED,ACTUAL);
     WITH UPRCPTR^ DO
-      BEGIN NAME := '        '; IDTYPE := NIL; FORWDECL := FALSE;
-        NEXT := NIL; EXTERN := FALSE; PFLEV := 0; GENLABEL(PFNAME);
-        KLASS := PROC; PFDECKIND := DECLARED; PFKIND := ACTUAL
+      BEGIN KLASS := PROC; PFDECKIND := DECLARED; PFKIND := ACTUAL;
+        NAME := '        '; IDTYPE := NIL; FORWDECL := FALSE;
+        NEXT := NIL; EXTERN := FALSE; PFLEV := 0; GENLABEL(PFNAME)
       END;
     NEW(UFCTPTR,FUNC,DECLARED,ACTUAL);
     WITH UFCTPTR^ DO
-      BEGIN NAME := '        '; IDTYPE := NIL; NEXT := NIL;
-        FORWDECL := FALSE; EXTERN := FALSE; PFLEV := 0; GENLABEL(PFNAME);
-        KLASS := FUNC; PFDECKIND := DECLARED; PFKIND := ACTUAL
+      BEGIN KLASS := FUNC; PFDECKIND := DECLARED; PFKIND := ACTUAL;
+        NAME := '        '; IDTYPE := NIL; NEXT := NIL;
+        FORWDECL := FALSE; EXTERN := FALSE; PFLEV := 0; GENLABEL(PFNAME)
       END
   END (*ENTERUNDECL*) ;
 
