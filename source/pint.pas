@@ -469,13 +469,14 @@ type
                      pi_cuf,     { 246 } pi_cif,     { 247 } pi_mpc,     { 248 }
                      pi_cvf,     { 249 } pi_ph10,    { 250 } pi_cpl,     { 251 }
                      pi_sfs,     { 252 } pi_sev,     { 253 } pi_mdc,     { 254 }
-                     pi_s2c,     { 255 }
+                     pi_ph2,     { 255 }
                      { past the 255 instruction, these instructions don't fit
                        into a single byte. Thus after this, these are pseudo
                        instructions that don't end up as machine instructions. }
                      pi_ltci,    { 256 } pi_ltcr,    { 257 } pi_ltcs,    { 258 }
                      pi_ltcb,    { 259 } pi_ltcc,    { 260 } pi_ltcx,    { 261 }
-                     pi_lto,     { 262 } pi_lsp      { 263 }
+                     pi_lto,     { 262 } pi_lsp,     { 263 }
+                     pi_s2c      { 264 }
                     );
       beta        = packed array[1..25] of char; (*error message*)
       alfainx     = 1..maxalfa; { index for alfa type }
@@ -821,7 +822,7 @@ fixed
         record 'sfs       ', false, intsize*2, pi_sfs end,
         record 'sev       ', true , intsize, pi_sev end,
         record 'mdc       ', false, intsize, pi_mdc end,
-        record 's2c       ', false, intsize, pi_s2c end,
+        record '---       ', false, 0, pi_ph2 end,
         { pseudo-instructions, not machine executable }
         record 'ltci      ', false, intsize, pi_ltci end,
         record 'ltcr      ', false, intsize, pi_ltcr end,
@@ -830,7 +831,8 @@ fixed
         record 'ltcc      ', false, intsize, pi_ltcc end,
         record 'ltcx      ', false, intsize, pi_ltcx end,
         record 'lto       ', false, intsize, pi_lto end,
-        record 'lsp       ', false, 0, pi_lsp end
+        record 'lsp       ', false, 0, pi_lsp end,
+        record 's2c       ', false, intsize, pi_s2c end
       end;
 
 var   pc, pcs     : address;   (*program address register*)
@@ -2886,7 +2888,7 @@ procedure load;
           pi_aps, pi_ckvb, pi_ckvc, pi_incx,
           pi_decx, pi_ckvx, pi_cxs, pi_max,
           pi_retm, pi_lsa, pi_vbs,
-          pi_mdc, pi_s2c:
+          pi_mdc:
             begin read(prd,q); storeop;
               storeq
             end;
@@ -3123,6 +3125,8 @@ procedure load;
           pi_ujc: begin storeop; q := 0; storeq end;
 
           pi_mpc{mpc}:; { does nothing in the interpreter }
+
+          pi_s2c: begin read(prd,q); storeop; storeq end;
 
       end; (*case*)
 
@@ -5518,9 +5522,9 @@ begin
                   end;
 
     { illegal instructions }
-    pi_ph1, pi_ph3, pi_ph4, pi_ph5,
-    pi_ph6, pi_ph7, pi_ph8, pi_ph9,
-    pi_mpc, pi_ph10:
+    pi_ph1, pi_ph2, pi_ph3, pi_ph4,
+    pi_ph5, pi_ph6, pi_ph7, pi_ph8,
+    pi_ph9, pi_mpc, pi_ph10:
       errorv(InvalidInstruction)
 
   end
