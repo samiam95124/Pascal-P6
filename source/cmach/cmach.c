@@ -481,8 +481,8 @@ typedef enum {
     pi_inn,     /*  48 */ pi_mod,     /*  49 */ pi_odd,     /*  50 */
     pi_mpi,     /*  51 */ pi_mpr,     /*  52 */ pi_dvi,     /*  53 */
     pi_dvr,     /*  54 */ pi_mov,     /*  55 */ pi_lca,     /*  56 */
-    pi_deci,    /*  57 */ pi_stp,     /*  58 */ pi_ph11,    /*  59 */
-    pi_ph12,    /*  60 */ pi_ujc,     /*  61 */ pi_rnd,     /*  62 */
+    pi_deci,    /*  57 */ pi_stp,     /*  58 */ pi_ordi,    /*  59 */
+    pi_chr,     /*  60 */ pi_ujc,     /*  61 */ pi_rnd,     /*  62 */
     pi_pck,     /*  63 */ pi_upk,     /*  64 */ pi_ldoa,    /*  65 */
     pi_ldor,    /*  66 */ pi_ldos,    /*  67 */ pi_ldob,    /*  68 */
     pi_ldoc,    /*  69 */ pi_stra,    /*  70 */ pi_strr,    /*  71 */
@@ -506,8 +506,8 @@ typedef enum {
     pi_ldci,    /* 123 */ pi_ldcr,    /* 124 */ pi_ldcn,    /* 125 */
     pi_ldcb,    /* 126 */ pi_ldcc,    /* 127 */ pi_reti,    /* 128 */
     pi_retr,    /* 129 */ pi_retc,    /* 130 */ pi_retb,    /* 131 */
-    pi_reta,    /* 132 */ pi_vip,     /* 133 */ pi_ph13,    /* 134 */
-    pi_lcp,     /* 135 */ pi_ph14,    /* 136 */ pi_equi,    /* 137 */
+    pi_reta,    /* 132 */ pi_vip,     /* 133 */ pi_ordb,    /* 134 */
+    pi_lcp,     /* 135 */ pi_ordc,    /* 136 */ pi_equi,    /* 137 */
     pi_equr,    /* 138 */ pi_equb,    /* 139 */ pi_equs,    /* 140 */
     pi_equc,    /* 141 */ pi_equm,    /* 142 */ pi_neqi,    /* 143 */
     pi_neqr,    /* 144 */ pi_neqb,    /* 145 */ pi_neqs,    /* 146 */
@@ -528,7 +528,7 @@ typedef enum {
     pi_inv,     /* 189 */ pi_ckla,    /* 190 */ pi_cta,     /* 191 */
     pi_ivti,    /* 192 */ pi_lodx,    /* 193 */ pi_ldox,    /* 194 */
     pi_strx,    /* 195 */ pi_srox,    /* 196 */ pi_stox,    /* 197 */
-    pi_indx,    /* 198 */ pi_chkx,    /* 199 */ pi_ph15,    /* 200 */
+    pi_indx,    /* 198 */ pi_chkx,    /* 199 */ pi_ordx,    /* 200 */
     pi_incx,    /* 201 */ pi_decx,    /* 202 */ pi_ckvx,    /* 203 */
     pi_retx,    /* 204 */ pi_noti,    /* 205 */ pi_xor,     /* 206 */
     pi_bge,     /* 207 */ pi_ede,     /* 208 */ pi_mse,     /* 209 */
@@ -553,9 +553,7 @@ typedef enum {
        instructions that don't end up as machine instructions. */
     pi_ltci,    /* 256 */ pi_ltcr,    /* 257 */ pi_ltcs,    /* 258 */
     pi_ltcb,    /* 259 */ pi_ltcc,    /* 260 */ pi_ltcx,    /* 261 */
-    pi_lto,     /* 262 */ pi_lsp,     /* 263 */ pi_ordi,    /* 264 */
-    pi_chr,     /* 265 */ pi_ordb,    /* 266 */ pi_ordc,    /* 267 */
-    pi_ordx     /* 268 */
+    pi_lto,     /* 262 */ pi_lsp      /* 263 */
 } mi;
 typedef long address;           /* address */
 
@@ -3078,6 +3076,12 @@ void sinins()
 
     case pi_stp: stopins = TRUE; break;
 
+    case pi_ordb:
+    case pi_ordc:
+    case pi_ordx:
+    case pi_ordi: break; /* ord is a no-op */
+
+    case pi_chr: break; /* chr is a no-op */
 
     case pi_ujc: errorv(INVALIDCASE); break;
     case pi_rnd: poprel(r1);
