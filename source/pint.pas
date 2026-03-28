@@ -348,7 +348,7 @@ const
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 111;  { number of predefined procedures/functions }
       maxinsm     = 255;  { maximum machine instruction code, 0-255 or byte }
-      maxins      = 268;  { maximum instruction code including pseudo-instructions }
+      maxins      = 263;  { maximum instruction code including pseudo-instructions }
       maxalfa     = 10;   { maximum number of characters in alfa type }
       fillen      = 20000; { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
@@ -403,8 +403,8 @@ type
                      pi_inn,     {  48 } pi_mod,     {  49 } pi_odd,     {  50 }
                      pi_mpi,     {  51 } pi_mpr,     {  52 } pi_dvi,     {  53 }
                      pi_dvr,     {  54 } pi_mov,     {  55 } pi_lca,     {  56 }
-                     pi_deci,    {  57 } pi_stp,     {  58 } pi_ph11,    {  59 }
-                     pi_ph12,    {  60 } pi_ujc,     {  61 } pi_rnd,     {  62 }
+                     pi_deci,    {  57 } pi_stp,     {  58 } pi_ordi,    {  59 }
+                     pi_chr,     {  60 } pi_ujc,     {  61 } pi_rnd,     {  62 }
                      pi_pck,     {  63 } pi_upk,     {  64 } pi_ldoa,    {  65 }
                      pi_ldor,    {  66 } pi_ldos,    {  67 } pi_ldob,    {  68 }
                      pi_ldoc,    {  69 } pi_stra,    {  70 } pi_strr,    {  71 }
@@ -428,8 +428,8 @@ type
                      pi_ldci,    { 123 } pi_ldcr,    { 124 } pi_ldcn,    { 125 }
                      pi_ldcb,    { 126 } pi_ldcc,    { 127 } pi_reti,    { 128 }
                      pi_retr,    { 129 } pi_retc,    { 130 } pi_retb,    { 131 }
-                     pi_reta,    { 132 } pi_vip,     { 133 } pi_ph13,    { 134 }
-                     pi_lcp,     { 135 } pi_ph14,    { 136 } pi_equi,    { 137 }
+                     pi_reta,    { 132 } pi_vip,     { 133 } pi_ordb,    { 134 }
+                     pi_lcp,     { 135 } pi_ordc,    { 136 } pi_equi,    { 137 }
                      pi_equr,    { 138 } pi_equb,    { 139 } pi_equs,    { 140 }
                      pi_equc,    { 141 } pi_equm,    { 142 } pi_neqi,    { 143 }
                      pi_neqr,    { 144 } pi_neqb,    { 145 } pi_neqs,    { 146 }
@@ -450,7 +450,7 @@ type
                      pi_inv,     { 189 } pi_ckla,    { 190 } pi_cta,     { 191 }
                      pi_ivti,    { 192 } pi_lodx,    { 193 } pi_ldox,    { 194 }
                      pi_strx,    { 195 } pi_srox,    { 196 } pi_stox,    { 197 }
-                     pi_indx,    { 198 } pi_chkx,    { 199 } pi_ph15,    { 200 }
+                     pi_indx,    { 198 } pi_chkx,    { 199 } pi_ordx,    { 200 }
                      pi_incx,    { 201 } pi_decx,    { 202 } pi_ckvx,    { 203 }
                      pi_retx,    { 204 } pi_noti,    { 205 } pi_xor,     { 206 }
                      pi_bge,     { 207 } pi_ede,     { 208 } pi_mse,     { 209 }
@@ -475,9 +475,7 @@ type
                        instructions that don't end up as machine instructions. }
                      pi_ltci,    { 256 } pi_ltcr,    { 257 } pi_ltcs,    { 258 }
                      pi_ltcb,    { 259 } pi_ltcc,    { 260 } pi_ltcx,    { 261 }
-                     pi_lto,     { 262 } pi_lsp,     { 263 } pi_ordi,    { 264 } 
-                     pi_chr,     { 265 } pi_ordb,    { 266 } pi_ordc,    { 267 } 
-                     pi_ordx     { 268 }
+                     pi_lto,     { 262 } pi_lsp      { 263 }
                     );
       beta        = packed array[1..25] of char; (*error message*)
       alfainx     = 1..maxalfa; { index for alfa type }
@@ -627,8 +625,8 @@ fixed
         record 'lca       ', false, intsize, pi_lca end,
         record 'deci      ', false, intsize, pi_deci end,
         record 'stp*      ', false, 0, pi_stp end,
-        record '---       ', false, 0, pi_ph11 end,
-        record '---       ', false, 0, pi_ph12 end,
+        record 'ordi      ', false, 0, pi_ordi end,
+        record 'chr       ', false, 0, pi_chr end,
         record 'ujc       ', false, intsize, pi_ujc end,
         record 'rnd       ', false, 0, pi_rnd end,
         record 'pck       ', false, intsize*2, pi_pck end,
@@ -702,9 +700,9 @@ fixed
         record 'retb      ', false, intsize, pi_retb end,
         record 'reta      ', false, intsize, pi_reta end,
         record 'vip       ', false, intsize*2, pi_vip end,
-        record '---       ', false, 0, pi_ph13 end,
+        record 'ordb      ', false, 0, pi_ordb end,
         record 'lcp       ', false, 0, pi_lcp end,
-        record '---       ', false, 0, pi_ph14 end,
+        record 'ordc      ', false, 0, pi_ordc end,
         record 'equi      ', false, 0, pi_equi end,
         record 'equr      ', false, 0, pi_equr end,
         record 'equb      ', false, 0, pi_equb end,
@@ -768,7 +766,7 @@ fixed
         record 'stox      ', false, 0, pi_stox end,
         record 'indx      ', false, intsize, pi_indx end,
         record 'chkx      ', false, intsize, pi_chkx end,
-        record '---       ', false, 0, pi_ph15 end,
+        record 'ordx      ', false, 0, pi_ordx end,
         record 'incx      ', false, intsize, pi_incx end,
         record 'decx      ', false, intsize, pi_decx end,
         record 'ckvx      ', false, intsize, pi_ckvx end,
@@ -832,12 +830,7 @@ fixed
         record 'ltcc      ', false, intsize, pi_ltcc end,
         record 'ltcx      ', false, intsize, pi_ltcx end,
         record 'lto       ', false, intsize, pi_lto end,
-        record 'lsp       ', false, 0, pi_lsp end,
-        record 'ordi      ', false, 0, pi_ordi end,
-        record 'chr       ', false, 0, pi_chr end,
-        record 'ordb      ', false, 0, pi_ordb end,
-        record 'ordc      ', false, 0, pi_ordc end,
-        record 'ordx      ', false, 0, pi_ordx end
+        record 'lsp       ', false, 0, pi_lsp end
       end;
 
 var   pc, pcs     : address;   (*program address register*)
@@ -3366,6 +3359,8 @@ procedure load;
           pi_leqi, pi_leqr, pi_leqb, pi_leqs, pi_leqc,
           pi_lesi, pi_lesr, pi_lesb, pi_less, pi_lesc,
 
+          pi_ordi, pi_ordb, pi_ordc, pi_ordx,
+
           pi_stoi, pi_stoa, pi_stor, pi_stos,
           pi_stob, pi_stoc, pi_stox,
 
@@ -3375,7 +3370,7 @@ procedure load;
           pi_abi, pi_abr, pi_notb, pi_and,
           pi_ior, pi_dif, pi_int, pi_uni,
           pi_inn, pi_mod, pi_odd, pi_mpi,
-          pi_mpr, pi_dvi, pi_dvr,
+          pi_mpr, pi_dvi, pi_dvr, pi_chr,
           pi_rnd, pi_rgs, pi_noti, pi_xor,
           pi_ede, pi_mse, pi_lcp, pi_cps,
           pi_equv, pi_neqv, pi_lesv, pi_grtv,
@@ -3393,9 +3388,6 @@ procedure load;
           { lsp is same as ldp }
           pi_lsp: begin op := ord(pi_ldp); storeop end;
 
-          { ord and chr are no-ops, no machine code generated }
-          pi_ordi, pi_ordb, pi_ordc, pi_ordx,
-          pi_chr: ;
 
                       (*ujc must have same length as ujp, so we output a dummy
                         q argument*)
@@ -5508,6 +5500,12 @@ begin
 
     pi_stp: begin stopins := true; pc := pcs end;
 
+    pi_ordb,
+    pi_ordc,
+    pi_ordx,
+    pi_ordi: ; { ord is a no-op }
+
+    pi_chr: ; { chr is a no-op }
 
     pi_ujc: errorv(InvalidCase);
     pi_rnd: begin poprel(r1);
@@ -5793,8 +5791,7 @@ begin
     { illegal instructions }
     pi_ph1, pi_ph3, pi_ph4, pi_ph5,
     pi_ph6, pi_ph7, pi_ph8, pi_ph9,
-    pi_mpc, pi_ph10, pi_ph11, pi_ph12,
-    pi_ph13, pi_ph14, pi_ph15:
+    pi_mpc, pi_ph10:
       errorv(InvalidInstruction)
 
   end
