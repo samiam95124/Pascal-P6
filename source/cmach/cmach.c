@@ -461,6 +461,102 @@ typedef unsigned char byte;    /* 8-bit byte */
 typedef long boolean;           /* true/false */
 typedef byte lvltyp;           /* procedure/function level */
 typedef byte instyp;           /* instruction */
+typedef enum {
+    pi_lodi,    /*   0 */ pi_ldoi,    /*   1 */ pi_stri,    /*   2 */
+    pi_sroi,    /*   3 */ pi_lda,     /*   4 */ pi_lao,     /*   5 */
+    pi_stoi,    /*   6 */ pi_ldcs,    /*   7 */ pi_cjp,     /*   8 */
+    pi_indi,    /*   9 */ pi_inci,    /*  10 */ pi_mst,     /*  11 */
+    pi_cup,     /*  12 */ pi_rip,     /*  13 */ pi_retp,    /*  14 */
+    pi_csp,     /*  15 */ pi_ixa,     /*  16 */ pi_equa,    /*  17 */
+    pi_neqa,    /*  18 */ pi_brk,     /*  19 */ pi_lnp,     /*  20 */
+    pi_cal,     /*  21 */ pi_ret,     /*  22 */ pi_ujp,     /*  23 */
+    pi_fjp,     /*  24 */ pi_xjp,     /*  25 */ pi_chki,    /*  26 */
+    pi_cuv,     /*  27 */ pi_adi,     /*  28 */ pi_adr,     /*  29 */
+    pi_sbi,     /*  30 */ pi_sbr,     /*  31 */ pi_sgs,     /*  32 */
+    pi_flt,     /*  33 */ pi_flo,     /*  34 */ pi_trc,     /*  35 */
+    pi_ngi,     /*  36 */ pi_ngr,     /*  37 */ pi_sqi,     /*  38 */
+    pi_sqr,     /*  39 */ pi_abi,     /*  40 */ pi_abr,     /*  41 */
+    pi_notb,    /*  42 */ pi_and,     /*  43 */ pi_ior,     /*  44 */
+    pi_dif,     /*  45 */ pi_int,     /*  46 */ pi_uni,     /*  47 */
+    pi_inn,     /*  48 */ pi_mod,     /*  49 */ pi_odd,     /*  50 */
+    pi_mpi,     /*  51 */ pi_mpr,     /*  52 */ pi_dvi,     /*  53 */
+    pi_dvr,     /*  54 */ pi_mov,     /*  55 */ pi_lca,     /*  56 */
+    pi_deci,    /*  57 */ pi_stp,     /*  58 */ pi_ph11,    /*  59 */
+    pi_ph12,    /*  60 */ pi_ujc,     /*  61 */ pi_rnd,     /*  62 */
+    pi_pck,     /*  63 */ pi_upk,     /*  64 */ pi_ldoa,    /*  65 */
+    pi_ldor,    /*  66 */ pi_ldos,    /*  67 */ pi_ldob,    /*  68 */
+    pi_ldoc,    /*  69 */ pi_stra,    /*  70 */ pi_strr,    /*  71 */
+    pi_strs,    /*  72 */ pi_strb,    /*  73 */ pi_strc,    /*  74 */
+    pi_sroa,    /*  75 */ pi_sror,    /*  76 */ pi_sros,    /*  77 */
+    pi_srob,    /*  78 */ pi_sroc,    /*  79 */ pi_stoa,    /*  80 */
+    pi_stor,    /*  81 */ pi_stos,    /*  82 */ pi_stob,    /*  83 */
+    pi_stoc,    /*  84 */ pi_inda,    /*  85 */ pi_indr,    /*  86 */
+    pi_inds,    /*  87 */ pi_indb,    /*  88 */ pi_indc,    /*  89 */
+    pi_inca,    /*  90 */ pi_suv,     /*  91 */ pi_vbs,     /*  92 */
+    pi_incb,    /*  93 */ pi_incc,    /*  94 */ pi_chka,    /*  95 */
+    pi_vbe,     /*  96 */ pi_chks,    /*  97 */ pi_chkb,    /*  98 */
+    pi_chkc,    /*  99 */ pi_cvbi,    /* 100 */ pi_ivtx,    /* 101 */
+    pi_ivtb,    /* 102 */ pi_decb,    /* 103 */ pi_decc,    /* 104 */
+    pi_loda,    /* 105 */ pi_lodr,    /* 106 */ pi_lods,    /* 107 */
+    pi_lodb,    /* 108 */ pi_lodc,    /* 109 */ pi_rgs,     /* 110 */
+    pi_ivtc,    /* 111 */ pi_ipj,     /* 112 */ pi_cip,     /* 113 */
+    pi_lpa,     /* 114 */ pi_cvbx,    /* 115 */ pi_cvbb,    /* 116 */
+    pi_dmp,     /* 117 */ pi_swp,     /* 118 */ pi_tjp,     /* 119 */
+    pi_lip,     /* 120 */ pi_cvbc,    /* 121 */ pi_vis,     /* 122 */
+    pi_ldci,    /* 123 */ pi_ldcr,    /* 124 */ pi_ldcn,    /* 125 */
+    pi_ldcb,    /* 126 */ pi_ldcc,    /* 127 */ pi_reti,    /* 128 */
+    pi_retr,    /* 129 */ pi_retc,    /* 130 */ pi_retb,    /* 131 */
+    pi_reta,    /* 132 */ pi_vip,     /* 133 */ pi_ph13,    /* 134 */
+    pi_lcp,     /* 135 */ pi_ph14,    /* 136 */ pi_equi,    /* 137 */
+    pi_equr,    /* 138 */ pi_equb,    /* 139 */ pi_equs,    /* 140 */
+    pi_equc,    /* 141 */ pi_equm,    /* 142 */ pi_neqi,    /* 143 */
+    pi_neqr,    /* 144 */ pi_neqb,    /* 145 */ pi_neqs,    /* 146 */
+    pi_neqc,    /* 147 */ pi_neqm,    /* 148 */ pi_geqi,    /* 149 */
+    pi_geqr,    /* 150 */ pi_geqb,    /* 151 */ pi_geqs,    /* 152 */
+    pi_geqc,    /* 153 */ pi_geqm,    /* 154 */ pi_grti,    /* 155 */
+    pi_grtr,    /* 156 */ pi_grtb,    /* 157 */ pi_grts,    /* 158 */
+    pi_grtc,    /* 159 */ pi_grtm,    /* 160 */ pi_leqi,    /* 161 */
+    pi_leqr,    /* 162 */ pi_leqb,    /* 163 */ pi_leqs,    /* 164 */
+    pi_leqc,    /* 165 */ pi_leqm,    /* 166 */ pi_lesi,    /* 167 */
+    pi_lesr,    /* 168 */ pi_lesb,    /* 169 */ pi_less,    /* 170 */
+    pi_lesc,    /* 171 */ pi_lesm,    /* 172 */ pi_ph1,     /* 173 */
+    pi_mrkl,    /* 174 */ pi_ckvi,    /* 175 */ pi_cps,     /* 176 */
+    pi_cpc,     /* 177 */ pi_aps,     /* 178 */ pi_ckvb,    /* 179 */
+    pi_ckvc,    /* 180 */ pi_dupi,    /* 181 */ pi_dupa,    /* 182 */
+    pi_dupr,    /* 183 */ pi_dups,    /* 184 */ pi_dupb,    /* 185 */
+    pi_dupc,    /* 186 */ pi_cks,     /* 187 */ pi_cke,     /* 188 */
+    pi_inv,     /* 189 */ pi_ckla,    /* 190 */ pi_cta,     /* 191 */
+    pi_ivti,    /* 192 */ pi_lodx,    /* 193 */ pi_ldox,    /* 194 */
+    pi_strx,    /* 195 */ pi_srox,    /* 196 */ pi_stox,    /* 197 */
+    pi_indx,    /* 198 */ pi_chkx,    /* 199 */ pi_ph15,    /* 200 */
+    pi_incx,    /* 201 */ pi_decx,    /* 202 */ pi_ckvx,    /* 203 */
+    pi_retx,    /* 204 */ pi_noti,    /* 205 */ pi_xor,     /* 206 */
+    pi_bge,     /* 207 */ pi_ede,     /* 208 */ pi_mse,     /* 209 */
+    pi_apc,     /* 210 */ pi_cxs,     /* 211 */ pi_cxc,     /* 212 */
+    pi_lft,     /* 213 */ pi_max,     /* 214 */ pi_equv,    /* 215 */
+    pi_neqv,    /* 216 */ pi_lesv,    /* 217 */ pi_grtv,    /* 218 */
+    pi_leqv,    /* 219 */ pi_geqv,    /* 220 */ pi_vdp,     /* 221 */
+    pi_spc,     /* 222 */ pi_ccs,     /* 223 */ pi_scp,     /* 224 */
+    pi_ldp,     /* 225 */ pi_vin,     /* 226 */ pi_vdd,     /* 227 */
+    pi_ph3,     /* 228 */ pi_ph4,     /* 229 */ pi_ph5,     /* 230 */
+    pi_ph6,     /* 231 */ pi_ph7,     /* 232 */ pi_ph8,     /* 233 */
+    pi_ph9,     /* 234 */ pi_stom,    /* 235 */ pi_rets,    /* 236 */
+    pi_retm,    /* 237 */ pi_ctb,     /* 238 */ pi_cpp,     /* 239 */
+    pi_cpr,     /* 240 */ pi_lsa,     /* 241 */ pi_eext,    /* 242 */
+    pi_wbs,     /* 243 */ pi_wbe,     /* 244 */ pi_sfr,     /* 245 */
+    pi_cuf,     /* 246 */ pi_cif,     /* 247 */ pi_mpc,     /* 248 */
+    pi_cvf,     /* 249 */ pi_ph10,    /* 250 */ pi_cpl,     /* 251 */
+    pi_sfs,     /* 252 */ pi_sev,     /* 253 */ pi_mdc,     /* 254 */
+    pi_ph2,     /* 255 */
+    /* past the 255 instruction, these instructions don't fit
+       into a single byte. Thus after this, these are pseudo
+       instructions that don't end up as machine instructions. */
+    pi_ltci,    /* 256 */ pi_ltcr,    /* 257 */ pi_ltcs,    /* 258 */
+    pi_ltcb,    /* 259 */ pi_ltcc,    /* 260 */ pi_ltcx,    /* 261 */
+    pi_lto,     /* 262 */ pi_lsp,     /* 263 */ pi_ordi,    /* 264 */
+    pi_chr,     /* 265 */ pi_ordb,    /* 266 */ pi_ordc,    /* 267 */
+    pi_ordx     /* 268 */
+} mi;
 typedef long address;           /* address */
 
 typedef char beta[25];         /* error message */
@@ -2569,105 +2665,105 @@ void sinins()
 
     switch (op) {
 
-    case 0   /*lodi*/: getp(); getq(); pshint(getint(getadr(mp-p*PTRSIZE) + q)); break;
-    case 193 /*lodx*/: getp(); getq(); pshint(getbyt(getadr(mp-p*PTRSIZE) + q)); break;
-    case 105 /*loda*/: getp(); getq(); pshadr(getadr(getadr(mp-p*PTRSIZE) + q)); break;
-    case 106 /*lodr*/: getp(); getq(); pshrel(getrel(getadr(mp-p*PTRSIZE) + q)); break;
-    case 107 /*lods*/: getp(); getq(); pshadr(getadr(mp-p*PTRSIZE) + q); break;
-    case 108 /*lodb*/: getp(); getq(); pshint(getbol(getadr(mp-p*PTRSIZE) + q)); break;
-    case 109 /*lodc*/: getp(); getq(); pshint(getchr(getadr(mp-p*PTRSIZE) + q)); break;
+    case pi_lodi: getp(); getq(); pshint(getint(getadr(mp-p*PTRSIZE) + q)); break;
+    case pi_lodx: getp(); getq(); pshint(getbyt(getadr(mp-p*PTRSIZE) + q)); break;
+    case pi_loda: getp(); getq(); pshadr(getadr(getadr(mp-p*PTRSIZE) + q)); break;
+    case pi_lodr: getp(); getq(); pshrel(getrel(getadr(mp-p*PTRSIZE) + q)); break;
+    case pi_lods: getp(); getq(); pshadr(getadr(mp-p*PTRSIZE) + q); break;
+    case pi_lodb: getp(); getq(); pshint(getbol(getadr(mp-p*PTRSIZE) + q)); break;
+    case pi_lodc: getp(); getq(); pshint(getchr(getadr(mp-p*PTRSIZE) + q)); break;
 
-    case 1   /*ldoi*/: getq(); pshint(getint(q)); break;
-    case 194 /*ldox*/: getq(); pshint(getbyt(q)); break;
-    case 65  /*ldoa*/: getq(); pshadr(getadr(q)); break;
-    case 66  /*ldor*/: getq(); pshrel(getrel(q)); break;
-    case 67  /*ldos*/: getq(); pshadr(q); break;
-    case 68  /*ldob*/: getq(); pshint(getbol(q)); break;
-    case 69  /*ldoc*/: getq(); pshint(getchr(q)); break;
+    case pi_ldoi: getq(); pshint(getint(q)); break;
+    case pi_ldox: getq(); pshint(getbyt(q)); break;
+    case pi_ldoa: getq(); pshadr(getadr(q)); break;
+    case pi_ldor: getq(); pshrel(getrel(q)); break;
+    case pi_ldos: getq(); pshadr(q); break;
+    case pi_ldob: getq(); pshint(getbol(q)); break;
+    case pi_ldoc: getq(); pshint(getchr(q)); break;
 
-    case 2   /*stri*/: getp(); getq(); popint(i); putint(getadr(mp-p*PTRSIZE)+q, i); break;
-    case 195 /*strx*/: getp(); getq(); popint(i); putbyt(getadr(mp-p*PTRSIZE)+q, i); break;
-    case 70  /*stra*/: getp(); getq(); popadr(ad); putadr(getadr(mp-p*PTRSIZE)+q, ad); break;
-    case 71  /*strr*/: getp(); getq(); poprel(r1); putrel(getadr(mp-p*PTRSIZE)+q, r1); break;
-    case 72  /*strs*/: getp(); getq(); popadr(ad); getset(ad, s1); putset(getadr(mp-p*PTRSIZE)+q, s1); break;
-    case 73  /*strb*/: getp(); getq(); popint(i1); b1 = i1 != 0;
+    case pi_stri: getp(); getq(); popint(i); putint(getadr(mp-p*PTRSIZE)+q, i); break;
+    case pi_strx: getp(); getq(); popint(i); putbyt(getadr(mp-p*PTRSIZE)+q, i); break;
+    case pi_stra: getp(); getq(); popadr(ad); putadr(getadr(mp-p*PTRSIZE)+q, ad); break;
+    case pi_strr: getp(); getq(); poprel(r1); putrel(getadr(mp-p*PTRSIZE)+q, r1); break;
+    case pi_strs: getp(); getq(); popadr(ad); getset(ad, s1); putset(getadr(mp-p*PTRSIZE)+q, s1); break;
+    case pi_strb: getp(); getq(); popint(i1); b1 = i1 != 0;
                        putbol(getadr(mp-p*PTRSIZE)+q, b1); break;
-    case 74  /*strc*/: getp(); getq(); popint(i1); c1 = i1;
+    case pi_strc: getp(); getq(); popint(i1); c1 = i1;
                          putchr(getadr(mp-p*PTRSIZE)+q, c1); break;
 
-    case 3   /*sroi*/: getq(); popint(i); putint(q, i); break;
-    case 196 /*srox*/: getq(); popint(i); putbyt(q, i); break;
-    case 75  /*sroa*/: getq(); popadr(ad); putadr(q, ad); break;
-    case 76  /*sror*/: getq(); poprel(r1); putrel(q, r1); break;
-    case 77  /*sros*/: getq(); popadr(ad); getset(ad, s1); putset(q, s1); break;
-    case 78  /*srob*/: getq(); popint(i1); b1 = i1 != 0; putbol(q, b1); break;
-    case 79  /*sroc*/: getq(); popint(i1); c1 = i1; putchr(q, c1); break;
+    case pi_sroi: getq(); popint(i); putint(q, i); break;
+    case pi_srox: getq(); popint(i); putbyt(q, i); break;
+    case pi_sroa: getq(); popadr(ad); putadr(q, ad); break;
+    case pi_sror: getq(); poprel(r1); putrel(q, r1); break;
+    case pi_sros: getq(); popadr(ad); getset(ad, s1); putset(q, s1); break;
+    case pi_srob: getq(); popint(i1); b1 = i1 != 0; putbol(q, b1); break;
+    case pi_sroc: getq(); popint(i1); c1 = i1; putchr(q, c1); break;
 
-    case 4 /*lda*/: getp(); getq(); pshadr(getadr(mp-p*PTRSIZE)+q); break;
-    case 5 /*lao*/: getq(); pshadr(q); break;
+    case pi_lda: getp(); getq(); pshadr(getadr(mp-p*PTRSIZE)+q); break;
+    case pi_lao: getq(); pshadr(q); break;
 
-    case 6   /*stoi*/: popint(i); popadr(ad); putint(ad, i); break;
-    case 197 /*stox*/: popint(i); popadr(ad); putbyt(ad, i); break;
-    case 80  /*stoa*/: popadr(ad1); popadr(ad); putadr(ad, ad1); break;
-    case 81  /*stor*/: poprel(r1); popadr(ad); putrel(ad, r1); break;
-    case 82  /*stos*/: popadr(ad); getset(ad, s1); popadr(ad1); putset(ad1, s1); break;
-    case 83  /*stob*/: popint(i1); b1 = i1 != 0; popadr(ad); putbol(ad, b1);
+    case pi_stoi: popint(i); popadr(ad); putint(ad, i); break;
+    case pi_stox: popint(i); popadr(ad); putbyt(ad, i); break;
+    case pi_stoa: popadr(ad1); popadr(ad); putadr(ad, ad1); break;
+    case pi_stor: poprel(r1); popadr(ad); putrel(ad, r1); break;
+    case pi_stos: popadr(ad); getset(ad, s1); popadr(ad1); putset(ad1, s1); break;
+    case pi_stob: popint(i1); b1 = i1 != 0; popadr(ad); putbol(ad, b1);
                        break;
-    case 84  /*stoc*/: popint(i1); c1 = i1; popadr(ad); putchr(ad, c1);
+    case pi_stoc: popint(i1); c1 = i1; popadr(ad); putchr(ad, c1);
                        break;
 
-    case 235 /*stom*/: getq(); getq1(); ad1 = getadr(sp+q1); ad2 = sp;
+    case pi_stom: getq(); getq1(); ad1 = getadr(sp+q1); ad2 = sp;
                     for (i = 0; i < q; i++) {
                       store[ad1+i] = store[ad2+i]; putdef(ad1+i, getdef(ad2+i));
                     }
                     sp = sp+q1+ADRSIZE;
                     break;
-    case 238 /*ctb*/: getq(); getq1(); popadr(ad1); ad2 = sp;
+    case pi_ctb: getq(); getq1(); popadr(ad1); ad2 = sp;
                     for (i = 0; i < q; i++) {
                       store[ad1+i] = store[ad2+i]; putdef(ad1+i, getdef(ad2+i));
                     }
                     sp = sp+q1; pshadr(ad1);
                     break;
-    case 252 /*sfs*/: getq(); getq1(); popadr(ad1); ad2 = sp;
+    case pi_sfs: getq(); getq1(); popadr(ad1); ad2 = sp;
                     for (i = 0; i < q; i++) {
                       store[ad1+i] = store[ad2+i]; putdef(ad1+i, getdef(ad2+i));
                     }
                     sp = sp+q1;
                     break;
 
-    case 127 /*ldcc*/: pshint(getchr(pc)); pc = pc+1; break;
-    case 126 /*ldcb*/: pshint(getbol(pc)); pc = pc+1; break;
-    case 123 /*ldci*/: i = getint(pc); pc = pc+INTSIZE; pshint(i); break;
-    case 125 /*ldcn*/: pshadr(NILVAL); break; /* load nil */
-    case 124 /*ldcr*/: getq(); pshrel(getrel(q)); break;
-    case 7   /*ldcs*/: getq(); pshadr(q); break;
+    case pi_ldcc: pshint(getchr(pc)); pc = pc+1; break;
+    case pi_ldcb: pshint(getbol(pc)); pc = pc+1; break;
+    case pi_ldci: i = getint(pc); pc = pc+INTSIZE; pshint(i); break;
+    case pi_ldcn: pshadr(NILVAL); break; /* load nil */
+    case pi_ldcr: getq(); pshrel(getrel(q)); break;
+    case pi_ldcs: getq(); pshadr(q); break;
 
-    case 9   /*indi*/: getq(); popadr(ad); pshint(getint(ad+q)); break;
-    case 198 /*indx*/: getq(); popadr(ad); pshint(getbyt(ad+q)); break;
-    case 85  /*inda*/: getq(); popadr(ad); ad1 = getadr(ad+q); pshadr(ad1); break;
-    case 86  /*indr*/: getq(); popadr(ad); pshrel(getrel(ad+q)); break;
-    case 87  /*inds*/: getq(); popadr(ad); pshadr(ad+q); break;
-    case 88  /*indb*/: getq(); popadr(ad); pshint(getbol(ad+q)); break;
-    case 89  /*indc*/: getq(); popadr(ad); pshint(getchr(ad+q)); break;
-    case 93 /*incb*/:
-    case 94 /*incc*/:
-    case 201 /*incx*/:
-    case 10 /*inci*/: getq(); popint(i1);
+    case pi_indi: getq(); popadr(ad); pshint(getint(ad+q)); break;
+    case pi_indx: getq(); popadr(ad); pshint(getbyt(ad+q)); break;
+    case pi_inda: getq(); popadr(ad); ad1 = getadr(ad+q); pshadr(ad1); break;
+    case pi_indr: getq(); popadr(ad); pshrel(getrel(ad+q)); break;
+    case pi_inds: getq(); popadr(ad); pshadr(ad+q); break;
+    case pi_indb: getq(); popadr(ad); pshint(getbol(ad+q)); break;
+    case pi_indc: getq(); popadr(ad); pshint(getchr(ad+q)); break;
+    case pi_incb:
+    case pi_incc:
+    case pi_incx:
+    case pi_inci: getq(); popint(i1);
                    if (dochkovf) if (i1<0 == q<0)
                       if (LONG_MAX-labs(i1) < labs(q))
                         errore(INTEGERVALUEOVERFLOW);
                    pshint(i1+q);
                    break;
-    case 90 /*inca*/: getq(); popadr(a1); pshadr(a1+q); break;
+    case pi_inca: getq(); popadr(a1); pshadr(a1+q); break;
 
-    case 245 /*sfr*/: getq();
+    case pi_sfr: getq();
                  /* allocate function result as zeros */
                  for (j = 0; j < q/INTSIZE; j++) pshint(0);
                  /* set function result undefined */
                  for (j = 0; j < q; j++) putdef(sp+j, FALSE);
                  break;
 
-    case 11 /*mst*/: getp(); getq(); getq1();
+    case pi_mst: getp(); getq(); getq1();
                   pshadr(0); /* place current ep */
                   pshadr(0); /* place bottom of stack */
                   pshadr(ep); /* previous ep */
@@ -2687,21 +2783,21 @@ void sinins()
                   putadr(mp+MARKET, ep); /* place current ep */
                   break;
 
-    case 12 /*cup*/:
-    case 246 /*cuf*/: /* q=entry point */
+    case pi_cup:
+    case pi_cuf: /* q=entry point */
                  getq(); pshadr(pc); pc = q;
                  break;
 
-    case 27 /*cuv*/:
-    case 249/*cvf*/: /*q=vector entry point*/
+    case pi_cuv:
+    case pi_cvf: /*q=vector entry point*/
                  getq(); pshadr(pc); pc = getadr(q);
                  break;
 
-    case 91 /*suv*/: getq(); getq1(); putadr(q1, q); break;
+    case pi_suv: getq(); getq1(); putadr(q1, q); break;
 
     /* For characters and booleans, need to clean 8 bit results because
       only the lower 8 bits were stored to. */
-    case 130 /*retc*/: getq();
+    case pi_retc: getq();
                    ep = getadr(mp+MARKEP);
                    sp = mp; /* index old mark */
                    popadr(mp); /* restore old mp */
@@ -2712,7 +2808,7 @@ void sinins()
                    putint(sp, getchr(sp));
                    break;
 
-    case 131 /*retb*/:  getq();
+    case pi_retb:  getq();
                    ep = getadr(mp+MARKEP);
                    sp = mp; /* index old mark */
                    popadr(mp); /* restore old mp */
@@ -2722,12 +2818,12 @@ void sinins()
                    /* clean result */
                    putint(sp, getbol(sp));
                    break;
-    case 14  /*retp*/:
-    case 128 /*reti*/:
-    case 204 /*retx*/:
-    case 236 /*rets*/:
-    case 129 /*retr*/:
-    case 132 /*reta*/: getq();
+    case pi_retp:
+    case pi_reti:
+    case pi_retx:
+    case pi_rets:
+    case pi_retr:
+    case pi_reta: getq();
                    ep = getadr(mp+MARKEP);
                    sp = mp; /* index old mark */
                    popadr(mp); /* restore old mp */
@@ -2736,7 +2832,7 @@ void sinins()
                    sp = sp+q; /* remove parameters */
                    break;
 
-    case 237 /*retm*/: getq();
+    case pi_retm: getq();
                    ep = getadr(mp+MARKEP);
                    sp = mp; /* index old mark */
                    popadr(mp); /* restore old mp */
@@ -2745,90 +2841,90 @@ void sinins()
                    sp = sp+q; /* remove parameters */
                    break;
 
-    case 15 /*csp*/: q = store[pc]; pc = pc+1; callsp(); break;
+    case pi_csp: q = store[pc]; pc = pc+1; callsp(); break;
 
-    case 16 /*ixa*/: getq(); popint(i); popadr(a1); pshadr(q*i+a1); break;
+    case pi_ixa: getq(); popint(i); popadr(a1); pshadr(q*i+a1); break;
 
-    case 17  /* equa */: popadr(a2); popadr(a1); pshint(a1==a2); break;
-    case 139 /* equb */:
-    case 141 /* equc */:
-    case 137 /* equi */: popint(i2); popint(i1); pshint(i1==i2); break;
-    case 138 /* equr */: poprel(r2); poprel(r1); pshint(r1==r2); break;
-    case 140 /* equs */: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
+    case pi_equa: popadr(a2); popadr(a1); pshint(a1==a2); break;
+    case pi_equb:
+    case pi_equc:
+    case pi_equi: popint(i2); popint(i1); pshint(i1==i2); break;
+    case pi_equr: poprel(r2); poprel(r1); pshint(r1==r2); break;
+    case pi_equs: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
                         pshint(sequ(s1,s2)); break;
-    case 142 /* equm */: getq(); popadr(a2); popadr(a1);
+    case pi_equm: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(b); break;
-    case 215 /* equv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
+    case pi_equv: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                         compare(&b, &a1, &a2); pshint(b); break;
 
-    case 18  /* neqa */: popadr(a2); popadr(a1); pshint(a1!=a2); break;
-    case 145 /* neqb */:
-    case 147 /* neqc */:
-    case 143 /* neqi */: popint(i2); popint(i1); pshint(i1!=i2); break;
-    case 144 /* neqr */: poprel(r2); poprel(r1); pshint(r1!=r2); break;
-    case 146 /* neqs */: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
+    case pi_neqa: popadr(a2); popadr(a1); pshint(a1!=a2); break;
+    case pi_neqb:
+    case pi_neqc:
+    case pi_neqi: popint(i2); popint(i1); pshint(i1!=i2); break;
+    case pi_neqr: poprel(r2); poprel(r1); pshint(r1!=r2); break;
+    case pi_neqs: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
                         pshint(!sequ(s1,s2)); break;
-    case 148 /* neqm */: getq(); popadr(a2); popadr(a1);
+    case pi_neqm: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(!b); break;
-    case 216 /* neqv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
+    case pi_neqv: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2); pshint(!b); break;
 
-    case 151 /* geqb */:
-    case 153 /* geqc */:
-    case 149 /* geqi */: popint(i2); popint(i1); pshint(i1>=i2); break;
-    case 150 /* geqr */: poprel(r2); poprel(r1); pshint(r1>=r2); break;
-    case 152 /* geqs */: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
+    case pi_geqb:
+    case pi_geqc:
+    case pi_geqi: popint(i2); popint(i1); pshint(i1>=i2); break;
+    case pi_geqr: poprel(r2); poprel(r1); pshint(r1>=r2); break;
+    case pi_geqs: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
                         pshint(sinc(s1,s2)); break;
-    case 154 /* geqm */: getq(); popadr(a2); popadr(a1);
+    case pi_geqm: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] >= store[a2])); break;
-    case 220 /* geqv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
+    case pi_geqv: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2);
                          pshint(b || store[a1] >= store[a2]); break;
 
-    case 157 /* grtb */:
-    case 159 /* grtc */:
-    case 155 /* grti */: popint(i2); popint(i1); pshint(i1>i2); break;
-    case 156 /* grtr */: poprel(r2); poprel(r1); pshint(r1>r2); break;
-    case 158 /* grts */: errorv(SETINCLUSION); break;
-    case 160 /* grtm */: getq(); popadr(a2); popadr(a1);
+    case pi_grtb:
+    case pi_grtc:
+    case pi_grti: popint(i2); popint(i1); pshint(i1>i2); break;
+    case pi_grtr: poprel(r2); poprel(r1); pshint(r1>r2); break;
+    case pi_grts: errorv(SETINCLUSION); break;
+    case pi_grtm: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(!b && (store[a1] > store[a2])); break;
-    case 218 /* grtv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
+    case pi_grtv: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2);
                          pshint(!b && store[a1] > store[a2]); break;
 
-    case 163 /* leqb */:
-    case 165 /* leqc */:
-    case 161 /* leqi */: popint(i2); popint(i1); pshint(i1<=i2); break;
-    case 162 /* leqr */: poprel(r2); poprel(r1); pshint(r1<=r2); break;
-    case 164 /* leqs */: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
+    case pi_leqb:
+    case pi_leqc:
+    case pi_leqi: popint(i2); popint(i1); pshint(i1<=i2); break;
+    case pi_leqr: poprel(r2); poprel(r1); pshint(r1<=r2); break;
+    case pi_leqs: popadr(ad1); getset(ad1, s2); popadr(ad); getset(ad, s1);
                         pshint(sinc(s2,s1)); break;
-    case 166 /* leqm */: getq(); popadr(a2); popadr(a1);
+    case pi_leqm: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] <= store[a2])); break;
-    case 219 /*leqv*/:   popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
+    case pi_leqv: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2);
                          pshint(b || store[a1] <= store[a2]); break;
 
-    case 169 /* lesb */:
-    case 171 /* lesc */:
-    case 167 /* lesi */: popint(i2); popint(i1); pshint(i1<i2); break;
-    case 168 /* lesr */: poprel(r2); poprel(r1); pshint(r1<r2); break;
-    case 170 /* less */: errorv(SETINCLUSION); break;
-    case 172 /* lesm */: getq(); popadr(a2); popadr(a1);
+    case pi_lesb:
+    case pi_lesc:
+    case pi_lesi: popint(i2); popint(i1); pshint(i1<i2); break;
+    case pi_lesr: poprel(r2); poprel(r1); pshint(r1<r2); break;
+    case pi_less: errorv(SETINCLUSION); break;
+    case pi_lesm: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(!b && (store[a1] < store[a2])); break;
-    case 217 /* lesv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
+    case pi_lesv: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2);
                          pshint(!b && store[a1] < store[a2]); break;
 
-    case 23 /*ujp*/: getq(); pc = q; break;
-    case 24 /*fjp*/: getq(); popint(i); if (i == 0) pc = q; break;
-    case 25 /*xjp*/: getq(); popint(i1); pc = i1*UJPLEN+q; break;
+    case pi_ujp: getq(); pc = q; break;
+    case pi_fjp: getq(); popint(i); if (i == 0) pc = q; break;
+    case pi_xjp: getq(); popint(i1); pc = i1*UJPLEN+q; break;
 
-    case 95 /*chka*/:
-    case 190 /*ckla*/: getq(); popadr(a1); pshadr(a1);
+    case pi_chka:
+    case pi_ckla: getq(); popadr(a1); pshadr(a1);
                        /*     0 = assign pointer including nil
                          Not 0 = assign pointer from heap address */
                        if (a1 == 0)
@@ -2851,151 +2947,145 @@ void sinins()
                            errorv(POINTERUSEDAFTERDISPOSE);
                        }
                        break;
-    case 97 /*chks*/: getq(); popadr(ad); getset(ad, s1); pshadr(ad);
+    case pi_chks: getq(); popadr(ad); getset(ad, s1); pshadr(ad);
                       for (j = SETLOW; j <= getint(q)-1; j++)
                         if (sisin(j, s1)) errorv(SETELEMENTOUTOFRANGE);
                       for (j = getint(q+INTSIZE)+1; j <= SETHIGH; j++)
                         if (sisin(j, s1)) errorv(SETELEMENTOUTOFRANGE);
                       break;
-    case 98 /*chkb*/:
-    case 99 /*chkc*/:
-    case 199 /* chkx */:
-    case 26 /*chki*/: getq(); popint(i1); pshint(i1);
+    case pi_chkb:
+    case pi_chkc:
+    case pi_chkx:
+    case pi_chki: getq(); popint(i1); pshint(i1);
                   if (i1 < getint(q) || i1 > getint(q+INTSIZE))
                     errore(VALUEOUTOFRANGE);
                   break;
 
-    case 187 /* cks */: pshint(0); break;
-    case 175 /* ckvi */:
-    case 203 /* ckvx */:
-    case 179 /* ckvb */:
-    case 180 /* ckvc */: getq(); popint(i2); popint(i1);
+    case pi_cks: pshint(0); break;
+    case pi_ckvi:
+    case pi_ckvx:
+    case pi_ckvb:
+    case pi_ckvc: getq(); popint(i2); popint(i1);
                     pshint(i1); pshint(i1 == q || i2 != 0);
                     break;;
-    case 188 /* cke */: popint(i2); popint(i1);
+    case pi_cke: popint(i2); popint(i1);
                     if (i2 == 0) errorv(VARIANTNOTACTIVE);
                     break;
 
     /* all the dups are defined, but not all used */
-    case 185 /* dupb */:
-    case 186 /* dupc */:
-    case 181 /* dupi */: popint(i1); pshint(i1); pshint(i1); break;
-    case 182 /* dupa */: popadr(a1); pshadr(a1); pshadr(a1); break;
-    case 183 /* dupr */: poprel(r1); pshrel(r1); pshrel(r1); break;
-    case 184 /* dups */: popadr(ad); pshadr(ad); pshadr(ad); break;
+    case pi_dupb:
+    case pi_dupc:
+    case pi_dupi: popint(i1); pshint(i1); pshint(i1); break;
+    case pi_dupa: popadr(a1); pshadr(a1); pshadr(a1); break;
+    case pi_dupr: poprel(r1); pshrel(r1); pshrel(r1); break;
+    case pi_dups: popadr(ad); pshadr(ad); pshadr(ad); break;
 
-    case 189 /* inv */: popadr(ad); putdef(ad, FALSE); break;
+    case pi_inv: popadr(ad); putdef(ad, FALSE); break;
 
-    case 28 /*adi*/: popint(i2); popint(i1);
+    case pi_adi: popint(i2); popint(i1);
                   if (dochkovf) if (i1<0 == i2<0)
                     if (LONG_MAX-labs(i1) < labs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1+i2); break;
-    case 29 /*adr*/: poprel(r2); poprel(r1); pshrel(r1+r2); break;
-    case 30 /*sbi*/: popint(i2); popint(i1);
+    case pi_adr: poprel(r2); poprel(r1); pshrel(r1+r2); break;
+    case pi_sbi: popint(i2); popint(i1);
                   if (dochkovf) if (i1<0 != i2<0)
                     if (LONG_MAX-labs(i1) < labs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1-i2); break;
-    case 31 /*sbr*/: poprel(r2); poprel(r1); pshrel(r1-r2); break;
-    case 32 /*sgs*/: popadr(ad); popint(i1); sset(s1, i1); putset(ad, s1);
+    case pi_sbr: poprel(r2); poprel(r1); pshrel(r1-r2); break;
+    case pi_sgs: popadr(ad); popint(i1); sset(s1, i1); putset(ad, s1);
                      pshadr(ad); break;
-    case 33 /*flt*/: popint(i1); pshrel(i1); break;
+    case pi_flt: popint(i1); pshrel(i1); break;
 
     /* note that flo implies the tos is float as well */
-    case 34 /*flo*/: poprel(r1); popint(i1); pshrel(i1); pshrel(r1); break;
+    case pi_flo: poprel(r1); popint(i1); pshrel(i1); pshrel(r1); break;
 
-    case 35 /*trc*/: poprel(r1);
+    case pi_trc: poprel(r1);
                   if (dochkovf) 
                     if (r1 < (double)-LONG_MAX || r1 > (double)LONG_MAX)
                       errore(REALARGUMENTTOOLARGE);
                   pshint(trunc(r1)); break;
-    case 36 /*ngi*/: popint(i1); pshint(-i1); break;
-    case 37 /*ngr*/: poprel(r1); pshrel(-r1); break;
-    case 38 /*sqi*/: popint(i1);
+    case pi_ngi: popint(i1); pshint(-i1); break;
+    case pi_ngr: poprel(r1); pshrel(-r1); break;
+    case pi_sqi: popint(i1);
                 if (dochkovf) if (i1 != 0)
                   if (labs(i1) > LONG_MAX/labs(i1)) errore(INTEGERVALUEOVERFLOW);
                 pshint(i1*i1); break;
-    case 39 /*sqr*/: poprel(r1); pshrel(r1*r1); break;
-    case 40 /*abi*/: popint(i1); pshint(labs(i1)); break;
-    case 41 /*abr*/: poprel(r1); pshrel(fabs(r1)); break;
-    case 42 /*notb*/: popint(i1); b1 = i1 != 0; pshint(!b1); break;
-    case 205 /*noti*/: popint(i1);
+    case pi_sqr: poprel(r1); pshrel(r1*r1); break;
+    case pi_abi: popint(i1); pshint(labs(i1)); break;
+    case pi_abr: poprel(r1); pshrel(fabs(r1)); break;
+    case pi_notb: popint(i1); b1 = i1 != 0; pshint(!b1); break;
+    case pi_noti: popint(i1);
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(~i1 & LONG_MAX); break;
-    case 43 /*and*/: popint(i2);
+    case pi_and: popint(i2);
                       if (i2 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       popint(i1);
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(i1 & i2); break;
-    case 44 /*ior*/: popint(i2);
+    case pi_ior: popint(i2);
                       if (i2 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       popint(i1);
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(i1 | i2); break;
-    case 206 /*xor*/: popint(i2); b2 = i2 != 0;
+    case pi_xor: popint(i2); b2 = i2 != 0;
                       if (i2 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       popint(i1); b1 = i1 != 0;
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(i1 ^ i2); break;
-    case 45 /*dif*/: popadr(ad); popadr(ad1); getset(ad1, s2);
+    case pi_dif: popadr(ad); popadr(ad1); getset(ad1, s2);
                      popadr(ad1); getset(ad1, s1); sdif(s1, s2);
                      putset(ad, s1); pshadr(ad); break;
-    case 46 /*int*/: popadr(ad); popadr(ad1); getset(ad1, s2);
+    case pi_int: popadr(ad); popadr(ad1); getset(ad1, s2);
                      popadr(ad1); getset(ad1, s1); sint(s1, s2);
                      putset(ad, s1); pshadr(ad); break;
-    case 47 /*uni*/: popadr(ad); popadr(ad1); getset(ad1, s2);
+    case pi_uni: popadr(ad); popadr(ad1); getset(ad1, s2);
                      popadr(ad1); getset(ad1, s1); suni(s1, s2);
                      putset(ad, s1); pshadr(ad);
                      break;
-    case 48 /*inn*/: popadr(ad); getset(ad, s1); popint(i1); pshint(sisin(i1, s1)); break;
-    case 49 /*mod*/: popint(i2); popint(i1);
+    case pi_inn: popadr(ad); getset(ad, s1); popint(i1); pshint(sisin(i1, s1)); break;
+    case pi_mod: popint(i2); popint(i1);
                   if (dochkovf) if (i2 <= 0) errore(INVALIDDIVISORTOMOD);
                   pshint(i1 % i2); break;
-    case 50 /*odd*/: popint(i1); pshint(i1&1); break;
-    case 51 /*mpi*/: popint(i2); popint(i1);
+    case pi_odd: popint(i1); pshint(i1&1); break;
+    case pi_mpi: popint(i2); popint(i1);
                   if (dochkovf) if (i1 != 0 && i2 != 0)
                     if (labs(i1) > LONG_MAX / labs(i2))
                       errore(INTEGERVALUEOVERFLOW);
                   pshint(i1*i2); break;
-    case 52 /*mpr*/: poprel(r2); poprel(r1); pshrel(r1*r2); break;
-    case 53 /*dvi*/: popint(i2); popint(i1);
+    case pi_mpr: poprel(r2); poprel(r1); pshrel(r1*r2); break;
+    case pi_dvi: popint(i2); popint(i1);
                       if (dochkovf) if (i2 == 0) errore(ZERODIVIDE);
                       pshint(i1/i2); break;
-    case 54 /*dvr*/: poprel(r2); poprel(r1);
+    case pi_dvr: poprel(r2); poprel(r1);
                       if (dochkovf) if (r2 == 0.0) errore(ZERODIVIDE);
                       pshrel(r1/r2); break;
-    case 55 /*mov*/: getq(); popint(i2); popint(i1);
+    case pi_mov: getq(); popint(i2); popint(i1);
                  for (i3 = 0; i3 <= q-1; i3++)
                    { store[i1+i3] = store[i2+i3];
                          putdef(i1+i3, getdef(i2+i3)); };
                  /* q is a number of storage units */
                  break;
-    case 56 /*lca*/: getq(); pshadr(q); break;
+    case pi_lca: getq(); pshadr(q); break;
 
-    case 103 /*decb*/:
-    case 104 /*decc*/:
-    case 202 /*decx*/:
-    case 57  /*deci*/: getq(); popint(i1);
+    case pi_decb:
+    case pi_decc:
+    case pi_decx:
+    case pi_deci: getq(); popint(i1);
                     if (dochkovf) if (i1<0 != q<0)
                       if (LONG_MAX-labs(i1) < labs(q))
                         errore(INTEGERVALUEOVERFLOW);
                     pshint(i1-q); break;
 
-    case 58 /*stp*/: stopins = TRUE; break;
+    case pi_stp: stopins = TRUE; break;
 
-    case 134 /*ordb*/:
-    case 136 /*ordc*/:
-    case 200 /*ordx*/:
-    case 59  /*ordi*/: break; /* ord is a no-op */
 
-    case 60 /*chr*/: break; /* chr is a no-op */
-
-    case 61 /*ujc*/: errorv(INVALIDCASE); break;
-    case 62 /*rnd*/: poprel(r1);
+    case pi_ujc: errorv(INVALIDCASE); break;
+    case pi_rnd: poprel(r1);
                   if (dochkovf) 
                     if (r1 < -((double)LONG_MAX+0.5) || r1 > (double)LONG_MAX+0.5)
                       errore(REALARGUMENTTOOLARGE);
                   pshint(round(r1)); break;
-    case 63 /*pck*/: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
+    case pi_pck: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
                  if (a2+q > q1) errore(PACKELEMENTSOUTOFBOUNDS);
                  for (i4 = 0; i4 <= q-1; i4++) { chkdef(a1+a2);
                     store[a3+i4] = store[a1+a2];
@@ -3003,7 +3093,7 @@ void sinins()
                     a2 = a2+1;
                  }
                  break;
-    case 64 /*upk*/: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
+    case pi_upk: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
                  if (a3+q > q1) errore(UNPACKELEMENTSOUTOFBOUNDS);
                  for (i4 = 0; i4 <= q-1; i4++) { chkdef(a1+i4);
                     store[a2+a3] = store[a1+i4];
@@ -3011,35 +3101,35 @@ void sinins()
                     a3 = a3+1;
                  } break;
 
-    case 110 /*rgs*/: popadr(ad); popint(i2); popint(i1); rset(s1, i1, i2);
+    case pi_rgs: popadr(ad); popint(i2); popint(i1); rset(s1, i1, i2);
                       putset(ad, s1); pshadr(ad);
                       break;
-    case 112 /*ipj*/: getp(); getq(); pc = q;
+    case pi_ipj: getp(); getq(); pc = q;
                  mp = getadr(mp-p*PTRSIZE); /* index the mark to restore */
                  sp = getadr(mp+MARKSB); /* get the stack bottom */
                  ep = getadr(mp+MARKET); /* get the mark ep */
                  break;
-    case 113 /*cip*/: 
-    case 247 /*cif*/: popadr(ad); ad1 = mp;
+    case pi_cip:
+    case pi_cif: popadr(ad); ad1 = mp;
                 mp = getadr(ad+1*PTRSIZE); pshadr(pc); pc = getadr(ad);
                 break;
-    case 13 /*rip*/: getq(); mp = getadr(sp+q); break;
-    case 114 /*lpa*/: getp(); getq(); /* place procedure address on stack */
+    case pi_rip: getq(); mp = getadr(sp+q); break;
+    case pi_lpa: getp(); getq(); /* place procedure address on stack */
                 pshadr(getadr(mp-p*PTRSIZE));
                 pshadr(q);
                 break;
-    case 117 /*dmp*/: getq(); sp = sp+q; break; /* remove top of stack */
+    case pi_dmp: getq(); sp = sp+q; break; /* remove top of stack */
 
-    case 118 /*swp*/: getq(); swpstk(q); break;
+    case pi_swp: getq(); swpstk(q); break;
 
-    case 119 /*tjp*/: getq(); popint(i); if (i != 0) pc = q; break;
+    case pi_tjp: getq(); popint(i); if (i != 0) pc = q; break;
 
-    case 120 /*lip*/: getp(); getq(); ad = getadr(mp-p*PTRSIZE) + q;
+    case pi_lip: getp(); getq(); ad = getadr(mp-p*PTRSIZE) + q;
                    ad1 = getadr(ad); ad2 = getadr(ad+1*PTRSIZE);
                    pshadr(ad2); pshadr(ad1);
                    break;
 
-    case 191 /*cta*/: getq(); getq1(); getq2(); popint(i); popadr(ad); pshadr(ad);
+    case pi_cta: getq(); getq1(); getq2(); popint(i); popadr(ad); pshadr(ad);
                        pshint(i); ad = ad-q-INTSIZE; ad1 = getadr(ad);
                        if (ad1 < INTSIZE)
                          errorv(SYSTEMERROR);
@@ -3053,16 +3143,16 @@ void sinins()
                        }
                       break;
 
-    case 192 /*ivti*/:
-    case 101 /*ivtx*/:
-    case 102 /*ivtb*/:
-    case 111 /*ivtc*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
+    case pi_ivti:
+    case pi_ivtx:
+    case pi_ivtb:
+    case pi_ivtc: getq(); getq1(); getq2(); popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (i < 0 || i >= getint(q2)) errorv(VALUEOUTOFRANGE);
                       if (dochkdef) {
                         b = getdef(ad);
                         if (b) {
-                          if (op == 192) j = getint(ad); else j = getbyt(ad);
+                          if (op == pi_ivti) j = getint(ad); else j = getbyt(ad);
                           b = getint(q2+(i+1)*INTSIZE) !=
                               getint(q2+(j+1)*INTSIZE);
                         }
@@ -3074,15 +3164,15 @@ void sinins()
                       }
                       break;
 
-    case 100 /*cvbi*/:
-    case 115 /*cvbx*/:
-    case 116 /*cvbb*/:
-    case 121 /*cvbc*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
+    case pi_cvbi:
+    case pi_cvbx:
+    case pi_cvbb:
+    case pi_cvbc: getq(); getq1(); getq2(); popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (i < 0 || i >= getint(q2)) errorv(VALUEOUTOFRANGE);
                       b = getdef(ad);
                       if (b) {
-                        if (op == 100) j = getint(ad); else j = getbyt(ad);
+                        if (op == pi_cvbi) j = getint(ad); else j = getbyt(ad);
                         b = getint(q2+(i+1)*INTSIZE) !=
                             getint(q2+(j+1)*INTSIZE);
                       }
@@ -3093,23 +3183,23 @@ void sinins()
                       }
                       break;
 
-    case 243 /* wbs */: popadr(ad); pshadr(ad); withenter(ad); break;
-    case 244 /* wbe */: withexit(); break;
+    case pi_wbs: popadr(ad); pshadr(ad); withenter(ad); break;
+    case pi_wbe: withexit(); break;
 
-    case 174 /*mrkl*/: getq(); srclin = q; break;
+    case pi_mrkl: getq(); srclin = q; break;
 
-    case 207 /*bge*/: getq();
+    case pi_bge: getq();
                    /* save current exception framing */
                    pshadr(expadr); pshadr(expstk); pshadr(expmrk);
                    pshadr(0); /* place dummy vector */
                    /* place new exception frame */
                    expadr = q; expstk = sp; expmrk = mp;
                    break;
-    case 208 /*ede*/: popadr(a1); /* dispose vector */
+    case pi_ede: popadr(a1); /* dispose vector */
                    /* restore previous exception frame */
                    popadr(expmrk); popadr(expstk); popadr(expadr);
                    break;
-    case 209 /*mse*/: popadr(a1);
+    case pi_mse: popadr(a1);
                    /* restore previous exception frame */
                    popadr(expmrk); popadr(expstk); popadr(expadr);
                    /* if there is no surrounding frame, handle fixed */
@@ -3121,48 +3211,48 @@ void sinins()
                      /* release to search vectors */
                    }
                    break;
-    case 253 /*sev*/: getp(); getq(); a1 = getadr(mp-p*PTRSIZE)+q;
+    case pi_sev: getp(); getq(); a1 = getadr(mp-p*PTRSIZE)+q;
                    popadr(ad); pshadr(ad); putadr(a1, ad);
                    break;
-    case 8 /*cjp*/: getq(); getq1(); popint(i1); pshint(i1);
+    case pi_cjp: getq(); getq1(); popint(i1); pshint(i1);
                   if (i1 >= getint(q) && i1 <= getint(q+INTSIZE))
                     { pc = q1; popint(i1); }
                   break;
-    case 20 /*lnp*/: getq(); np = q; gbtop = np; ad = pctop;
+    case pi_lnp: getq(); np = q; gbtop = np; ad = pctop;
                   /* clear global memory and set undefined */
                   while (np > ad)
                     { store[ad] = 0; putdef(ad, FALSE); ad = ad+1; }
                   break;
-    case 21 /*cal*/: getq(); pshadr(pc); pc = q; break;
-    case 22 /*ret*/: popadr(pc); break;
-    case 92 /*vbs*/: getq(); popadr(ad); varenter(ad, ad+q-1); break;
-    case 96 /*vbe*/: varexit(); break;
-    case 19 /*brk*/: break; /* breaks are no-ops here */
-    case 122 /*vis*/: getq(); getq1(); popadr(ad); ad1 = ad+q*INTSIZE;
+    case pi_cal: getq(); pshadr(pc); pc = q; break;
+    case pi_ret: popadr(pc); break;
+    case pi_vbs: getq(); popadr(ad); varenter(ad, ad+q-1); break;
+    case pi_vbe: varexit(); break;
+    case pi_brk: break; /* breaks are no-ops here */
+    case pi_vis: getq(); getq1(); popadr(ad); ad1 = ad+q*INTSIZE;
                    for (i = 1; i <= q; i++) {
                      popint(i1); putint(ad1, i1); ad1 = ad1-INTSIZE; q1 = q1*i1;
                    }
                    popadr(ad1); sp = sp-q1; putadr(ad, sp); pshadr(ad1);
                    break;
-    case 133 /*vip*/: getq(); getq1(); popadr(ad); ad1 = ad+q*INTSIZE;
+    case pi_vip: getq(); getq1(); popadr(ad); ad1 = ad+q*INTSIZE;
                    for (i = 1; i <= q; i++) {
                      popint(i1); putint(ad1, i1); ad1 = ad1-INTSIZE; q1 = q1*i1;
                    }
                    newspc(q1, &ad2); putadr(ad1, ad2);
                    break;
-    case 226 /*vin*/: getq(); getq1(); popadr(ad); ad2 = sp;
+    case pi_vin: getq(); getq1(); popadr(ad); ad2 = sp;
                    for (i = 1; i <= q; i++)
                      { q1 = q1*getint(ad2); ad2 = ad2+INTSIZE; }
                    newspc(q1+q*INTSIZE, &ad2); putadr(ad, ad2);
                    for (i = 1; i <= q; i++)
                      { popint(i1); putint(ad2, i1); ad2 = ad2+INTSIZE; }
                    break;
-    case 135 /*lcp*/: popadr(ad); pshadr(ad+PTRSIZE); pshadr(getadr(ad)); break;
-    case 176 /*cps*/: popadr(ad1); popint(i1); popadr(ad2); popint(i2);
+    case pi_lcp: popadr(ad); pshadr(ad+PTRSIZE); pshadr(getadr(ad)); break;
+    case pi_cps: popadr(ad1); popint(i1); popadr(ad2); popint(i2);
                        pshint(i2); pshadr(ad2); pshint(i1); pshadr(ad1);
                        if (i1 != i2) errorv(CONTAINERMISMATCH);
                       break;
-    case 177 /*cpc*/: getq(); popadr(ad1); popadr(ad2); popadr(ad3); popadr(ad4);
+    case pi_cpc: getq(); popadr(ad1); popadr(ad2); popadr(ad3); popadr(ad4);
                        pshadr(ad4); pshadr(ad3); pshadr(ad2); pshadr(ad1);
                        for (i = 1; i <= q; i++) {
                          if (getint(ad2) != getint(ad4))
@@ -3171,12 +3261,12 @@ void sinins()
                        }
                       break;
 
-    case 178 /*aps*/: getq(); popadr(ad1); popadr(ad); popadr(ad); popadr(i1);
+    case pi_aps: getq(); popadr(ad1); popadr(ad); popadr(ad); popadr(i1);
                        for (i = 0; i <= i1*q-1; i++) {
                          store[ad+i] = store[ad1+i]; putdef(ad+i, getdef(ad1+i));
                        }
                       break;
-    case 210 /*apc*/: getq(); getq1(); popadr(ad1); popadr(ad); popadr(ad);
+    case pi_apc: getq(); getq1(); popadr(ad1); popadr(ad); popadr(ad);
                        popadr(ad2);
                        for (i = 1; i <= q; i++)
                          { q1 = q1*getint(ad2); ad2 = ad2+INTSIZE; };
@@ -3184,11 +3274,11 @@ void sinins()
                          store[ad+i] = store[ad1+i]; putdef(ad+i, getdef(ad1+i));
                        }
                       break;
-    case 211 /*cxs*/: getq(); popint(i); popadr(ad); popint(i1);
+    case pi_cxs: getq(); popint(i); popadr(ad); popint(i1);
                        if (i < 1 || i > i1) errore(VALUEOUTOFRANGE);
                        pshadr(ad+(i-1)*q);
                       break;
-    case 212 /*cxc*/: getq(); getq1(); popint(i); popadr(ad); popadr(ad1);
+    case pi_cxc: getq(); getq1(); popint(i); popadr(ad); popadr(ad1);
                        ad2 = ad1+PTRSIZE;
                        for (j = 1; j <= q-1; j++)
                          { q1 = q1*getint(ad2); ad2 = ad2+INTSIZE; }
@@ -3196,18 +3286,18 @@ void sinins()
                          errore(VALUEOUTOFRANGE);
                        pshadr(ad1+PTRSIZE); pshadr(ad+(i-1)*q1);
                        break;
-    case 213 /*lft*/: getq(); popadr(ad); pshadr(q); pshadr(ad); break;
-    case 214 /*max*/: getq(); popint(i); popadr(ad1);
+    case pi_lft: getq(); popadr(ad); pshadr(q); pshadr(ad); break;
+    case pi_max: getq(); popint(i); popadr(ad1);
                        if (q > 1) popadr(ad); else popint(i1);
                        if (i < 1 || i > q) errorv(INVALIDCONTAINERLEVEL);
                        if (q == 1) i = i1;
                        else i = getint(ad+(q-i)*INTSIZE);
                        pshint(i);
                       break;
-    case 221 /*vdp*/:
-    case 227 /*vdd*/: popadr(ad); dspspc(0, ad); break;
-    case 222 /*spc*/: popadr(ad); popadr(ad1); pshint(getint(ad1)); pshadr(ad); break;
-    case 223 /*ccs*/: getq(); getq1(); popadr(ad); popadr(ad1); ad3 = ad1;
+    case pi_vdp:
+    case pi_vdd: popadr(ad); dspspc(0, ad); break;
+    case pi_spc: popadr(ad); popadr(ad1); pshint(getint(ad1)); pshadr(ad); break;
+    case pi_ccs: getq(); getq1(); popadr(ad); popadr(ad1); ad3 = ad1;
                        if (q == 1) q1 = q1*ad1;
                        else for (i = 1; i <= q; i++)
                          { q1 = q1*getint(ad3); ad3 = ad3+INTSIZE; }
@@ -3217,31 +3307,31 @@ void sinins()
                        };
                        pshadr(ad1); pshadr(ad2);
                      break;
-    case 224 /*scp*/: popadr(ad); popadr(ad1); popadr(ad2); putadr(ad2, ad);
+    case pi_scp: popadr(ad); popadr(ad1); popadr(ad2); putadr(ad2, ad);
                        putadr(ad2+PTRSIZE, ad1); break;
-    case 225 /*ldp*/: popadr(ad); pshadr(getadr(ad+PTRSIZE));
+    case pi_ldp: popadr(ad); pshadr(getadr(ad+PTRSIZE));
                        pshadr(getadr(ad)); break;
-    case 239 /*cpp*/: getq(); getq1(); ad = sp+q; sp = sp-q1; ad1 = sp;
+    case pi_cpp: getq(); getq1(); ad = sp+q; sp = sp-q1; ad1 = sp;
                       for (i = 0; i < q1; i++) {
                         store[ad1] = store[ad]; putdef(ad1, getdef(ad));
                         ad = ad+1; ad1 = ad1+1;
                       }
                       break;
-    case 240 /*cpr*/: getq(); getq1(); ad = sp+q+q1; ad1 = sp+q;
+    case pi_cpr: getq(); getq1(); ad = sp+q+q1; ad1 = sp+q;
                       for (i = 0; i < q; i++) {
                         ad = ad-1; ad1 = ad1-1;
                         store[ad] = store[ad1]; putdef(ad, getdef(ad1));
                       }
                       sp = sp+q1;
                       break;
-    case 241 /*lsa*/: getq(); ad = sp+q; pshadr(ad); break;
-    case 251 /*cpl*/: popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
+    case pi_lsa: getq(); ad = sp+q; pshadr(ad); break;
+    case pi_cpl: popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
                       pshadr(ad2);
                       break;
-    case 254 /*mdc*/: getq(); popint(i1); pshint(i1); pshint(i1+q);
+    case pi_mdc: getq(); popint(i1); pshint(i1); pshint(i1+q);
                       break;
 
-    case 242 /*eext*/:
+    case pi_eext:
 #ifdef EXTERNALS
                     ExecuteExternal(pc-extvecbase);
                     /* set stack below function result, if any */
