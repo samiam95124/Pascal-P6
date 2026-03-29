@@ -348,7 +348,7 @@ const
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 111;  { number of predefined procedures/functions }
       maxinsm     = 255;  { maximum machine instruction code, 0-255 or byte }
-      maxins      = 263;  { maximum instruction code including pseudo-instructions }
+      maxins      = 264;  { maximum instruction code including pseudo-instructions }
       maxalfa     = 10;   { maximum number of characters in alfa type }
       fillen      = 20000; { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
@@ -2108,6 +2108,7 @@ procedure load;
    end;
 
    procedure init;
+   var i: integer;
    begin
          sptable[ 0]  :='get       ';     sptable[ 1]  :='put       ';
          sptable[ 2]  :='thw       ';     sptable[ 3]  :='rln       ';
