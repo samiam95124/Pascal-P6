@@ -50,7 +50,7 @@ echo "**********************************************************************"
 echo "Building Services..."
 echo "**********************************************************************"
 echo ""
-pc libs/source/services -pint
+pc libs/source/services -pint -r
 cp libs/source/services.p6 libs
 
 #
@@ -65,17 +65,17 @@ echo "**********************************************************************"
 echo ""
 pc libs/source/strings -r
 cp libs/source/strings.o libs
-pc libs/source/strings -pint
+pc libs/source/strings -pint -r
 cp libs/source/strings.p6 libs
 
 echo ""
 echo "**********************************************************************"
 echo "Building Parse..."
-echo "**********************************************************************"
+echo "*******************************************s***************************"
 echo ""
 pc libs/source/parse -r
 cp libs/source/parse.o libs
-pc libs/source/parse -pint
+pc libs/source/parse -pint -r
 cp libs/source/parse.p6 libs
 
 #
