@@ -6035,6 +6035,39 @@ static void init(int argc, char* argv[])
 
 /** ****************************************************************************
 
+Convert Pascaline string to C string
+
+Takes a Pascaline string (space-padded, fixed-length) and returns a pointer to
+a null-terminated C string. The buffer is allocated on the stack via alloca.
+Trailing spaces are stripped.
+
+*******************************************************************************/
+
+char* psystem_s2c(
+    /* Pascaline string */ char* s,
+    /* max string length */ long maxlen
+)
+
+{
+
+    static char buf[10000]; /* static buffer for converted string */
+    long len;
+
+    /* find actual length (strip trailing spaces) */
+    len = maxlen;
+    if (len > 9999) len = 9999;
+    while (len > 0 && s[len-1] == ' ') len--;
+
+    /* copy and null-terminate */
+    memcpy(buf, s, len);
+    buf[len] = '\0';
+
+    return buf;
+
+}
+
+/** ****************************************************************************
+
 Deinitialize psystem support module
 
 *******************************************************************************/

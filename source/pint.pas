@@ -348,7 +348,7 @@ const
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 111;  { number of predefined procedures/functions }
       maxinsm     = 255;  { maximum machine instruction code, 0-255 or byte }
-      maxins      = 263;  { maximum instruction code including pseudo-instructions }
+      maxins      = 264;  { maximum instruction code including pseudo-instructions }
       maxalfa     = 10;   { maximum number of characters in alfa type }
       fillen      = 20000; { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
@@ -475,7 +475,8 @@ type
                        instructions that don't end up as machine instructions. }
                      pi_ltci,    { 256 } pi_ltcr,    { 257 } pi_ltcs,    { 258 }
                      pi_ltcb,    { 259 } pi_ltcc,    { 260 } pi_ltcx,    { 261 }
-                     pi_lto,     { 262 } pi_lsp      { 263 }
+                     pi_lto,     { 262 } pi_lsp,     { 263 }
+                     pi_s2c      { 264 }
                     );
       beta        = packed array[1..25] of char; (*error message*)
       alfainx     = 1..maxalfa; { index for alfa type }
@@ -830,7 +831,8 @@ fixed
         record 'ltcc      ', false, intsize, pi_ltcc end,
         record 'ltcx      ', false, intsize, pi_ltcx end,
         record 'lto       ', false, intsize, pi_lto end,
-        record 'lsp       ', false, 0, pi_lsp end
+        record 'lsp       ', false, 0, pi_lsp end,
+        record 's2c       ', false, intsize, pi_s2c end
       end;
 
 var   pc, pcs     : address;   (*program address register*)
@@ -2106,7 +2108,7 @@ procedure load;
    end;
 
    procedure init;
-      var i: integer;
+   var i: integer;
    begin
          sptable[ 0]  :='get       ';     sptable[ 1]  :='put       ';
          sptable[ 2]  :='thw       ';     sptable[ 3]  :='rln       ';
@@ -3124,6 +3126,8 @@ procedure load;
           pi_ujc: begin storeop; q := 0; storeq end;
 
           pi_mpc{mpc}:; { does nothing in the interpreter }
+
+          pi_s2c: begin read(prd,q); storeop; storeq end;
 
       end; (*case*)
 
@@ -5509,6 +5513,8 @@ begin
                        pshadr(ad2) end;
     pi_mdc: begin getq; popint(i1); pshint(i1); pshint(i1+q) end;
 
+    pi_s2c: getq; { no-op in interpreter, skip operand }
+
     pi_eext: begin
                     i1 := sp+adrsize; { index parameters }
                     ExecuteExternal(pc-extvecbase, i1);
@@ -5517,11 +5523,9 @@ begin
                   end;
 
     { illegal instructions }
-    { illegal instructions }
-    pi_ph1, pi_ph3, pi_ph4, pi_ph5,
-    pi_ph6, pi_ph7, pi_ph8, pi_ph9,
-    pi_mpc, pi_ph10,
-    pi_ph2:
+    pi_ph1, pi_ph2, pi_ph3, pi_ph4,
+    pi_ph5, pi_ph6, pi_ph7, pi_ph8,
+    pi_ph9, pi_mpc, pi_ph10:
       errorv(InvalidInstruction)
 
   end
