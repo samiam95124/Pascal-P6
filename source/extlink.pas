@@ -213,7 +213,6 @@ type str = packed array [1..strmax] of char;
 
 var a:             integer;
     s, s2, s3, s4: str;
-    st:            settype;
     at:            services.attrset;
     ps:            services.permset;
     cs:            schar;
@@ -305,73 +304,115 @@ begin
 
 end;
 
-procedure set2atr(view st: settype; out at: services.attrset);
+{ check if element e is in pint set at address a }
+function inset(a: address; e: integer): boolean;
 
-var r: record case boolean of
-         false: (st: settype);
-         true:  (at: services.attrset)
-       end;
+var by, bt, p, i, b: integer;
 
 begin
 
-    r.st := st;
-    at := r.at
+    by := e div 8; { find byte }
+    bt := e mod 8; { find bit }
+    p := 1;
+    for i := 1 to bt do p := p*2;
+    b := getbyt(a+by);
+    inset := odd(b div p)
 
 end;
 
-procedure atr2set(view at: services.attrset; out st: settype);
+{ set element e in pint set at address a }
+procedure addset(a: address; e: integer);
 
-var r: record case boolean of
-         false: (st: settype);
-         true:  (at: services.attrset)
-       end;
+var by, bt, p, i, b: integer;
 
 begin
 
-    r.at := at;
-    st := r.st
+    by := e div 8; { find byte }
+    bt := e mod 8; { find bit }
+    p := 1;
+    for i := 1 to bt do p := p*2;
+    b := getbyt(a+by);
+    if not odd(b div p) then
+        putbyt(a+by, b+p)
 
 end;
 
-procedure set2prm(view st: settype; out ps: services.permset);
+{ clear pint set at address a }
+procedure clrset(a: address);
 
-var r: record case boolean of
-         false: (st: settype);
-         true:  (ps: services.permset)
-       end;
+var i: integer;
 
 begin
 
-    r.st := st;
-    ps := r.ps
+    for i := 0 to setsize-1 do putbyt(a+i, 0)
 
 end;
 
-procedure prm2set(view ps: services.permset; out st: settype);
-
-var r: record case boolean of
-         false: (st: settype);
-         true:  (ps: services.permset)
-       end;
+procedure set2atr(ad: address; out at: services.attrset);
 
 begin
 
-    r.ps := ps;
-    st := r.st
+    at := [];
+    if inset(ad, 0) then at := at+[services.atexec];
+    if inset(ad, 1) then at := at+[services.atarc];
+    if inset(ad, 2) then at := at+[services.atsys];
+    if inset(ad, 3) then at := at+[services.atdir];
+    if inset(ad, 4) then at := at+[services.atloop]
 
 end;
 
-procedure cst2set(view cs: schar; out st: settype);
-
-var r: record case boolean of
-         false: (st: settype);
-         true:  (cs: schar)
-       end;
+procedure atr2set(ad: address; view at: services.attrset);
 
 begin
 
-    r.cs := cs;
-    st := r.st
+    clrset(ad);
+    if services.atexec in at then addset(ad, 0);
+    if services.atarc in at then addset(ad, 1);
+    if services.atsys in at then addset(ad, 2);
+    if services.atdir in at then addset(ad, 3);
+    if services.atloop in at then addset(ad, 4)
+
+end;
+
+procedure set2prm(ad: address; out ps: services.permset);
+
+begin
+
+    ps := [];
+    if inset(ad, 0) then ps := ps+[services.pmread];
+    if inset(ad, 1) then ps := ps+[services.pmwrite];
+    if inset(ad, 2) then ps := ps+[services.pmexec];
+    if inset(ad, 3) then ps := ps+[services.pmdel];
+    if inset(ad, 4) then ps := ps+[services.pmvis];
+    if inset(ad, 5) then ps := ps+[services.pmcopy];
+    if inset(ad, 6) then ps := ps+[services.pmren]
+
+end;
+
+procedure prm2set(ad: address; view ps: services.permset);
+
+begin
+
+    clrset(ad);
+    if services.pmread in ps then addset(ad, 0);
+    if services.pmwrite in ps then addset(ad, 1);
+    if services.pmexec in ps then addset(ad, 2);
+    if services.pmdel in ps then addset(ad, 3);
+    if services.pmvis in ps then addset(ad, 4);
+    if services.pmcopy in ps then addset(ad, 5);
+    if services.pmren in ps then addset(ad, 6)
+
+end;
+
+procedure cst2set(ad: address; view cs: schar);
+
+var i: integer;
+
+begin
+
+    clrset(ad);
+    for i := 0 to 255 do
+        if chr(i) in cs then addset(ad, i)
 
 end;
 
@@ -426,8 +467,7 @@ begin
       ad := ad+intsize;
       putint(ad, fp^.alloc);
       ad := ad+intsize;
-      atr2set(fp^.attr, st);
-      putset(ad, st);
+      atr2set(ad, fp^.attr);
       ad := ad+setsize;
       putint(ad, fp^.create);
       ad := ad+intsize;
@@ -437,14 +477,11 @@ begin
       ad := ad+intsize;
       putint(ad, fp^.backup);
       ad := ad+intsize;
-      prm2set(fp^.user, st);
-      putset(ad, st);
+      prm2set(ad, fp^.user);
       ad := ad+setsize;
-      prm2set(fp^.group, st);
-      putset(ad, st);
+      prm2set(ad, fp^.group);
       ad := ad+setsize;
-      prm2set(fp^.other, st);
-      putset(ad, st);
+      prm2set(ad, fp^.other);
       ad := ad+setsize;
       ad3 := ad; { set last entry link }
       putadr(ad, nilval); { clear next (with nil value) }
@@ -1172,8 +1209,7 @@ begin
        60: begin { procedure setatr(view fn: string; a: attrset) }
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2atr(st, at);
+           set2atr(params, at);
            services.setatr(s, at);
            params := params+setsize+strparsiz
 
@@ -1182,8 +1218,7 @@ begin
        61: begin { procedure setatr(view fn: pstring; a: attrset) }
 
            getpstr(params+setsize, s);
-           getset(params, st);
-           set2atr(st, at);
+           set2atr(params, at);
            services.setatr(s, at);
            params := params+setsize+ptrsize
 
@@ -1192,8 +1227,7 @@ begin
        62: begin { procedure resatr(view fn: string; a: attrset)}
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2atr(st, at);
+           set2atr(params, at);
            services.resatr(s, at);
            params := params+setsize+strparsiz
 
@@ -1202,8 +1236,7 @@ begin
        63: begin { procedure resatr(view fn: sstring; a: attrset)}
 
            getpstr(params+setsize, s);
-           getset(params, st);
-           set2atr(st, at);
+           set2atr(params, at);
            services.resatr(s, at);
            params := params+setsize+strparsiz
 
@@ -1228,8 +1261,7 @@ begin
        66: begin { procedure setuper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.setuper(s, ps);
            params := params+setsize+strparsiz
 
@@ -1238,8 +1270,7 @@ begin
        67: begin { procedure setuper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.setuper(s, ps);
            params := params+setsize+ptrsize
 
@@ -1248,8 +1279,7 @@ begin
        68: begin { procedure resuper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.resuper(s, ps);
            params := params+setsize+strparsiz
 
@@ -1258,8 +1288,7 @@ begin
        69: begin { procedure resuper(view fn: pstring; p: permset) }
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.resuper(s, ps);
            params := params+setsize+ptrsize
 
@@ -1268,8 +1297,7 @@ begin
        70: begin { procedure setgper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.setgper(s, ps);
            params := params+setsize+strparsiz
 
@@ -1278,8 +1306,7 @@ begin
        71: begin { procedure setgper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.setgper(s, ps);
            params := params+setsize+ptrsize
 
@@ -1288,8 +1315,7 @@ begin
        72: begin { procedure resgper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.resgper(s, ps);
            params := params+setsize+strparsiz
 
@@ -1298,8 +1324,7 @@ begin
        73: begin { procedure resgper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.resgper(s, ps);
            params := params+setsize+ptrsize
 
@@ -1308,8 +1333,7 @@ begin
        74: begin { procedure setoper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.setoper(s, ps);
            params := params+setsize+strparsiz
 
@@ -1318,8 +1342,7 @@ begin
        75: begin { procedure setoper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.setoper(s, ps);
            params := params+setsize+ptrsize
 
@@ -1328,8 +1351,7 @@ begin
        76: begin { procedure resoper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.resoper(s, ps);
            params := params+setsize+strparsiz
 
@@ -1338,8 +1360,7 @@ begin
        77: begin { procedure resoper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
-           getset(params, st);
-           set2prm(st, ps);
+           set2prm(params, ps);
            services.resoper(s, ps);
            params := params+setsize+ptrsize
 
@@ -1380,8 +1401,7 @@ begin
        82: begin { procedure filchr(out fc: schar) }
 
            services.filchr(cs);
-           cst2set(cs, st);
-           putset(getadr(params), st);
+           cst2set(getadr(params), cs);
            params := params+ptrsize
 
        end;
