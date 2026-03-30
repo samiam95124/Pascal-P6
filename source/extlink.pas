@@ -391,7 +391,8 @@ var i: integer;
 
 begin
 
-   for i := 1 to max(s) do begin s[i] := getchr(ad); ad := ad+1 end;
+   for i := 1 to max(s)-1 do begin s[i] := getchr(ad); ad := ad+1 end;
+   s[max(s)] := chr(0) { terminate string }
 
 end;
 
@@ -482,12 +483,12 @@ begin
       ad2 := ad2+intsize;
       movstr2vm(ep^.name^, ad2); { move the name string into place }
       l := max(ep^.data^); { get length of data }
-      newspc(l+intsize, ad2); { get space for name }
-      putadr(ad, ad2); { place name }
+      newspc(l+intsize, ad2); { get space for data }
+      putadr(ad, ad2); { place data }
       ad := ad+ptrsize;
       putint(ad2, l); { put string size }
       ad2 := ad2+intsize;
-      movstr2vm(ep^.data^, ad2); { move the name string into place }
+      movstr2vm(ep^.data^, ad2); { move the data string into place }
       ad3 := ad; { set last entry link }
       putadr(ad, nilval); { clear next (with nil value) }
       lp := ep; { save last entry }
@@ -538,6 +539,7 @@ begin
    end
 
 end;
+
 
 begin
 
@@ -1536,7 +1538,7 @@ function NumExternal: integer;
 
 begin
 
-    NumExternal := 58
+    NumExternal := 101
 
 end;
 
