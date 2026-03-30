@@ -305,7 +305,6 @@ begin
 
 end;
 
-{ check if element e is in pint set at address a }
 procedure set2atr(view st: settype; out at: services.attrset);
 
 var r: record case boolean of
