@@ -391,7 +391,8 @@ var i: integer;
 
 begin
 
-   for i := 1 to max(s) do begin s[i] := getchr(ad); ad := ad+1 end;
+   for i := 1 to max(s)-1 do begin s[i] := getchr(ad); ad := ad+1 end;
+   s[max(s)] := chr(0) { terminate string }
 
 end;
 
@@ -482,12 +483,12 @@ begin
       ad2 := ad2+intsize;
       movstr2vm(ep^.name^, ad2); { move the name string into place }
       l := max(ep^.data^); { get length of data }
-      newspc(l+intsize, ad2); { get space for name }
-      putadr(ad, ad2); { place name }
+      newspc(l+intsize, ad2); { get space for data }
+      putadr(ad, ad2); { place data }
       ad := ad+ptrsize;
       putint(ad2, l); { put string size }
       ad2 := ad2+intsize;
-      movstr2vm(ep^.data^, ad2); { move the name string into place }
+      movstr2vm(ep^.data^, ad2); { move the data string into place }
       ad3 := ad; { set last entry link }
       putadr(ad, nilval); { clear next (with nil value) }
       lp := ep; { save last entry }
@@ -538,6 +539,7 @@ begin
    end
 
 end;
+
 
 begin
 
@@ -1169,41 +1171,41 @@ begin
 
        60: begin { procedure setatr(view fn: string; a: attrset) }
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2atr(st, at);
            services.setatr(s, at);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
        61: begin { procedure setatr(view fn: pstring; a: attrset) }
 
-           getpstr(params+setsize, s);
-           getset(params, st);
+           getpstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2atr(st, at);
            services.setatr(s, at);
-           params := params+setsize+ptrsize
+           params := params+ptrsize+ptrsize
 
        end;
 
        62: begin { procedure resatr(view fn: string; a: attrset)}
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2atr(st, at);
            services.resatr(s, at);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
        63: begin { procedure resatr(view fn: sstring; a: attrset)}
 
-           getpstr(params+setsize, s);
-           getset(params, st);
+           getpstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2atr(st, at);
            services.resatr(s, at);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
@@ -1225,121 +1227,121 @@ begin
 
        66: begin { procedure setuper(view fn: string; p: permset) }
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.setuper(s, ps);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
        67: begin { procedure setuper(view fn: pstring; p: permset) }
 
-           getpstr(params+setsize, s);
-           getset(params, st);
+           getpstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.setuper(s, ps);
-           params := params+setsize+ptrsize
+           params := params+ptrsize+ptrsize
 
        end;
 
        68: begin { procedure resuper(view fn: string; p: permset) }
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.resuper(s, ps);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
        69: begin { procedure resuper(view fn: pstring; p: permset) }
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.resuper(s, ps);
-           params := params+setsize+ptrsize
+           params := params+ptrsize+ptrsize
 
        end;
 
        70: begin { procedure setgper(view fn: string; p: permset) }
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.setgper(s, ps);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
        71: begin { procedure setgper(view fn: pstring; p: permset) }
 
-           getpstr(params+setsize, s);
-           getset(params, st);
+           getpstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.setgper(s, ps);
-           params := params+setsize+ptrsize
+           params := params+ptrsize+ptrsize
 
        end;
 
        72: begin { procedure resgper(view fn: string; p: permset) }
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.resgper(s, ps);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
        73: begin { procedure resgper(view fn: pstring; p: permset) }
 
-           getpstr(params+setsize, s);
-           getset(params, st);
+           getpstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.resgper(s, ps);
-           params := params+setsize+ptrsize
+           params := params+ptrsize+ptrsize
 
        end;
 
        74: begin { procedure setoper(view fn: string; p: permset) }
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.setoper(s, ps);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
        75: begin { procedure setoper(view fn: pstring; p: permset) }
 
-           getpstr(params+setsize, s);
-           getset(params, st);
+           getpstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.setoper(s, ps);
-           params := params+setsize+ptrsize
+           params := params+ptrsize+ptrsize
 
        end;
 
        76: begin { procedure resoper(view fn: string; p: permset) }
 
-           getstr(params+setsize, s);
-           getset(params, st);
+           getstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.resoper(s, ps);
-           params := params+setsize+strparsiz
+           params := params+ptrsize+strparsiz
 
        end;
 
        77: begin { procedure resoper(view fn: pstring; p: permset) }
 
-           getpstr(params+setsize, s);
-           getset(params, st);
+           getpstr(params+ptrsize, s);
+           getset(getadr(params), st);
            set2prm(st, ps);
            services.resoper(s, ps);
-           params := params+setsize+ptrsize
+           params := params+ptrsize+ptrsize
 
        end;
 
@@ -1536,7 +1538,7 @@ function NumExternal: integer;
 
 begin
 
-    NumExternal := 58
+    NumExternal := 101
 
 end;
 
