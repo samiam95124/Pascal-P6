@@ -91,6 +91,28 @@
     .global services.rempth$p_pvc
     .global services.countrys$p_vc_i
     .global services.languages$p_vc_i
+    .global services.time$f
+    .global services.local$f_i
+    .global services.clock$f
+    .global services.elapsed$f_i
+    .global services.filchr$p_sc
+    .global services.optchr$f
+    .global services.pthchr$f
+    .global services.latitude$f
+    .global services.longitude$f
+    .global services.altitude$f
+    .global services.country$f
+    .global services.timezone$f
+    .global services.daysave$f
+    .global services.time24hour$f
+    .global services.language$f
+    .global services.decimal$f
+    .global services.numbersep$f
+    .global services.timeorder$f
+    .global services.dateorder$f
+    .global services.datesep$f
+    .global services.timesep$f
+    .global services.currchr$f
 
     .text
 
@@ -490,6 +512,121 @@ services.countrys$p_vc_i:
 
 services.languages$p_vc_i:
     jmp     wrapper_languages
+
+#
+# Scalar functions. These require no marshalling, so they are routed directly
+# to the petit-ami entry point.
+#
+
+# function time: integer; external;
+
+services.time$f:
+    jmp     ami_time
+
+# function local(t: integer): integer; external;
+
+services.local$f_i:
+    jmp     ami_local
+
+# function clock: integer; external;
+
+services.clock$f:
+    jmp     ami_clock
+
+# function elapsed(r: integer): integer; external;
+
+services.elapsed$f_i:
+    jmp     ami_elapsed
+
+# procedure filchr(out fc: schar); external;
+
+services.filchr$p_sc:
+    jmp     ami_filchr
+
+# function optchr: char; external;
+
+services.optchr$f:
+    jmp     ami_optchr
+
+# function pthchr: char; external;
+
+services.pthchr$f:
+    jmp     ami_pthchr
+
+# function latitude: integer; external;
+
+services.latitude$f:
+    jmp     ami_latitude
+
+# function longitude: integer; external;
+
+services.longitude$f:
+    jmp     ami_longitude
+
+# function altitude: integer; external;
+
+services.altitude$f:
+    jmp     ami_altitude
+
+# function country: integer; external;
+
+services.country$f:
+    jmp     ami_country
+
+# function timezone: integer; external;
+
+services.timezone$f:
+    jmp     ami_timezone
+
+# function daysave: boolean; external;
+
+services.daysave$f:
+    jmp     ami_daysave
+
+# function time24hour: boolean; external;
+
+services.time24hour$f:
+    jmp     ami_time24hour
+
+# function language: integer; external;
+
+services.language$f:
+    jmp     ami_language
+
+# function decimal: char; external;
+
+services.decimal$f:
+    jmp     ami_decimal
+
+# function numbersep: char; external;
+
+services.numbersep$f:
+    jmp     ami_numbersep
+
+# function timeorder: integer; external;
+
+services.timeorder$f:
+    jmp     ami_timeorder
+
+# function dateorder: integer; external;
+
+services.dateorder$f:
+    jmp     ami_dateorder
+
+# function datesep: char; external;
+
+services.datesep$f:
+    jmp     ami_datesep
+
+# function timesep: char; external;
+
+services.timesep$f:
+    jmp     ami_timesep
+
+# function currchr: char; external;
+
+services.currchr$f:
+    jmp     ami_currchr
 
 #
 # Next module in series

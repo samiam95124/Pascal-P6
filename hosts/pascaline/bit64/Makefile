@@ -109,7 +109,10 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 # Petit-Ami. The result is an archive services.a.
 #
 $(LIBS)/services.a: $(AMI)/services.c \
-	$(LIBS)/source/services_wrapper.asm
+	$(LIBS)/source/services_wrapper.asm \
+	$(LIBS)/source/services_wrapper.c \
+	$(LIBS)/source/services_support.c \
+	$(LIBS)/source/services_wrapper.h
 	@echo
 	@echo "Building services..."
 	@echo

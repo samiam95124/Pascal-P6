@@ -31,7 +31,7 @@
 
 procedure list(view f: string; var  l: filptr);
 ->
-void services_listl(char* f, int l, services_filrec **lp);
+void ami_list(char* f, ami_filrec **lp);
 
 ********************************************************************************/
 
@@ -44,9 +44,9 @@ void wrapper_list(
 
     rempad(fn, &fnl);
     /* get files list in C form */
-    services_listl(fn, fnl, (services_filptr*)fl); 
+    ami_list(cstrz(fn, fnl), (ami_filptr*)fl); 
     /* convert list to Pascaline form */
-    cfilelist2pascaline((services_filptr*)fl);
+    cfilelist2pascaline((ami_filptr*)fl);
 
 }
 
@@ -54,7 +54,7 @@ void wrapper_list(
 
 procedure list(view f: pstring; var  l: filptr);
 ->
-extern void services_listl(char* f, int l, services_filrec **lp);
+extern void ami_list(char* f, ami_filrec **lp);
 
 ********************************************************************************/
 
@@ -70,9 +70,9 @@ void wrapper_listp(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
     /* get files list in C form */
-    services_listl(s, l, (services_filptr*)fl); 
+    ami_list(cstrz(s, l), (ami_filptr*)fl); 
     /* convert list to Pascaline form */
-    cfilelist2pascaline((services_filptr*)fl);
+    cfilelist2pascaline((ami_filptr*)fl);
 
 }
 
@@ -80,7 +80,7 @@ void wrapper_listp(
 
 procedure times(out s: string; t: integer);
 ->
-void services_times(char* s, int sl, int t);
+void ami_times(char* s, int sl, int t);
 
 ********************************************************************************/
 
@@ -92,7 +92,7 @@ void wrapper_times(
 
 {
 
-    services_times(s, l, t); /* find time string */
+    ami_times(s, l, t); /* find time string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
@@ -101,7 +101,7 @@ void wrapper_times(
 
 function times(t: integer): pstring;
 ->
-void services_times(char* s, int sl, int t);
+void ami_times(char* s, int sl, int t);
 
 ********************************************************************************/
 
@@ -113,7 +113,7 @@ pstring wrapper_timesp(
 
     char buff[BUFLEN];
 
-    services_times(buff, BUFLEN, t); /* find time string */
+    ami_times(buff, BUFLEN, t); /* find time string */
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -124,7 +124,7 @@ pstring wrapper_timesp(
 
 procedure dates(var s: string; t: integer);
 ->
-services_dates(char* s, int sl, int t);
+ami_dates(char* s, int sl, int t);
 
 ********************************************************************************/
 
@@ -136,7 +136,7 @@ void wrapper_dates(
 
 {
 
-    services_dates(s, l, t); /* find time string */
+    ami_dates(s, l, t); /* find time string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
@@ -145,7 +145,7 @@ void wrapper_dates(
 
 function dates(t: integer): pstring;
 ->
-services_dates(char* s, int sl, int t);
+ami_dates(char* s, int sl, int t);
 
 ********************************************************************************/
 
@@ -157,7 +157,7 @@ pstring wrapper_datesp(
 
     char buff[BUFLEN];
 
-    services_dates(buff, BUFLEN, t); /* find time string */
+    ami_dates(buff, BUFLEN, t); /* find time string */
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -167,7 +167,7 @@ pstring wrapper_datesp(
 
 procedure writetime(var f: text; t: integer);
 ->
-void services_writetime(FILE *f, int t);
+void ami_writetime(FILE *f, int t);
 
 ********************************************************************************/
 
@@ -181,7 +181,7 @@ void wrapper_writetimef(
     FILE* fp; /* libc file pointer */
 
     fp = psystem_libcwrfil(pfp); /* find libc compatible file */
-    services_writetime(fp, t);
+    ami_writetime(fp, t);
 
 }
 
@@ -189,7 +189,7 @@ void wrapper_writetimef(
 
 procedure writetime(var f: text; t: integer);
 ->
-void services_writetime(FILE *f, int t);
+void ami_writetime(FILE *f, int t);
 
 ********************************************************************************/
 
@@ -199,7 +199,7 @@ void wrapper_writetime(
 
 {
 
-    services_writetime(stdout, t);
+    ami_writetime(stdout, t);
 
 }
 
@@ -207,7 +207,7 @@ void wrapper_writetime(
 
 procedure writedatef(var f: text; t: integer);
 ->
-void services_writedate(FILE *f, int t);
+void ami_writedate(FILE *f, int t);
 
 ********************************************************************************/
 
@@ -221,7 +221,7 @@ void wrapper_writedatef(
     FILE* fp; /* libc file pointer */
 
     fp = psystem_libcwrfil(pfp); /* find libc compatible file */
-    services_writedate(fp, t);
+    ami_writedate(fp, t);
 
 }
 
@@ -229,7 +229,7 @@ void wrapper_writedatef(
 
 procedure writedate(var f: text; t: integer);
 ->
-void services_writedate(FILE *f, int t);
+void ami_writedate(FILE *f, int t);
 
 ********************************************************************************/
 
@@ -239,7 +239,7 @@ void wrapper_writedate(
 
 {
 
-    services_writedate(stdout, t);
+    ami_writedate(stdout, t);
 
 }
 
@@ -247,7 +247,7 @@ void wrapper_writedate(
 
 function validfile(view s: string): boolean;
 ->
-int  services_validfilel(char* s, int l);
+int  ami_validfile(char* s);
 
 ********************************************************************************/
 
@@ -259,7 +259,7 @@ int wrapper_validfile(
 {
 
     rempad(s, &l);
-    return (services_validfilel(s, l));
+    return (ami_validfile(cstrz(s, l)));
 
 }
 
@@ -267,7 +267,7 @@ int wrapper_validfile(
 
 function validfile(view s: pstring): boolean;
 ->
-int  services_validfilel(char* s, int l);
+int  ami_validfile(char* s);
 
 ********************************************************************************/
 
@@ -282,7 +282,7 @@ int wrapper_validfilep(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    return(services_validfilel(s, l));
+    return(ami_validfile(cstrz(s, l)));
 
 }
 
@@ -290,7 +290,7 @@ int wrapper_validfilep(
 
 function validpath(view s: string): boolean;
 ->
-int  services_validpathl(char* s, int l);
+int  ami_validpath(char* s);
 
 ********************************************************************************/
 
@@ -302,7 +302,7 @@ int wrapper_validpath(
 {
 
     rempad(s, &l);
-    return (services_validpathl(s, l));
+    return (ami_validpath(cstrz(s, l)));
 
 }
 
@@ -310,7 +310,7 @@ int wrapper_validpath(
 
 function validpath(view s: pstring): boolean;
 ->
-int  services_validpathl(char* s, int l);
+int  ami_validpath(char* s);
 
 ********************************************************************************/
 
@@ -325,7 +325,7 @@ int wrapper_validpathp(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    return(services_validpathl(s, l));
+    return(ami_validpath(cstrz(s, l)));
 
 }
 
@@ -333,7 +333,7 @@ int wrapper_validpathp(
 
 function wild(view s: string): boolean;
 ->
-int  services_wildl(char* s, int l);
+int  ami_wild(char* s);
 
 ********************************************************************************/
 
@@ -345,7 +345,7 @@ int wrapper_wild(
 {
 
     rempad(s, &l);
-    return (services_wildl(s, l));
+    return (ami_wild(cstrz(s, l)));
 
 }
 
@@ -353,7 +353,7 @@ int wrapper_wild(
 
 function wild(view s: pstring): boolean;
 ->
-int  services_wildl(char* s, int l);
+int  ami_wild(char* s);
 
 ********************************************************************************/
 
@@ -368,7 +368,7 @@ int wrapper_wildp(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    return(services_wildl(s, l));
+    return(ami_wild(cstrz(s, l)));
 
 }
 
@@ -376,7 +376,7 @@ int wrapper_wildp(
 
 procedure getenv(view ls: string; out ds: string);
 ->
-void services_getenvl(char* ls, int lsl, char* ds, int dsl);
+void ami_getenv(char* ls, char* ds, int dsl);
 
 ********************************************************************************/
 
@@ -388,7 +388,7 @@ void wrapper_getenv(
 {
 
     rempad(s, &sl);
-    services_getenvl(s, sl, d, dl); /* find environment string */
+    ami_getenv(cstrz(s, sl), d, dl); /* find environment string */
     cstr2pad(d, dl); /* convert output to padded */
 
 }
@@ -397,7 +397,7 @@ void wrapper_getenv(
 
 function getenv(view ls: string): pstring;
 ->
-void services_getenvl(char* ls, int lsl, char* ds, int dsl);
+void ami_getenv(char* ls, char* ds, int dsl);
 
 ********************************************************************************/
 
@@ -410,7 +410,7 @@ pstring wrapper_getenvp(
     char buff[BUFLEN];
 
     rempad(s, &sl);
-    services_getenvl(s, sl, buff, BUFLEN); /* find environment string */
+    ami_getenv(cstrz(s, sl), buff, BUFLEN); /* find environment string */
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -420,7 +420,7 @@ pstring wrapper_getenvp(
 
 procedure setenv(view sn, sd: string);
 ->
-void services_setenvl(char* sn, int snl, char* sd, int sdl);
+void ami_setenv(char* sn, char* sd);
 
 ********************************************************************************/
 
@@ -433,7 +433,7 @@ void wrapper_setenv(
 
     rempad(n, &nl);
     rempad(v, &vl);
-    services_setenvl(n, nl, v, vl);
+    ami_setenv(cstrz(n, nl), cstrz(v, vl));
 
 }
 
@@ -441,7 +441,7 @@ void wrapper_setenv(
 
 procedure setenv(sn: pstring; view sd: string);
 ->
-void services_setenvl(char* sn, int snl, char* sd, int sdl);
+void ami_setenv(char* sn, char* sd);
 
 ********************************************************************************/
 
@@ -458,7 +458,7 @@ void wrapper_setenvps(
     pstr2cstrl(n, &s, &l); /* get cstr/len from pstring */
     rempad(v, &vl);
 
-    services_setenvl(s, l, v, vl);
+    ami_setenv(cstrz(s, l), cstrz(v, vl));
 
 }
 
@@ -466,7 +466,7 @@ void wrapper_setenvps(
 
 procedure setenv(view sn: string; sd: pstring);
 ->
-void services_setenvl(char* sn, int snl, char* sd, int sdl);
+void ami_setenv(char* sn, char* sd);
 
 ********************************************************************************/
 
@@ -483,7 +483,7 @@ void wrapper_setenvsp(
     rempad(n, &nl);
     pstr2cstrl(v, &s, &l); /* get cstr/len from pstring */
 
-    services_setenvl(n, nl, s, l);
+    ami_setenv(cstrz(n, nl), cstrz(s, l));
 
 }
 
@@ -491,7 +491,7 @@ void wrapper_setenvsp(
 
 procedure setenv(sn, sd: pstring);
 ->
-void services_setenvl(char* sn, int snl, char* sd, int sdl);
+void ami_setenv(char* sn, char* sd);
 
 ********************************************************************************/
 
@@ -510,7 +510,7 @@ void wrapper_setenvpp(
     pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
     pstr2cstrl(v, &vs, &vl); /* get cstr/len from pstring */
 
-    services_setenvl(ns, nl, vs, vl);
+    ami_setenv(cstrz(ns, nl), cstrz(vs, vl));
 
 }
 
@@ -518,15 +518,15 @@ void wrapper_setenvpp(
 
 procedure allenv(var el: envptr);
 ->
-void services_allenv(services_envrec **el);
+void ami_allenv(ami_envrec **el);
 
 ********************************************************************************/
 
-void wrapper_allenv(services_envrec** el)
+void wrapper_allenv(ami_envrec** el)
 
 {
 
-    services_allenv(el);
+    ami_allenv(el);
     cenvlist2pascaline(el);
 
 }
@@ -535,7 +535,7 @@ void wrapper_allenv(services_envrec** el)
 
 procedure remenv(view sn: string);
 ->
-void services_remenvl(char* sn, int snl);
+void ami_remenv(char* sn);
 
 ********************************************************************************/
 
@@ -547,7 +547,7 @@ void wrapper_remenv(
 {
 
     rempad(s, &l);
-    services_remenvl(s, l);
+    ami_remenv(cstrz(s, l));
 
 }
 
@@ -555,7 +555,7 @@ void wrapper_remenv(
 
 procedure remenv(view sn: pstring);
 ->
-extern void services_remenvl(char* sn, int snl);
+extern void ami_remenv(char* sn);
 
 ********************************************************************************/
 
@@ -570,7 +570,7 @@ void wrapper_remenvp(
 
     pstr2cstrl(n, &s, &l); /* get cstr/len from pstring */
 
-    services_remenvl(s, l);
+    ami_remenv(cstrz(s, l));
 
 }
 
@@ -578,7 +578,7 @@ void wrapper_remenvp(
 
 procedure exec(view cmd: string);
 ->
-void services_execl(char* cmd, int cmdl);
+void ami_exec(char* cmd);
 
 ********************************************************************************/
 
@@ -590,7 +590,7 @@ void wrapper_exec(
 {
 
     rempad(s, &l);
-    services_execl(s, l);
+    ami_exec(cstrz(s, l));
 
 }
 
@@ -598,7 +598,7 @@ void wrapper_exec(
 
 procedure exec(cmd: pstring);
 ->
-void services_execl(char* cmd, int cmdl);
+void ami_exec(char* cmd);
 
 ********************************************************************************/
 
@@ -613,7 +613,7 @@ void wrapper_execp(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    services_execl(s, l);
+    ami_exec(cstrz(s, l));
 
 }
 
@@ -621,7 +621,7 @@ void wrapper_execp(
 
 procedure exece(view cmd: string; el: envptr);
 ->
-void services_execel(char* cmd, int cmdl, services_envrec *el);
+void ami_exece(char* cmd, ami_envrec *el);
 
 ********************************************************************************/
 
@@ -633,11 +633,11 @@ void wrapper_exece(
 
 {
 
-    /* C copy list */ services_envptr cel;
+    /* C copy list */ ami_envptr cel;
 
     rempad(s, &l); /* remove right padding */
     cel = cenvlist2c(el); /* convert environment to C form */
-    services_execel(s, l, cel); /* execute */
+    ami_exece(cstrz(s, l), cel); /* execute */
     freenvl(cel); /* free the list */
 
 }
@@ -646,7 +646,7 @@ void wrapper_exece(
 
 procedure exece(cmd: pstring; el: envptr);
 ->
-void services_execel(char* cmd, int cmdl, services_envrec *el);
+void ami_exece(char* cmd, ami_envrec *el);
 
 ********************************************************************************/
 
@@ -659,11 +659,11 @@ void wrapper_execep(
 
     /** string pointer */ char* s;
     /** string length */  int l;
-    /* C copy list */ services_envptr cel;
+    /* C copy list */ ami_envptr cel;
 
     cel = cenvlist2c(el); /* convert environment to C form */
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
-    services_execel(s, l, cel);
+    ami_exece(cstrz(s, l), cel);
     freenvl(cel); /* free the list */
 
 }
@@ -672,7 +672,7 @@ void wrapper_execep(
 
 procedure execw(view cmd: string; out e: integer);
 ->
-void services_execwl(char* cmd, int cmdl, int *e);
+void ami_execw(char* cmd, int *e);
 
 ********************************************************************************/
 
@@ -685,7 +685,7 @@ void wrapper_execw(
 {
 
     rempad(s, &l); /* remove right padding */
-    services_execwl(s, l, e);
+    ami_execw(cstrz(s, l), e);
 
 }
 
@@ -693,13 +693,13 @@ void wrapper_execw(
 
 procedure execw(cmd: pstring; out e: integer);
 ->
-void services_execwl(char* cmd, int cmdl, int *e);
+void ami_execw(char* cmd, int *e);
 
 ********************************************************************************/
 
 void wrapper_execwp(
     /** filename */    pstring fn,
-    /** environment */ services_envptr el,
+    /** environment */ ami_envptr el,
     /** error */       int *e
 )
 
@@ -710,7 +710,7 @@ void wrapper_execwp(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    services_execwl(s, l, e);
+    ami_execw(cstrz(s, l), e);
 
 }
 
@@ -718,7 +718,7 @@ void wrapper_execwp(
 
 procedure execew(view cmd: string; el: envptr; out e: integer);
 ->
-void services_execewl(char* cmd, int cmdl, services_envrec *el, int *e);
+void ami_execew(char* cmd, ami_envrec *el, int *e);
 
 ********************************************************************************/
 
@@ -731,11 +731,11 @@ void wrapper_execew(
 
 {
 
-    /* C copy list */ services_envptr cel;
+    /* C copy list */ ami_envptr cel;
 
     rempad(s, &l); /* remove right padding */
     cel = cenvlist2c(el); /* convert environment to C form */
-    services_execewl(s, l, cel, e);
+    ami_execew(cstrz(s, l), cel, e);
     freenvl(cel); /* free the list */
 
 }
@@ -744,7 +744,7 @@ void wrapper_execew(
 
 procedure execew(cmd: pstring; el: envptr; out e: integer);
 ->
-void services_execewl(char* cmd, int cmdl, services_envrec *el, int *e);
+void ami_execew(char* cmd, ami_envrec *el, int *e);
 
 ********************************************************************************/
 
@@ -758,12 +758,12 @@ void wrapper_execewp(
 
     /** string pointer */ char* s;
     /** string length */  int l;
-    /* C copy list */     services_envptr cel;
+    /* C copy list */     ami_envptr cel;
 
     cel = cenvlist2c(el); /* convert environment to C form */
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    services_execewl(s, l, cel, e);
+    ami_execew(cstrz(s, l), cel, e);
 
 }
 
@@ -771,7 +771,7 @@ void wrapper_execewp(
 
 procedure getcur(out fn: string);
 ->
-void services_getcur(char* fn, int l);
+void ami_getcur(char* fn, int l);
 
 ********************************************************************************/
 
@@ -782,7 +782,7 @@ void wrapper_getcur(
 
 {
 
-    services_getcur(s, l); /* find time string */
+    ami_getcur(s, l); /* find time string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
@@ -791,7 +791,7 @@ void wrapper_getcur(
 
 function getcur: pstring;
 ->
-void services_getcur(char* fn, int l);
+void ami_getcur(char* fn, int l);
 
 ********************************************************************************/
 
@@ -801,7 +801,7 @@ pstring wrapper_getcurp(void)
 
     char buff[BUFLEN];
 
-    services_getcur(buff, BUFLEN); /* find time string */
+    ami_getcur(buff, BUFLEN); /* find time string */
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -811,7 +811,7 @@ pstring wrapper_getcurp(void)
 
 procedure setcur(view fn: string);
 ->
-void services_setcurl(char* fn, int fnl);
+void ami_setcur(char* fn);
 
 ********************************************************************************/
 
@@ -823,7 +823,7 @@ void wrapper_setcur(
 {
 
     rempad(s, &l); /* remove right padding */
-    services_setcurl(s, l); /* set current path */
+    ami_setcur(cstrz(s, l)); /* set current path */
 
 }
 
@@ -831,7 +831,7 @@ void wrapper_setcur(
 
 procedure setcur(fn: pstring);
 ->
-void services_setcurl(char* fn, int fnl);
+void ami_setcur(char* fn);
 
 ********************************************************************************/
 
@@ -846,7 +846,7 @@ void wrapper_setcurp(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    services_setcurl(s, l);
+    ami_setcur(cstrz(s, l));
 
 }
 
@@ -854,8 +854,7 @@ void wrapper_setcurp(
 
 procedure brknam(view fn: string; out p, n, e: string);
 ->
-void services_brknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_brknam(char* fn, char* p, int pl, char* n, int nl, char* e, int el);
 
 ********************************************************************************/
 
@@ -870,7 +869,7 @@ void wrapper_brknam(
 
     rempad(fn, &fnl); /* remove right padding */
     /* execute subfunction */
-    services_brknaml(fn, fnl, p, pl, n, nl, e, el);
+    ami_brknam(cstrz(fn, fnl), p, pl, n, nl, e, el);
     /* convert output cstrings to padded pascaline */
     cstr2pad(p, pl);
     cstr2pad(n, nl);
@@ -882,8 +881,7 @@ void wrapper_brknam(
 
 procedure brknam(view fn: string; out p, n, e: pstring);
 ->
-void services_brknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_brknam(char* fn, char* p, int pl, char* n, int nl, char* e, int el);
 
 ********************************************************************************/
 
@@ -903,7 +901,7 @@ void wrapper_brknamsp(
 
     rempad(fn, &fnl); /* remove right padding */
     /* execute subfunction */
-    services_brknaml(fn, fnl, buff1, BUFLEN, buff2, BUFLEN, buff3, BUFLEN);
+    ami_brknam(cstrz(fn, fnl), buff1, BUFLEN, buff2, BUFLEN, buff3, BUFLEN);
     *p = cstr2pstr(buff1, BUFLEN); /* place results */
     *n = cstr2pstr(buff2, BUFLEN);
     *e = cstr2pstr(buff3, BUFLEN);
@@ -914,8 +912,7 @@ void wrapper_brknamsp(
 
 procedure brknam(fn: pstring; out p, n, e: pstring);
 ->
-void services_brknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_brknam(char* fn, char* p, int pl, char* n, int nl, char* e, int el);
 
 ********************************************************************************/
 
@@ -935,7 +932,7 @@ void wrapper_brknampp(
 
     cpstrp2cstrl(&fn, &fnl); /* convert pstring arguments to cstr/len */
     /* execute subfunction */
-    services_brknaml((string)fn, fnl, buff1, BUFLEN, buff2, BUFLEN, buff3, BUFLEN);
+    ami_brknam(cstrz((string)fn, fnl), buff1, BUFLEN, buff2, BUFLEN, buff3, BUFLEN);
     *p = cstr2pstr(buff1, BUFLEN); /* place results */
     *n = cstr2pstr(buff2, BUFLEN);
     *e = cstr2pstr(buff3, BUFLEN);
@@ -946,8 +943,7 @@ void wrapper_brknampp(
 
 procedure maknam(out fn: string; view p, n, e: string);
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -967,7 +963,7 @@ void wrapper_maknam(
     rempad(p, &pl); /* remove padding */
     rempad(n, &nl);
     rempad(e, &el);
-    services_maknaml(fn, fnl, p, pl, n, nl, e, el);
+    ami_maknam(fn, fnl, cstrz(p, pl), cstrz(n, nl), cstrz(e, el));
     cstr2pad(fn, fnl); /* convert output to padded */
 
 }
@@ -976,8 +972,7 @@ void wrapper_maknam(
 
 function maknam(view p, n, e: string): pstring;
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -997,7 +992,7 @@ pstring wrapper_maknamp(
     rempad(p, &pl);
     rempad(n, &nl);
     rempad(e, &el);
-    services_maknaml(buff, BUFLEN, p, pl, n, nl, e, el);
+    ami_maknam(buff, BUFLEN, cstrz(p, pl), cstrz(n, nl), cstrz(e, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1007,8 +1002,7 @@ pstring wrapper_maknamp(
 
 function maknam(view p: string; view n: string; e: pstring): pstring;
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -1030,7 +1024,7 @@ pstring wrapper_maknampssp(
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
     rempad(n, &nl); /* remove padding */
     pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
-    services_maknaml(buff, BUFLEN, ps, pl, n, nl, es, el);
+    ami_maknam(buff, BUFLEN, cstrz(ps, pl), cstrz(n, nl), cstrz(es, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1040,8 +1034,7 @@ pstring wrapper_maknampssp(
 
 function maknam(view p: string; n: pstring; view e: string): pstring;
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -1061,7 +1054,7 @@ pstring wrapper_maknampsps(
     rempad(p, &pl); /* remove padding */
     pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
     rempad(e, &el); /* remove padding */
-    services_maknaml(buff, BUFLEN, p, pl, ns, nl, e, el);
+    ami_maknam(buff, BUFLEN, cstrz(p, pl), cstrz(ns, nl), cstrz(e, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1071,8 +1064,7 @@ pstring wrapper_maknampsps(
 
 function maknam(view p: string; n: pstring; e: pstring): pstring;
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -1094,7 +1086,7 @@ pstring wrapper_maknampspp(
     rempad(p, &pl); /* remove padding */
     pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
     pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
-    services_maknaml(buff, BUFLEN, p, pl, ns, nl, es, el);
+    ami_maknam(buff, BUFLEN, cstrz(p, pl), cstrz(ns, nl), cstrz(es, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1104,8 +1096,7 @@ pstring wrapper_maknampspp(
 
 function maknam(p: pstring; view n: string; view e: string): pstring;
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -1126,7 +1117,7 @@ pstring wrapper_maknamppss(
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
     rempad(n, &nl); /* remove padding */
     rempad(e, &el); /* remove padding */
-    services_maknaml(buff, BUFLEN, ps, pl, n, nl, e, el);
+    ami_maknam(buff, BUFLEN, cstrz(ps, pl), cstrz(n, nl), cstrz(e, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1136,8 +1127,7 @@ pstring wrapper_maknamppss(
 
 function maknam(p: pstring; view n: string; e: pstring): pstring;
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -1159,7 +1149,7 @@ pstring wrapper_maknamppsp(
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
     rempad(n, &nl); /* remove padding */
     pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
-    services_maknaml(buff, BUFLEN, ps, pl, n, nl, es, el);
+    ami_maknam(buff, BUFLEN, cstrz(ps, pl), cstrz(n, nl), cstrz(es, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1169,8 +1159,7 @@ pstring wrapper_maknamppsp(
 
 function maknam(p: pstring; n: pstring; view e: string): pstring;
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -1192,7 +1181,7 @@ pstring wrapper_maknamppps(
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
     pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
     rempad(e, &el); /* remove padding */
-    services_maknaml(buff, BUFLEN, ps, pl, ns, nl, e, el);
+    ami_maknam(buff, BUFLEN, cstrz(ps, pl), cstrz(ns, nl), cstrz(e, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1202,8 +1191,7 @@ pstring wrapper_maknamppps(
 
 function maknam(p: pstring; n: pstring; e: pstring): pstring;
 ->
-void services_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
-                int el);
+void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 
 ********************************************************************************/
 
@@ -1227,7 +1215,7 @@ pstring wrapper_maknampppp(
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
     pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
     pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
-    services_maknaml(buff, BUFLEN, ps, pl, ns, nl, es, el);
+    ami_maknam(buff, BUFLEN, cstrz(ps, pl), cstrz(ns, nl), cstrz(es, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1237,7 +1225,7 @@ pstring wrapper_maknampppp(
 
 procedure fulnam(var fn: string);
 ->
-void services_fulnam(char* fn, int fnl);
+void ami_fulnam(char* fn, int fnl);
 
 ********************************************************************************/
 
@@ -1252,7 +1240,7 @@ void wrapper_fulnam(
 
     rempad(s, &pl);
     s[pl] = 0;
-    services_fulnam(s, l); /* find full name string */
+    ami_fulnam(s, l); /* find full name string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
@@ -1261,7 +1249,7 @@ void wrapper_fulnam(
 
 function fulnam(view fn: string): pstring;
 ->
-void services_fulnam(char* fn, int fnl);
+void ami_fulnam(char* fn, int fnl);
 
 ********************************************************************************/
 
@@ -1277,7 +1265,7 @@ pstring wrapper_fulnamp(
     rempad(s, &l);
     strncpy(buff, s, l); /* copy filename to buffer */
     if (l < BUFLEN) buff[l] = 0; /* ensure terminated */
-    services_fulnam(buff, BUFLEN); /* find time string */
+    ami_fulnam(buff, BUFLEN); /* find time string */
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1287,7 +1275,7 @@ pstring wrapper_fulnamp(
 
 procedure getpgm(out p: string);
 ->
-extern void services_getpgm(char* p, int pl);
+extern void ami_getpgm(char* p, int pl);
 
 ********************************************************************************/
 
@@ -1298,7 +1286,7 @@ void wrapper_getpgm(
 
 {
 
-    services_getpgm(s, l); /* find program path string */
+    ami_getpgm(s, l); /* find program path string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
@@ -1307,7 +1295,7 @@ void wrapper_getpgm(
 
 function getpgm: pstring;
 ->
-extern void services_getpgm(char* p, int pl);
+extern void ami_getpgm(char* p, int pl);
 
 ********************************************************************************/
 
@@ -1317,7 +1305,7 @@ pstring wrapper_getpgmp(void)
 
     char buff[BUFLEN];
 
-    services_getpgm(buff, BUFLEN); /* find program path string */
+    ami_getpgm(buff, BUFLEN); /* find program path string */
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1327,7 +1315,7 @@ pstring wrapper_getpgmp(void)
 
 procedure getusr(out fn: string);
 ->
-void services_getusr(char* fn, int fnl);
+void ami_getusr(char* fn, int fnl);
 
 ********************************************************************************/
 
@@ -1338,7 +1326,7 @@ void wrapper_getusr(
 
 {
 
-    services_getusr(s, l); /* find time string */
+    ami_getusr(s, l); /* find time string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
@@ -1347,7 +1335,7 @@ void wrapper_getusr(
 
 function getusr: pstring;
 ->
-void services_getusr(char* fn, int fnl);
+void ami_getusr(char* fn, int fnl);
 
 ********************************************************************************/
 
@@ -1357,7 +1345,7 @@ pstring wrapper_getusrp(void)
 
     char buff[BUFLEN];
 
-    services_getusr(buff, BUFLEN); /* find program path string */
+    ami_getusr(buff, BUFLEN); /* find program path string */
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1367,7 +1355,7 @@ pstring wrapper_getusrp(void)
 
 procedure setatr(view fn: string; a: attrset);
 ->
-services_setatr(char* fn, services_attrset a);
+ami_setatr(char* fn, ami_attrset a);
 
 ********************************************************************************/
 
@@ -1380,7 +1368,7 @@ void wrapper_setatr(
 {
 
     rempad(s, &l); /* remove padding */
-    services_setatrl(s, l, a[0]); /* set attributes */
+    ami_setatr(cstrz(s, l), a[0]); /* set attributes */
 
 }
 
@@ -1388,7 +1376,7 @@ void wrapper_setatr(
 
 procedure setatr(fn: pstring; a: attrset);
 ->
-void services_setatrl(char* fn, int fnl, services_attrset a);
+void ami_setatr(char* fn, ami_attrset a);
 
 ********************************************************************************/
 
@@ -1403,7 +1391,7 @@ void wrapper_setatrp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_setatrl(as, al, a[0]); /* set attributes */
+    ami_setatr(cstrz(as, al), a[0]); /* set attributes */
 
 }
 
@@ -1411,7 +1399,7 @@ void wrapper_setatrp(
 
 procedure resatr(view fn: string; a: attrset);
 ->
-void services_resatrl(char* fn, int fnl, services_attrset a);
+void ami_resatr(char* fn, ami_attrset a);
 
 ********************************************************************************/
 
@@ -1424,7 +1412,7 @@ void wrapper_resatr(
 {
 
     rempad(s, &l); /* remove padding */
-    services_resatrl(s, l, a[0]); /* reset attributes */
+    ami_resatr(cstrz(s, l), a[0]); /* reset attributes */
 
 }
 
@@ -1432,7 +1420,7 @@ void wrapper_resatr(
 
 procedure resatr(fn: pstring; a: attrset);
 ->
-void services_resatrl(char* fn, int fnl, services_attrset a);
+void ami_resatr(char* fn, ami_attrset a);
 
 ********************************************************************************/
 
@@ -1447,7 +1435,7 @@ void wrapper_resatrp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_resatrl(as, al, a[0]); /* set attributes */
+    ami_resatr(cstrz(as, al), a[0]); /* set attributes */
 
 }
 
@@ -1455,7 +1443,7 @@ void wrapper_resatrp(
 
 procedure bakupd(view fn: string);
 ->
-void services_bakupdl(char* fn, int fnl);
+void ami_bakupd(char* fn);
 
 ********************************************************************************/
 
@@ -1467,7 +1455,7 @@ void wrapper_bakupd(
 {
 
     rempad(s, &l); /* remove padding */
-    services_bakupdl(s, l); /* set backed up */
+    ami_bakupd(cstrz(s, l)); /* set backed up */
 
 }
 
@@ -1475,7 +1463,7 @@ void wrapper_bakupd(
 
 procedure bakupd(fn: pstring);
 ->
-void services_bakupdl(char* fn, int fnl);
+void ami_bakupd(char* fn);
 
 ********************************************************************************/
 
@@ -1490,7 +1478,7 @@ void wrapper_bakupdp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_bakupdl(as, al); /* set attributes */
+    ami_bakupd(cstrz(as, al)); /* set attributes */
 
 }
 
@@ -1498,7 +1486,7 @@ void wrapper_bakupdp(
 
 procedure setuper(view fn: string; p: permset);
 ->
-void services_setuperl(char* fn, int fnl, services_permset p);
+void ami_setuper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1511,7 +1499,7 @@ void wrapper_setuper(
 {
 
     rempad(s, &l); /* remove padding */
-    services_setuperl(s, l, a[0]); /* set permissions */
+    ami_setuper(cstrz(s, l), a[0]); /* set permissions */
 
 }
 
@@ -1519,7 +1507,7 @@ void wrapper_setuper(
 
 procedure setuper(fn: pstring; p: permset);
 ->
-void services_setuperl(char* fn, int fnl, services_permset p);
+void ami_setuper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1534,7 +1522,7 @@ void wrapper_setuperp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_setuperl(as, al, a[0]); /* set permissions */
+    ami_setuper(cstrz(as, al), a[0]); /* set permissions */
 
 }
 
@@ -1542,7 +1530,7 @@ void wrapper_setuperp(
 
 procedure resuper(view fn: string; p: permset);
 ->
-void services_resuperl(char* fn, int fnl, services_permset p);
+void ami_resuper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1555,7 +1543,7 @@ void wrapper_resuper(
 {
 
     rempad(s, &l); /* remove padding */
-    services_resuperl(s, l, a[0]); /* set permissions */
+    ami_resuper(cstrz(s, l), a[0]); /* set permissions */
 
 }
 
@@ -1563,7 +1551,7 @@ void wrapper_resuper(
 
 procedure resuper(fn: pstring; p: permset);
 ->
-void services_resuperl(char* fn, int fnl, services_permset p);
+void ami_resuper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1578,7 +1566,7 @@ void wrapper_resuperp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_resuperl(as, al, a[0]); /* set permissions */
+    ami_resuper(cstrz(as, al), a[0]); /* set permissions */
 
 }
 
@@ -1586,7 +1574,7 @@ void wrapper_resuperp(
 
 procedure setgper(view fn: string; p: permset);
 ->
-void services_setgperl(char* fn, int fnl, services_permset p);
+void ami_setgper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1599,7 +1587,7 @@ void wrapper_setgper(
 {
 
     rempad(s, &l); /* remove padding */
-    services_setgperl(s, l, a[0]); /* set permissions */
+    ami_setgper(cstrz(s, l), a[0]); /* set permissions */
 
 }
 
@@ -1607,7 +1595,7 @@ void wrapper_setgper(
 
 procedure setgper(fn: pstring; p: permset);
 ->
-void services_setgperl(char* fn, int fnl, services_permset p);
+void ami_setgper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1622,7 +1610,7 @@ void wrapper_setgperp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_setgperl(as, al, a[0]); /* set permissions */
+    ami_setgper(cstrz(as, al), a[0]); /* set permissions */
 
 }
 
@@ -1630,7 +1618,7 @@ void wrapper_setgperp(
 
 procedure resgper(view fn: string; p: permset);
 ->
-void services_resgperl(char* fn, int fnl, services_permset p);
+void ami_resgper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1643,7 +1631,7 @@ void wrapper_resgper(
 {
 
     rempad(s, &l); /* remove padding */
-    services_resgperl(s, l, a[0]); /* set permissions */
+    ami_resgper(cstrz(s, l), a[0]); /* set permissions */
 
 }
 
@@ -1651,7 +1639,7 @@ void wrapper_resgper(
 
 procedure resgper(fn: pstring; p: permset);
 ->
-void services_resgperl(char* fn, int fnl, services_permset p);
+void ami_resgper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1666,7 +1654,7 @@ void wrapper_resgperp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_resgperl(as, al, a[0]); /* set permissions */
+    ami_resgper(cstrz(as, al), a[0]); /* set permissions */
 
 }
 
@@ -1674,7 +1662,7 @@ void wrapper_resgperp(
 
 procedure setoper(view fn: string; p: permset);
 ->
-void services_setoperl(char* fn, int fnl, services_permset p);
+void ami_setoper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1687,7 +1675,7 @@ void wrapper_setoper(
 {
 
     rempad(s, &l); /* remove padding */
-    services_setoperl(s, l, a[0]); /* set permissions */
+    ami_setoper(cstrz(s, l), a[0]); /* set permissions */
 
 }
 
@@ -1695,7 +1683,7 @@ void wrapper_setoper(
 
 procedure setoper(fn: pstring; p: permset);
 ->
-void services_setoperl(char* fn, int fnl, services_permset p);
+void ami_setoper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1710,7 +1698,7 @@ void wrapper_setoperp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_setoperl(as, al, a[0]); /* set permissions */
+    ami_setoper(cstrz(as, al), a[0]); /* set permissions */
 
 }
 
@@ -1718,7 +1706,7 @@ void wrapper_setoperp(
 
 procedure resoper(view fn: string; p: permset);
 ->
-void services_resoperl(char* fn, int fnl, services_permset p);
+void ami_resoper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1731,7 +1719,7 @@ void wrapper_resoper(
 {
 
     rempad(s, &l); /* remove padding */
-    services_resoperl(s, l, a[0]); /* set permissions */
+    ami_resoper(cstrz(s, l), a[0]); /* set permissions */
 
 }
 
@@ -1739,7 +1727,7 @@ void wrapper_resoper(
 
 procedure resoper(fn: pstring; p: permset);
 ->
-void services_resoperl(char* fn, int fnl, services_permset p);
+void ami_resoper(char* fn, ami_permset p);
 
 ********************************************************************************/
 
@@ -1754,7 +1742,7 @@ void wrapper_resoperp(
     int    al;
 
     pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
-    services_resoperl(as, al, a[0]); /* set permissions */
+    ami_resoper(cstrz(as, al), a[0]); /* set permissions */
 
 }
 
@@ -1762,7 +1750,7 @@ void wrapper_resoperp(
 
 procedure makpth(view fn: string);
 ->
-void services_makpthl(char* fn, int fnl);
+void ami_makpth(char* fn);
 
 ********************************************************************************/
 
@@ -1774,7 +1762,7 @@ void wrapper_makpth(
 {
 
     rempad(s, &l); /* remove padding */
-    services_makpthl(s, l); /* make path */
+    ami_makpth(cstrz(s, l)); /* make path */
 
 }
 
@@ -1782,7 +1770,7 @@ void wrapper_makpth(
 
 procedure makpth(fn: pstring);
 ->
-void services_makpthl(char* fn, int fnl);
+void ami_makpth(char* fn);
 
 ********************************************************************************/
 
@@ -1796,7 +1784,7 @@ void wrapper_makpthp(
     int    pl;
 
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
-    services_makpthl(ps, pl); /* set permissions */
+    ami_makpth(cstrz(ps, pl)); /* set permissions */
 
 }
 
@@ -1804,7 +1792,7 @@ void wrapper_makpthp(
 
 procedure rempth(view fn: string);
 ->
-void services_rempthl(char* fn, int fnl);
+void ami_rempth(char* fn);
 
 ********************************************************************************/
 
@@ -1816,7 +1804,7 @@ void wrapper_rempth(
 {
 
     rempad(s, &l); /* remove padding */
-    services_rempthl(s, l); /* make path */
+    ami_rempth(cstrz(s, l)); /* make path */
 
 }
 
@@ -1824,7 +1812,7 @@ void wrapper_rempth(
 
 procedure rempth(fn: pstring);
 ->
-void services_rempthl(char* fn, int fnl);
+void ami_rempth(char* fn);
 
 ********************************************************************************/
 
@@ -1838,7 +1826,7 @@ void wrapper_rempthp(
     int    pl;
 
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
-    services_rempthl(ps, pl); /* set permissions */
+    ami_rempth(cstrz(ps, pl)); /* set permissions */
 
 }
 
@@ -1846,7 +1834,7 @@ void wrapper_rempthp(
 
 procedure countrys(out s: string; c: integer);
 ->
-void services_countrys(char* s, int sl, int c);
+void ami_countrys(char* s, int sl, int c);
 
 ********************************************************************************/
 
@@ -1858,7 +1846,7 @@ void wrapper_countrys(
 
 {
 
-    services_countrys(s, l, c); /* find country string */
+    ami_countrys(s, l, c); /* find country string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
@@ -1867,7 +1855,7 @@ void wrapper_countrys(
 
 procedure languages(out s: string; len: integer; l: integer);
 ->
-void services_languages(char* s, int sl, int l);
+void ami_languages(char* s, int sl, int l);
 
 ********************************************************************************/
 
@@ -1879,7 +1867,7 @@ void wrapper_languages(
 
 {
 
-    services_languages(s, l, c); /* find country string */
+    ami_languages(s, l, c); /* find country string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
