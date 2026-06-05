@@ -155,6 +155,42 @@ void rempad(
 
 }
 
+/********************************************************************************
+
+Convert counted string to zero terminated C string
+
+The Petit-Ami ami_* services API takes input strings as zero terminated C
+strings. Pascaline passes strings as a (pointer, length) pair that is not
+terminated. This routine copies the counted string to a zero terminated buffer
+and returns it. A rotating set of per-thread buffers is used so that several
+input strings may be converted in the argument list of a single call (the most
+in any services call is three, in maknam).
+
+********************************************************************************/
+
+#define CSTRZBUF 4 /* number of rotating conversion buffers */
+
+char* cstrz(
+    /** counted string */ char* s,
+    /** length */         int   l
+)
+
+{
+
+    static __thread char buff[CSTRZBUF][BUFLEN]; /* rotating buffers */
+    static __thread int  nxt = 0;                /* next buffer to use */
+    /* selected buffer */ char* b;
+
+    b = buff[nxt]; /* get next rotating buffer */
+    nxt = (nxt+1)%CSTRZBUF; /* advance */
+    if (l > BUFLEN-1) l = BUFLEN-1; /* clip to buffer */
+    memcpy(b, s, l); /* copy string data */
+    b[l] = 0; /* zero terminate */
+
+    return (b);
+
+}
+
 
 /********************************************************************************
 
@@ -184,7 +220,7 @@ filename entries to a new structure and disposing of the old.
 ********************************************************************************/
 
 void cfilelist2pascaline(
-    /** file record list head */ services_filptr* fla
+    /** file record list head */ ami_filptr* fla
 )
 
 {
@@ -192,8 +228,8 @@ void cfilelist2pascaline(
     /* pointer for pascaline string */ pstring ps;
     /* length */                       int l;
     /* pointer to string */            char* s;
-    /* pointer to old list */          services_filptr fl;
-    /* pointer to last old entry */    services_filptr np;
+    /* pointer to old list */          ami_filptr fl;
+    /* pointer to last old entry */    ami_filptr np;
     /* new list */                     filptr nl;
     /* last entry */                   filptr lp;
     /* new list pointer */             filptr p;
@@ -241,7 +277,7 @@ void cfilelist2pascaline(
 
     }
     /* set address of converted list */
-    *fla = (services_filptr)nl;
+    *fla = (ami_filptr)nl;
 
 }
 
@@ -255,12 +291,12 @@ data constained into C zero terminated string form.
 ********************************************************************************/
 
 void cenvlist2pascaline(
-    /** file record list head */ services_envptr* eva
+    /** file record list head */ ami_envptr* eva
 )
 
 {
 
-    /* pointer to old list */ services_envptr el;
+    /* pointer to old list */ ami_envptr el;
     /* C sring pointer */      char*cs;
 
     el = *eva; /* index list */
@@ -288,21 +324,21 @@ Preserves the original list. Returns C copy list.
 
 ********************************************************************************/
 
-services_envptr cenvlist2c(
+ami_envptr cenvlist2c(
     /** environment record list head */ envptr el
 )
 
 {
 
     /* pstring */ pstring ps;
-    /* new copy list in C */ services_envptr cl;
-    /* new entry */ services_envptr cp;
-    /* last entry */ services_envptr lp;
+    /* new copy list in C */ ami_envptr cl;
+    /* new entry */ ami_envptr cp;
+    /* last entry */ ami_envptr lp;
 
     lp = NULL; /* set no last entry */
     while (el) { /* traverse */
 
-        cp = malloc(sizeof(services_envrec)); /* get new C entry */
+        cp = malloc(sizeof(ami_envrec)); /* get new C entry */
         cp->name = pstr2cstr((pstring)el->name); /* convert name */
         cp->data = pstr2cstr((pstring)el->data); /* convert data */
         cp->next = NULL;
@@ -326,12 +362,12 @@ Frees both strins and the entry for the entire list.
 ********************************************************************************/
 
 void freenvl(
-    /** environment record list head */ services_envptr el
+    /** environment record list head */ ami_envptr el
 )
 
 {
 
-    /* element pointer */ services_envptr ep;
+    /* element pointer */ ami_envptr ep;
 
     while (el) { /* drain */
 
