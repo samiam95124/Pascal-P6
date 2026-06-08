@@ -956,7 +956,13 @@ begin i := 1;
   while fl > 0 do begin
     c := ' '; if i <= max(s) then begin c := s[i]; i := i+1 end;
     if (c = '"') or (c = '\\') then write(f, '\\', c)
-    else if c < ' ' then write(f, '\\x', ord(c)$:#2)
+    { Emit control characters as 3-digit octal. GAS '\x' hex escapes are greedy
+      (they consume every following hex digit), so '\x0d'+'C' would merge into
+      one wrong byte and swallow the 'C'; '\NNN' octal stops at three digits. }
+    else if c < ' ' then
+      write(f, '\\', chr(ord('0')+(ord(c) div 64)),
+                     chr(ord('0')+(ord(c) div 8 mod 8)),
+                     chr(ord('0')+(ord(c) mod 8)))
     else write(f, c);
     fl := fl-1
   end
