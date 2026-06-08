@@ -47,12 +47,40 @@ BUILD=$(PASCALP6)/build
 LIBS=$(PASCALP6)/libs
 AMI=$(PASCALP6)/petit_ami/linux
 AMIINC=$(PASCALP6)/petit_ami/include
+AMILIBC=$(PASCALP6)/petit_ami/libc
 CPPFLAGS=-P -nostdinc -traditional-cpp
 CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 EXTERNAL=libs
+
+#
+# I/O bypass mode.
+#
+# When STDIO_BYPASS is true (the normal mode), psystem is built to route its
+# stdio through the Petit-Ami stdio implementation (petit_ami/libc/stdio.c,
+# compiled with -DSTDIO_BYPASS). Because psystem is the single I/O point for all
+# Pascaline programs, this makes every write/read pass through the Petit-Ami I/O
+# override layer (ovr_*/vt_*), so the terminal, graphics and other Petit-Ami
+# models can hook the program's console I/O. With no model installed the
+# override defaults to the real system I/O, so non-model programs are unaffected.
+#
+# When false, psystem uses the system stdio directly and I/O hooks do not work.
+# Both modes are expected to function identically except for I/O hooking.
+#
+STDIO_BYPASS=true
+
+ifeq ($(STDIO_BYPASS),true)
+# Petit-Ami's stdio.h does not export the fseek origin constants (its own stdio.c
+# gets them from a system header); supply the standard values for psystem.
+PSYSTEM_BYPASS=-DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) \
+	-DSEEK_SET=0 -DSEEK_CUR=1 -DSEEK_END=2
+PSYSTEM_STDIO=$(BUILD)/pgen/psystem_stdio.o
+else
+PSYSTEM_BYPASS=
+PSYSTEM_STDIO=
+endif
 
 all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a
@@ -77,12 +105,16 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	@echo
 	mkdir -p $(BUILD)/pgen
 	mkdir -p $(BUILD)/pgen/amd64
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem.o \
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(PSYSTEM_BYPASS) -o $(BUILD)/pgen/psystem.o \
 		-c $(SOURCE)/pgen/psystem.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/psystem_asm.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/psystem.asm
-	ar r $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
-		$(BUILD)/pgen/amd64/psystem_asm.o
+	if [ -n "$(PSYSTEM_STDIO)" ]; then \
+		$(CC) $(CFLAGS) $(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) \
+			-o $(PSYSTEM_STDIO) -c $(AMILIBC)/stdio.c; \
+	fi
+	ar rc $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
+		$(BUILD)/pgen/amd64/psystem_asm.o $(PSYSTEM_STDIO)
 
 #
 # Build main for AMD64, the program stack startup shim.
@@ -128,6 +160,50 @@ $(LIBS)/services.a: $(AMI)/services.c \
 	ar r $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
 		$(BUILD)/libs/services_wrapper.o $(BUILD)/libs/services.o \
 		$(BUILD)/libs/services_support.o
+
+#
+# Terminal
+#
+# Terminal is built from components since it is an external C library in
+# Petit-Ami. The result is an archive terminal.a.
+#
+# The Petit-Ami terminal model intercepts console I/O via the libc override
+# vectors (ovr_*) supplied by Petit-Ami's own stdio (libc/stdio.c). All the
+# Petit-Ami sources and the wrappers are therefore built with -DSTDIO_BYPASS
+# and the Petit-Ami libc include path, so stdio calls route through that
+# implementation rather than the system libc, and no patched glibc is needed.
+# The bundled base modules (services, config, system_event, option, stdio) are
+# the console-model dependencies pulled in by terminal.c.
+#
+TERMCPP=$(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source
+$(LIBS)/terminal.a: $(AMI)/terminal.c \
+	$(LIBS)/source/terminal_wrapper.asm \
+	$(LIBS)/source/terminal_wrapper.c \
+	$(LIBS)/source/terminal_support.c \
+	$(LIBS)/source/terminal_wrapper.h
+	@echo
+	@echo "Building terminal..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(TERMCPP) \
+		-o $(BUILD)/libs/terminal_support.o -c $(LIBS)/source/terminal_support.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/terminal_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/terminal_wrapper.asm
+	$(CC) $(CFLAGS) $(TERMCPP) \
+		-o $(BUILD)/libs/terminal_wrapper.o -c $(LIBS)/source/terminal_wrapper.c
+	$(CC) $(CFLAGS) $(TERMCPP) \
+		-o $(BUILD)/libs/terminal.o -c $(AMI)/terminal.c
+	$(CC) $(CFLAGS) $(TERMCPP) \
+		-o $(BUILD)/libs/term_services.o -c $(AMI)/services.c
+	$(CC) $(CFLAGS) $(TERMCPP) \
+		-o $(BUILD)/libs/system_event.o -c $(AMI)/system_event.c
+	$(CC) $(CFLAGS) $(TERMCPP) \
+		-o $(BUILD)/libs/config.o -c $(PASCALP6)/petit_ami/utils/config.c
+	rm -f $(LIBS)/terminal.a
+	ar rc $(LIBS)/terminal.a $(BUILD)/libs/terminal_wrapper_asm.o \
+		$(BUILD)/libs/terminal_wrapper.o $(BUILD)/libs/terminal_support.o \
+		$(BUILD)/libs/terminal.o $(BUILD)/libs/term_services.o \
+		$(BUILD)/libs/system_event.o $(BUILD)/libs/config.o
 
 ################################################################################
 #
