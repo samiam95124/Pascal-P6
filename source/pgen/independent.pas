@@ -1184,62 +1184,216 @@ begin
   i := i*s
 end;
 
-procedure getreal(var r: real); { get real }
-var i: integer; { integer holding }
-    e: integer; { exponent }
-    d: integer; { digit }
-    s: boolean; { sign }
-   { find power of ten }
-function pwrten(e: integer): real;
-var t: real; { accumulator }
-    p: real; { current power }
+{ Get real, correctly rounded.
+
+  Reads a decimal real and converts it to the nearest double using exact big
+  integer arithmetic, identical to the conversion in the runtime (psystem.c
+  cvt_bits) so that every execution mode loads the same value. The decimal is
+  value = D*10^E for D the significant digits as a big integer; the significand
+  is normalized into [2^52,2^53) by powers of two, extracted by exact long
+  division, and rounded to nearest with ties to even on the exact remainder.
+  Normal, subnormal, underflow and overflow are handled. The big integer uses
+  32 bit limbs held in 64 bit integers (all products stay below 2^63). Original
+  implementation; no third party conversion code is used. }
+procedure getreal(var r: real);
+const cvtnl = 120;             { big integer limbs of 32 bits }
+      cvtcap = 768;            { max significant digits kept }
+      cbase = 4294967296;      { 2^32, the limb base }
+      p52 = 4503599627370496;  { 2^52 }
+      p53 = 9007199254740992;  { 2^53 }
+      infbits = 9218868437227405312; { 2047*2^52, +infinity }
+type cvtbn = record v: array [0..cvtnl-1] of integer; nn: integer end;
+var i, e, d: integer;
+    s, seen: boolean;
+    sticky, ndig, bitv: integer;
+    dig: cvtbn;
+    ovl: record case boolean of    { overlay to read the bits back as a real }
+           true:  (rv: real);
+           false: (iv: integer)
+         end;
+
+  function p2(k: integer): integer; { 2^k }
+  var t: integer;
+  begin t := 1; while k > 0 do begin t := t*2; k := k-1 end; p2 := t end;
+
+  procedure cvtnorm(var a: cvtbn);
+  begin while (a.nn > 1) and (a.v[a.nn-1] = 0) do a.nn := a.nn-1 end;
+
+  function cvtzero(var a: cvtbn): boolean;
+  begin cvtzero := (a.nn = 1) and (a.v[0] = 0) end;
+
+  procedure cvtset(var a: cvtbn; x: integer);
+  var j: integer;
+  begin
+    for j := 0 to cvtnl-1 do a.v[j] := 0;
+    a.nn := 0;
+    repeat a.v[a.nn] := x mod cbase; x := x div cbase; a.nn := a.nn+1 until x = 0
+  end;
+
+  function cvtcmp(var a, b: cvtbn): integer; { sign of a-b }
+  var j, res: integer;
+  begin
+    if a.nn <> b.nn then begin if a.nn < b.nn then res := -1 else res := 1 end
+    else begin
+      res := 0; j := a.nn-1;
+      while (j >= 0) and (res = 0) do begin
+        if a.v[j] < b.v[j] then res := -1
+        else if a.v[j] > b.v[j] then res := 1;
+        j := j-1
+      end
+    end;
+    cvtcmp := res
+  end;
+
+  procedure cvtmuls(var a: cvtbn; sm: integer); { a := a*sm, sm small }
+  var j, t, carry: integer;
+  begin carry := 0;
+    for j := 0 to a.nn-1 do
+      begin t := a.v[j]*sm+carry; a.v[j] := t mod cbase; carry := t div cbase end;
+    while (carry > 0) and (a.nn < cvtnl) do
+      begin a.v[a.nn] := carry mod cbase; carry := carry div cbase; a.nn := a.nn+1 end
+  end;
+
+  procedure cvtadd(var a: cvtbn; dd: integer); { a := a+dd, dd small }
+  var j, t, carry: integer;
+  begin carry := dd; j := 0;
+    while (carry > 0) and (j < cvtnl) do
+      begin t := a.v[j]+carry; a.v[j] := t mod cbase; carry := t div cbase; j := j+1 end;
+    if j > a.nn then a.nn := j
+  end;
+
+  procedure cvtmul10(var a: cvtbn; p: integer); { a := a*10^p }
+  begin while p > 0 do begin cvtmuls(a, 10); p := p-1 end end;
+
+  procedure cvtshl(var a: cvtbn; bits2: integer); { a := a*2^bits2 }
+  var word, bit, j, t, carry, mul: integer;
+  begin
+    word := bits2 div 32; bit := bits2 mod 32;
+    if word > 0 then begin
+      for j := a.nn-1 downto 0 do a.v[j+word] := a.v[j];
+      for j := 0 to word-1 do a.v[j] := 0;
+      a.nn := a.nn+word
+    end;
+    if bit > 0 then begin
+      mul := p2(bit); carry := 0;
+      for j := word to a.nn-1 do
+        begin t := a.v[j]*mul+carry; a.v[j] := t mod cbase; carry := t div cbase end;
+      if (carry > 0) and (a.nn < cvtnl) then begin a.v[a.nn] := carry; a.nn := a.nn+1 end
+    end;
+    cvtnorm(a)
+  end;
+
+  procedure cvtsub(var a, b: cvtbn); { a := a-b, requires a >= b }
+  var j, t, borrow: integer;
+  begin borrow := 0;
+    for j := 0 to a.nn-1 do begin
+      t := a.v[j]-borrow; if j < b.nn then t := t-b.v[j];
+      if t < 0 then begin t := t+cbase; borrow := 1 end else borrow := 0;
+      a.v[j] := t
+    end;
+    cvtnorm(a)
+  end;
+
+  { value = vd*10^ex -> nearest double bit pattern (magnitude) }
+  function cvtbits(var vd: cvtbn; ex, stk0, nd: integer): integer;
+  var num, den, tt, r2: cvtbn;
+      e2, j, biased, dx, remnz, c, shift, qq, mm, rbit, stky, res: integer;
+      done: boolean;
+  begin
+    res := 0;
+    if not cvtzero(vd) then begin
+      dx := ex+nd-1;
+      if dx > 309 then res := infbits          { overflow -> +inf }
+      else if dx < -330 then res := 0          { underflow -> +0 }
+      else begin
+        num := vd; cvtset(den, 1);
+        if ex >= 0 then cvtmul10(num, ex) else cvtmul10(den, -ex);
+        { normalize so num/den lies in [2^52, 2^53) }
+        e2 := 0; done := false;
+        repeat tt := den; cvtshl(tt, 53);
+          if cvtcmp(num, tt) >= 0 then begin cvtshl(den, 1); e2 := e2+1 end
+          else done := true
+        until done;
+        done := false;
+        repeat tt := den; cvtshl(tt, 52);
+          if cvtcmp(num, tt) < 0 then begin cvtshl(num, 1); e2 := e2-1 end
+          else done := true
+        until done;
+        { extract the 53-bit significand by long division }
+        qq := 0;
+        for j := 52 downto 0 do begin
+          tt := den; cvtshl(tt, j); qq := qq*2;
+          if cvtcmp(num, tt) >= 0 then begin cvtsub(num, tt); qq := qq+1 end
+        end;
+        remnz := 0; if not cvtzero(num) then remnz := 1;
+        biased := e2+1075;
+        if biased >= 1 then begin { normal: round at the unit, ties to even }
+          r2 := num; cvtmuls(r2, 2); c := cvtcmp(r2, den);
+          if (c > 0) or ((c = 0) and ((stk0 <> 0) or odd(qq))) then qq := qq+1;
+          if qq = p53 then begin qq := qq div 2; biased := biased+1 end;
+          if biased >= 2047 then res := infbits
+          else res := biased*p52+(qq mod p52)
+        end else begin { subnormal: round at a coarser position }
+          shift := 1-biased;
+          if shift > 53 then res := 0
+          else begin
+            rbit := (qq div p2(shift-1)) mod 2;
+            stky := 0;
+            if (stk0 <> 0) or ((qq mod p2(shift-1)) <> 0) or (remnz <> 0) then stky := 1;
+            mm := qq div p2(shift);
+            if (rbit <> 0) and ((stky <> 0) or odd(mm)) then mm := mm+1;
+            res := mm mod p53 { overflow to 2^52 becomes the smallest normal }
+          end
+        end
+      end
+    end;
+    cvtbits := res
+  end;
+
 begin
-   p := 1.0e+1; { set 1st power }
-   t := 1.0; { initalize result }
-   repeat
-      if odd(e) then t := t*p; { if bit set, add this power }
-      e := e div 2; { index next bit }
-      p := sqr(p) { find next power }
-   until e = 0;
-   pwrten := t
-end;
-begin
-  e := 0; { clear exponent }
-  s := false; { set sign }
-  r := 0.0; { clear result }
+  e := 0; s := false; seen := false; sticky := 0; ndig := 0;
+  cvtset(dig, 0);
   { skip leading spaces }
   while (ch = ' ') and not eolinp do getnxt;
   { get any sign from number }
   if ch = '-' then begin getnxt; s := true end
   else if ch = '+' then getnxt;
   if not (ch in ['0'..'9']) then error('Invalid real number');
-  while (ch in ['0'..'9']) do begin { parse digit }
+  while (ch in ['0'..'9']) do begin { parse integer digit }
      d := ord(ch)-ord('0');
-     r := r*10+d; { add in new digit }
+     if seen or (d <> 0) then begin seen := true; { skip leading zeros }
+       if ndig < cvtcap then begin cvtmuls(dig, 10); cvtadd(dig, d); ndig := ndig+1 end
+       else begin e := e+1; if d <> 0 then sticky := 1 end
+     end;
      getnxt
   end;
   if ch in ['.', 'e', 'E'] then begin { it's a real }
      if ch = '.' then begin { decimal point }
         getnxt; { skip '.' }
         if not (ch in ['0'..'9']) then error('Invalid real number');
-        while (ch in ['0'..'9']) do begin { parse digit }
+        while (ch in ['0'..'9']) do begin { parse fractional digit }
            d := ord(ch)-ord('0');
-           r := r*10+d; { add in new digit }
-           getnxt;
-           e := e-1 { count off right of decimal }
-        end;
+           if (not seen) and (d = 0) then e := e-1 { leading fractional zero }
+           else begin seen := true;
+             if ndig < cvtcap then
+               begin cvtmuls(dig, 10); cvtadd(dig, d); ndig := ndig+1; e := e-1 end
+             else begin if d <> 0 then sticky := 1 end
+           end;
+           getnxt
+        end
      end;
      if ch in ['e', 'E'] then begin { exponent }
         getnxt; { skip 'e' }
         if not (ch in ['0'..'9', '+', '-']) then
            error('Invalid real number');
         getint(i); { get exponent }
-        { find with exponent }
         e := e+i
-     end;
-     if e < 0 then r := r/pwrten(e) else r := r*pwrten(e)
+     end
   end;
-  if s then r := -r
+  if ndig = 0 then ndig := 1;
+  bitv := cvtbits(dig, e, sticky, ndig); { correctly rounded bit pattern }
+  ovl.iv := bitv; r := ovl.rv;           { reinterpret as real }
+  if s then r := -r                      { apply sign }
 end;
 
 procedure getlab;
@@ -2403,6 +2557,11 @@ procedure gencstlst(cp: cstptr); forward;
 procedure gencstety(cp: cstptr);
 var i: integer;
     ti: 1..maxtmp;
+    { overlay a real onto an integer to emit its exact IEEE bit pattern }
+    ro: record case boolean of
+          true:  (rv: real);
+          false: (iv: integer)
+        end;
 begin
   case cp^.ct of
     cstr: begin
@@ -2410,7 +2569,15 @@ begin
       writeq(prr, cp^.str^, cp^.strl);
       writeln(prr, '"') 
     end;
-    creal: writeln(prr, '        .double ', cp^.r);
+    { Emit the real as its exact 8 byte IEEE bit pattern via .quad rather than
+      as decimal text via .double. Decimal text at the default precision does
+      not round trip a double (17 significant figures are needed), which shifts
+      constants near the ends of the range by up to one ulp. .quad of the bits
+      and .double of the value occupy the same 8 bytes, so this is exact. }
+    creal: begin
+      ro.rv := cp^.r;
+      writeln(prr, '        .quad   ', ro.iv:1, ' # double ', cp^.r)
+    end;
     cset: begin
       write(prr, '        .byte   ');
       r.s := cp^.s;

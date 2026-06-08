@@ -12,9 +12,9 @@ Maxcrd: 9223372036854775807
 Maxlint: 9223372036854775807
 Maxlcrd: 9223372036854775807
 Maxchr: 255
-Maxreal: 1.797693134862313e+308
-Maxsreal: 1.797693134862313e+308
-Maxlreal: 1.797693134862313e+308
+Maxreal: 1.797693134862311e+308
+Maxsreal: 1.797693134862311e+308
+Maxlreal: 1.797693134862311e+308
 Bit length of cardinal appears to be: 63
 Bit length of long integer without sign appears to be: 63
 Bit length of long cardinal appears to be: 63
