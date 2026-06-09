@@ -994,7 +994,7 @@ begin
 
    { **************************** Mouse test ********************************* }
 
-   if mouse(input) > 0 then begin { mouse test }
+   if mouse(output) > 0 then begin { mouse test }
 
       x := 1; y := 1;
       page;
