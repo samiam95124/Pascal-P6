@@ -84,7 +84,7 @@ endif
 
 all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a \
-	$(LIBS)/terminal.a
+	$(LIBS)/terminal.a $(LIBS)/graphics.a
 
 ################################################################################
 #
@@ -205,6 +205,48 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 		$(BUILD)/libs/terminal_wrapper.o $(BUILD)/libs/terminal_support.o \
 		$(BUILD)/libs/terminal.o $(BUILD)/libs/term_services.o \
 		$(BUILD)/libs/system_event.o $(BUILD)/libs/config.o
+
+#
+# Graphics
+#
+# Graphics is a superset of terminal (text surface + graphical surface +
+# windowing + widgets). It is built from components into an archive graphics.a,
+# the same way as terminal.a but with graphics.c and its font dependencies.
+# graphics.c renders through X11/FreeType/FontConfig, so it is compiled with
+# those include paths and programs that use graphics.a must link
+# -lX11 -lfreetype -lfontconfig (in addition to the usual -lm -lpthread).
+#
+GRAPHCFG=$(shell pkg-config --cflags freetype2 fontconfig)
+GRAPHCPP=$(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source \
+	$(GRAPHCFG)
+$(LIBS)/graphics.a: $(AMI)/graphics.c \
+	$(LIBS)/source/graphics_wrapper.asm \
+	$(LIBS)/source/graphics_wrapper.c \
+	$(LIBS)/source/graphics_support.c \
+	$(LIBS)/source/graphics_wrapper.h
+	@echo
+	@echo "Building graphics..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(GRAPHCPP) \
+		-o $(BUILD)/libs/graphics_support.o -c $(LIBS)/source/graphics_support.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/graphics_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/graphics_wrapper.asm
+	$(CC) $(CFLAGS) $(GRAPHCPP) \
+		-o $(BUILD)/libs/graphics_wrapper.o -c $(LIBS)/source/graphics_wrapper.c
+	$(CC) $(CFLAGS) $(GRAPHCPP) \
+		-o $(BUILD)/libs/graphics.o -c $(AMI)/graphics.c
+	$(CC) $(CFLAGS) $(GRAPHCPP) \
+		-o $(BUILD)/libs/graph_services.o -c $(AMI)/services.c
+	$(CC) $(CFLAGS) $(GRAPHCPP) \
+		-o $(BUILD)/libs/graph_system_event.o -c $(AMI)/system_event.c
+	$(CC) $(CFLAGS) $(GRAPHCPP) \
+		-o $(BUILD)/libs/graph_config.o -c $(PASCALP6)/petit_ami/utils/config.c
+	rm -f $(LIBS)/graphics.a
+	ar rc $(LIBS)/graphics.a $(BUILD)/libs/graphics_wrapper_asm.o \
+		$(BUILD)/libs/graphics_wrapper.o $(BUILD)/libs/graphics_support.o \
+		$(BUILD)/libs/graphics.o $(BUILD)/libs/graph_services.o \
+		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o
 
 ################################################################################
 #

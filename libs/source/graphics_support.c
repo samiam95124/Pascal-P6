@@ -1,0 +1,430 @@
+/*******************************************************************************
+*                                                                              *
+*                     Graphics Library Support for Pascaline                   *
+*                                                                              *
+*                              Created 2024                                    *
+*                                                                              *
+*                               S. A. FRANCO                                   *
+*                                                                              *
+* Conversion helpers and hand-written wrappers for the Pascaline graphics       *
+* binding: event record translation, the procedure-parameter callback layer,    *
+* and the wrappers whose arguments need marshalling (menus, string lists,        *
+* event records). The straight parameter wrappers live in graphics_wrapper.c.    *
+*                                                                              *
+* Graphics is a superset of terminal; the event record is the terminal record    *
+* extended with the graphical-coordinate and widget events.                      *
+*                                                                              *
+*******************************************************************************/
+
+#include <string.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <sys/mman.h>
+#include <graphics.h>
+#include <graphics_wrapper.h>
+
+/********************************************************************************
+
+Null-terminate a counted Pascaline string
+
+The Pascaline string wrappers pass (char*, length); the C graphics functions
+that take a plain char* need a null-terminated copy. A small pool of rotating
+thread-local buffers lets several string arguments coexist in one call.
+
+********************************************************************************/
+
+#define CSTRZBUF 8   /* number of rotating conversion buffers */
+#define CSTRZLEN 500 /* maximum converted string length */
+
+char* cstrz(char* s, int l)
+{
+    static __thread char buff[CSTRZBUF][CSTRZLEN];
+    static __thread int  nxt = 0;
+    char* b = buff[nxt];
+    nxt = (nxt+1)%CSTRZBUF;
+    if (l > CSTRZLEN-1) l = CSTRZLEN-1;
+    memcpy(b, s, l);
+    b[l] = 0;
+    return (b);
+}
+
+/********************************************************************************
+
+Convert C event record to Pascaline event record
+
+The Pascaline 'evtrec' variant record (graphics.pas) lays the fixed fields out
+forward (winid@0, handled@8, etype@9) and the variant fields from offset 12 in
+REVERSE declaration order, each 8 bytes (echar is a single byte). The named
+event codes are in the same order in the C and Pascaline enumerations, so the
+tag byte copies directly.
+
+********************************************************************************/
+
+#define PD 12 /* base of variant data */
+
+void cevt2pascaline(ami_evtrec* ce, char* pe)
+{
+    PEVTL(pe, PA_EVT_WINID)   = ce->winid;
+    PEVTC(pe, PA_EVT_HANDLED) = ce->handled;
+    PEVTC(pe, PA_EVT_ETYPE)   = ce->etype;
+    switch (ce->etype) {
+
+        case ami_etchar:   PEVTC(pe, PD)    = ce->echar;  break;
+        case ami_ettim:    PEVTL(pe, PD)    = ce->timnum; break;
+        case ami_etmoumov: PEVTL(pe, PD)    = ce->moupy;
+                           PEVTL(pe, PD+8)  = ce->moupx;
+                           PEVTL(pe, PD+16) = ce->mmoun;  break;
+        case ami_etmouba:  PEVTL(pe, PD)    = ce->amoubn;
+                           PEVTL(pe, PD+8)  = ce->amoun;  break;
+        case ami_etmoubd:  PEVTL(pe, PD)    = ce->dmoubn;
+                           PEVTL(pe, PD+8)  = ce->dmoun;  break;
+        case ami_etjoyba:  PEVTL(pe, PD)    = ce->ajoybn;
+                           PEVTL(pe, PD+8)  = ce->ajoyn;  break;
+        case ami_etjoybd:  PEVTL(pe, PD)    = ce->djoybn;
+                           PEVTL(pe, PD+8)  = ce->djoyn;  break;
+        case ami_etjoymov: PEVTL(pe, PD)    = ce->joyp6;
+                           PEVTL(pe, PD+8)  = ce->joyp5;
+                           PEVTL(pe, PD+16) = ce->joyp4;
+                           PEVTL(pe, PD+24) = ce->joypz;
+                           PEVTL(pe, PD+32) = ce->joypy;
+                           PEVTL(pe, PD+40) = ce->joypx;
+                           PEVTL(pe, PD+48) = ce->mjoyn; break;
+        case ami_etfun:    PEVTL(pe, PD)    = ce->fkey;   break;
+        case ami_etresize: PEVTL(pe, PD)    = ce->rszyg;  /* rszx,rszy,rszxg,rszyg */
+                           PEVTL(pe, PD+8)  = ce->rszxg;
+                           PEVTL(pe, PD+16) = ce->rszy;
+                           PEVTL(pe, PD+24) = ce->rszx;   break;
+        case ami_etmoumovg:PEVTL(pe, PD)    = ce->moupyg; /* mmoung,moupxg,moupyg */
+                           PEVTL(pe, PD+8)  = ce->moupxg;
+                           PEVTL(pe, PD+16) = ce->mmoung; break;
+        case ami_etredraw: PEVTL(pe, PD)    = ce->rey;    /* rsx,rsy,rex,rey */
+                           PEVTL(pe, PD+8)  = ce->rex;
+                           PEVTL(pe, PD+16) = ce->rsy;
+                           PEVTL(pe, PD+24) = ce->rsx;    break;
+        case ami_etmenus:  PEVTL(pe, PD)    = ce->menuid; break;
+        case ami_etbutton: PEVTL(pe, PD)    = ce->butid;  break;
+        case ami_etchkbox: PEVTL(pe, PD)    = ce->ckbxid; break;
+        case ami_etradbut: PEVTL(pe, PD)    = ce->radbid; break;
+        case ami_etsclull: PEVTL(pe, PD)    = ce->sclulid; break;
+        case ami_etscldrl: PEVTL(pe, PD)    = ce->scldrid; break;
+        case ami_etsclulp: PEVTL(pe, PD)    = ce->sclupid; break;
+        case ami_etscldrp: PEVTL(pe, PD)    = ce->scldpid; break;
+        case ami_etsclpos: PEVTL(pe, PD)    = ce->sclpos; /* sclpid,sclpos */
+                           PEVTL(pe, PD+8)  = ce->sclpid; break;
+        case ami_etedtbox: PEVTL(pe, PD)    = ce->edtbid; break;
+        case ami_etnumbox: PEVTL(pe, PD)    = ce->numbsl; /* numbid,numbsl */
+                           PEVTL(pe, PD+8)  = ce->numbid; break;
+        case ami_etlstbox: PEVTL(pe, PD)    = ce->lstbsl; /* lstbid,lstbsl */
+                           PEVTL(pe, PD+8)  = ce->lstbid; break;
+        case ami_etdrpbox: PEVTL(pe, PD)    = ce->drpbsl; /* drpbid,drpbsl */
+                           PEVTL(pe, PD+8)  = ce->drpbid; break;
+        case ami_etdrebox: PEVTL(pe, PD)    = ce->drebid; break;
+        case ami_etsldpos: PEVTL(pe, PD)    = ce->sldpos; /* sldpid,sldpos */
+                           PEVTL(pe, PD+8)  = ce->sldpid; break;
+        case ami_ettabbar: PEVTL(pe, PD)    = ce->tabsel; /* tabid,tabsel */
+                           PEVTL(pe, PD+8)  = ce->tabid;  break;
+        default: break; /* events without parameter data */
+
+    }
+}
+
+/* Convert a Pascaline event record back to C form (for sendevent). Only the
+   commonly sent events carry data; others send just the tag. */
+static void pascaline2cevt(char* pe, ami_evtrec* ce)
+{
+    memset(ce, 0, sizeof(*ce));
+    ce->winid   = PEVTL(pe, PA_EVT_WINID);
+    ce->handled = PEVTC(pe, PA_EVT_HANDLED);
+    ce->etype   = (ami_evtcod)(unsigned char)PEVTC(pe, PA_EVT_ETYPE);
+    switch (ce->etype) {
+        case ami_etchar:   ce->echar  = PEVTC(pe, PD); break;
+        case ami_ettim:    ce->timnum = PEVTL(pe, PD); break;
+        case ami_etmoumov: ce->moupy=PEVTL(pe,PD); ce->moupx=PEVTL(pe,PD+8);
+                           ce->mmoun=PEVTL(pe,PD+16); break;
+        case ami_etfun:    ce->fkey = PEVTL(pe, PD); break;
+        case ami_etmenus:  ce->menuid = PEVTL(pe, PD); break;
+        default: break;
+    }
+}
+
+/********************************************************************************
+Event wrappers
+********************************************************************************/
+
+void wrapper_eventf(pfile pfp, char* per)
+{
+    FILE* f = psystem_libcrdfil(pfp);
+    ami_evtrec ce;
+    ami_event(f, &ce);
+    cevt2pascaline(&ce, per);
+}
+
+void wrapper_event(char* per)
+{
+    ami_evtrec ce;
+    ami_event(stdin, &ce);
+    cevt2pascaline(&ce, per);
+}
+
+void wrapper_sendeventf(pfile pfp, char* per)
+{
+    FILE* f = psystem_libcwrfil(pfp);
+    ami_evtrec ce;
+    pascaline2cevt(per, &ce);
+    ami_sendevent(f, &ce);
+}
+
+void wrapper_sendevent(char* per)
+{
+    ami_evtrec ce;
+    pascaline2cevt(per, &ce);
+    ami_sendevent(stdout, &ce);
+}
+
+/********************************************************************************
+
+Call a Pascaline procedure from C, and the callback thunk pool. Reused verbatim
+from the terminal binding: a Pascaline procedure value is (code, display); pacall
+sets %rbp to the display and enters the procedure with the argument in %rdi. For
+each installed event handler a small machine-code thunk captures (code, display)
+and presents the single C function pointer Petit-Ami expects.
+
+********************************************************************************/
+
+__asm__ (
+"    .text\n"
+"    .globl pacall\n"
+"pacall:\n"                 /* void pacall(code=%rdi, display=%rsi, arg=%rdx) */
+"    push %rbp\n"
+"    mov  %rdi, %rax\n"
+"    mov  %rsi, %rbp\n"
+"    mov  %rdx, %rdi\n"
+"    call *%rax\n"
+"    pop  %rbp\n"
+"    ret\n"
+);
+extern void pacall(void* code, void* display, void* arg);
+
+void evtdispatch(void* code, void* display, ami_evtrec* cer)
+{
+    char per[80];
+    cevt2pascaline(cer, per);
+    pacall(code, display, per);
+    cer->handled = PEVTC(per, PA_EVT_HANDLED);
+}
+
+#define THUNKSZ 48
+#define NTHUNK  64
+static unsigned char* thunkpool = 0;
+static int            thunknext = 0;
+
+static unsigned char* thunkalloc(void)
+{
+    if (!thunkpool)
+        thunkpool = mmap(0, THUNKSZ*NTHUNK, PROT_READ|PROT_WRITE|PROT_EXEC,
+                         MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+    return thunkpool+(thunknext++ % NTHUNK)*THUNKSZ;
+}
+
+static unsigned char* emitimm(unsigned char* p, unsigned char op, void* val)
+{
+    *p++ = 0x48; *p++ = op;
+    memcpy(p, &val, 8);
+    return p+8;
+}
+
+/* void thunk(ami_evtrec* cer) -> evtdispatch(code,display,cer) */
+static void* mkevtthunk(void* code, void* display)
+{
+    unsigned char* t = thunkalloc();
+    unsigned char* p = t;
+    *p++ = 0x48; *p++ = 0x89; *p++ = 0xfa;   /* mov %rdi,%rdx (cer -> arg3) */
+    p = emitimm(p, 0xbe, display);           /* movabs display,%rsi */
+    p = emitimm(p, 0xbf, code);              /* movabs code,%rdi    */
+    p = emitimm(p, 0xb8, (void*)evtdispatch);/* movabs evtdispatch,%rax */
+    *p++ = 0xff; *p++ = 0xe0;                /* jmp *%rax */
+    return t;
+}
+
+void wrapper_eventover(int e, void* eh_code, void* eh_display, void* oeh)
+{
+    ami_pevthan old;
+    ami_eventover(e, (ami_pevthan)mkevtthunk(eh_code, eh_display), &old);
+    *(void**)oeh = (void*)old;
+}
+
+void wrapper_eventsover(void* eh_code, void* eh_display, void* oeh)
+{
+    ami_pevthan old;
+    ami_eventsover((ami_pevthan)mkevtthunk(eh_code, eh_display), &old);
+    *(void**)oeh = (void*)old;
+}
+
+/********************************************************************************
+
+Menu and string-list marshalling
+
+The Pascaline menurec/strrec records use pstring text and 8-byte boolean flags;
+the C ami_menurec/ami_strrec use char* and int. Convert the Pascaline linked
+list into a C linked list allocated for the call.
+
+********************************************************************************/
+
+/* Pascaline menurec layout (graphics.pas), 8-byte fields */
+#define PM_NEXT   0
+#define PM_BRANCH 8
+#define PM_ONOFF  16
+#define PM_ONEOF  24
+#define PM_BAR    32
+#define PM_ID     40
+#define PM_FACE   48
+#define PMP(p,off) (*(void**)((char*)(p)+(off)))
+#define PMI(p,off) (*(long*) ((char*)(p)+(off)))
+
+static char* pstr2cstr(pstring ps)
+{
+    char* s;
+    if (!ps) return 0;
+    s = malloc(ps->len+1);
+    memcpy(s, &ps->data, ps->len);
+    s[ps->len] = 0;
+    return s;
+}
+
+static ami_menuptr cvtmenu(void* pm)
+{
+    ami_menuptr m;
+    if (!pm) return 0;
+    m = malloc(sizeof(ami_menurec));
+    m->next   = cvtmenu(PMP(pm, PM_NEXT));
+    m->branch = cvtmenu(PMP(pm, PM_BRANCH));
+    m->onoff  = PMI(pm, PM_ONOFF) != 0;
+    m->oneof  = PMI(pm, PM_ONEOF) != 0;
+    m->bar    = PMI(pm, PM_BAR)   != 0;
+    m->id     = PMI(pm, PM_ID);
+    m->face   = pstr2cstr((pstring)PMP(pm, PM_FACE));
+    return m;
+}
+
+void wrapper_menuf(pfile pfp, void* m)
+{
+    FILE* f = psystem_libcwrfil(pfp);
+    ami_menu(f, cvtmenu(m)); /* note: allocates a C copy for the call */
+}
+void wrapper_menu(void* m) { ami_menu(stdout, cvtmenu(m)); }
+
+/* Pascaline strrec layout: next@0, str(pstring)@8 */
+static ami_strptr cvtstrlst(void* ps)
+{
+    ami_strptr s;
+    if (!ps) return 0;
+    s = malloc(sizeof(ami_strrec));
+    s->next = cvtstrlst(PMP(ps, 0));
+    s->str  = pstr2cstr((pstring)PMP(ps, 8));
+    return s;
+}
+
+void wrapper_stdmenu(int sms, void* sm, void* pm)
+{
+    /* stdmenu(sms; var sm: menuptr; pm: menuptr) builds a standard menu; the
+       returned C list is not converted back to Pascaline form yet. */
+    ami_menuptr csm;
+    (void)sm;
+    ami_stdmenu(sms, &csm, cvtmenu(pm));
+}
+
+/* string-list widgets: listbox/dropbox/dropeditbox and their *g/siz variants */
+#define LSTBOX(NM) \
+void wrapper_##NM##f(pfile pfp, int x1,int y1,int x2,int y2, void* sp, int id) \
+{ FILE* f = psystem_libcwrfil(pfp); ami_##NM(f,x1,y1,x2,y2,cvtstrlst(sp),id); } \
+void wrapper_##NM(int x1,int y1,int x2,int y2, void* sp, int id) \
+{ ami_##NM(stdout,x1,y1,x2,y2,cvtstrlst(sp),id); }
+LSTBOX(listbox)
+LSTBOX(listboxg)
+LSTBOX(dropbox)
+LSTBOX(dropboxg)
+LSTBOX(dropeditbox)
+LSTBOX(dropeditboxg)
+
+/* size queries: strptr + 2 out ints (listbox) */
+#define LSTSIZ2(NM) \
+void wrapper_##NM##f(pfile pfp, void* sp, long* w, long* h) \
+{ FILE* f=psystem_libcwrfil(pfp); int tw,th; ami_##NM(f,cvtstrlst(sp),&tw,&th); \
+  *w=tw; *h=th; } \
+void wrapper_##NM(void* sp, long* w, long* h) \
+{ int tw,th; ami_##NM(stdout,cvtstrlst(sp),&tw,&th); *w=tw; *h=th; }
+LSTSIZ2(listboxsiz)
+LSTSIZ2(listboxsizg)
+
+/* size queries: strptr + 4 out ints (drop box closed/open width/height) */
+#define LSTSIZ4(NM) \
+void wrapper_##NM##f(pfile pfp, void* sp, long* cw, long* ch, long* ow, long* oh) \
+{ FILE* f=psystem_libcwrfil(pfp); int a,b,c,d; ami_##NM(f,cvtstrlst(sp),&a,&b,&c,&d); \
+  *cw=a; *ch=b; *ow=c; *oh=d; } \
+void wrapper_##NM(void* sp, long* cw, long* ch, long* ow, long* oh) \
+{ int a,b,c,d; ami_##NM(stdout,cvtstrlst(sp),&a,&b,&c,&d); *cw=a;*ch=b;*ow=c;*oh=d; }
+LSTSIZ4(dropboxsiz)
+LSTSIZ4(dropboxsizg)
+LSTSIZ4(dropeditboxsiz)
+LSTSIZ4(dropeditboxsizg)
+
+/* tab bar: coords + strptr + orientation + id */
+#define TABBAR(NM) \
+void wrapper_##NM##f(pfile pfp, int x1,int y1,int x2,int y2, void* sp, int tor, int id) \
+{ FILE* f=psystem_libcwrfil(pfp); ami_##NM(f,x1,y1,x2,y2,cvtstrlst(sp),tor,id); } \
+void wrapper_##NM(int x1,int y1,int x2,int y2, void* sp, int tor, int id) \
+{ ami_##NM(stdout,x1,y1,x2,y2,cvtstrlst(sp),tor,id); }
+TABBAR(tabbar)
+TABBAR(tabbarg)
+
+/********************************************************************************
+
+openwin and the query dialogs
+
+openwin returns C FILE* handles through FILE** out parameters; bridging those to
+Pascaline file control blocks is not yet implemented. The query dialogs require
+the widget package. These are placeholders that compile and link.
+
+********************************************************************************/
+
+/* TODO: openwin FILE** -> Pascaline file bridge */
+void wrapper_openwin(pfile infile, pfile outfile, pfile parent, int wid)
+{
+    (void)infile; (void)outfile; (void)parent; (void)wid;
+    /* not yet implemented */
+}
+
+/* query dialogs: out strings and an option set (int). Require the widget
+   package to actually run; the option set is copied as an int bitmask. */
+void wrapper_queryfind(string s, int sl, long* opt)
+{
+    int topt = (int)*opt;
+    ami_queryfind(s, sl, &topt);
+    *opt = topt;
+}
+
+void wrapper_queryfindrep(string s, int sl, string r, int rl, long* opt)
+{
+    int topt = (int)*opt;
+    ami_queryfindrep(s, sl, r, rl, &topt);
+    *opt = topt;
+}
+
+void wrapper_queryfontf(pfile pfp, long* fc, long* s, long* fr, long* fg,
+                        long* fb, long* br, long* bg, long* bb, long* effect)
+{
+    FILE* f = psystem_libcwrfil(pfp);
+    int afc,as,afr,afg,afb,abr,abg,abb,aeff;
+    afc=*fc; as=*s; afr=*fr; afg=*fg; afb=*fb; abr=*br; abg=*bg; abb=*bb; aeff=*effect;
+    ami_queryfont(f, &afc,&as,&afr,&afg,&afb,&abr,&abg,&abb,&aeff);
+    *fc=afc; *s=as; *fr=afr; *fg=afg; *fb=afb; *br=abr; *bg=abg; *bb=abb; *effect=aeff;
+}
+
+void wrapper_queryfont(long* fc, long* s, long* fr, long* fg, long* fb,
+                       long* br, long* bg, long* bb, long* effect)
+{
+    int afc,as,afr,afg,afb,abr,abg,abb,aeff;
+    afc=*fc; as=*s; afr=*fr; afg=*fg; afb=*fb; abr=*br; abg=*bg; abb=*bb; aeff=*effect;
+    ami_queryfont(stdout, &afc,&as,&afr,&afg,&afb,&abr,&abg,&abb,&aeff);
+    *fc=afc; *s=as; *fr=afr; *fg=afg; *fb=afb; *br=abr; *bg=abg; *bb=abb; *effect=aeff;
+}
