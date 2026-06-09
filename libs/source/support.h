@@ -1,6 +1,6 @@
 /*******************************************************************************
 *                                                                              *
-*                  Common Pascaline/C Support for Petit-Ami Bindings            *
+*                  Common Pascaline/C Support for Ami Bindings                 *
 *                                                                              *
 *                               S. A. FRANCO                                   *
 *                                                                              *
@@ -75,7 +75,7 @@ void pacall(void* code, void* display, void* arg);
 /*
  * Build an executable thunk presenting a single C function pointer that, when
  * called with one argument, tail-calls dispatch(code, display, arg). Used to
- * hand a Pascaline procedure to Petit-Ami as a plain callback. dispatch is the
+ * hand a Pascaline procedure to Ami as a plain callback. dispatch is the
  * binding's own event dispatcher (which knows that binding's event record).
  */
 void* mkevtthunk(void* code, void* display, void* dispatch);

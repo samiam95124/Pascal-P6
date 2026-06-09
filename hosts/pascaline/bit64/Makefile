@@ -45,9 +45,9 @@ CFLAGS=-static -g3 -DWRDSIZ64
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
 LIBS=$(PASCALP6)/libs
-AMI=$(PASCALP6)/petit_ami/linux
-AMIINC=$(PASCALP6)/petit_ami/include
-AMILIBC=$(PASCALP6)/petit_ami/libc
+AMI=$(PASCALP6)/amitk/linux
+AMIINC=$(PASCALP6)/amitk/include
+AMILIBC=$(PASCALP6)/amitk/libc
 CPPFLAGS=-P -nostdinc -traditional-cpp
 CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
@@ -59,10 +59,10 @@ EXTERNAL=libs
 # I/O bypass mode.
 #
 # When STDIO_BYPASS is true (the normal mode), psystem is built to route its
-# stdio through the Petit-Ami stdio implementation (petit_ami/libc/stdio.c,
+# stdio through the Ami stdio implementation (amitk/libc/stdio.c,
 # compiled with -DSTDIO_BYPASS). Because psystem is the single I/O point for all
-# Pascaline programs, this makes every write/read pass through the Petit-Ami I/O
-# override layer (ovr_*/vt_*), so the terminal, graphics and other Petit-Ami
+# Pascaline programs, this makes every write/read pass through the Ami I/O
+# override layer (ovr_*/vt_*), so the terminal, graphics and other Ami
 # models can hook the program's console I/O. With no model installed the
 # override defaults to the real system I/O, so non-model programs are unaffected.
 #
@@ -72,7 +72,7 @@ EXTERNAL=libs
 STDIO_BYPASS=true
 
 ifeq ($(STDIO_BYPASS),true)
-# Petit-Ami's stdio.h does not export the fseek origin constants (its own stdio.c
+# Ami's stdio.h does not export the fseek origin constants (its own stdio.c
 # gets them from a system header); supply the standard values for psystem.
 PSYSTEM_BYPASS=-DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) \
 	-DSEEK_SET=0 -DSEEK_CUR=1 -DSEEK_END=2
@@ -141,7 +141,7 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 # Common Pascaline/C support, shared by services, terminal and graphics. Holds
 # the Pascaline<->C string conversions and the Pascaline call/event-thunk
 # machinery that do not depend on any one binding's module header. Built once
-# and bundled into each binding archive. It uses no FILE/petit-ami internals, so
+# and bundled into each binding archive. It uses no FILE/Ami internals, so
 # a single object serves all three (bypass and non-bypass) archives.
 #
 $(BUILD)/libs/support.o: $(LIBS)/source/support.c \
@@ -152,7 +152,7 @@ $(BUILD)/libs/support.o: $(LIBS)/source/support.c \
 
 #
 # Services is built from components since it is an external C library in
-# Petit-Ami. The result is an archive services.a.
+# Ami. The result is an archive services.a.
 #
 $(LIBS)/services.a: $(AMI)/services.c \
 	$(LIBS)/source/services_wrapper.asm \
@@ -182,12 +182,12 @@ $(LIBS)/services.a: $(AMI)/services.c \
 # Terminal
 #
 # Terminal is built from components since it is an external C library in
-# Petit-Ami. The result is an archive terminal.a.
+# Ami. The result is an archive terminal.a.
 #
-# The Petit-Ami terminal model intercepts console I/O via the libc override
-# vectors (ovr_*) supplied by Petit-Ami's own stdio (libc/stdio.c). All the
-# Petit-Ami sources and the wrappers are therefore built with -DSTDIO_BYPASS
-# and the Petit-Ami libc include path, so stdio calls route through that
+# The Ami terminal model intercepts console I/O via the libc override
+# vectors (ovr_*) supplied by Ami's own stdio (libc/stdio.c). All the
+# Ami sources and the wrappers are therefore built with -DSTDIO_BYPASS
+# and the Ami libc include path, so stdio calls route through that
 # implementation rather than the system libc, and no patched glibc is needed.
 # The bundled base modules (services, config, system_event, option, stdio) are
 # the console-model dependencies pulled in by terminal.c.
@@ -216,7 +216,7 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 	$(CC) $(CFLAGS) $(TERMCPP) \
 		-o $(BUILD)/libs/system_event.o -c $(AMI)/system_event.c
 	$(CC) $(CFLAGS) $(TERMCPP) \
-		-o $(BUILD)/libs/config.o -c $(PASCALP6)/petit_ami/utils/config.c
+		-o $(BUILD)/libs/config.o -c $(PASCALP6)/amitk/utils/config.c
 	rm -f $(LIBS)/terminal.a
 	ar rc $(LIBS)/terminal.a $(BUILD)/libs/terminal_wrapper_asm.o \
 		$(BUILD)/libs/terminal_wrapper.o $(BUILD)/libs/terminal_support.o \
@@ -260,7 +260,7 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(BUILD)/libs/graph_system_event.o -c $(AMI)/system_event.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
-		-o $(BUILD)/libs/graph_config.o -c $(PASCALP6)/petit_ami/utils/config.c
+		-o $(BUILD)/libs/graph_config.o -c $(PASCALP6)/amitk/utils/config.c
 	rm -f $(LIBS)/graphics.a
 	ar rc $(LIBS)/graphics.a $(BUILD)/libs/graphics_wrapper_asm.o \
 		$(BUILD)/libs/graphics_wrapper.o $(BUILD)/libs/graphics_support.o \

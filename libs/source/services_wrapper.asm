@@ -515,7 +515,7 @@ services.languages$p_vc_i:
 
 #
 # Scalar functions. These require no marshalling, so they are routed directly
-# to the petit-ami entry point.
+# to the Ami entry point.
 #
 
 # function time: integer; external;

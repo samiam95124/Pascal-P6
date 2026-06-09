@@ -21,7 +21,7 @@
 
 Convert C event record to Pascaline event record
 
-The Petit-Ami event record (ami_evtrec) uses C int (4 byte) fields and an
+The Ami event record (ami_evtrec) uses C int (4 byte) fields and an
 anonymous union. The Pascaline 'evtrec' variant record uses 8 byte integers and
 a different field layout, determined from the generated DWARF:
 
@@ -124,11 +124,11 @@ void wrapper_event(
 
 Callback thunks
 
-Petit-Ami stores a callback as a single C function pointer and calls it later
+Ami stores a callback as a single C function pointer and calls it later
 (deferred). A Pascaline procedure is two words (code, display), so it cannot be
 handed over directly. For each installed callback we build a small machine code
 thunk that captures (code, display) and the dispatcher address, and presents the
-plain C function pointer Petit-Ami expects. When Petit-Ami calls the thunk, the
+plain C function pointer Ami expects. When Ami calls the thunk, the
 thunk tail-calls the dispatcher, which converts arguments and uses pacall() to
 enter the Pascaline procedure with the captured display.
 

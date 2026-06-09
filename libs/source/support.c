@@ -1,6 +1,6 @@
 /*******************************************************************************
 *                                                                              *
-*                  Common Pascaline/C Support for Petit-Ami Bindings            *
+*                  Common Pascaline/C Support for Ami Bindings                 *
 *                                                                              *
 *                               S. A. FRANCO                                   *
 *                                                                              *
@@ -82,7 +82,7 @@ void rempad(char* cs, int* l)
  * Counted Pascaline string -> zero-terminated C string.
  *
  * Pascaline passes a string as a (pointer, length) pair that is not terminated;
- * the Petit-Ami ami_* APIs take zero-terminated C strings. A rotating pool of
+ * the Ami ami_* APIs take zero-terminated C strings. A rotating pool of
  * per-thread buffers lets several string arguments of one call coexist.
  */
 #define CSTRZBUF 8    /* number of rotating conversion buffers */
@@ -133,11 +133,11 @@ __asm__ (
 
 Callback thunks
 
-Petit-Ami stores a callback as a single C function pointer and calls it later
+Ami stores a callback as a single C function pointer and calls it later
 (deferred). A Pascaline procedure is two words (code, display), so it cannot be
 handed over directly. For each installed callback we build a small machine code
 thunk that captures (code, display) and the dispatcher address, and presents the
-plain C function pointer Petit-Ami expects. When Petit-Ami calls the thunk, the
+plain C function pointer Ami expects. When Ami calls the thunk, the
 thunk tail-calls the dispatcher, which converts arguments and uses pacall() to
 enter the Pascaline procedure with the captured display.
 

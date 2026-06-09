@@ -6,14 +6,14 @@
 *                                                                             *
 *                               S. A. FRANCO                                  *
 *                                                                             *
-* Defines the Pascaline interface to the Petit-Ami terminal module. The       *
+* Defines the Pascaline interface to the Ami terminal module. The             *
 * terminal interface describes a 2 dimensional, fixed window on which         *
 * characters are drawn. Each character can have colors or attributes. The     *
 * size of the window can be determined, and timer, mouse, and joystick        *
 * services are supported.                                                     *
 *                                                                             *
 * This is the Pascaline binding. The actual implementation lives in the C     *
-* Petit-Ami terminal module (terminal.c), reached through terminal_wrapper.   *
+* Ami terminal module (terminal.c), reached through terminal_wrapper.         *
 *                                                                             *
 ******************************************************************************}
 

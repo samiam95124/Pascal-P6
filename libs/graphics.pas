@@ -6,14 +6,14 @@
 *                                                                             *
 *                               S. A. FRANCO                                  *
 *                                                                             *
-* Defines the Pascaline interface to the Petit-Ami graphics module. Graphics  *
+* Defines the Pascaline interface to the Ami graphics module. Graphics        *
 * is a superset of the terminal model: it provides the full character surface *
 * of terminal plus a graphical surface (lines, rectangles, ellipses, arcs,    *
 * fonts, pictures), windowing (frames, sizing, menus, openwin) and widgets    *
 * (buttons, checkboxes, edit boxes, list boxes, sliders, tab bars). A terminal *
 * program relinks against graphics unchanged.                                 *
 *                                                                             *
-* This is the Pascaline binding. The implementation lives in the C Petit-Ami  *
+* This is the Pascaline binding. The implementation lives in the C Ami        *
 * graphics module (graphics.c), reached through graphics_wrapper.             *
 *                                                                             *
 ******************************************************************************}

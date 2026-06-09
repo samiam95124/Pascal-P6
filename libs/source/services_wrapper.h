@@ -6,7 +6,7 @@
 *                                                                              *
 *                               S. A. FRANCO                                   *
 *                                                                              *
-* Contains code to convert C structures from Petit-Ami services library to     *
+* Contains code to convert C structures from Ami services library to           *
 * Pascaline form. The common Pascaline/C types and string conversions are in   *
 * support.h; this header adds the services-specific record formats.   *
 *                                                                              *
