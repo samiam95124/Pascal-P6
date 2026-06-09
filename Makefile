@@ -138,6 +138,19 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 #
 # Services
 #
+# Common Pascaline/C support, shared by services, terminal and graphics. Holds
+# the Pascaline<->C string conversions and the Pascaline call/event-thunk
+# machinery that do not depend on any one binding's module header. Built once
+# and bundled into each binding archive. It uses no FILE/petit-ami internals, so
+# a single object serves all three (bypass and non-bypass) archives.
+#
+$(BUILD)/libs/support.o: $(LIBS)/source/support.c \
+	$(LIBS)/source/support.h
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(LIBS)/source \
+		-o $(BUILD)/libs/support.o -c $(LIBS)/source/support.c
+
+#
 # Services is built from components since it is an external C library in
 # Petit-Ami. The result is an archive services.a.
 #
@@ -145,7 +158,9 @@ $(LIBS)/services.a: $(AMI)/services.c \
 	$(LIBS)/source/services_wrapper.asm \
 	$(LIBS)/source/services_wrapper.c \
 	$(LIBS)/source/services_support.c \
-	$(LIBS)/source/services_wrapper.h
+	$(LIBS)/source/services_wrapper.h \
+	$(LIBS)/source/support.h \
+	$(BUILD)/libs/support.o
 	@echo
 	@echo "Building services..."
 	@echo
@@ -158,9 +173,10 @@ $(LIBS)/services.a: $(AMI)/services.c \
 		-o $(BUILD)/libs/services_wrapper.o -c $(LIBS)/source/services_wrapper.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
 		-o $(BUILD)/libs/services.o -c $(AMI)/services.c
-	ar r $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
+	rm -f $(LIBS)/services.a
+	ar rc $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
 		$(BUILD)/libs/services_wrapper.o $(BUILD)/libs/services.o \
-		$(BUILD)/libs/services_support.o
+		$(BUILD)/libs/services_support.o $(BUILD)/libs/support.o
 
 #
 # Terminal
@@ -181,7 +197,8 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 	$(LIBS)/source/terminal_wrapper.asm \
 	$(LIBS)/source/terminal_wrapper.c \
 	$(LIBS)/source/terminal_support.c \
-	$(LIBS)/source/terminal_wrapper.h
+	$(LIBS)/source/support.h \
+	$(BUILD)/libs/support.o
 	@echo
 	@echo "Building terminal..."
 	@echo
@@ -204,7 +221,8 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 	ar rc $(LIBS)/terminal.a $(BUILD)/libs/terminal_wrapper_asm.o \
 		$(BUILD)/libs/terminal_wrapper.o $(BUILD)/libs/terminal_support.o \
 		$(BUILD)/libs/terminal.o $(BUILD)/libs/term_services.o \
-		$(BUILD)/libs/system_event.o $(BUILD)/libs/config.o
+		$(BUILD)/libs/system_event.o $(BUILD)/libs/config.o \
+		$(BUILD)/libs/support.o
 
 #
 # Graphics
@@ -223,7 +241,8 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 	$(LIBS)/source/graphics_wrapper.asm \
 	$(LIBS)/source/graphics_wrapper.c \
 	$(LIBS)/source/graphics_support.c \
-	$(LIBS)/source/graphics_wrapper.h
+	$(LIBS)/source/support.h \
+	$(BUILD)/libs/support.o
 	@echo
 	@echo "Building graphics..."
 	@echo
@@ -246,7 +265,8 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 	ar rc $(LIBS)/graphics.a $(BUILD)/libs/graphics_wrapper_asm.o \
 		$(BUILD)/libs/graphics_wrapper.o $(BUILD)/libs/graphics_support.o \
 		$(BUILD)/libs/graphics.o $(BUILD)/libs/graph_services.o \
-		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o
+		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o \
+		$(BUILD)/libs/support.o
 
 ################################################################################
 #

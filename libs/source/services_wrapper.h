@@ -7,7 +7,8 @@
 *                               S. A. FRANCO                                   *
 *                                                                              *
 * Contains code to convert C structures from Petit-Ami services library to     *
-* Pascaline form.                                                              *
+* Pascaline form. The common Pascaline/C types and string conversions are in   *
+* support.h; this header adds the services-specific record formats.   *
 *                                                                              *
 *******************************************************************************/
 
@@ -18,31 +19,7 @@
 extern "C" {
 #endif
 
-/*
- * Pascaline string
- *
- * Passed as parameter is char* followed by length 
- */
-typedef char* string;
-
-/*
-* Header structure for pstring.
-*
-* The structure is:
-*
-* length
-* string data
-*
-* The string data is any length, and is allocated at the end of the structure.
-* It is based on a single character, but actually can be any length.
-*/
-typedef struct {
-
-    long len;
-    char data;
-
-} pstring_header;
-typedef pstring_header* pstring;
+#include <support.h>
 
 /* Pascaline sets are 256, or 4*64 bits */
 typedef long set[4];
@@ -76,31 +53,18 @@ typedef struct envrec {
 } envrec;
 typedef envrec* envptr; /* pointer to environment record */
 
-/* pascaline file pointer */
-typedef unsigned char* pfile;
-
 /*
  * Length of string buffers
  */
 #define BUFLEN 1024
 
 /*
- * Services support routines
+ * Services-specific support routines
  */
-
-pstring cstr2pstr(char* cs, int l); /* convert C string to pstring */
-char* pstr2cstr(pstring ps); /* convert pstring to C string in place */
-void pstr2cstrl(pstring ps, char** s, int* l); /* convert pstring to C string with length */
-void cpstrp2cstrl(pstring* ps, int* l); /* convert pstring to C string in place with length */
-void cstr2pad(char* cs, int l); /* convert C string to padded Pascaline */
-void rempad(char* cs, int* l); /* remove padding from string/length */
-char* cstrz(char* s, int l); /* counted string to zero-terminated C string */
 void cfilelist2pascaline(ami_filptr* fla); /* convert C files list to Pascaline files list */
 void cenvlist2pascaline(ami_envptr* eva); /* convert C environment string list to Pascaline */
 ami_envptr cenvlist2c(envptr el); /* convert Pascaline environment string list to C */
 void freenvl(ami_envptr el); /* free environment list */
-FILE* psystem_libcwrfil(pfile f); /* Find libc write file equivalent */
-FILE* psystem_libcrdfil(pfile f); /* Find libc read file equivalent */
 
 #ifdef __cplusplus
 }

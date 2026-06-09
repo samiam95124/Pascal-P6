@@ -26,6 +26,7 @@
 #include <stddef.h>
 #include <services.h>
 #include <services_wrapper.h>
+#include <support.h>
 
 /********************************************************************************
 

@@ -19,34 +19,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <sys/mman.h>
 #include <graphics.h>
-#include <graphics_wrapper.h>
-
-/********************************************************************************
-
-Null-terminate a counted Pascaline string
-
-The Pascaline string wrappers pass (char*, length); the C graphics functions
-that take a plain char* need a null-terminated copy. A small pool of rotating
-thread-local buffers lets several string arguments coexist in one call.
-
-********************************************************************************/
-
-#define CSTRZBUF 8   /* number of rotating conversion buffers */
-#define CSTRZLEN 500 /* maximum converted string length */
-
-char* cstrz(char* s, int l)
-{
-    static __thread char buff[CSTRZBUF][CSTRZLEN];
-    static __thread int  nxt = 0;
-    char* b = buff[nxt];
-    nxt = (nxt+1)%CSTRZBUF;
-    if (l > CSTRZLEN-1) l = CSTRZLEN-1;
-    memcpy(b, s, l);
-    b[l] = 0;
-    return (b);
-}
+#include <support.h>
 
 /********************************************************************************
 
@@ -181,29 +155,15 @@ void wrapper_sendevent(char* per)
     ami_sendevent(stdout, &ce);
 }
 
-/********************************************************************************
+/******************************************************************************
 
-Call a Pascaline procedure from C, and the callback thunk pool. Reused verbatim
-from the terminal binding: a Pascaline procedure value is (code, display); pacall
-sets %rbp to the display and enters the procedure with the argument in %rdi. For
-each installed event handler a small machine-code thunk captures (code, display)
-and presents the single C function pointer Petit-Ami expects.
+Dispatch an event callback
 
-********************************************************************************/
+Convert the C event record to Pascaline form, enter the Pascaline handler
+through the shared pacall(), then copy the handled flag back. The shared
+mkevtthunk() is given this routine as the dispatcher for a callback thunk.
 
-__asm__ (
-"    .text\n"
-"    .globl pacall\n"
-"pacall:\n"                 /* void pacall(code=%rdi, display=%rsi, arg=%rdx) */
-"    push %rbp\n"
-"    mov  %rdi, %rax\n"
-"    mov  %rsi, %rbp\n"
-"    mov  %rdx, %rdi\n"
-"    call *%rax\n"
-"    pop  %rbp\n"
-"    ret\n"
-);
-extern void pacall(void* code, void* display, void* arg);
+******************************************************************************/
 
 void evtdispatch(void* code, void* display, ami_evtrec* cer)
 {
@@ -213,50 +173,17 @@ void evtdispatch(void* code, void* display, ami_evtrec* cer)
     cer->handled = PEVTC(per, PA_EVT_HANDLED);
 }
 
-#define THUNKSZ 48
-#define NTHUNK  64
-static unsigned char* thunkpool = 0;
-static int            thunknext = 0;
-
-static unsigned char* thunkalloc(void)
-{
-    if (!thunkpool)
-        thunkpool = mmap(0, THUNKSZ*NTHUNK, PROT_READ|PROT_WRITE|PROT_EXEC,
-                         MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    return thunkpool+(thunknext++ % NTHUNK)*THUNKSZ;
-}
-
-static unsigned char* emitimm(unsigned char* p, unsigned char op, void* val)
-{
-    *p++ = 0x48; *p++ = op;
-    memcpy(p, &val, 8);
-    return p+8;
-}
-
-/* void thunk(ami_evtrec* cer) -> evtdispatch(code,display,cer) */
-static void* mkevtthunk(void* code, void* display)
-{
-    unsigned char* t = thunkalloc();
-    unsigned char* p = t;
-    *p++ = 0x48; *p++ = 0x89; *p++ = 0xfa;   /* mov %rdi,%rdx (cer -> arg3) */
-    p = emitimm(p, 0xbe, display);           /* movabs display,%rsi */
-    p = emitimm(p, 0xbf, code);              /* movabs code,%rdi    */
-    p = emitimm(p, 0xb8, (void*)evtdispatch);/* movabs evtdispatch,%rax */
-    *p++ = 0xff; *p++ = 0xe0;                /* jmp *%rax */
-    return t;
-}
-
 void wrapper_eventover(int e, void* eh_code, void* eh_display, void* oeh)
 {
     ami_pevthan old;
-    ami_eventover(e, (ami_pevthan)mkevtthunk(eh_code, eh_display), &old);
+    ami_eventover(e, (ami_pevthan)mkevtthunk(eh_code, eh_display, (void*)evtdispatch), &old);
     *(void**)oeh = (void*)old;
 }
 
 void wrapper_eventsover(void* eh_code, void* eh_display, void* oeh)
 {
     ami_pevthan old;
-    ami_eventsover((ami_pevthan)mkevtthunk(eh_code, eh_display), &old);
+    ami_eventsover((ami_pevthan)mkevtthunk(eh_code, eh_display, (void*)evtdispatch), &old);
     *(void**)oeh = (void*)old;
 }
 
@@ -281,15 +208,6 @@ list into a C linked list allocated for the call.
 #define PMP(p,off) (*(void**)((char*)(p)+(off)))
 #define PMI(p,off) (*(long*) ((char*)(p)+(off)))
 
-static char* pstr2cstr(pstring ps)
-{
-    char* s;
-    if (!ps) return 0;
-    s = malloc(ps->len+1);
-    memcpy(s, &ps->data, ps->len);
-    s[ps->len] = 0;
-    return s;
-}
 
 static ami_menuptr cvtmenu(void* pm)
 {

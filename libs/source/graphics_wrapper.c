@@ -1,10 +1,7 @@
 /* Generated graphics wrappers. Do not edit by hand. */
 
-#include <string.h>
 #include <graphics.h>
-#include <graphics_wrapper.h>
-
-extern char* cstrz(char* s, int l);
+#include <support.h>
 
 double wrapper_pointsf(pfile pfp)
 {
