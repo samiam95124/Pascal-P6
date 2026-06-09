@@ -83,7 +83,8 @@ PSYSTEM_STDIO=
 endif
 
 all: bin/cmach bin/spew \
-	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a
+	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a \
+	$(LIBS)/terminal.a
 
 ################################################################################
 #
