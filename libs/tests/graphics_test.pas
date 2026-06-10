@@ -117,6 +117,23 @@ begin
 
 end;
 
+{ True if a right-padded string is blank/empty. Scan from the last position
+  left while blank, stopping at the first position; the string is empty only if
+  the scan reaches position 1 and that position is also blank. A leading blank
+  alone does NOT mean blank: " rst: rasa" is a real name. }
+
+function blank(view s: string): boolean;
+
+var i: integer;
+
+begin
+
+   i := max(s);
+   while (i > 1) and (s[i] = ' ') do i := i-1;
+   blank := (i = 1) and (s[1] = ' ')
+
+end;
+
 { find random number between 0 and N (linear congruential generator, since
   the runtime exposes no rand primitive; scaled with mod to avoid 32-bit
   multiply overflow) }
@@ -1202,7 +1219,7 @@ begin
    home(output);
    binvis(output);
    fontnam(output, ftterm, fns);
-   if fns[1] <> ' ' then begin
+   if not blank(fns) then begin
 
       font(output, ftterm);
       writeln('This is the terminal font: System name: "', fns:*, '"');
@@ -1217,7 +1234,7 @@ begin
 
    end;
    fontnam(output, ftbook, fns);
-   if fns[1] <> ' ' then begin
+   if not blank(fns) then begin
 
       font(output, ftbook);
       writeln('This is the book font: System name: "', fns:*, '"');
@@ -1232,7 +1249,7 @@ begin
 
    end;
    fontnam(output, ftsign, fns);
-   if fns[1] <> ' ' then begin
+   if not blank(fns) then begin
 
       font(output, ftsign);
       writeln('This is the sign font: System name: "', fns:*, '"');
@@ -1247,7 +1264,7 @@ begin
 
    end;
    fontnam(output, fttech, fns);
-   if fns[1] <> ' ' then begin
+   if not blank(fns) then begin
 
       font(output, fttech);
       writeln('This is the technical font: System name: "', fns:*, '"');
@@ -2734,15 +2751,15 @@ begin
    grid;
    writeln('Number of fonts: ', fonts(output):1);
    writeln;
-   { Iterate font codes 1..fonts() directly. fonts() counts every code,
-     including ones with a blank name; counting down a separate total while
-     skipping the blank ones runs the code past the last font (which raises
-     "Invalid font number"). }
+   { Iterate font codes 1..fonts() directly and skip only genuinely blank names
+     (blank() tests right-padded strings, so leading-space names like
+     " rst: rasa" are kept). Bounding the loop by the code count also keeps the
+     index from ever running past the last font. }
    cnt := fonts(output);
    for i := 1 to cnt do begin
 
       fontnam(output, i, fns);
-      if (fns[1] <> ' ') and (fns[1] <> chr(0)) then begin { defined font }
+      if not blank(fns) then begin { defined font }
 
          writeln(i:1, ': ', fns:*);
          if cury(output) >= maxy(output) then begin { screen overflows }
@@ -2772,7 +2789,7 @@ begin
    for i := 1 to cnt do begin
 
       fontnam(output, i, fns);
-      if (fns[1] <> ' ') and (fns[1] <> chr(0)) then begin { defined font }
+      if not blank(fns) then begin { defined font }
 
          font(output, i);
          writeln(i:1, ': ', fns:*);
