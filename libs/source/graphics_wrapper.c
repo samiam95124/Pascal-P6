@@ -491,13 +491,13 @@ void wrapper_bold(int e)
     ami_bold(stdout, e);
 }
 
-void wrapper_blorf(pfile pfp)
+void wrapper_borf(pfile pfp)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_bor(f);
 }
 
-void wrapper_blor(void)
+void wrapper_bor(void)
 {
     ami_bor(stdout);
 }
@@ -983,11 +983,13 @@ void wrapper_fontnamf(pfile pfp, int fc, string fns, int fnsl)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_fontnam(f, fc, fns, fnsl);
+    { int _p = 0; while (_p < fnsl && fns[_p]) _p++; while (_p < fnsl) fns[_p++] = ' '; }
 }
 
 void wrapper_fontnam(int fc, string fns, int fnsl)
 {
     ami_fontnam(stdout, fc, fns, fnsl);
+    { int _p = 0; while (_p < fnsl && fns[_p]) _p++; while (_p < fnsl) fns[_p++] = ' '; }
 }
 
 void wrapper_fontsizf(pfile pfp, int s)
@@ -1001,13 +1003,13 @@ void wrapper_fontsiz(int s)
     ami_fontsiz(stdout, s);
 }
 
-void wrapper_florf(pfile pfp)
+void wrapper_forf(pfile pfp)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_for(f);
 }
 
-void wrapper_flor(void)
+void wrapper_for(void)
 {
     ami_for(stdout);
 }
@@ -1153,11 +1155,13 @@ void wrapper_getwidgettextf(pfile pfp, int id, string s, int sl)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_getwidgettext(f, id, s, sl);
+    { int _p = 0; while (_p < sl && s[_p]) _p++; while (_p < sl) s[_p++] = ' '; }
 }
 
 void wrapper_getwidgettext(int id, string s, int sl)
 {
     ami_getwidgettext(stdout, id, s, sl);
+    { int _p = 0; while (_p < sl && s[_p]) _p++; while (_p < sl) s[_p++] = ' '; }
 }
 
 void wrapper_groupf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
@@ -1579,11 +1583,13 @@ void wrapper_querycolor(long* r, long* g, long* b)
 void wrapper_queryopen(string s, int sl)
 {
     ami_queryopen(s, sl);
+    { int _p = 0; while (_p < sl && s[_p]) _p++; while (_p < sl) s[_p++] = ' '; }
 }
 
 void wrapper_querysave(string s, int sl)
 {
     ami_querysave(s, sl);
+    { int _p = 0; while (_p < sl && s[_p]) _p++; while (_p < sl) s[_p++] = ' '; }
 }
 
 void wrapper_radiobuttonf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)

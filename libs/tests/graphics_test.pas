@@ -1205,7 +1205,7 @@ begin
    if fns[1] <> ' ' then begin
 
       font(output, ftterm);
-      writeln('This is the terminal font: System name: "', fns, '"');
+      writeln('This is the terminal font: System name: "', fns:*, '"');
       writeln('Size x -> ', chrsizx(output):1, ' y -> ', chrsizy(output):1);
       prtall;
       writeln
@@ -1220,7 +1220,7 @@ begin
    if fns[1] <> ' ' then begin
 
       font(output, ftbook);
-      writeln('This is the book font: System name: "', fns, '"');
+      writeln('This is the book font: System name: "', fns:*, '"');
       writeln('Size x -> ', chrsizx(output):1, ' y -> ', chrsizy(output):1);
       prtall;
       writeln
@@ -1235,7 +1235,7 @@ begin
    if fns[1] <> ' ' then begin
 
       font(output, ftsign);
-      writeln('This is the sign font: System name: "', fns, '"');
+      writeln('This is the sign font: System name: "', fns:*, '"');
       writeln('Size x -> ', chrsizx(output):1, ' y -> ', chrsizy(output):1);
       prtall;
       writeln
@@ -1250,7 +1250,7 @@ begin
    if fns[1] <> ' ' then begin
 
       font(output, fttech);
-      writeln('This is the technical font: System name: "', fns, '"');
+      writeln('This is the technical font: System name: "', fns:*, '"');
       writeln('Size x -> ', chrsizx(output):1, ' y -> ', chrsizy(output):1);
       prtall;
       writeln
@@ -2745,7 +2745,7 @@ begin
          if (fns[1] = ' ') or (fns[1] = chr(0)) then i := i+1
 
       until (fns[1] <> ' ') and (fns[1] <> chr(0));
-      writeln(i:1, ': ', fns);
+      writeln(i:1, ': ', fns:*);
       if cury(output) >= maxy(output) then begin { screen overflows }
 
          writeln('Press return to continue');
@@ -2781,7 +2781,7 @@ begin
 
       until (fns[1] <> ' ') and (fns[1] <> chr(0));
       font(output, i);
-      writeln(i:1, ': ', fns);
+      writeln(i:1, ': ', fns:*);
       if cury(output) >= maxy(output) then begin { screen overflows }
 
          font(output, ftterm);

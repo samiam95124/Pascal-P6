@@ -40,7 +40,13 @@ def emit(ret, name, params):
             nt,nn=split_param(rest[i+1])
             if nt.replace(' ','')=='int' and nn==pn+'l':  # output string buffer
                 cparams += [f'string {pn}', f'int {nn}']
-                callargs += [pn, nn]; i+=2; continue
+                callargs += [pn, nn]
+                # ami_* returns a null-terminated C string; convert it to a
+                # Pascaline right-padded (space-filled) string so the caller can
+                # print it at its natural length with the :* field.
+                post.append(f"{{ int _p = 0; while (_p < {nn} && {pn}[_p]) "
+                            f"_p++; while (_p < {nn}) {pn}[_p++] = ' '; }}")
+                i+=2; continue
         if cn=='char*':                                    # input string
             cparams += [f'string {pn}', f'int {pn}l']
             if name in NVARIANT:
@@ -89,8 +95,7 @@ def emit(ret, name, params):
 
 specials=[]
 out=['/* Generated graphics wrappers. Do not edit by hand. */','',
-      '#include <string.h>','#include <graphics.h>','#include <graphics_wrapper.h>','',
-      'extern char* cstrz(char* s, int l);','']
+      '#include <graphics.h>','#include <support.h>','']
 for line in open('/tmp/gfxgen/funcs.txt'):
     line=line.strip()
     if not line: continue
