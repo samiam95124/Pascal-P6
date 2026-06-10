@@ -524,7 +524,7 @@ void wrapper_buffer(int e)
     ami_buffer(stdout, e);
 }
 
-void wrapper_buttonf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
+void wrapper_buttonf(pfile pfp, int x1, int y1, int x2, int y2, long r9pad, string s, int sl, int id)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_button(f, x1, y1, x2, y2, cstrz(s, sl), id);
@@ -535,7 +535,7 @@ void wrapper_button(int x1, int y1, int x2, int y2, string s, int sl, int id)
     ami_button(stdout, x1, y1, x2, y2, cstrz(s, sl), id);
 }
 
-void wrapper_buttongf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
+void wrapper_buttongf(pfile pfp, int x1, int y1, int x2, int y2, long r9pad, string s, int sl, int id)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_buttong(f, x1, y1, x2, y2, cstrz(s, sl), id);
@@ -595,7 +595,7 @@ void wrapper_bxor(void)
     ami_bxor(stdout);
 }
 
-void wrapper_checkboxf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
+void wrapper_checkboxf(pfile pfp, int x1, int y1, int x2, int y2, long r9pad, string s, int sl, int id)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_checkbox(f, x1, y1, x2, y2, cstrz(s, sl), id);
@@ -606,7 +606,7 @@ void wrapper_checkbox(int x1, int y1, int x2, int y2, string s, int sl, int id)
     ami_checkbox(stdout, x1, y1, x2, y2, cstrz(s, sl), id);
 }
 
-void wrapper_checkboxgf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
+void wrapper_checkboxgf(pfile pfp, int x1, int y1, int x2, int y2, long r9pad, string s, int sl, int id)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_checkboxg(f, x1, y1, x2, y2, cstrz(s, sl), id);
@@ -1164,7 +1164,7 @@ void wrapper_getwidgettext(int id, string s, int sl)
     { int _p = 0; while (_p < sl && s[_p]) _p++; while (_p < sl) s[_p++] = ' '; }
 }
 
-void wrapper_groupf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
+void wrapper_groupf(pfile pfp, int x1, int y1, int x2, int y2, long r9pad, string s, int sl, int id)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_group(f, x1, y1, x2, y2, cstrz(s, sl), id);
@@ -1175,7 +1175,7 @@ void wrapper_group(int x1, int y1, int x2, int y2, string s, int sl, int id)
     ami_group(stdout, x1, y1, x2, y2, cstrz(s, sl), id);
 }
 
-void wrapper_groupgf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
+void wrapper_groupgf(pfile pfp, int x1, int y1, int x2, int y2, long r9pad, string s, int sl, int id)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_groupg(f, x1, y1, x2, y2, cstrz(s, sl), id);
@@ -1592,7 +1592,7 @@ void wrapper_querysave(string s, int sl)
     { int _p = 0; while (_p < sl && s[_p]) _p++; while (_p < sl) s[_p++] = ' '; }
 }
 
-void wrapper_radiobuttonf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
+void wrapper_radiobuttonf(pfile pfp, int x1, int y1, int x2, int y2, long r9pad, string s, int sl, int id)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_radiobutton(f, x1, y1, x2, y2, cstrz(s, sl), id);
@@ -1603,7 +1603,7 @@ void wrapper_radiobutton(int x1, int y1, int x2, int y2, string s, int sl, int i
     ami_radiobutton(stdout, x1, y1, x2, y2, cstrz(s, sl), id);
 }
 
-void wrapper_radiobuttongf(pfile pfp, int x1, int y1, int x2, int y2, string s, int sl, int id)
+void wrapper_radiobuttongf(pfile pfp, int x1, int y1, int x2, int y2, long r9pad, string s, int sl, int id)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_radiobuttong(f, x1, y1, x2, y2, cstrz(s, sl), id);
