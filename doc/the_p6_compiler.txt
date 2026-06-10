@@ -451,10 +451,10 @@ network
 Access to networking.
 
 At this writing, only the services module is implemented in pint.
-The Pascaline libraries, originally written in Pascaline, were rewritten in C (for several reasons), and appear as the independent library called “Petit-ami”. They can be accessed by any language.
-Note that not all Pascaline libraries appear in Petit-ami. For example the strings module is still written in Pascaline, and makes no sense for other languages outside of Pascaline.
+The Pascaline libraries, originally written in Pascaline, were rewritten in C (for several reasons), and appear as the independent library called “Ami”. They can be accessed by any language.
+Note that not all Pascaline libraries appear in Ami. For example the strings module is still written in Pascaline, and makes no sense for other languages outside of Pascaline.
 2.2.6.1 Enabling externals
-External linking to Petit-ami is enabled via the EXTERNALS define when compiling Pascal-P6. When this definition is active, all modules with the names in the Pascaline external module table above will be redirected to external definitions.
+External linking to Ami is enabled via the EXTERNALS define when compiling Pascal-P6. When this definition is active, all modules with the names in the Pascaline external module table above will be redirected to external definitions.
 2.2.6.2 Using externals
 The externals in Pascal-P6 are compiled with the system as object files that are linked into the system. Further, there is a block of code in pint that translates each call to the C language, in the file:
 externals_<system>.inc
@@ -3286,7 +3286,7 @@ services_test.inp	Test file for services library.
 10.6.1 Directory: test_results
 Contains the results of different run conditions. Each of cmach, package, pgen, pint and pmach have a directory here. See the chapter “Testing Pascal-P6”.
 10.7 Directory: Petit_ami
-This directory is a submodule for Petit-Ami. The contents are described in the Petit-Ami documents.
+This directory is a submodule for Ami. The contents are described in the Ami documents.
 10.8 Directory: sample_programs
 The sample programs directory is used for sample test programs. Each program will have all of a *.pas source file, a *.inp file, a *.cmp file, and a *.dat file. The description of these files can be found in the section on “Testing Pascal-P6”.
 basics.pas	A tiny basic interpreter in Pascal.

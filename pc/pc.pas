@@ -66,12 +66,12 @@ label 99;
 const
 
 { name of base libary }            serlib = 'psystem';
-{ name of terminal library }       trmlib = 'terminal';
-{ name of graphical library }      gralib = 'graphical';
+{ name of terminal library }       terminallib = 'terminal';
+{ name of graphical library }      graphicslib = 'graphics';
 { libs that can be substituted for standard serial library }
-                                   iolibs = 'terminal graphical';
+                                   iolibnams = 'terminal graphics';
 { libs that run in a separate window }
-                                   gwlibs  = 'gralib gmnlib';
+                                   windowlibs  = 'graphics';
 { maximum length of command line } cmdmax = 250;
 { maximum length of filename }     filmax = 1000;
 { maximum size of input line }     maxlin = 1000;
@@ -205,7 +205,8 @@ serrfil:     boolean;
 { temp filename holding }                  tmpnam:  filnam;
 { exclude list }                           exclude: lstptr;
 { packaging list }                         package: pkgptr;
-{ a graphical window library exists }      grawin:  boolean;
+{ a graphical window library exists }      windowed:  boolean;
+{ the terminal library is the I/O library } terminaled: boolean;
 { an alternate standard I/O library exists }
                                            siolib:  boolean;
 { exit has error }                         errexit: boolean;
@@ -1121,10 +1122,10 @@ var w:  integer; { total number of libraries }
 begin
 
    siolib := false; { set no standard I/O libraries }
-   w := words(iolibs); { find the number of standard I/O libraries to find }
+   w := words(iolibnams); { find the number of standard I/O libraries to find }
    for i := 1 to w do begin { search libraries }
 
-      extwords(l, iolibs, i, i); { get library name }
+      extwords(l, iolibnams, i, i); { get library name }
       { search for that and set true if found }
       if schfil(l) <> nil then siolib := true
 
@@ -1142,14 +1143,14 @@ var w:  integer; { total number of libraries }
 
 begin
 
-   grawin := false; { set no graphical windowed I/O libraries }
+   windowed := false; { set no graphical windowed I/O libraries }
    { find the number of graphical windowed I/O libraries to find }
-   w := words(gwlibs);
+   w := words(windowlibs);
    for i := 1 to w do begin { search libraries }
 
-      extwords(l, gwlibs, i, i); { get library name }
+      extwords(l, windowlibs, i, i); { get library name }
       { search for that and set true if found }
-      if schfil(l) <> nil then grawin := true
+      if schfil(l) <> nil then windowed := true
 
    end
 
@@ -1159,18 +1160,20 @@ begin
 
    schsio; { find if target already specifies a standard library }
    schgwn; { find if target specifies a graphical windowed library }
+   terminaled := false; { set terminal is not the I/O library }
    if not siolib then begin { no standard library specified }
 
       { find default library }
-      if fdefgra then copy(defnam, gralib)
-      else if fdeftrm then copy(defnam, trmlib)
+      if fdefgra then begin copy(defnam, graphicslib); windowed := true end
+      else if fdeftrm then begin copy(defnam, terminallib); terminaled := true end
       else copy(defnam, serlib);
       fndfil(defnam, false);
       if not exists(defnam) then { not found }
          error('Support module not found %', defnam);
       logfil(defnam, fp) { log the library }
 
-   end
+   end else if not windowed then terminaled := true
+   { an I/O library is present and it is not the windowed one, so terminal }
 
 end;
 
@@ -1484,7 +1487,7 @@ begin
    while fp <> nil do begin { traverse }
 
       { look for entries with no references and not listed }
-      if inlist(fp^.name, iolibs) and not fp^.list then plcety(fp); { found }
+      if inlist(fp^.name, iolibnams) and not fp^.list then plcety(fp); { found }
       fp := fp^.stack { next on stack }
 
    end
@@ -2133,7 +2136,17 @@ begin { dolink }
       { build gcc command }
       clears(cmdbuf); { clear command buffer }
       i := 1; { set 1st char }
-      putstr('gcc -static -g3 -o');
+      putstr('gcc -static -g3');
+      putchr(' ');
+      { An I/O library (terminal or graphics) installs its I/O overrides from a
+        constructor in its module object. A program that does not call any of
+        its functions (e.g. promoted serial code) would leave that object out
+        of the link, so force a reference to pull it in: ami_cursor anchors the
+        terminal module, ami_cursorg the graphics module (graphics-only, so it
+        unambiguously selects graphics.o). }
+      if windowed then begin putstr('-Wl,-u,ami_cursorg'); putchr(' ') end
+      else if terminaled then begin putstr('-Wl,-u,ami_cursor'); putchr(' ') end;
+      putstr('-o');
       putchr(' ');
       putstr(fns);
       putchr(' ');
@@ -2144,6 +2157,14 @@ begin { dolink }
       putstr(psystem);
       putchr(' ');
       putstr('-lm -lpthread');
+      { The graphics window library renders through X11/FreeType/FontConfig
+        (Linux). A fully static link needs their entire transitive closure;
+        the set below is 'pkg-config --static --libs x11 xext freetype2
+        fontconfig' plus -ldl. These must follow the archives that use them. }
+      if windowed then begin putchr(' ');
+         putstr('-lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lfontconfig');
+         putchr(' ');
+         putstr('-luuid -lexpat -lfreetype -lpng16 -lm -lz -ldl') end;
       excact(cmdbuf) { execute command buffer action }
 
    end
@@ -2250,22 +2271,24 @@ begin
       { find each of .o, .s and executive files }
       services.maknam(fn, p, n, 'o');
       dolist(fn, op);
-      if op = nil then { should not be missing }
-         error('Sequence error, missing file % check other tasks', fn); 
       services.maknam(fn, p, n, 's');
       dolist(fn, sp);
-      if sp = nil then { should not be missing }
-         error('Sequence error, missing file % check other tasks', fn); 
       services.maknam(fn, p, n, '');
       dolist(fn, ep);
-      if ep = nil then excrbl := true { does not exist }
-      else if (ep^.modify < op^.modify) or 
+      { A missing .o, .s or executable means the executable must be (re)built;
+        e.g. a partial clean that removed the intermediates but left the .o and
+        executable. (The intermediates the link does not consume are not
+        regenerated.) Otherwise rebuild if the executable is older than its .o
+        or .s inputs. The compile-stage rebuild check (regfil) independently
+        handles a stale or missing object from an edited source. }
+      if (op = nil) or (sp = nil) or (ep = nil) then excrbl := true
+      else if (ep^.modify < op^.modify) or
               (ep^.modify < sp^.modify) then
          { exec date/time is older than .o or .s, execute rebuild }
          excrbl := true;
       if ep <> nil then dispose(ep); { release objects }
-      dispose(op);
-      dispose(sp)
+      if op <> nil then dispose(op);
+      if sp <> nil then dispose(sp)
 
    end
 
@@ -2639,7 +2662,8 @@ begin
    fngwin := false; { do not override graphical windows switch }
    fsymcof := false; { do not generate coff symbols }
    siolib := false; { set no serial library found }
-   grawin := false; { set no graphical windowing library found }
+   windowed := false; { set no graphical windowing library found }
+   terminaled := false; { set terminal is not the I/O library }
    errexit := false; { set no error exit }
 
    { process command line }

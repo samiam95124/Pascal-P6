@@ -1,10 +1,10 @@
 {*******************************************************************************
 
-Petit-ami interface
+Ami interface
 
-Defines the calls that make up the Petit-ami support library for Pascaline.
+Defines the calls that make up the Ami support library for Pascaline.
 
-Petit-ami is the collection of Pascaline support library modules written in
+Ami is the collection of Pascaline support library modules written in
 C.
 
 *******************************************************************************}
@@ -20,7 +20,7 @@ Each of these brings an externally defined routine into Pascaline callable form.
 { Allow GNU Pascal extensions }
 {$gnu-pascal}
 
-{ petit-ami declares }
+{ Ami declares }
 procedure pa_list(f: charptr; l: integer); external name 'pa_list';
 procedure pa_times(s: charptr; sl: integer; t: integer); external name 'pa_times';
 procedure pa_dates(s: charptr; sl: integer; t: integer); external name 'pa_dates';

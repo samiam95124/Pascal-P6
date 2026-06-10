@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <terminal.h>
-#include <terminal_wrapper.h>
+#include <support.h>
 
 /* home */
 

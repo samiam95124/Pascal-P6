@@ -1,10 +1,10 @@
 /*******************************************************************************
 
-Petit-ami interface
+Ami interface
 
-Defines the calls that make up the Petit-ami support library for Pascaline.
+Defines the calls that make up the Ami support library for Pascaline.
 
-Petit-ami is the collection of Pascaline support library modules written in C.
+Ami is the collection of Pascaline support library modules written in C.
 
 At this implementation (a test implementation), only services.c is implemented.
 

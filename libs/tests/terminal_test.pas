@@ -5,7 +5,7 @@
 *                    Copyright (C) 2024 Scott A. Franco                       *
 *                                                                             *
 * This program performs a reasonably complete test of common features in the  *
-* terminal level standard. It is the Pascaline equivalent of the Petit-Ami    *
+* terminal level standard. It is the Pascaline equivalent of the Ami          *
 * terminal_test.c reference test.                                             *
 *                                                                             *
 * Tests performed:                                                            *

@@ -15,13 +15,13 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <terminal.h>
-#include <terminal_wrapper.h>
+#include <support.h>
 
 /********************************************************************************
 
 Convert C event record to Pascaline event record
 
-The Petit-Ami event record (ami_evtrec) uses C int (4 byte) fields and an
+The Ami event record (ami_evtrec) uses C int (4 byte) fields and an
 anonymous union. The Pascaline 'evtrec' variant record uses 8 byte integers and
 a different field layout, determined from the generated DWARF:
 
@@ -122,41 +122,13 @@ void wrapper_event(
 
 /********************************************************************************
 
-Call a Pascaline procedure from C
-
-A Pascaline procedure value is a pair (code address, display pointer). The
-display is the frame pointer of the lexically enclosing scope; the procedure's
-ENTER instruction uses it (via %rbp) to build its own display. To call such a
-procedure from C we set %rbp to the display, place the single argument in %rdi
-(Pascaline's first parameter register under the amd64 SysV convention) and call
-the code. %rbp is saved and restored so the C caller is unaffected.
-
-********************************************************************************/
-
-__asm__ (
-"    .text\n"
-"    .globl pacall\n"
-"pacall:\n"                 /* void pacall(code=%rdi, display=%rsi, arg=%rdx) */
-"    push %rbp\n"           /* preserve C frame pointer */
-"    mov  %rdi, %rax\n"     /* %rax = code address */
-"    mov  %rsi, %rbp\n"     /* %rbp = display (static link) */
-"    mov  %rdx, %rdi\n"     /* %rdi = argument (Pascaline param 1) */
-"    call *%rax\n"          /* enter the Pascaline procedure */
-"    pop  %rbp\n"           /* restore C frame pointer */
-"    ret\n"
-);
-
-extern void pacall(void* code, void* display, void* arg);
-
-/********************************************************************************
-
 Callback thunks
 
-Petit-Ami stores a callback as a single C function pointer and calls it later
+Ami stores a callback as a single C function pointer and calls it later
 (deferred). A Pascaline procedure is two words (code, display), so it cannot be
 handed over directly. For each installed callback we build a small machine code
 thunk that captures (code, display) and the dispatcher address, and presents the
-plain C function pointer Petit-Ami expects. When Petit-Ami calls the thunk, the
+plain C function pointer Ami expects. When Ami calls the thunk, the
 thunk tail-calls the dispatcher, which converts arguments and uses pacall() to
 enter the Pascaline procedure with the captured display.
 
@@ -166,7 +138,6 @@ display, so this is exactly what is wanted).
 
 ********************************************************************************/
 
-#include <sys/mman.h>
 
 /* dispatch an event callback: convert the C event, enter the Pascaline handler,
    then copy the handled flag back */
@@ -178,49 +149,6 @@ void evtdispatch(void* code, void* display, ami_evtrec* cer)
     cevt2pascaline(cer, per);
     pacall(code, display, per);
     cer->handled = PEVTC(per, PA_EVT_HANDLED);
-
-}
-
-#define THUNKSZ 48  /* bytes reserved per thunk */
-#define NTHUNK  64  /* number of thunks in the pool */
-
-static unsigned char* thunkpool = 0; /* executable thunk pool */
-static int            thunknext = 0; /* next free thunk */
-
-static unsigned char* thunkalloc(void)
-{
-
-    if (!thunkpool)
-        thunkpool = mmap(0, THUNKSZ*NTHUNK, PROT_READ|PROT_WRITE|PROT_EXEC,
-                         MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    return thunkpool+(thunknext++ % NTHUNK)*THUNKSZ;
-
-}
-
-/* emit a movabs of a 64 bit immediate into a register (opcode selects reg) */
-static unsigned char* emitimm(unsigned char* p, unsigned char op, void* val)
-{
-
-    *p++ = 0x48; *p++ = op;
-    memcpy(p, &val, 8);
-    return p+8;
-
-}
-
-/* build an event thunk: void thunk(ami_evtrec* cer) -> evtdispatch(code,display,cer) */
-static void* mkevtthunk(void* code, void* display)
-{
-
-    unsigned char* t = thunkalloc();
-    unsigned char* p = t;
-
-    *p++ = 0x48; *p++ = 0x89; *p++ = 0xfa;   /* mov  %rdi,%rdx  (cer -> arg3) */
-    p = emitimm(p, 0xbe, display);           /* movabs display,%rsi (arg2)   */
-    p = emitimm(p, 0xbf, code);              /* movabs code,%rdi    (arg1)   */
-    p = emitimm(p, 0xb8, (void*)evtdispatch);/* movabs evtdispatch,%rax      */
-    *p++ = 0xff; *p++ = 0xe0;                /* jmp  *%rax                   */
-
-    return t;
 
 }
 
@@ -245,7 +173,7 @@ void wrapper_eventover(
 
     ami_pevthan old;
 
-    ami_eventover(e, (ami_pevthan)mkevtthunk(eh_code, eh_display), &old);
+    ami_eventover(e, (ami_pevthan)mkevtthunk(eh_code, eh_display, (void*)evtdispatch), &old);
     *(void**)oeh = (void*)old;
 
 }
@@ -260,7 +188,7 @@ void wrapper_eventsover(
 
     ami_pevthan old;
 
-    ami_eventsover((ami_pevthan)mkevtthunk(eh_code, eh_display), &old);
+    ami_eventsover((ami_pevthan)mkevtthunk(eh_code, eh_display, (void*)evtdispatch), &old);
     *(void**)oeh = (void*)old;
 
 }
