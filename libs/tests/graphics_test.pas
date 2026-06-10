@@ -1056,7 +1056,7 @@ begin
    auto(output, 0);
    curvis(output, 0);
    page;
-   loadpict(output, 1, 'tests/mypic');
+   loadpict(output, 1, 'mypic');
    c := clock;
    for i := 1 to t do begin
 
@@ -1089,7 +1089,7 @@ begin
    auto(output, 0);
    curvis(output, 0);
    page;
-   loadpict(output, 1, 'tests/mypic');
+   loadpict(output, 1, 'mypic');
    xs := pictsizx(output, 1);
    ys := pictsizy(output, 1);
    c := clock;
@@ -2964,11 +2964,11 @@ begin
 
    page;
    grid;
-   maknam(fn, 'tests', 'mypic', '');
+   maknam(fn, '', 'mypic', '');
    loadpict(output, 1, fn);
    writeln('Picture size for 1: x: ', pictsizx(output, 1):1, ' y: ',
            pictsizy(output, 1):1);
-   maknam(fn, 'tests', 'mypic1', 'bmp');
+   maknam(fn, '', 'mypic1', 'bmp');
    loadpict(output, 2, fn);
    writeln('Picture size for 2: x: ', pictsizx(output, 2):1, ' y: ',
            pictsizy(output, 2):1);
