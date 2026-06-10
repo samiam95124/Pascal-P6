@@ -197,16 +197,20 @@ list into a C linked list allocated for the call.
 
 ********************************************************************************/
 
-/* Pascaline menurec layout (graphics.pas), 8-byte fields */
-#define PM_NEXT   0
-#define PM_BRANCH 8
-#define PM_ONOFF  16
-#define PM_ONEOF  24
-#define PM_BAR    32
-#define PM_ID     40
-#define PM_FACE   48
+/* Pascaline menurec layout (graphics.pas), from the mangled record type
+   (next$0$p2$branch$8$p2$onoff$16$b$oneof$17$b$bar$18$b$id$20$i$face$28$pvc):
+   pointers and the integer are 8 bytes, the booleans single bytes. */
+#define PM_NEXT   0  /* menuptr */
+#define PM_BRANCH 8  /* menuptr */
+#define PM_ONOFF  16 /* boolean (byte) */
+#define PM_ONEOF  17 /* boolean (byte) */
+#define PM_BAR    18 /* boolean (byte) */
+#define PM_ID     20 /* integer (8 bytes) */
+#define PM_FACE   28 /* pstring */
+#define PM_SIZE   36 /* size of record */
 #define PMP(p,off) (*(void**)((char*)(p)+(off)))
 #define PMI(p,off) (*(long*) ((char*)(p)+(off)))
+#define PMC(p,off) (*(char*) ((char*)(p)+(off)))
 
 
 static ami_menuptr cvtmenu(void* pm)
@@ -216,12 +220,29 @@ static ami_menuptr cvtmenu(void* pm)
     m = malloc(sizeof(ami_menurec));
     m->next   = cvtmenu(PMP(pm, PM_NEXT));
     m->branch = cvtmenu(PMP(pm, PM_BRANCH));
-    m->onoff  = PMI(pm, PM_ONOFF) != 0;
-    m->oneof  = PMI(pm, PM_ONEOF) != 0;
-    m->bar    = PMI(pm, PM_BAR)   != 0;
+    m->onoff  = PMC(pm, PM_ONOFF) != 0;
+    m->oneof  = PMC(pm, PM_ONEOF) != 0;
+    m->bar    = PMC(pm, PM_BAR)   != 0;
     m->id     = PMI(pm, PM_ID);
     m->face   = pstr2cstr((pstring)PMP(pm, PM_FACE));
     return m;
+}
+
+/* Convert a C menu list to Pascaline menurec form (for stdmenu's result).
+   The records are heap blocks laid out as Pascaline reads them. */
+static void* cvtmenu2pa(ami_menuptr m)
+{
+    char* pm;
+    if (!m) return 0;
+    pm = calloc(1, PM_SIZE);
+    PMP(pm, PM_NEXT)   = cvtmenu2pa(m->next);
+    PMP(pm, PM_BRANCH) = cvtmenu2pa(m->branch);
+    PMC(pm, PM_ONOFF)  = m->onoff != 0;
+    PMC(pm, PM_ONEOF)  = m->oneof != 0;
+    PMC(pm, PM_BAR)    = m->bar   != 0;
+    PMI(pm, PM_ID)     = m->id;
+    PMP(pm, PM_FACE)   = cstr2pstr(m->face, strlen(m->face));
+    return pm;
 }
 
 void wrapper_menuf(pfile pfp, void* m)
@@ -244,11 +265,11 @@ static ami_strptr cvtstrlst(void* ps)
 
 void wrapper_stdmenu(int sms, void* sm, void* pm)
 {
-    /* stdmenu(sms; var sm: menuptr; pm: menuptr) builds a standard menu; the
-       returned C list is not converted back to Pascaline form yet. */
+    /* stdmenu(sms; var sm: menuptr; pm: menuptr) builds a standard menu list
+       and returns it through the var parameter in Pascaline form. */
     ami_menuptr csm;
-    (void)sm;
     ami_stdmenu(sms, &csm, cvtmenu(pm));
+    *(void**)sm = cvtmenu2pa(csm);
 }
 
 /* string-list widgets: listbox/dropbox/dropeditbox and their *g/siz variants */
