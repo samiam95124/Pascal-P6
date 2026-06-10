@@ -299,17 +299,33 @@ TABBAR(tabbarg)
 
 openwin and the query dialogs
 
-openwin returns C FILE* handles through FILE** out parameters; bridging those to
-Pascaline file control blocks is not yet implemented. The query dialogs require
-the widget package. These are placeholders that compile and link.
-
 ********************************************************************************/
 
-/* TODO: openwin FILE** -> Pascaline file bridge */
+/*
+ * Open a window. ami_openwin takes the C file handles by reference: the input
+ * side is normally the shared stdin (events for every window arrive on it),
+ * and the output side comes back as a new C file for the window. The new
+ * handles are bound to the caller's Pascaline file variables with
+ * psystem_libcatcfil so subsequent Pascaline I/O on them routes to the window.
+ *
+ * The parent is a window output file, or an unopened file variable (logical
+ * file 0) for a top-level window -- the Pascaline expression of C's NULL
+ * parent.
+ */
 void wrapper_openwin(pfile infile, pfile outfile, pfile parent, int wid)
 {
-    (void)infile; (void)outfile; (void)parent; (void)wid;
-    /* not yet implemented */
+    FILE* fin;
+    FILE* fout;
+    FILE* par;
+
+    /* input side: the caller's file if open, else the shared stdin */
+    fin = *infile ? psystem_libcrdfil(infile) : stdin;
+    fout = NULL;
+    par = *parent ? psystem_libcwrfil(parent) : NULL;
+    ami_openwin(&fin, &fout, par, wid);
+    /* bind the window files to the Pascaline file variables */
+    if (*infile == 0) psystem_libcatcfil(infile, fin, 0);
+    psystem_libcatcfil(outfile, fout, 1);
 }
 
 /* query dialogs: out strings and an option set (int). Require the widget
