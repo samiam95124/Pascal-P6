@@ -82,8 +82,12 @@ void rempad(char* cs, int* l)
  * Counted Pascaline string -> zero-terminated C string.
  *
  * Pascaline passes a string as a (pointer, length) pair that is not terminated;
- * the Ami ami_* APIs take zero-terminated C strings. A rotating pool of
- * per-thread buffers lets several string arguments of one call coexist.
+ * the Ami ami_* APIs take zero-terminated C strings. The Pascaline string is
+ * right-padded with spaces, so the trailing pad is trimmed (it is not part of
+ * the value) before terminating -- otherwise, e.g., a space-padded file name
+ * built by maknam reaches open() with trailing blanks and is not found.
+ * A rotating pool of per-thread buffers lets several string arguments of one
+ * call coexist.
  */
 #define CSTRZBUF 8    /* number of rotating conversion buffers */
 #define CSTRZLEN 1024 /* maximum converted string length */
@@ -97,6 +101,7 @@ char* cstrz(char* s, int l)
     b = buff[nxt];
     nxt = (nxt+1)%CSTRZBUF;
     if (l > CSTRZLEN-1) l = CSTRZLEN-1;
+    while (l && s[l-1] == ' ') l--; /* trim trailing space padding */
     memcpy(b, s, l);
     b[l] = 0;
 
