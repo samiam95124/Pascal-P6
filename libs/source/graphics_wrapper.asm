@@ -19,8 +19,8 @@
     .globl  graphics.band$p_fc
     .globl  graphics.baseline$f
     .globl  graphics.baseline$f_fc
-    .globl  graphics.bcolor$p_fc_x$black$white$red$green$blue$cyan$yellow$magenta$
-    .globl  graphics.bcolor$p_x$black$white$red$green$blue$cyan$yellow$magenta$
+    .globl  graphics.bcolor$p_fc_x$black$white$red$green$blue$cyan$yellow$magenta$backcolor$
+    .globl  graphics.bcolor$p_x$black$white$red$green$blue$cyan$yellow$magenta$backcolor$
     .globl  graphics.bcolorc$p_fc_i_i_i
     .globl  graphics.bcolorc$p_i_i_i
     .globl  graphics.bcolorg$p_fc_i_i_i
@@ -135,8 +135,8 @@
     .globl  graphics.farc$p_i_i_i_i_i_i
     .globl  graphics.fchord$p_fc_i_i_i_i_i_i
     .globl  graphics.fchord$p_i_i_i_i_i_i
-    .globl  graphics.fcolor$p_fc_x$black$white$red$green$blue$cyan$yellow$magenta$
-    .globl  graphics.fcolor$p_x$black$white$red$green$blue$cyan$yellow$magenta$
+    .globl  graphics.fcolor$p_fc_x$black$white$red$green$blue$cyan$yellow$magenta$backcolor$
+    .globl  graphics.fcolor$p_x$black$white$red$green$blue$cyan$yellow$magenta$backcolor$
     .globl  graphics.fcolorc$p_fc_i_i_i
     .globl  graphics.fcolorc$p_i_i_i
     .globl  graphics.fcolorg$p_fc_i_i_i
@@ -508,10 +508,10 @@ graphics.baseline$f:
 graphics.baseline$f_fc:
     jmp     wrapper_baselinef
 
-graphics.bcolor$p_fc_x$black$white$red$green$blue$cyan$yellow$magenta$:
+graphics.bcolor$p_fc_x$black$white$red$green$blue$cyan$yellow$magenta$backcolor$:
     jmp     wrapper_bcolorf
 
-graphics.bcolor$p_x$black$white$red$green$blue$cyan$yellow$magenta$:
+graphics.bcolor$p_x$black$white$red$green$blue$cyan$yellow$magenta$backcolor$:
     jmp     wrapper_bcolor
 
 graphics.bcolorc$p_fc_i_i_i:
@@ -856,10 +856,10 @@ graphics.fchord$p_fc_i_i_i_i_i_i:
 graphics.fchord$p_i_i_i_i_i_i:
     jmp     wrapper_fchord
 
-graphics.fcolor$p_fc_x$black$white$red$green$blue$cyan$yellow$magenta$:
+graphics.fcolor$p_fc_x$black$white$red$green$blue$cyan$yellow$magenta$backcolor$:
     jmp     wrapper_fcolorf
 
-graphics.fcolor$p_x$black$white$red$green$blue$cyan$yellow$magenta$:
+graphics.fcolor$p_x$black$white$red$green$blue$cyan$yellow$magenta$backcolor$:
     jmp     wrapper_fcolor
 
 graphics.fcolorc$p_fc_i_i_i:
