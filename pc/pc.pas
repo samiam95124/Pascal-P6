@@ -2271,22 +2271,24 @@ begin
       { find each of .o, .s and executive files }
       services.maknam(fn, p, n, 'o');
       dolist(fn, op);
-      if op = nil then { should not be missing }
-         error('Sequence error, missing file % check other tasks', fn); 
       services.maknam(fn, p, n, 's');
       dolist(fn, sp);
-      if sp = nil then { should not be missing }
-         error('Sequence error, missing file % check other tasks', fn); 
       services.maknam(fn, p, n, '');
       dolist(fn, ep);
-      if ep = nil then excrbl := true { does not exist }
-      else if (ep^.modify < op^.modify) or 
+      { A missing .o, .s or executable means the executable must be (re)built;
+        e.g. a partial clean that removed the intermediates but left the .o and
+        executable. (The intermediates the link does not consume are not
+        regenerated.) Otherwise rebuild if the executable is older than its .o
+        or .s inputs. The compile-stage rebuild check (regfil) independently
+        handles a stale or missing object from an edited source. }
+      if (op = nil) or (sp = nil) or (ep = nil) then excrbl := true
+      else if (ep^.modify < op^.modify) or
               (ep^.modify < sp^.modify) then
          { exec date/time is older than .o or .s, execute rebuild }
          excrbl := true;
       if ep <> nil then dispose(ep); { release objects }
-      dispose(op);
-      dispose(sp)
+      if op <> nil then dispose(op);
+      if sp <> nil then dispose(sp)
 
    end
 
