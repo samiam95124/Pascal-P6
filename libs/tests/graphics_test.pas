@@ -2734,28 +2734,27 @@ begin
    grid;
    writeln('Number of fonts: ', fonts(output):1);
    writeln;
-   i := 1;
+   { Iterate font codes 1..fonts() directly. fonts() counts every code,
+     including ones with a blank name; counting down a separate total while
+     skipping the blank ones runs the code past the last font (which raises
+     "Invalid font number"). }
    cnt := fonts(output);
-   while cnt > 0 do begin
+   for i := 1 to cnt do begin
 
-      { find defined font code }
-      repeat
+      fontnam(output, i, fns);
+      if (fns[1] <> ' ') and (fns[1] <> chr(0)) then begin { defined font }
 
-         fontnam(output, i, fns);
-         if (fns[1] = ' ') or (fns[1] = chr(0)) then i := i+1
+         writeln(i:1, ': ', fns:*);
+         if cury(output) >= maxy(output) then begin { screen overflows }
 
-      until (fns[1] <> ' ') and (fns[1] <> chr(0));
-      writeln(i:1, ': ', fns:*);
-      if cury(output) >= maxy(output) then begin { screen overflows }
+            writeln('Press return to continue');
+            waitnext;
+            page;
+            grid
 
-         writeln('Press return to continue');
-         waitnext;
-         page;
-         grid
+         end
 
-      end;
-      i := i+1; { next font code }
-      cnt := cnt-1 { count fonts }
+      end
 
    end;
    writeln;
@@ -2769,32 +2768,27 @@ begin
    auto(output, 0);
    bcolor(output, cyan);
    bover(output);
-   i := 1;
    cnt := fonts(output);
-   while cnt <> 0 do begin
+   for i := 1 to cnt do begin
 
-      { find defined font code }
-      repeat
+      fontnam(output, i, fns);
+      if (fns[1] <> ' ') and (fns[1] <> chr(0)) then begin { defined font }
 
-         fontnam(output, i, fns);
-         if (fns[1] = ' ') or (fns[1] = chr(0)) then i := i+1
+         font(output, i);
+         writeln(i:1, ': ', fns:*);
+         if cury(output) >= maxy(output) then begin { screen overflows }
 
-      until (fns[1] <> ' ') and (fns[1] <> chr(0));
-      font(output, i);
-      writeln(i:1, ': ', fns:*);
-      if cury(output) >= maxy(output) then begin { screen overflows }
+            font(output, ftterm);
+            writeln('Press return to continue');
+            waitnext;
+            bcolor(output, white);
+            page;
+            grid;
+            bcolor(output, cyan)
 
-         font(output, ftterm);
-         writeln('Press return to continue');
-         waitnext;
-         bcolor(output, white);
-         page;
-         grid;
-         bcolor(output, cyan)
+         end
 
-      end;
-      i := i+1; { next font code }
-      cnt := cnt-1 { count fonts }
+      end
 
    end;
    bcolor(output, white);
