@@ -491,13 +491,13 @@ void wrapper_bold(int e)
     ami_bold(stdout, e);
 }
 
-void wrapper_borf(pfile pfp)
+void wrapper_blorf(pfile pfp)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_bor(f);
 }
 
-void wrapper_bor(void)
+void wrapper_blor(void)
 {
     ami_bor(stdout);
 }
@@ -1003,13 +1003,13 @@ void wrapper_fontsiz(int s)
     ami_fontsiz(stdout, s);
 }
 
-void wrapper_forf(pfile pfp)
+void wrapper_florf(pfile pfp)
 {
     FILE* f = psystem_libcwrfil(pfp);
     ami_for(f);
 }
 
-void wrapper_for(void)
+void wrapper_flor(void)
 {
     ami_for(stdout);
 }
