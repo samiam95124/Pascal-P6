@@ -154,6 +154,13 @@ $(BUILD)/libs/support.o: $(LIBS)/source/support.c \
 # Services is built from components since it is an external C library in
 # Ami. The result is an archive services.a.
 #
+# Built with -DSTDIO_BYPASS and the Ami libc include path, the same as terminal
+# and graphics: psystem (the I/O point) runs in bypass mode, so the FILE* it
+# hands to a wrapper is an Ami-stdio FILE. The services file routines (writetime,
+# writedate, ...) must use the matching Ami stdio, or they would dereference that
+# FILE as a system FILE and crash.
+#
+SERVCPP=$(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source
 $(LIBS)/services.a: $(AMI)/services.c \
 	$(LIBS)/source/services_wrapper.asm \
 	$(LIBS)/source/services_wrapper.c \
@@ -165,13 +172,13 @@ $(LIBS)/services.a: $(AMI)/services.c \
 	@echo "Building services..."
 	@echo
 	mkdir -p $(BUILD)/libs
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
+	$(CC) $(CFLAGS) $(SERVCPP) \
 		-o $(BUILD)/libs/services_support.o -c $(LIBS)/source/services_support.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/services_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/services_wrapper.asm
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
+	$(CC) $(CFLAGS) $(SERVCPP) \
 		-o $(BUILD)/libs/services_wrapper.o -c $(LIBS)/source/services_wrapper.c
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
+	$(CC) $(CFLAGS) $(SERVCPP) \
 		-o $(BUILD)/libs/services.o -c $(AMI)/services.c
 	rm -f $(LIBS)/services.a
 	ar rc $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
