@@ -16,7 +16,8 @@
 program graphics_test(input, output);
 
 uses graphics,
-     services;
+     services,
+     strings;
 
 label 99; { terminate }
 
@@ -217,12 +218,16 @@ end;
 procedure waitnext;
 
 var er: evtrec;
+    ts: pstring; { title string }
 
 begin
 
-   { set title with frame number }
+   { set title with frame number (recycled dynamic string) }
    framenum := framenum+1;
-   title(output, 'graphics_test');
+   openstring;
+   ts := cat('graphics_test: frame ', ints(framenum));
+   title(output, ts^);
+   closestring;
    repeat event(input, er) until (er.etype = etenter) or (er.etype = etterm);
    if er.etype = etterm then goto 99
 
