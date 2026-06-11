@@ -104,5 +104,31 @@ compprog source/pcom
 #
 cp pgen.new bin/pgen
 compprog source/pint
-compprog source/pintt
+#
+# pintt is the same source built with the terminal module flavor first on
+# the module path (the instruction file appends the plain flavor after it).
+# The plain interpreter is rebuilt afterward so source/pint matches its
+# instruction file.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building source/pint (terminal flavor) as pintt..."
+echo "**********************************************************************"
+echo ""
+pc source/pint -mp=term -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pint bin/pintt
+pc source/pint -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pint bin
 compprog source/pmach

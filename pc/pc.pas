@@ -2784,7 +2784,10 @@ begin
    end;
 
    if not parse.endlin(cmdhan) then error('Invalid command line');
-   services.getenv('MODULEPATH', modpth); { get any module path }
+   { a command line module path has priority; otherwise take any environment
+     module path }
+   if modpth[1] = ' ' then
+      services.getenv('MODULEPATH', modpth); { get any module path }
    if fverb and (modpth[1] <> ' ') then 
       writeln('Environment module path: ', modpth:*);
    { find any instruction files for us }
