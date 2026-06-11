@@ -3285,18 +3285,10 @@ begin
     pi_mdc: begin getq; popint(i1); pshint(i1); pshint(i1+q) end;
 
     pi_eext: begin
-                    {ExecuteExternal(pc-extvecbase); fixme}
-                    { set stack below function result, if any }
-                    sp := mp;
-                    {???fixme???}
-                    {
-                    pc := getadr(mp+markra);
-                    }
-                    ep := getadr(mp+markep);
-                    {???fixme???}
-                    {
-                    mp := getadr(mp+markdl)
-                    }
+                    i1 := sp+adrsize; { index parameters }
+                    ExecuteExternal(pc-extvecbase, i1);
+                    popadr(pc); { load return address }
+                    sp := i1; { skip parameters }
                   end;
 
     { illegal instructions }
