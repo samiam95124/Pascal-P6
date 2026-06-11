@@ -102,4 +102,5 @@ compprog source/pcom
 #
 cp pgen.new bin/pgen
 compprog source/pint
+compprog source/pintt
 compprog source/pmach
