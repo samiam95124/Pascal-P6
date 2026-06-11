@@ -16,8 +16,19 @@ module extlink;
 
 joins services; { system services }
 
-uses strings,  { string functions }
-     pint_mem; { low level vm access for pint }
+uses strings,   { string functions }
+     exttables, { external symbol tables }
+     extterm,   { terminal external execution (flavored by module path) }
+     pint_mem;  { low level vm access for pint }
+
+{ the public surface: symbol lookup and routine execution }
+
+procedure LookupExternal(view modulen: string; view symbol: string;
+                         var routine: integer); forward;
+procedure ExecuteExternal(routine: integer; var params: integer); forward;
+function NumExternal: integer; forward;
+
+private
 
 {*******************************************************************************
 
@@ -27,14 +38,34 @@ Given a module name and symbol name, returns a number used to execute the given
 module call. If no routine is found, a zero is returned. If a routine is found,
 this can be used as a key to execute the correct routine.
 
-Note that overloads are accounted for in the type signature. Thus the symbol for
-each overload is different.
+Each module has a symbol table in exttables (generated): the table index is
+the routine number within the module, and the modules stack into one flat
+number space in the order services, terminal. The entries hold a prefix of
+the symbol (symbols can far exceed a source line, and no two share even half
+the prefix width), so the match is on the prefix.
 
-Note that the numbering system for routines is flat, that is, all modules use
-the same incrementing numbers. This system many have to change if we end up
-renumbering them too much.
+Note that overloads are accounted for in the type signature. Thus the symbol
+for each overload is different.
 
 *******************************************************************************}
+
+{ match a symbol against a table entry prefix }
+
+function matchpre(view symbol: string; view e: syment): boolean;
+
+var i, l: integer;
+    m:    boolean;
+
+begin
+
+   l := len(e); { significant length of the entry }
+   m := l > 0; { empty entries match nothing }
+   for i := 1 to l do
+      if i > max(symbol) then m := false
+      else if symbol[i] <> e[i] then m := false;
+   matchpre := m
+
+end;
 
 procedure LookupExternal(
     { name of module }           view modulen: string;
@@ -42,127 +73,21 @@ procedure LookupExternal(
     { resulting routine number } var routine: integer
     );
 
+var i: integer;
+
 begin
 
    routine := 0; { set no routine found }
 
    if compp(modulen, 'services') then begin
 
-       if compp(symbol, 'list@p_vc_pr(name:0:pvc,size:8:i,alloc:16:i,attr:24:sx(atexec,atarc,atsys,atdir,atloop),create:56:i,modify:64:i,access:72:i,backup:80:i,user:88:sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren),group:120:sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren),other:152:sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren),next:184:p2)') then routine := 1
-       else if compp(symbol, 'list@p_pvc_pr(name:0:pvc,size:8:i,alloc:16:i,attr:24:sx(atexec,atarc,atsys,atdir,atloop),create:56:i,modify:64:i,access:72:i,backup:80:i,user:88:sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren),group:120:sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren),other:152:sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren),next:184:p2)') then routine := 2
-       else if compp(symbol, 'times@p_vc_i') then routine := 3
-       else if compp(symbol, 'times@f_i') then routine := 4
-       else if compp(symbol, 'dates@p_vc_i') then routine := 5
-       else if compp(symbol, 'dates@f_i') then routine := 6
-       else if compp(symbol, 'writetime@p_fc_i') then routine := 7
-       else if compp(symbol, 'writetime@p_i') then routine := 8
-       else if compp(symbol, 'writedate@p_fc_i') then routine := 9
-       else if compp(symbol, 'writedate@p_i') then routine := 10
-       else if compp(symbol, 'time@f') then routine := 11
-       else if compp(symbol, 'local@f_i') then routine := 12
-       else if compp(symbol, 'clock@f') then routine := 13
-       else if compp(symbol, 'elapsed@f_i') then routine := 14
-       else if compp(symbol, 'validfile@f_vc') then routine := 15
-       else if compp(symbol, 'validfile@f_pvc') then routine := 16
-       else if compp(symbol, 'validpath@f_vc') then routine := 17
-       else if compp(symbol, 'validpath@f_pvc') then routine := 18
-       else if compp(symbol, 'wild@f_vc') then routine := 19
-       else if compp(symbol, 'wild@f_pvc') then routine := 20
-       else if compp(symbol, 'getenv@p_vc_vc') then routine := 21
-       else if compp(symbol, 'getenv@f_vc') then routine := 22
-       else if compp(symbol, 'setenv@p_vc_vc') then routine := 23
-       else if compp(symbol, 'setenv@p_pvc_vc') then routine := 24
-       else if compp(symbol, 'setenv@p_vc_pvc') then routine := 25
-       else if compp(symbol, 'setenv@p_pvc_pvc') then routine := 26
-       else if compp(symbol, 'allenv@p_pr(name:0:pvc,data:8:p12,next:16:p2)') then routine := 27
-       else if compp(symbol, 'remenv@p_vc') then routine := 28
-       else if compp(symbol, 'remenv@p_pvc') then routine := 29
-       else if compp(symbol, 'exec@p_vc') then routine := 30
-       else if compp(symbol, 'exec@p_pvc') then routine := 31
-       else if compp(symbol, 'exece@p_vc_pr(name:0:pvc,data:8:p12,next:16:p2)') then routine := 32
-       else if compp(symbol, 'exece@p_pvc_pr(name:0:pvc,data:8:p12,next:16:p2)') then routine := 33
-       else if compp(symbol, 'execw@p_vc_i ') then routine := 34
-       else if compp(symbol, 'execw@p_pvc_i ') then routine := 35
-       else if compp(symbol, 'execew@p_vc_pr(name:0:pvc,data:8:p12,next:16:p2)_i') then routine := 36
-       else if compp(symbol, 'execew@p_pvc_pr(name:0:pvc,data:8:p12,next:16:p2)_i') then routine := 37
-       else if compp(symbol, 'getcur@p_vc') then routine := 38
-       else if compp(symbol, 'getcur@f') then routine := 39
-       else if compp(symbol, 'setcur@p_vc') then routine := 40
-       else if compp(symbol, 'setcur@p_pvc') then routine := 41
-       else if compp(symbol, 'brknam@p_vc_vc_vc_vc') then routine := 42
-       else if compp(symbol, 'brknam@p_vc_pvc_pvc_pvc') then routine := 43
-       else if compp(symbol, 'brknam@p_pvc_pvc_pvc_pvc') then routine := 44
-       else if compp(symbol, 'maknam@p_vc_vc_vc_vc') then routine := 45
-       else if compp(symbol, 'maknam@f_vc_vc_vc') then routine := 46
-       else if compp(symbol, 'maknam@f_vc_vc_pvc') then routine := 47
-       else if compp(symbol, 'maknam@f_vc_pvc_vc') then routine := 48
-       else if compp(symbol, 'maknam@f_vc_pvc_pvc') then routine := 49
-       else if compp(symbol, 'maknam@f_pvc_vc_vc') then routine := 50
-       else if compp(symbol, 'maknam@f_pvc_vc_pvc') then routine := 51
-       else if compp(symbol, 'maknam@f_pvc_pvc_vc') then routine := 52
-       else if compp(symbol, 'maknam@f_pvc_pvc_pvc') then routine := 53
-       else if compp(symbol, 'fulnam@p_vc') then routine := 54
-       else if compp(symbol, 'fulnam@f_vc') then routine := 55
-       else if compp(symbol, 'getpgm@p_vc') then routine := 56
-       else if compp(symbol, 'getpgm@f') then routine := 57
-       else if compp(symbol, 'getusr@p_vc') then routine := 58
-       else if compp(symbol, 'getusr@f') then routine := 59
-       else if compp(symbol, 'setatr@p_vc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 60
-       else if compp(symbol, 'setatr@p_pvc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 61
-       else if compp(symbol, 'resatr@p_vc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 62
-       else if compp(symbol, 'resatr@p_pvc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 63
-       else if compp(symbol, 'bakupd@p_vc') then routine := 64
-       else if compp(symbol, 'bakupd@p_pvc') then routine := 65
-       else if compp(symbol, 'setuper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 66
-       else if compp(symbol, 'setuper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 67
-       else if compp(symbol, 'resuper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 68
-       else if compp(symbol, 'resuper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 69
-       else if compp(symbol, 'setgper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 70
-       else if compp(symbol, 'setgper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 71
-       else if compp(symbol, 'resgper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 72
-       else if compp(symbol, 'resgper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 73
-       else if compp(symbol, 'setoper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 74
-       else if compp(symbol, 'setoper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 75
-       else if compp(symbol, 'resoper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 76
-       else if compp(symbol, 'resoper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 77
-       else if compp(symbol, 'makpth@p_vc') then routine := 78
-       else if compp(symbol, 'makpth@p_pvc') then routine := 79
-       else if compp(symbol, 'rempth@p_vc') then routine := 80
-       else if compp(symbol, 'rempth@p_pvc') then routine := 81
-       else if compp(symbol, 'filchr@p_sc') then routine := 82
-       else if compp(symbol, 'optchr@f') then routine := 83
-       else if compp(symbol, 'pthchr@f') then routine := 84
-       else if compp(symbol, 'latitude@f') then routine := 85
-       else if compp(symbol, 'longitude@f') then routine := 86
-       else if compp(symbol, 'altitude@f') then routine := 87
-       else if compp(symbol, 'country@f') then routine := 88
-       else if compp(symbol, 'countrys@p_vc_i') then routine := 89
-       else if compp(symbol, 'timezone@f') then routine := 90
-       else if compp(symbol, 'daysave@f') then routine := 91
-       else if compp(symbol, 'time24hour@f') then routine := 92
-       else if compp(symbol, 'language@f') then routine := 93
-       else if compp(symbol, 'languages@p_vc_i') then routine := 94
-       else if compp(symbol, 'decimal@f') then routine := 95
-       else if compp(symbol, 'numbersep@f') then routine := 96
-       else if compp(symbol, 'timeorder@f') then routine := 97
-       else if compp(symbol, 'dateorder@f') then routine := 98
-       else if compp(symbol, 'datesep@f') then routine := 99
-       else if compp(symbol, 'timesep@f') then routine := 100
-       else if compp(symbol, 'currchr@f') then routine := 101
+      for i := 1 to nservices do
+         if matchpre(symbol, servicestab[i]) then routine := i
 
-   { placeholders }
-
-   { terminal is complete }
    end else if compp(modulen, 'terminal') then begin
 
-   { graph is unfinished }
-   end else if compp(modulen, 'graph') then begin
-
-   { terminal is complete }
-   end else if compp(modulen, 'sound') then begin
-
-   { network is fairly complete }
-   end else if compp(modulen, 'network') then begin
+      for i := 1 to nterminal do
+         if matchpre(symbol, terminaltab[i]) then routine := nservices+i
 
    end
 
@@ -170,35 +95,13 @@ end;
 
 {*******************************************************************************
 
-Execute routine by number
+Common marshalling declarations
 
-Given a routine number, executes that routine. All of the input parameters are
-passed on the stack, and the result, if any, also returned on the stack.
-
-All of the input parameters are removed from the stack, leaving just the result
-(if any).
-
-The load of parameters is fairly ad-hoc. Value parameters are simply fetched.
-VAR and VIEW pameters have to be loaded into a buffer to transfer.
-
-The layout of the parameters and return are:
-
-params+intsize*2: return value
-params+intsize:   param1
-params:           param2
-...
-
-ie., the parameters start at the params address, then climb upwards until the
-return value (if any). The params address should be incremented past all
-parameters, but left pointing at the return value, if any. Otherwise params
-is just left above all parameters.
+The string buffers and error codes are shared by the per-module execution
+routines below.
 
 *******************************************************************************}
 
-procedure ExecuteExternal(
-    { number of routine to execute}             routine: integer;
-    { address of parameters bottom/result } var params:  integer
-);
 
 const 
 
@@ -211,21 +114,7 @@ const
 
 type str = packed array [1..strmax] of char;
 
-var a:             integer;
-    s, s2, s3, s4: str;
-    st:            settype;
-    at:            services.attrset;
-    ps:            services.permset;
-    cs:            schar;
-    ch:            char;
-    fp:            services.filptr;
-    ad, ad2:       address;
-    fn:            fileno;
-    bl:            boolean;
-    ep:            services.envptr;
-    sp:            pstring;
 
- 
 procedure getstr(sa: address; var s: string);
 
 var a1:  integer;
@@ -400,6 +289,7 @@ end;
 procedure cvtflist(fp: services.filptr; var la: address);
 
 var lp: services.filptr; ad, ad2, ad3: address; l: integer;
+    st: settype;
 
 begin
 
@@ -541,6 +431,54 @@ begin
 end;
 
 
+{*******************************************************************************
+
+Execute services routine
+
+Executes a services routine by module-local number. All of the input
+parameters are passed on the stack, and the result, if any, also returned on
+the stack.
+
+All of the input parameters are removed from the stack, leaving just the
+result (if any).
+
+The load of parameters is fairly ad-hoc. Value parameters are simply fetched.
+VAR and VIEW parameters have to be loaded into a buffer to transfer.
+
+The layout of the parameters and return are:
+
+params+intsize*2: return value
+params+intsize:   param1
+params:           param2
+...
+
+ie., the parameters start at the params address, then climb upwards until the
+return value (if any). The params address should be incremented past all
+parameters, but left pointing at the return value, if any. Otherwise params
+is just left above all parameters.
+
+*******************************************************************************}
+
+procedure execservices(
+    { module routine to execute }               routine: integer;
+    { address of parameters bottom/result } var params:  integer
+);
+
+var a:             integer;
+    s, s2, s3, s4: str;
+    st:            settype;
+    at:            services.attrset;
+    ps:            services.permset;
+    cs:            schar;
+    ch:            char;
+    fp:            services.filptr;
+    ad, ad2:       address;
+    fn:            fileno;
+    bl:            boolean;
+    ep:            services.envptr;
+    sp:            pstring;
+
+ 
 begin
 
     case routine of
@@ -1524,6 +1462,28 @@ begin
 
     end
 
+
+end;
+
+{*******************************************************************************
+
+Execute routine by number
+
+Given a flat routine number, dispatches to the module execution routine. The
+flat number space stacks the modules in the order services, terminal.
+
+*******************************************************************************}
+
+procedure ExecuteExternal(
+    { number of routine to execute}             routine: integer;
+    { address of parameters bottom/result } var params:  integer
+);
+
+begin
+
+    if routine <= nservices then execservices(routine, params)
+    else execterminal(routine-nservices, params)
+
 end;
 
 {*******************************************************************************
@@ -1538,7 +1498,7 @@ function NumExternal: integer;
 
 begin
 
-    NumExternal := 101
+    NumExternal := nservices+nterminal
 
 end;
 
