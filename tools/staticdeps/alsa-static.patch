@@ -10,7 +10,7 @@
      __SND_DLSYM_VERSION(snd_dlsym_, name, version).next = snd_dlsym_start; \
      __SND_DLSYM_VERSION(snd_dlsym_, name, version).dlsym_name = # name; \
 --- a/src/conf.c	2020-02-19 01:35:39.000000000 -0800
-+++ b/src/conf.c	2026-06-10 20:17:50.074442641 -0700
++++ b/src/conf.c	2026-06-10 22:03:13.829353694 -0700
 @@ -3621,6 +3621,17 @@
  	const char *str;
  	int (*func)(snd_config_t *root, snd_config_t *config, snd_config_t **dst, snd_config_t *private_data) = NULL;
@@ -29,14 +29,20 @@
  
  	err = snd_config_search(config, "func", &c);
  	if (err < 0) {
-@@ -3681,16 +3692,16 @@
+@@ -3680,17 +3691,20 @@
+ 	func = h ? snd_dlsym(h, func_name, SND_DLSYM_VERSION(SND_CONFIG_DLSYM_VERSION_HOOK)) : NULL;
  	err = 0;
  	if (!h) {
- 		SNDERR("Cannot open shared library %s (%s)", lib, errbuf);
+-		SNDERR("Cannot open shared library %s (%s)", lib, errbuf);
 -		err = -ENOENT;
-+		err = errors ? -ENOENT : 0;
++		if (errors) {
++			SNDERR("Cannot open shared library %s (%s)", lib, errbuf);
++			err = -ENOENT;
++		}
  	} else if (!func) {
- 		SNDERR("symbol %s is not defined inside %s", func_name, lib);
+-		SNDERR("symbol %s is not defined inside %s", func_name, lib);
++		if (errors)
++			SNDERR("symbol %s is not defined inside %s", func_name, lib);
  		snd_dlclose(h);
 -		err = -ENXIO;
 +		err = errors ? -ENXIO : 0;
