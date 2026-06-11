@@ -6505,10 +6505,13 @@ end;
         gen2(50(*lda*),level-(level-fcp^.pflev),fcp^.pfaddr);
         if fcp^.klass = func then gencipcif(123(*cif*), fcp)
         else gencipcif(67(*cip*), fcp);
-        { rip offset is a forward reference: base offset + data segment size }
+        { rip offset is a forward reference: the distance from the post-call
+          stack position back to the caller's mark is display + data segment
+          + expression depth + function result; the data segment is added at
+          resolution }
         genlabel(riplbl);
         new(rp); rp^.next := riplst; rp^.lab := riplbl;
-        rp^.off := lcs+lsize+soff; riplst := rp;
+        rp^.off := level*ptrsize+lsize+soff; riplst := rp;
         gen1(32(*rip*),riplbl);
         mesl(locpar); { remove stack parameters }
         mesl(-lsize);
