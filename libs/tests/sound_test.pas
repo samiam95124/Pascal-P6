@@ -10,16 +10,16 @@
 * 1. The MIDI tests not only test sound.c, but also the synthesizer           *
 * implementation.                                                             *
 *                                                                             *
-* 2. The C original accepts a --port=<port> (or --p=<port>) option to select  *
-* the output port. Option parsing is not bound in Pascaline, so the port      *
-* defaults to synth_out here.                                                 *
+* 2. The output port defaults to synth_out (the first fluidsynth instance)    *
+* and can be given as a number on the command line, the equivalent of the C  *
+* original's --port option.                                                  *
 *                                                                             *
 * The terminate event (etterm) is handled by polling in the wait routines,    *
 * which perform a non-local goto to the terminate label.                      *
 *                                                                             *
 ******************************************************************************}
 
-program sound_test(input, output);
+program sound_test(input, output, command);
 
 uses terminal, { terminal level functions }
      sound;    { sound library }
@@ -209,7 +209,11 @@ end;
 
 begin
 
-   dport := synth_out; { set default synth out (C original takes --port) }
+   { The output port: the default synthesizer (the first fluidsynth
+     instance), or the port number given on the command line (the C
+     original's --port option). }
+   dport := synth_out;
+   if not eof(command) then read(command, dport);
 
    {***************************************************************************
 

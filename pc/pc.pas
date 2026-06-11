@@ -2167,6 +2167,11 @@ begin { dolink }
         unambiguously selects graphics.o). }
       if windowed then begin putstr('-Wl,-u,ami_cursorg'); putchr(' ') end
       else if terminaled then begin putstr('-Wl,-u,ami_cursor'); putchr(' ') end;
+      { The synthesizer plugins register from constructors and export nothing
+        the program references, so force their archive members into the link
+        (the same anchoring as the I/O models). }
+      if sounded then begin
+         putstr('-Wl,-u,setparamfluid -Wl,-u,setparamdump'); putchr(' ') end;
       putstr('-o');
       putchr(' ');
       putstr(fns);
