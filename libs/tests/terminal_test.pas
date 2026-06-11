@@ -778,7 +778,9 @@ begin
    prtcen(maxy(output), 'Scroll left'); waitnext;
    page; fillcol;
    for x := 1 to maxx(output) do begin wait(200); scroll(output, -1, 0) end;
-   if x < y then minlen := x else minlen := y; { find minimum direction }
+   { find minimum screen dimension }
+   if maxx(output) < maxy(output) then minlen := maxx(output)
+   else minlen := maxy(output);
    prtcen(maxy(output), 'Scroll right'); waitnext;
    page; fillcol;
    for i := 1 to minlen do begin wait(200); scroll(output, 1, 1) end;
