@@ -5515,6 +5515,11 @@ void psystem_libcatcfil(
     if (filstate[fn] == fsread || filstate[fn] == fswrite)
         if (fclose(filtable[fn]))
             errore(modnam, __LINE__, FILECLOSEFAIL);
+    /* The attached file has no disk name. Mark it named with a placeholder
+       so close does not treat it as a temp file and remove by a leftover
+       name (a reopen by name fails cleanly instead). */
+    strcpy(filnamtab[fn], "<attached>");
+    filanamtab[fn] = TRUE;
     filtable[fn] = fp;
     if (wr) { /* mirror rewritefn */
 

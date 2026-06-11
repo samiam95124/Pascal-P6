@@ -72,6 +72,8 @@ const
                                    iolibnams = 'terminal graphics';
 { libs that run in a separate window }
                                    windowlibs  = 'graphics';
+{ name of sound library }          soundlib = 'sound';
+{ name of network library }        networklib = 'network';
 { maximum length of command line } cmdmax = 250;
 { maximum length of filename }     filmax = 1000;
 { maximum size of input line }     maxlin = 1000;
@@ -207,6 +209,8 @@ serrfil:     boolean;
 { packaging list }                         package: pkgptr;
 { a graphical window library exists }      windowed:  boolean;
 { the terminal library is the I/O library } terminaled: boolean;
+{ the sound library is used }              sounded:   boolean;
+{ the network library is used }            networked: boolean;
 { an alternate standard I/O library exists }
                                            siolib:  boolean;
 { exit has error }                         errexit: boolean;
@@ -1160,6 +1164,11 @@ begin
 
    schsio; { find if target already specifies a standard library }
    schgwn; { find if target specifies a graphical windowed library }
+   { find if the target uses the sound or network libraries (these are
+     independent device libraries, not I/O models; they only add their
+     external system libraries to the link) }
+   sounded := schfil(soundlib) <> nil;
+   networked := schfil(networklib) <> nil;
    terminaled := false; { set terminal is not the I/O library }
    if not siolib then begin { no standard library specified }
 
@@ -2183,6 +2192,18 @@ begin { dolink }
          putstr('-lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lfontconfig');
          putchr(' ');
          putstr('-luuid -lexpat -lfreetype -lpng16 -lm -lz -ldl') end;
+      { The sound library plays through ALSA and synthesizes through
+        fluidsynth (whose closure adds glib and pcre). The static libasound
+        and libfluidsynth are locally built and installed in /usr/local/lib
+        by tools/staticdeps/build.sh (the distribution carries only the
+        shared libraries). }
+      if sounded then begin putchr(' ');
+         putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lasound');
+         putchr(' ');
+         putstr('-lm -lpthread -ldl') end;
+      { The network library secures connections through OpenSSL. }
+      if networked then begin putchr(' ');
+         putstr('-lssl -lcrypto -lpthread -ldl') end;
       excact(cmdbuf) { execute command buffer action }
 
    end
