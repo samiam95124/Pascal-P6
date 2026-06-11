@@ -63,6 +63,11 @@ begin
    for i := 1 to l do
       if i > max(symbol) then m := false
       else if symbol[i] <> e[i] then m := false;
+   { an entry shorter than the prefix width is the complete symbol: the
+     symbol must end exactly there, or an overload that extends it
+     (maxx@f vs maxx@f_fc) would bind to the wrong routine }
+   if m then if l < symprefix then if l < max(symbol) then
+      if symbol[l+1] <> ' ' then m := false;
    matchpre := m
 
 end;
