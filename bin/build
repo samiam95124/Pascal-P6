@@ -41,17 +41,19 @@ if [ $? -ne 0 ]; then
 fi
 
 #
-# Services is build from C level components.
-# We build an interpretive deck here only as a dummy to satisfy
-# pc builds.
+# Build dummy decks to satisfy pc builds.
 #
 echo ""
 echo "**********************************************************************"
-echo "Building Services..."
+echo "Building Dummy decks..."
 echo "**********************************************************************"
 echo ""
 pc libs/source/services -pint -r
 cp libs/source/services.p6 libs
+pc libs/source/terminal -pint -r
+cp libs/source/terminal.p6 libs
+pc libs/source/graphics -pint -r
+cp libs/source/graphics.p6 libs
 
 #
 # General library modules in Pascaline.
