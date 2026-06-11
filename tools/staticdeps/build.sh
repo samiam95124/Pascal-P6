@@ -89,5 +89,8 @@ echo "installed /usr/local/lib/libfluidsynth.a"
 
 echo
 echo "Static dependency closure for pc link lines:"
-echo "  sound:   -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lasound -lm -lpthread -ldl"
+echo "  sound:   -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre \\"
+echo "           -Wl,--whole-archive -lasound -Wl,--no-whole-archive -lm -lpthread -ldl"
+echo "           (libasound whole-archive: the device plugins register through"
+echo "            per-member constructors, so every member must link)"
 echo "  network: -lssl -lcrypto -lpthread -ldl"

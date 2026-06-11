@@ -2196,9 +2196,15 @@ begin { dolink }
         fluidsynth (whose closure adds glib and pcre). The static libasound
         and libfluidsynth are locally built and installed in /usr/local/lib
         by tools/staticdeps/build.sh (the distribution carries only the
-        shared libraries). }
+        shared libraries). libasound links whole-archive: its device plugins
+        resolve through a registry populated by per-member constructors, and
+        a member nothing references statically would otherwise be left out
+        of the link, losing its registration (e.g. the virtual rawmidi
+        plugin on a system with virmidi devices). }
       if sounded then begin putchr(' ');
-         putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lasound');
+         putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre');
+         putchr(' ');
+         putstr('-Wl,--whole-archive -lasound -Wl,--no-whole-archive');
          putchr(' ');
          putstr('-lm -lpthread -ldl') end;
       { The network library secures connections through OpenSSL. }
