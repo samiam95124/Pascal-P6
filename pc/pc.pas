@@ -2076,7 +2076,9 @@ begin { dolink }
       if fpmach or fcmach or fpack then begin
 
          { concatenate file }
-         catfils(lnklst, fns);
+         services.brknam(prgnam, p, n, e);
+         services.maknam(fni, p, n, 'p6');
+         catfils(lnklst, fni);
          { prepare machine binary }
          clears(cmdbuf); { clear command buffer }
          i := 1; { set 1st char }

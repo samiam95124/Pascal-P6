@@ -3522,8 +3522,10 @@ begin (* main *)
   wthcnt := 0;
   wthfre := nil;
   exitcode:= 0; { clear program exit code }
-  { place the external vectors table }
-  extvecbase := 11;
+  { The external vectors table sits after the loader prelude pint assembles
+    (lnp q, cal q, stp = 9+9+1 bytes); the deck bakes vector addresses
+    against that base. Must match pint's vector placement. }
+  extvecbase := 19;
   { endian flip status is set if the host processor and the target disagree on
     endian mode }
   flipend := litend <> lendian;
