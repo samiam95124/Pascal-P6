@@ -211,9 +211,16 @@ begin
 
    { The output port: the default synthesizer (the first fluidsynth
      instance), or the port number given on the command line (the C
-     original's --port option). }
+     original's --port option). The command line can present as blanks (an
+     empty line carries a space), so skip spaces with the lookahead buffer
+     and only read a number if one is present. }
    dport := synth_out;
-   if not eof(command) then read(command, dport);
+   if not eof(command) then begin
+
+      while (not eoln(command)) and (command^ = ' ') do get(command);
+      if not eoln(command) then read(command, dport)
+
+   end;
 
    {***************************************************************************
 
