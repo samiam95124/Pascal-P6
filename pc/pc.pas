@@ -72,6 +72,8 @@ const
                                    iolibnams = 'terminal graphics';
 { libs that run in a separate window }
                                    windowlibs  = 'graphics';
+{ name of sound library }          soundlib = 'sound';
+{ name of network library }        networklib = 'network';
 { maximum length of command line } cmdmax = 250;
 { maximum length of filename }     filmax = 1000;
 { maximum size of input line }     maxlin = 1000;
@@ -207,6 +209,8 @@ serrfil:     boolean;
 { packaging list }                         package: pkgptr;
 { a graphical window library exists }      windowed:  boolean;
 { the terminal library is the I/O library } terminaled: boolean;
+{ the sound library is used }              sounded:   boolean;
+{ the network library is used }            networked: boolean;
 { an alternate standard I/O library exists }
                                            siolib:  boolean;
 { exit has error }                         errexit: boolean;
@@ -1160,6 +1164,11 @@ begin
 
    schsio; { find if target already specifies a standard library }
    schgwn; { find if target specifies a graphical windowed library }
+   { find if the target uses the sound or network libraries (these are
+     independent device libraries, not I/O models; they only add their
+     external system libraries to the link) }
+   sounded := schfil(soundlib) <> nil;
+   networked := schfil(networklib) <> nil;
    terminaled := false; { set terminal is not the I/O library }
    if not siolib then begin { no standard library specified }
 
@@ -2158,6 +2167,11 @@ begin { dolink }
         unambiguously selects graphics.o). }
       if windowed then begin putstr('-Wl,-u,ami_cursorg'); putchr(' ') end
       else if terminaled then begin putstr('-Wl,-u,ami_cursor'); putchr(' ') end;
+      { The synthesizer plugins register from constructors and export nothing
+        the program references, so force their archive members into the link
+        (the same anchoring as the I/O models). }
+      if sounded then begin
+         putstr('-Wl,-u,setparamfluid -Wl,-u,setparamdump'); putchr(' ') end;
       putstr('-o');
       putchr(' ');
       putstr(fns);
@@ -2183,6 +2197,24 @@ begin { dolink }
          putstr('-lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lfontconfig');
          putchr(' ');
          putstr('-luuid -lexpat -lfreetype -lpng16 -lm -lz -ldl') end;
+      { The sound library plays through ALSA and synthesizes through
+        fluidsynth (whose closure adds glib and pcre). The static libasound
+        and libfluidsynth are locally built and installed in /usr/local/lib
+        by tools/staticdeps/build.sh (the distribution carries only the
+        shared libraries). libasound links whole-archive: its device plugins
+        resolve through a registry populated by per-member constructors, and
+        a member nothing references statically would otherwise be left out
+        of the link, losing its registration (e.g. the virtual rawmidi
+        plugin on a system with virmidi devices). }
+      if sounded then begin putchr(' ');
+         putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre');
+         putchr(' ');
+         putstr('-Wl,--whole-archive -lasound -Wl,--no-whole-archive');
+         putchr(' ');
+         putstr('-lm -lpthread -ldl') end;
+      { The network library secures connections through OpenSSL. }
+      if networked then begin putchr(' ');
+         putstr('-lssl -lcrypto -lpthread -ldl') end;
       excact(cmdbuf) { execute command buffer action }
 
    end

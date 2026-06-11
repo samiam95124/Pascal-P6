@@ -84,7 +84,8 @@ endif
 
 all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a \
-	$(LIBS)/terminal.a $(LIBS)/graphics.a $(LIBS)/gnome_widgets.o
+	$(LIBS)/terminal.a $(LIBS)/graphics.a $(LIBS)/gnome_widgets.o \
+	$(LIBS)/sound.a $(LIBS)/network.a
 
 ################################################################################
 #
@@ -285,6 +286,66 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 $(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(LIBS)/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+
+#
+# Sound and network bindings. Unlike the I/O models, these live in the plain
+# glibc stdio world (no STDIO_BYPASS): sound's API carries no files at all,
+# and network's connection files are bridged into the Pascaline runtime at
+# the descriptor level (network_support.c). Both archives bundle support.o
+# for the string conversions, which are stdio-free and safe in either world.
+# Sound bundles both synthesizer plugins (dump and fluidsynth). The static
+# libasound and libfluidsynth are locally built and installed in
+# /usr/local/lib by tools/staticdeps/build.sh (the distribution carries only
+# their shared libraries); network's libssl/libcrypto ship with the
+# distribution. pc adds the per-library link closures.
+#
+SNDNETCPP=$(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source
+
+$(LIBS)/sound.a: $(AMI)/sound.c $(AMI)/dumpsynthplug.c $(AMI)/fluidsynthplug.c \
+	$(LIBS)/source/sound_wrapper.asm \
+	$(LIBS)/source/sound_wrapper.c \
+	$(BUILD)/libs/support.o
+	@echo
+	@echo "Building sound..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/sound_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/sound_wrapper.asm
+	$(CC) $(CFLAGS) $(SNDNETCPP) \
+		-o $(BUILD)/libs/sound_wrapper.o -c $(LIBS)/source/sound_wrapper.c
+	$(CC) $(CFLAGS) $(SNDNETCPP) \
+		-o $(BUILD)/libs/sound.o -c $(AMI)/sound.c
+	$(CC) $(CFLAGS) $(SNDNETCPP) \
+		-o $(BUILD)/libs/dumpsynthplug.o -c $(AMI)/dumpsynthplug.c
+	$(CC) $(CFLAGS) $(SNDNETCPP) \
+		-o $(BUILD)/libs/fluidsynthplug.o -c $(AMI)/fluidsynthplug.c
+	rm -f $(LIBS)/sound.a
+	ar rc $(LIBS)/sound.a $(BUILD)/libs/sound_wrapper_asm.o \
+		$(BUILD)/libs/sound_wrapper.o $(BUILD)/libs/sound.o \
+		$(BUILD)/libs/dumpsynthplug.o $(BUILD)/libs/fluidsynthplug.o \
+		$(BUILD)/libs/support.o
+
+$(LIBS)/network.a: $(AMI)/network.c \
+	$(LIBS)/source/network_wrapper.asm \
+	$(LIBS)/source/network_wrapper.c \
+	$(LIBS)/source/network_support.c \
+	$(BUILD)/libs/support.o
+	@echo
+	@echo "Building network..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/network_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/network_wrapper.asm
+	$(CC) $(CFLAGS) $(SNDNETCPP) \
+		-o $(BUILD)/libs/network_wrapper.o -c $(LIBS)/source/network_wrapper.c
+	$(CC) $(CFLAGS) $(SNDNETCPP) \
+		-o $(BUILD)/libs/network_support.o -c $(LIBS)/source/network_support.c
+	$(CC) $(CFLAGS) $(SNDNETCPP) \
+		-o $(BUILD)/libs/network.o -c $(AMI)/network.c
+	rm -f $(LIBS)/network.a
+	ar rc $(LIBS)/network.a $(BUILD)/libs/network_wrapper_asm.o \
+		$(BUILD)/libs/network_wrapper.o $(BUILD)/libs/network_support.o \
+		$(BUILD)/libs/network.o $(BUILD)/libs/support.o
 
 ################################################################################
 #
