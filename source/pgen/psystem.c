@@ -5484,6 +5484,56 @@ FILE* psystem_libcrdfil(
 
 /** ****************************************************************************
 
+Attach libc file to Pascal file
+
+Given a Pascal file pointer and a libc file, binds the libc file to the Pascal
+file so subsequent Pascal I/O on it routes to that libc file. The Pascal file
+is allocated a logical file number if it does not have one, and is placed in
+write or read state per the wr flag, mirroring rewrite/reset. Used by library
+bindings whose C side creates files of its own (e.g. the Ami openwin call,
+which returns the file handles for a new window).
+
+The header files (input, output, ...) cannot be rebound; attaching to one is
+an error.
+
+*******************************************************************************/
+
+void psystem_libcatcfil(
+    /** Pascal file to attach to */ pasfil* f,
+    /** libc file to attach */      FILE*   fp,
+    /** write (else read) state */  long    wr
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* allocate a logical file if not yet assigned */
+    fn = *f; /* get logical file no. */
+    if (fn <= COMMANDFN) errore(modnam, __LINE__, FILEMODEINCORRECT);
+    /* close any file currently open on this logical file */
+    if (filstate[fn] == fsread || filstate[fn] == fswrite)
+        if (fclose(filtable[fn]))
+            errore(modnam, __LINE__, FILECLOSEFAIL);
+    filtable[fn] = fp;
+    if (wr) { /* mirror rewritefn */
+
+        filstate[fn] = fswrite;
+        filbuff[fn] = FALSE;
+
+    } else { /* mirror resetfn */
+
+        filstate[fn] = fsread;
+        filbuff[fn] = FALSE;
+        fileoln[fn] = FALSE;
+        filbof[fn] = FALSE;
+
+    }
+
+}
+
+/** ****************************************************************************
+
 Compare strings
 
 Compares two strings, and returns:

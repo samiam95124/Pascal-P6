@@ -84,7 +84,7 @@ endif
 
 all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a \
-	$(LIBS)/terminal.a $(LIBS)/graphics.a
+	$(LIBS)/terminal.a $(LIBS)/graphics.a $(LIBS)/gnome_widgets.o
 
 ################################################################################
 #
@@ -274,6 +274,17 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 		$(BUILD)/libs/graphics.o $(BUILD)/libs/graph_services.o \
 		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o \
 		$(BUILD)/libs/support.o
+
+#
+# Gnome widgets, the portable widget set drawn with the graphics API. It
+# overrides the graphics widget stubs from a constructor and exports no
+# symbols, so it cannot be pulled from an archive by an undefined reference;
+# pc links it as an explicit object in windowed programs. Built with the same
+# flags as graphics.o (STDIO_BYPASS: it prints to Ami-stdio FILEs).
+#
+$(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
+	$(CC) $(CFLAGS) $(GRAPHCPP) \
+		-o $(LIBS)/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
 
 ################################################################################
 #

@@ -39,15 +39,22 @@ def emit(ret, name, params):
         if ct in SPECIAL_TYPES: return None  # hand-write
 
     cret = {'void':'void','int':'int','float':'double'}.get(ret,'void')
-    # build wrapper param list + call-arg list + pre/post statements
-    cparams=[]; callargs=[]; pre=[]; post=[]
+    # Build wrapper params as (decls, int-register slots) groups plus
+    # call-arg list and pre/post statements. The slot weights model the
+    # pgen amd64_sysv caller: a Pascaline string passes as a 2-slot
+    # (pointer, length) pair that is never split across the register/stack
+    # boundary — with one register left, the whole pair (and everything
+    # after it) goes to the stack and that register stays unused. The
+    # per-form pad() below inserts a dummy parameter to burn that register
+    # so the C signature lays the stack out identically.
+    groups=[]; callargs=[]; pre=[]; post=[]
     i=0
     while i<len(rest):
         ct,pn = split_param(rest[i]); cn=ct.replace(' ','')
         if cn=='char*' and i+1<len(rest):
             nt,nn=split_param(rest[i+1])
             if nt.replace(' ','')=='int' and nn==pn+'l':  # output string buffer
-                cparams += [f'string {pn}', f'int {nn}']
+                groups.append(([f'string {pn}', f'int {nn}'], 2))
                 callargs += [pn, nn]
                 # ami_* returns a null-terminated C string; convert it to a
                 # Pascaline right-padded (space-filled) string with no zero, so
@@ -56,26 +63,36 @@ def emit(ret, name, params):
                             f"_p++; while (_p < {nn}) {pn}[_p++] = ' '; }}")
                 i+=2; continue
         if cn=='char*':                                    # input string
-            cparams += [f'string {pn}', f'int {pn}l']
+            groups.append(([f'string {pn}', f'int {pn}l'], 2))
             if name in NVARIANT:
                 callargs.append(f'{pn}, {pn}l')            # use n-variant
             else:
                 callargs.append(f'cstrz({pn}, {pn}l)')     # null-terminate
             i+=1; continue
         if cn=='int*':                                     # var integer out
-            cparams.append(f'long* {pn}')
+            groups.append(([f'long* {pn}'], 1))
             pre.append(f'int t{pn};')
             callargs.append(f'&t{pn}')
             post.append(f'*{pn} = t{pn};')
             i+=1; continue
         if cn=='FILE*':                                    # explicit file param
-            cparams.append(f'pfile p{pn}')
+            groups.append(([f'pfile p{pn}'], 1))
             pre.append(f'FILE* {pn} = psystem_libcwrfil(p{pn});')
             callargs.append(pn); i+=1; continue
-        if cn=='float':
-            cparams.append(f'double {pn}'); callargs.append(f'(float){pn}'); i+=1; continue
+        if cn=='float':                                    # xmm, no int slot
+            groups.append(([f'double {pn}'], 0))
+            callargs.append(f'(float){pn}'); i+=1; continue
         # default: scalar (int / enum / winmodset / bool) -> int
-        cparams.append(f'int {pn}'); callargs.append(pn); i+=1
+        groups.append(([f'int {pn}'], 1)); callargs.append(pn); i+=1
+
+    def padded(prefix_slots):
+        # lay the groups out for one form; a 2-slot pair starting with
+        # exactly one register free gets a pad to burn that register
+        ps=[]; c=prefix_slots
+        for decls, slots in groups:
+            if slots==2 and c==5: ps.append('long r9pad'); c+=1
+            ps += decls; c+=slots
+        return ps
     pname = NAME_REMAP.get(name, name)
     callee = ('ami_'+name+'n') if name in NVARIANT else ('ami_'+name)
     rkw = 'return ' if cret!='void' else ''
@@ -92,12 +109,14 @@ def emit(ret, name, params):
 
     txt=[]
     if has_file:
-        ps = ', '.join(['pfile pfp']+cparams)
+        ps = ', '.join(['pfile pfp']+padded(1))
         txt.append(f'{cret} wrapper_{pname}f({ps})\n{{\n{body("f")}\n}}')
-        ps2 = ', '.join(cparams) if cparams else 'void'
+        p2 = padded(0)
+        ps2 = ', '.join(p2) if p2 else 'void'
         txt.append(f'{cret} wrapper_{pname}({ps2})\n{{\n{body("stdout")}\n}}')
     else:
-        ps = ', '.join(cparams) if cparams else 'void'
+        p1 = padded(0)
+        ps = ', '.join(p1) if p1 else 'void'
         txt.append(f'{cret} wrapper_{pname}({ps})\n{{\n{body(None)}\n}}')
     return '\n\n'.join(txt)
 

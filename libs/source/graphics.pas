@@ -27,7 +27,7 @@ const
 type
 
    { colors displayable in text mode }
-   color = (black, white, red, green, blue, cyan, yellow, magenta);
+   color = (black, white, red, green, blue, cyan, yellow, magenta, backcolor);
 
    { line styles for graphical drawing }
    lstyle = (lssolid, lsdash, lsdot);

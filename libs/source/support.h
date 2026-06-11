@@ -55,6 +55,7 @@ typedef unsigned char* pfile;
 /* File conversion helpers, supplied by the psystem runtime. */
 FILE* psystem_libcwrfil(pfile f); /* libc write file equivalent */
 FILE* psystem_libcrdfil(pfile f); /* libc read file equivalent */
+void  psystem_libcatcfil(pfile f, FILE* fp, long wr); /* attach libc file */
 
 /* String conversions between Pascaline and C forms. */
 pstring cstr2pstr(char* cs, int l);       /* C string -> heap pstring */

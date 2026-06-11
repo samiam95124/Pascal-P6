@@ -1955,6 +1955,7 @@ var p, n, e: filnam;  { path components }
     i:       lininx;  { index for that }
     main:    filnam;  { name for main module }
     psystem: filnam;  { name for psystem module }
+    widgets: filnam;  { name for the widgets module }
 
 { place output character }
 
@@ -2127,6 +2128,17 @@ begin { dolink }
       fndfil(psystem, true);
       if not exists(psystem) then { not found }
          writeln('*** pc: Error: support module "%"', psystem);
+      if windowed then begin
+
+         { find the widgets module. It overrides the graphics widget stubs from
+           a constructor and exports no symbols, so it cannot be force-linked
+           from an archive; it is linked as an explicit object. }
+         copy(widgets, 'gnome_widgets');
+         fndfil(widgets, true);
+         if not exists(widgets) then { not found }
+            error('Support module "%" not found', widgets)
+
+      end;
       if fverb then begin
 
          write('Building executable');
@@ -2154,6 +2166,12 @@ begin { dolink }
       putchr(' ');
       putstr(lnklst);
       putchr(' ');
+      { The widgets object follows the Pascal modules: main falls through into
+        the module chain, so a foreign object between main and the modules
+        breaks the chain. Its graphics references resolve from the graphics.a
+        members the -u anchor has already extracted, and its stdio from
+        psystem, later on the line. }
+      if windowed then begin putstr(widgets); putchr(' ') end;
       putstr(psystem);
       putchr(' ');
       putstr('-lm -lpthread');
