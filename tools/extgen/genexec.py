@@ -15,7 +15,9 @@
 #   general files are an error (the terminal model manages the console).
 # - Colors convert between the VM ordinal and the native enumeration.
 # - The eventover/eventsover forms take procedure parameters (callbacks into
-#   interpreted code); they error as unimplemented.
+#   interpreted code); the generator emits error stubs for them, and the real
+#   implementations (interpreter re-entry through callvm) are maintained by
+#   hand in source/term/extterm.pas -- re-merge them after regenerating.
 import os, re
 
 HERE = os.path.dirname(os.path.abspath(__file__))

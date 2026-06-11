@@ -19,6 +19,137 @@ joins terminal; { terminal model I/O }
 
 uses pint_mem; { low level vm access for pint }
 
+{ place event record to client memory }
+
+procedure putevt(view er: terminal.evtrec; ad: address);
+
+begin
+
+   putint(ad, er.winid); { winid at 0 }
+   putbyt(ad+8, ord(er.handled)); { handled at 8 }
+   putbyt(ad+9, ord(er.etype)); { etype tag at 9 }
+   case er.etype of { variant data, reverse order from 12 }
+
+      terminal.etchar:   putbyt(ad+12, ord(er.echar));
+      terminal.ettim:    putint(ad+12, er.timnum);
+      terminal.etmoumov: begin putint(ad+12, er.moupy);
+                               putint(ad+20, er.moupx);
+                               putint(ad+28, er.mmoun) end;
+      terminal.etmouba:  begin putint(ad+12, er.amoubn);
+                               putint(ad+20, er.amoun) end;
+      terminal.etmoubd:  begin putint(ad+12, er.dmoubn);
+                               putint(ad+20, er.dmoun) end;
+      terminal.etjoyba:  begin putint(ad+12, er.ajoybn);
+                               putint(ad+20, er.ajoyn) end;
+      terminal.etjoybd:  begin putint(ad+12, er.djoybn);
+                               putint(ad+20, er.djoyn) end;
+      terminal.etjoymov: begin putint(ad+12, er.joyp6);
+                               putint(ad+20, er.joyp5);
+                               putint(ad+28, er.joyp4);
+                               putint(ad+36, er.joypz);
+                               putint(ad+44, er.joypy);
+                               putint(ad+52, er.joypx);
+                               putint(ad+60, er.mjoyn) end;
+      terminal.etfun:    putint(ad+12, er.fkey);
+      terminal.etresize: begin putint(ad+12, er.rszy);
+                               putint(ad+20, er.rszx) end;
+      terminal.etmenus:  putint(ad+12, er.menuid);
+   else { events without parameter data }
+   end
+
+end;
+
+{ Event callback support: interpreted programs register global-level
+  handlers through eventover/eventsover; a native thunk converts the event
+  record into interpreted memory, runs the handler through the interpreter
+  (callvm), and carries the handled flag back. Old vectors are opaque
+  integers by the interface, and there is no facility to reinstall them, so
+  registration simply replaces the previous interpreted handler. Handlers at
+  nested level would need the thunk securing planned for the compiler, and
+  error as not implemented. }
+
+const nevtcod = 56; { number of event codes (etchar..etmenus) }
+      evtrecvmsiz = 80; { interpreted event record scratch size }
+
+var vmhand:    array [1..nevtcod] of address; { per-event interpreted handlers }
+    vmhandall: address; { master interpreted handler }
+    hooked:    array [1..nevtcod] of boolean; { native vector hooked }
+    hookedall: boolean;
+    evtinit:   boolean; { tables initialized }
+
+{ initialize the callback tables on first use }
+
+procedure evtsetup;
+
+var i: integer;
+
+begin
+
+   if not evtinit then begin
+
+      for i := 1 to nevtcod do begin vmhand[i] := 0; hooked[i] := false end;
+      vmhandall := 0;
+      hookedall := false;
+      evtinit := true
+
+   end
+
+end;
+
+{ convert ordinal to event code }
+
+function int2evtcod(i: integer): terminal.evtcod;
+
+var c: terminal.evtcod;
+    j: integer;
+
+begin
+
+   c := terminal.etchar;
+   for j := 1 to i do c := succ(c);
+   int2evtcod := c
+
+end;
+
+{ run an interpreted handler against an event record }
+
+procedure callhand(h: address; var er: terminal.evtrec);
+
+var ad: address;
+
+begin
+
+   ad := resvm(evtrecvmsiz); { scratch on the interpreted stack }
+   putevt(er, ad);
+   callvm(globalframe, h, ad);
+   er.handled := getbyt(ad+8) <> 0; { carry the handled flag back }
+   relvm(evtrecvmsiz)
+
+end;
+
+{ native thunk for per-event vectors }
+
+procedure evtthunk(var er: terminal.evtrec);
+
+var h: address;
+
+begin
+
+   h := vmhand[ord(er.etype)+1];
+   if h <> 0 then callhand(h, er)
+
+end;
+
+{ native thunk for the master vector }
+
+procedure evtsthunk(var er: terminal.evtrec);
+
+begin
+
+   if vmhandall <> 0 then callhand(vmhandall, er)
+
+end;
+
 procedure execterminal(routine: integer; var params: integer); forward;
 
 private
@@ -91,45 +222,6 @@ begin
 
 end;
 
-{ place event record to client memory }
-
-procedure putevt(view er: terminal.evtrec; ad: address);
-
-begin
-
-   putint(ad, er.winid); { winid at 0 }
-   putbyt(ad+8, ord(er.handled)); { handled at 8 }
-   putbyt(ad+9, ord(er.etype)); { etype tag at 9 }
-   case er.etype of { variant data, reverse order from 12 }
-
-      terminal.etchar:   putbyt(ad+12, ord(er.echar));
-      terminal.ettim:    putint(ad+12, er.timnum);
-      terminal.etmoumov: begin putint(ad+12, er.moupy);
-                               putint(ad+20, er.moupx);
-                               putint(ad+28, er.mmoun) end;
-      terminal.etmouba:  begin putint(ad+12, er.amoubn);
-                               putint(ad+20, er.amoun) end;
-      terminal.etmoubd:  begin putint(ad+12, er.dmoubn);
-                               putint(ad+20, er.dmoun) end;
-      terminal.etjoyba:  begin putint(ad+12, er.ajoybn);
-                               putint(ad+20, er.ajoyn) end;
-      terminal.etjoybd:  begin putint(ad+12, er.djoybn);
-                               putint(ad+20, er.djoyn) end;
-      terminal.etjoymov: begin putint(ad+12, er.joyp6);
-                               putint(ad+20, er.joyp5);
-                               putint(ad+28, er.joyp4);
-                               putint(ad+36, er.joypz);
-                               putint(ad+44, er.joypy);
-                               putint(ad+52, er.joypx);
-                               putint(ad+60, er.mjoyn) end;
-      terminal.etfun:    putint(ad+12, er.fkey);
-      terminal.etresize: begin putint(ad+12, er.rszy);
-                               putint(ad+20, er.rszx) end;
-      terminal.etmenus:  putint(ad+12, er.menuid);
-   else { events without parameter data }
-   end
-
-end;
 
 begin
 
@@ -953,9 +1045,51 @@ begin
 
        end;
 
-       { eventover and eventsover take procedure parameters (callbacks
-         into interpreted code) and are not implemented }
-       92, 93: errore(FunctionNotImplemented);
+       92: begin { eventover@p_x(...)_q(...)_i }
+
+           { (e: evtcod; eh: handler; out oeh: integer): oeh at params, the
+             handler pair above it (address below frame), e on top }
+           evtsetup;
+           ad := getadr(params); { out oeh }
+           ad2 := getadr(params+adrsize); { handler address }
+           a2 := getadr(params+adrsize+ptrsize); { handler frame }
+           a := getint(params+adrsize+ptrsize*2); { event code ordinal }
+           { only global-level handlers: nested ones need the planned thunk
+             securing }
+           if ad2 <> 0 then if a2 <> globalframe then
+              errore(FunctionNotImplemented);
+           putint(ad, vmhand[a+1]); { old vector as opaque integer }
+           vmhand[a+1] := ad2;
+           if not hooked[a+1] then begin
+
+              terminal.eventover(int2evtcod(a), evtthunk, a3);
+              hooked[a+1] := true
+
+           end;
+           params := params+adrsize+ptrsize*2+intsize
+
+       end;
+
+       93: begin { eventsover@p_q(...)_i }
+
+           { (eh: handler; out oeh: integer) }
+           evtsetup;
+           ad := getadr(params); { out oeh }
+           ad2 := getadr(params+adrsize); { handler address }
+           a2 := getadr(params+adrsize+ptrsize); { handler frame }
+           if ad2 <> 0 then if a2 <> globalframe then
+              errore(FunctionNotImplemented);
+           putint(ad, vmhandall);
+           vmhandall := ad2;
+           if not hookedall then begin
+
+              terminal.eventsover(evtsthunk, a3);
+              hookedall := true
+
+           end;
+           params := params+adrsize+ptrsize*2
+
+       end;
 
     else errore(FunctionNotImplemented)
 
@@ -964,4 +1098,7 @@ begin
 end;
 
 begin
+
+   evtinit := false
+
 end.

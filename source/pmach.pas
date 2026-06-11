@@ -564,6 +564,7 @@ var   pc          : address;   (*program address register*)
       maxpow2     : integer; { maximum power of 2 }
       bindig      : integer; { digits in unsigned binary }
       extvecbase  : integer; { base of external vectors }
+      stpaddr     : address; { address of the loader prelude stp }
       exitcode    : integer; { exit code for program }
       breakflag   : boolean; { user break signaled }
       prdval      : boolean; { input source file parsed }
@@ -685,6 +686,7 @@ end;(*errori*)
 
 { throw an exception by vector }
 override procedure errore(ei: integer); forward;
+procedure sinins; forward;
 
 { handle exception vector }
 procedure errorv(ea: address);
@@ -1434,6 +1436,57 @@ begin
      end;
      store[fa] := ff; putdef(fa, true)
    end
+end;
+
+{ call an interpreted procedure with one address parameter (see pint) }
+
+override procedure callvm(sl, pa, pr: address);
+
+var mps: address;
+
+begin
+
+   mps := mp; { save our frame }
+   pshadr(pr); { the single address parameter }
+   pshadr(stpaddr); { return lands on the loader stp }
+   mp := sl; { static environment for the callee's mark }
+   pc := pa;
+   repeat sinins until stopins; { run the callee to completion }
+   stopins := false;
+   mp := mps { restore our frame }
+
+end;
+
+{ reserve scratch space on the interpreted stack }
+
+override function resvm(sz: integer): address;
+
+begin
+
+   sp := sp-sz;
+   if sp <= np then errorv(StoreOverflow);
+   resvm := sp
+
+end;
+
+{ release scratch space on the interpreted stack }
+
+override procedure relvm(sz: integer);
+
+begin
+
+   sp := sp+sz
+
+end;
+
+{ the interpreted global frame pointer: every frame's display entry 1 }
+
+override function globalframe: address;
+
+begin
+
+   globalframe := getadr(mp-ptrsize)
+
 end;
 
 procedure valfilwm(fa: address); { validate file write mode }
@@ -3064,7 +3117,10 @@ begin
     pi_cif: begin popadr(ad); ad1 := mp;
                 mp := getadr(ad+1*ptrsize); pshadr(pc); pc := getadr(ad)
               end;
-    pi_rip: begin getq; mp := getadr(sp+q) end;
+    { restore frame after indirect call: q is the static distance from the
+      post-call stack position back to the caller's own mark (the native
+      generator preserves the frame in a register instead) }
+    pi_rip: begin getq; mp := sp+q end;
     pi_lpa: begin getp; getq; { place procedure address on stack }
                 pshadr(getadr(mp-p*ptrsize));
                 pshadr(q)
@@ -3526,6 +3582,8 @@ begin (* main *)
     (lnp q, cal q, stp = 9+9+1 bytes); the deck bakes vector addresses
     against that base. Must match pint's vector placement. }
   extvecbase := 19;
+  { the prelude stp before the vectors: interpreted callbacks return there }
+  stpaddr := 18;
   { endian flip status is set if the host processor and the target disagree on
     endian mode }
   flipend := litend <> lendian;
