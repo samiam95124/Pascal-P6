@@ -115,7 +115,7 @@ echo "**********************************************************************"
 echo "Building source/pint (terminal flavor) as pintt..."
 echo "**********************************************************************"
 echo ""
-pc source/pint -mp=term -r $OPTIONS
+pc source/pint -mp=source/term -r $OPTIONS
 if [ $? -ne 0 ]; then
 
    echo "*** Error: compile failed"
