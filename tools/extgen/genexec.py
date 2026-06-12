@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Generate the per-module external executors for the interpreter's flavored
-# extterm modules (source/{plain,term,graph}/extterm.pas).
+# extexec modules (source/{plain,term,graph}/extexec.pas).
 #
 # Ground truth is twofold: the module's symbol list (<module>.syms, in .p6
 # declaration order -- the table index is the routine number) carries the
@@ -598,7 +598,7 @@ end;
 '''
 
 def writeflavor(path, header, joins, body):
-    out = [header, '', 'module extterm;', '']
+    out = [header, '', 'module extexec;', '']
     if joins:
         out.append(joins)
         out.append('')
@@ -624,10 +624,10 @@ def main():
     tbody += term.callbacks()
     tbody += term.executor('execterminal')
     tbody.append(STUB % 'execgraph')
-    writeflavor(os.path.join(ROOT, 'source/term/extterm.pas'),
+    writeflavor(os.path.join(ROOT, 'source/term/extexec.pas'),
 '''{*******************************************************************************
 *                                                                              *
-*                       Terminal external execution                            *
+*                       External model execution                               *
 *                                                                              *
 * The terminal flavor of the external execution module, selected for the      *
 * pintt interpreter by module path: terminal externals execute against the    *
@@ -644,10 +644,10 @@ def main():
     gbody += graph.callbacks()
     gbody += graph.executor('execgraph')
     gbody.append(STUB % 'execterminal')
-    writeflavor(os.path.join(ROOT, 'source/graph/extterm.pas'),
+    writeflavor(os.path.join(ROOT, 'source/graph/extexec.pas'),
 '''{*******************************************************************************
 *                                                                              *
-*                       Terminal external execution                            *
+*                       External model execution                               *
 *                                                                              *
 * The graphics flavor of the external execution module, selected for the      *
 * pintg interpreter by module path. Joining graphics links the "blonde"       *
@@ -668,10 +668,10 @@ def main():
 
     pbody = 'const FunctionNotImplemented = 90;\n\n' + \
             (STUB % 'execterminal') + '\n' + (STUB % 'execgraph')
-    writeflavor(os.path.join(ROOT, 'source/plain/extterm.pas'),
+    writeflavor(os.path.join(ROOT, 'source/plain/extexec.pas'),
 '''{*******************************************************************************
 *                                                                              *
-*                       Terminal external execution                            *
+*                       External model execution                               *
 *                                                                              *
 * The plain flavor of the external execution module: the plain interpreter    *
 * hosts no I/O model, so executing a terminal or graphics external is an      *

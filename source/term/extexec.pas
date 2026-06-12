@@ -1,6 +1,6 @@
 {*******************************************************************************
 *                                                                              *
-*                       Terminal external execution                            *
+*                       External model execution                               *
 *                                                                              *
 * The terminal flavor of the external execution module, selected for the      *
 * pintt interpreter by module path: terminal externals execute against the    *
@@ -10,7 +10,7 @@
 *                                                                              *
 *******************************************************************************}
 
-module extterm;
+module extexec;
 
 joins terminal; { terminal model I/O }
 

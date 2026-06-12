@@ -18,7 +18,7 @@ joins services; { system services }
 
 uses strings,   { string functions }
      exttables, { external symbol tables }
-     extterm,   { terminal external execution (flavored by module path) }
+     extexec,   { external model execution (flavored by module path) }
      pint_mem;  { low level vm access for pint }
 
 { the public surface: symbol lookup and routine execution }

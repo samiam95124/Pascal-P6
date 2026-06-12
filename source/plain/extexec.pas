@@ -1,6 +1,6 @@
 {*******************************************************************************
 *                                                                              *
-*                       Terminal external execution                            *
+*                       External model execution                               *
 *                                                                              *
 * The plain flavor of the external execution module: the plain interpreter    *
 * hosts no I/O model, so executing a terminal or graphics external is an      *
@@ -11,7 +11,7 @@
 *                                                                              *
 *******************************************************************************}
 
-module extterm;
+module extexec;
 
 uses pint_mem; { low level vm access for pint }
 

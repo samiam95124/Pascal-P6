@@ -1,6 +1,6 @@
 {*******************************************************************************
 *                                                                              *
-*                       Terminal external execution                            *
+*                       External model execution                               *
 *                                                                              *
 * The graphics flavor of the external execution module, selected for the      *
 * pintg interpreter by module path. Joining graphics links the "blonde"       *
@@ -17,7 +17,7 @@
 *                                                                              *
 *******************************************************************************}
 
-module extterm;
+module extexec;
 
 joins graphics; { graphics model I/O (the blonde archive) }
 
