@@ -952,6 +952,7 @@ var   pc, pcs     : address;   (*program address register*)
       wthfre      : wthptr; { free with block entries }
       extvecs     : integer; { number of external vectors }
       extvecbase  : integer; { base of external vectors }
+      stpaddr     : address; { address of the loader prelude stp }
       exitcode    : integer; { exit code for program }
       breakflag   : boolean; { user break signaled }
       dbgcmds     : array [dbgcmd] of alfa; { debug command strings }
@@ -1054,6 +1055,7 @@ begin
 end;
 
 procedure lstins(var ad: address); forward;
+procedure sinins; forward;
 
 procedure dmpins;
 begin
@@ -3151,6 +3153,7 @@ begin (*load*)
   }
   op := 20; storeop; q := 0; npadr := pc; storeq; { lnp }
   op := 21; storeop; q := pc+intsize+1+extvecs; storeq; { call mstack }
+  stpaddr := pc; { interpreted callbacks return here to stop the nested run }
   op := 58; storeop; { stp }
   { place the external vectors table }
   extvecbase := pc; op := 242;
@@ -3284,6 +3287,61 @@ begin
      end;
      store[fa] := ff; putdef(fa, true)
    end
+end;
+
+{ call an interpreted procedure with one address parameter. The static link
+  seeds the callee's display copy exactly as cip does; the return address is
+  the loader prelude stp, so the nested run ends on the callee's return. The
+  frame is preserved across the call like the native generator's register
+  save. }
+
+override procedure callvm(sl, pa, pr: address);
+
+var mps: address;
+
+begin
+
+   mps := mp; { save our frame }
+   pshadr(pr); { the single address parameter }
+   pshadr(stpaddr); { return lands on the loader stp }
+   mp := sl; { static environment for the callee's mark }
+   pc := pa;
+   repeat sinins until stopins; { run the callee to completion }
+   stopins := false;
+   mp := mps { restore our frame }
+
+end;
+
+{ reserve scratch space on the interpreted stack }
+
+override function resvm(sz: integer): address;
+
+begin
+
+   sp := sp-sz;
+   if sp <= np then errorv(StoreOverflow);
+   resvm := sp
+
+end;
+
+{ release scratch space on the interpreted stack }
+
+override procedure relvm(sz: integer);
+
+begin
+
+   sp := sp+sz
+
+end;
+
+{ the interpreted global frame pointer: every frame's display entry 1 }
+
+override function globalframe: address;
+
+begin
+
+   globalframe := getadr(mp-ptrsize)
+
 end;
 
 procedure valfilwm(fa: address); { validate file write mode }
@@ -5276,7 +5334,10 @@ begin
     pi_cif: begin popadr(ad); ad1 := mp;
                 mp := getadr(ad+1*ptrsize); pshadr(pc); pc := getadr(ad)
               end;
-    pi_rip: begin getq; mp := getadr(sp+q) end;
+    { restore frame after indirect call: q is the static distance from the
+      post-call stack position back to the caller's own mark (the native
+      generator preserves the frame in a register instead) }
+    pi_rip: begin getq; mp := sp+q end;
     pi_lpa: begin getp; getq; { place procedure address on stack }
                 pshadr(getadr(mp-p*ptrsize));
                 pshadr(q)

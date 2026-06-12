@@ -248,6 +248,62 @@ begin
 
 end;
 
+{ call an interpreted procedure with one address parameter; sl is the static
+  environment for the callee's mark (like cip), pa the entry address, pr the
+  parameter }
+
+virtual procedure callvm(sl, pa, pr: address);
+
+begin
+
+    refer(sl);
+    refer(pa);
+    refer(pr);
+
+    writeln('*** pint_mem: callvm: abstract function not defined');
+    halt
+
+end;
+
+{ reserve scratch space on the interpreted stack }
+
+virtual function resvm(sz: integer): address;
+
+begin
+
+    refer(sz);
+
+    writeln('*** pint_mem: resvm: abstract function not defined');
+    resvm := 0;
+    halt
+
+end;
+
+{ release scratch space on the interpreted stack }
+
+virtual procedure relvm(sz: integer);
+
+begin
+
+    refer(sz);
+
+    writeln('*** pint_mem: relvm: abstract function not defined');
+    halt
+
+end;
+
+{ the interpreted global frame pointer }
+
+virtual function globalframe: address;
+
+begin
+
+    writeln('*** pint_mem: globalframe: abstract function not defined');
+    globalframe := 0;
+    halt
+
+end;
+
 virtual procedure errore(ei: integer);
 
 begin

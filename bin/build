@@ -41,17 +41,19 @@ if [ $? -ne 0 ]; then
 fi
 
 #
-# Services is build from C level components.
-# We build an interpretive deck here only as a dummy to satisfy
-# pc builds.
+# Build dummy decks to satisfy pc builds.
 #
 echo ""
 echo "**********************************************************************"
-echo "Building Services..."
+echo "Building Dummy decks..."
 echo "**********************************************************************"
 echo ""
 pc libs/source/services -pint -r
 cp libs/source/services.p6 libs
+pc libs/source/terminal -pint -r
+cp libs/source/terminal.p6 libs
+pc libs/source/graphics -pint -r
+cp libs/source/graphics.p6 libs
 
 #
 # General library modules in Pascaline.
@@ -102,4 +104,31 @@ compprog source/pcom
 #
 cp pgen.new bin/pgen
 compprog source/pint
+#
+# pintt is the same source built with the terminal module flavor first on
+# the module path (the instruction file appends the plain flavor after it).
+# The plain interpreter is rebuilt afterward so source/pint matches its
+# instruction file.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building source/pint (terminal flavor) as pintt..."
+echo "**********************************************************************"
+echo ""
+pc source/pint -mp=source/term -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pint bin/pintt
+pc source/pint -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pint bin
 compprog source/pmach

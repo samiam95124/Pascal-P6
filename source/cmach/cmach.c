@@ -3117,7 +3117,9 @@ void sinins()
     case pi_cif: popadr(ad); ad1 = mp;
                 mp = getadr(ad+1*PTRSIZE); pshadr(pc); pc = getadr(ad);
                 break;
-    case pi_rip: getq(); mp = getadr(sp+q); break;
+    /* restore frame after indirect call: q is the static distance from the
+       post-call stack position back to the caller's own mark */
+    case pi_rip: getq(); mp = sp+q; break;
     case pi_lpa: getp(); getq(); /* place procedure address on stack */
                 pshadr(getadr(mp-p*PTRSIZE));
                 pshadr(q);
