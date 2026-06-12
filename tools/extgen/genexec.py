@@ -98,7 +98,7 @@ def parse_evtrec(digest):
 # per-module generation
 # ----------------------------------------------------------------------------
 
-HARDTYPES = {'menuptr', 'strptr', 'imageptr', 'widget'}
+HARDTYPES = {'menuptr', 'imageptr', 'widget'}
 
 class Gen:
 
@@ -196,6 +196,10 @@ class Gen:
                     pre.append('           %s := fn;' % v)
                     args.append('filtable[%s]' % v)
                     filevars.append(v)
+            elif base == 'strptr':
+                ni += 1; v = 'a%d' % ni
+                pre.append('           %s := getadr(%s); { string list }' % (v, off))
+                args.append('getstrlst(%s)' % v)
             elif typ == 'evtrec':
                 pre.append('           ad2 := getadr(%s);' % off)
                 args.append('er')
@@ -648,6 +652,38 @@ begin
 
       end;
       putmenu := ad
+
+   end
+
+end;
+
+{ String list conversion: the interpreted list (next:0, str pstring:8 --
+  offsets from the signature digest) converts to a native list for the
+  list and drop box widgets. }
+
+function getstrlst(ad: address): graphics.strptr;
+
+var sp: graphics.strptr;
+    sa: address;
+    l, i: integer;
+
+begin
+
+   if (ad = 0) or (ad = nilval) then getstrlst := nil
+   else begin
+
+      new(sp);
+      sp^.next := getstrlst(getadr(ad));
+      sa := getadr(ad+8); { string }
+      if (sa = 0) or (sa = nilval) then sp^.str := nil
+      else begin
+
+         l := getint(sa);
+         new(sp^.str, l);
+         for i := 1 to l do sp^.str^[i] := chr(getbyt(sa+intsize+i-1))
+
+      end;
+      getstrlst := sp
 
    end
 

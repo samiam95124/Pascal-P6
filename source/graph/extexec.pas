@@ -189,6 +189,38 @@ begin
 
 end;
 
+{ String list conversion: the interpreted list (next:0, str pstring:8 --
+  offsets from the signature digest) converts to a native list for the
+  list and drop box widgets. }
+
+function getstrlst(ad: address): graphics.strptr;
+
+var sp: graphics.strptr;
+    sa: address;
+    l, i: integer;
+
+begin
+
+   if (ad = 0) or (ad = nilval) then getstrlst := nil
+   else begin
+
+      new(sp);
+      sp^.next := getstrlst(getadr(ad));
+      sa := getadr(ad+8); { string }
+      if (sa = 0) or (sa = nilval) then sp^.str := nil
+      else begin
+
+         l := getint(sa);
+         new(sp^.str, l);
+         for i := 1 to l do sp^.str^[i] := chr(getbyt(sa+intsize+i-1))
+
+      end;
+      getstrlst := sp
+
+   end
+
+end;
+
 { convert ordinal to color }
 
 function cnvcolor(i: integer): graphics.color;
@@ -2004,53 +2036,293 @@ begin
 
        end;
 
-       { dropbox: strptr parameters are not yet marshalled }
-       134: errore(FunctionNotImplemented);
+       134: begin { dropbox@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
 
-       { dropbox: strptr parameters are not yet marshalled }
-       135: errore(FunctionNotImplemented);
+           ad := getadr(params+intsize+intsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize);
+           a5 := getint(params+intsize+intsize);
+           a6 := getadr(params+intsize); { string list }
+           a7 := getint(params);
+           graphics.dropbox(filtable[a1], a2, a3, a4, a5, getstrlst(a6), a7);
+           params := params+adrsize+intsize+intsize+intsize+intsize+intsize+intsize;
 
-       { dropboxg: strptr parameters are not yet marshalled }
-       136: errore(FunctionNotImplemented);
+       end;
 
-       { dropboxg: strptr parameters are not yet marshalled }
-       137: errore(FunctionNotImplemented);
+       135: begin { dropbox@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
 
-       { dropboxsiz: strptr parameters are not yet marshalled }
-       138: errore(FunctionNotImplemented);
+           a1 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a2 := getint(params+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize);
+           a5 := getadr(params+intsize); { string list }
+           a6 := getint(params);
+           graphics.dropbox(a1, a2, a3, a4, getstrlst(a5), a6);
+           params := params+intsize+intsize+intsize+intsize+intsize+intsize;
 
-       { dropboxsiz: strptr parameters are not yet marshalled }
-       139: errore(FunctionNotImplemented);
+       end;
 
-       { dropboxsizg: strptr parameters are not yet marshalled }
-       140: errore(FunctionNotImplemented);
+       136: begin { dropboxg@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
 
-       { dropboxsizg: strptr parameters are not yet marshalled }
-       141: errore(FunctionNotImplemented);
+           ad := getadr(params+intsize+intsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize);
+           a5 := getint(params+intsize+intsize);
+           a6 := getadr(params+intsize); { string list }
+           a7 := getint(params);
+           graphics.dropboxg(filtable[a1], a2, a3, a4, a5, getstrlst(a6), a7);
+           params := params+adrsize+intsize+intsize+intsize+intsize+intsize+intsize;
 
-       { dropeditbox: strptr parameters are not yet marshalled }
-       142: errore(FunctionNotImplemented);
+       end;
 
-       { dropeditbox: strptr parameters are not yet marshalled }
-       143: errore(FunctionNotImplemented);
+       137: begin { dropboxg@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
 
-       { dropeditboxg: strptr parameters are not yet marshalled }
-       144: errore(FunctionNotImplemented);
+           a1 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a2 := getint(params+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize);
+           a5 := getadr(params+intsize); { string list }
+           a6 := getint(params);
+           graphics.dropboxg(a1, a2, a3, a4, getstrlst(a5), a6);
+           params := params+intsize+intsize+intsize+intsize+intsize+intsize;
 
-       { dropeditboxg: strptr parameters are not yet marshalled }
-       145: errore(FunctionNotImplemented);
+       end;
 
-       { dropeditboxsiz: strptr parameters are not yet marshalled }
-       146: errore(FunctionNotImplemented);
+       138: begin { dropboxsiz@p_fc_pr(next:0:p2,str:8:pvc)_i_i_i_i }
 
-       { dropeditboxsiz: strptr parameters are not yet marshalled }
-       147: errore(FunctionNotImplemented);
+           ad := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getadr(params+adrsize+adrsize+adrsize+adrsize); { string list }
+           a3 := getadr(params+adrsize+adrsize+adrsize);
+           a4 := 0;
+           a5 := getadr(params+adrsize+adrsize);
+           a6 := 0;
+           a7 := getadr(params+adrsize);
+           a8 := 0;
+           a9 := getadr(params);
+           a10 := 0;
+           graphics.dropboxsiz(filtable[a1], getstrlst(a2), a4, a6, a8, a10);
+           putint(a3, a4);
+           putint(a5, a6);
+           putint(a7, a8);
+           putint(a9, a10);
+           params := params+adrsize+intsize+adrsize+adrsize+adrsize+adrsize;
 
-       { dropeditboxsizg: strptr parameters are not yet marshalled }
-       148: errore(FunctionNotImplemented);
+       end;
 
-       { dropeditboxsizg: strptr parameters are not yet marshalled }
-       149: errore(FunctionNotImplemented);
+       139: begin { dropboxsiz@p_pr(next:0:p2,str:8:pvc)_i_i_i_i }
+
+           a1 := getadr(params+adrsize+adrsize+adrsize+adrsize); { string list }
+           a2 := getadr(params+adrsize+adrsize+adrsize);
+           a3 := 0;
+           a4 := getadr(params+adrsize+adrsize);
+           a5 := 0;
+           a6 := getadr(params+adrsize);
+           a7 := 0;
+           a8 := getadr(params);
+           a9 := 0;
+           graphics.dropboxsiz(getstrlst(a1), a3, a5, a7, a9);
+           putint(a2, a3);
+           putint(a4, a5);
+           putint(a6, a7);
+           putint(a8, a9);
+           params := params+intsize+adrsize+adrsize+adrsize+adrsize;
+
+       end;
+
+       140: begin { dropboxsizg@p_fc_pr(next:0:p2,str:8:pvc)_i_i_i_i }
+
+           ad := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getadr(params+adrsize+adrsize+adrsize+adrsize); { string list }
+           a3 := getadr(params+adrsize+adrsize+adrsize);
+           a4 := 0;
+           a5 := getadr(params+adrsize+adrsize);
+           a6 := 0;
+           a7 := getadr(params+adrsize);
+           a8 := 0;
+           a9 := getadr(params);
+           a10 := 0;
+           graphics.dropboxsizg(filtable[a1], getstrlst(a2), a4, a6, a8, a10);
+           putint(a3, a4);
+           putint(a5, a6);
+           putint(a7, a8);
+           putint(a9, a10);
+           params := params+adrsize+intsize+adrsize+adrsize+adrsize+adrsize;
+
+       end;
+
+       141: begin { dropboxsizg@p_pr(next:0:p2,str:8:pvc)_i_i_i_i }
+
+           a1 := getadr(params+adrsize+adrsize+adrsize+adrsize); { string list }
+           a2 := getadr(params+adrsize+adrsize+adrsize);
+           a3 := 0;
+           a4 := getadr(params+adrsize+adrsize);
+           a5 := 0;
+           a6 := getadr(params+adrsize);
+           a7 := 0;
+           a8 := getadr(params);
+           a9 := 0;
+           graphics.dropboxsizg(getstrlst(a1), a3, a5, a7, a9);
+           putint(a2, a3);
+           putint(a4, a5);
+           putint(a6, a7);
+           putint(a8, a9);
+           params := params+intsize+adrsize+adrsize+adrsize+adrsize;
+
+       end;
+
+       142: begin { dropeditbox@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
+
+           ad := getadr(params+intsize+intsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize);
+           a5 := getint(params+intsize+intsize);
+           a6 := getadr(params+intsize); { string list }
+           a7 := getint(params);
+           graphics.dropeditbox(filtable[a1], a2, a3, a4, a5, getstrlst(a6), a7);
+           params := params+adrsize+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
+
+       143: begin { dropeditbox@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
+
+           a1 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a2 := getint(params+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize);
+           a5 := getadr(params+intsize); { string list }
+           a6 := getint(params);
+           graphics.dropeditbox(a1, a2, a3, a4, getstrlst(a5), a6);
+           params := params+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
+
+       144: begin { dropeditboxg@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
+
+           ad := getadr(params+intsize+intsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize);
+           a5 := getint(params+intsize+intsize);
+           a6 := getadr(params+intsize); { string list }
+           a7 := getint(params);
+           graphics.dropeditboxg(filtable[a1], a2, a3, a4, a5, getstrlst(a6), a7);
+           params := params+adrsize+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
+
+       145: begin { dropeditboxg@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
+
+           a1 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a2 := getint(params+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize);
+           a5 := getadr(params+intsize); { string list }
+           a6 := getint(params);
+           graphics.dropeditboxg(a1, a2, a3, a4, getstrlst(a5), a6);
+           params := params+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
+
+       146: begin { dropeditboxsiz@p_fc_pr(next:0:p2,str:8:pvc)_i_i_i_i }
+
+           ad := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getadr(params+adrsize+adrsize+adrsize+adrsize); { string list }
+           a3 := getadr(params+adrsize+adrsize+adrsize);
+           a4 := 0;
+           a5 := getadr(params+adrsize+adrsize);
+           a6 := 0;
+           a7 := getadr(params+adrsize);
+           a8 := 0;
+           a9 := getadr(params);
+           a10 := 0;
+           graphics.dropeditboxsiz(filtable[a1], getstrlst(a2), a4, a6, a8, a10);
+           putint(a3, a4);
+           putint(a5, a6);
+           putint(a7, a8);
+           putint(a9, a10);
+           params := params+adrsize+intsize+adrsize+adrsize+adrsize+adrsize;
+
+       end;
+
+       147: begin { dropeditboxsiz@p_pr(next:0:p2,str:8:pvc)_i_i_i_i }
+
+           a1 := getadr(params+adrsize+adrsize+adrsize+adrsize); { string list }
+           a2 := getadr(params+adrsize+adrsize+adrsize);
+           a3 := 0;
+           a4 := getadr(params+adrsize+adrsize);
+           a5 := 0;
+           a6 := getadr(params+adrsize);
+           a7 := 0;
+           a8 := getadr(params);
+           a9 := 0;
+           graphics.dropeditboxsiz(getstrlst(a1), a3, a5, a7, a9);
+           putint(a2, a3);
+           putint(a4, a5);
+           putint(a6, a7);
+           putint(a8, a9);
+           params := params+intsize+adrsize+adrsize+adrsize+adrsize;
+
+       end;
+
+       148: begin { dropeditboxsizg@p_fc_pr(next:0:p2,str:8:pvc)_i_i_i_i }
+
+           ad := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getadr(params+adrsize+adrsize+adrsize+adrsize); { string list }
+           a3 := getadr(params+adrsize+adrsize+adrsize);
+           a4 := 0;
+           a5 := getadr(params+adrsize+adrsize);
+           a6 := 0;
+           a7 := getadr(params+adrsize);
+           a8 := 0;
+           a9 := getadr(params);
+           a10 := 0;
+           graphics.dropeditboxsizg(filtable[a1], getstrlst(a2), a4, a6, a8, a10);
+           putint(a3, a4);
+           putint(a5, a6);
+           putint(a7, a8);
+           putint(a9, a10);
+           params := params+adrsize+intsize+adrsize+adrsize+adrsize+adrsize;
+
+       end;
+
+       149: begin { dropeditboxsizg@p_pr(next:0:p2,str:8:pvc)_i_i_i_i }
+
+           a1 := getadr(params+adrsize+adrsize+adrsize+adrsize); { string list }
+           a2 := getadr(params+adrsize+adrsize+adrsize);
+           a3 := 0;
+           a4 := getadr(params+adrsize+adrsize);
+           a5 := 0;
+           a6 := getadr(params+adrsize);
+           a7 := 0;
+           a8 := getadr(params);
+           a9 := 0;
+           graphics.dropeditboxsizg(getstrlst(a1), a3, a5, a7, a9);
+           putint(a2, a3);
+           putint(a4, a5);
+           putint(a6, a7);
+           putint(a8, a9);
+           params := params+intsize+adrsize+adrsize+adrsize+adrsize;
+
+       end;
 
        150: begin { editbox@p_fc_i_i_i_i_i }
 
@@ -3206,29 +3478,125 @@ begin
 
        end;
 
-       { listbox: strptr parameters are not yet marshalled }
-       248: errore(FunctionNotImplemented);
+       248: begin { listbox@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
 
-       { listbox: strptr parameters are not yet marshalled }
-       249: errore(FunctionNotImplemented);
+           ad := getadr(params+intsize+intsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize);
+           a5 := getint(params+intsize+intsize);
+           a6 := getadr(params+intsize); { string list }
+           a7 := getint(params);
+           graphics.listbox(filtable[a1], a2, a3, a4, a5, getstrlst(a6), a7);
+           params := params+adrsize+intsize+intsize+intsize+intsize+intsize+intsize;
 
-       { listboxg: strptr parameters are not yet marshalled }
-       250: errore(FunctionNotImplemented);
+       end;
 
-       { listboxg: strptr parameters are not yet marshalled }
-       251: errore(FunctionNotImplemented);
+       249: begin { listbox@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
 
-       { listboxsiz: strptr parameters are not yet marshalled }
-       252: errore(FunctionNotImplemented);
+           a1 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a2 := getint(params+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize);
+           a5 := getadr(params+intsize); { string list }
+           a6 := getint(params);
+           graphics.listbox(a1, a2, a3, a4, getstrlst(a5), a6);
+           params := params+intsize+intsize+intsize+intsize+intsize+intsize;
 
-       { listboxsiz: strptr parameters are not yet marshalled }
-       253: errore(FunctionNotImplemented);
+       end;
 
-       { listboxsizg: strptr parameters are not yet marshalled }
-       254: errore(FunctionNotImplemented);
+       250: begin { listboxg@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
 
-       { listboxsizg: strptr parameters are not yet marshalled }
-       255: errore(FunctionNotImplemented);
+           ad := getadr(params+intsize+intsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize);
+           a5 := getint(params+intsize+intsize);
+           a6 := getadr(params+intsize); { string list }
+           a7 := getint(params);
+           graphics.listboxg(filtable[a1], a2, a3, a4, a5, getstrlst(a6), a7);
+           params := params+adrsize+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
+
+       251: begin { listboxg@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_i }
+
+           a1 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a2 := getint(params+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize);
+           a5 := getadr(params+intsize); { string list }
+           a6 := getint(params);
+           graphics.listboxg(a1, a2, a3, a4, getstrlst(a5), a6);
+           params := params+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
+
+       252: begin { listboxsiz@p_fc_pr(next:0:p2,str:8:pvc)_i_i }
+
+           ad := getadr(params+adrsize+adrsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getadr(params+adrsize+adrsize); { string list }
+           a3 := getadr(params+adrsize);
+           a4 := 0;
+           a5 := getadr(params);
+           a6 := 0;
+           graphics.listboxsiz(filtable[a1], getstrlst(a2), a4, a6);
+           putint(a3, a4);
+           putint(a5, a6);
+           params := params+adrsize+intsize+adrsize+adrsize;
+
+       end;
+
+       253: begin { listboxsiz@p_pr(next:0:p2,str:8:pvc)_i_i }
+
+           a1 := getadr(params+adrsize+adrsize); { string list }
+           a2 := getadr(params+adrsize);
+           a3 := 0;
+           a4 := getadr(params);
+           a5 := 0;
+           graphics.listboxsiz(getstrlst(a1), a3, a5);
+           putint(a2, a3);
+           putint(a4, a5);
+           params := params+intsize+adrsize+adrsize;
+
+       end;
+
+       254: begin { listboxsizg@p_fc_pr(next:0:p2,str:8:pvc)_i_i }
+
+           ad := getadr(params+adrsize+adrsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getadr(params+adrsize+adrsize); { string list }
+           a3 := getadr(params+adrsize);
+           a4 := 0;
+           a5 := getadr(params);
+           a6 := 0;
+           graphics.listboxsizg(filtable[a1], getstrlst(a2), a4, a6);
+           putint(a3, a4);
+           putint(a5, a6);
+           params := params+adrsize+intsize+adrsize+adrsize;
+
+       end;
+
+       255: begin { listboxsizg@p_pr(next:0:p2,str:8:pvc)_i_i }
+
+           a1 := getadr(params+adrsize+adrsize); { string list }
+           a2 := getadr(params+adrsize);
+           a3 := 0;
+           a4 := getadr(params);
+           a5 := 0;
+           graphics.listboxsizg(getstrlst(a1), a3, a5);
+           putint(a2, a3);
+           putint(a4, a5);
+           params := params+intsize+adrsize+adrsize;
+
+       end;
 
        256: begin { loadpict@p_fc_i_vc }
 
@@ -5283,17 +5651,67 @@ begin
 
        end;
 
-       { tabbar: strptr parameters are not yet marshalled }
-       417: errore(FunctionNotImplemented);
+       417: begin { tabbar@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(t }
 
-       { tabbar: strptr parameters are not yet marshalled }
-       418: errore(FunctionNotImplemented);
+           ad := getadr(params+intsize+intsize+intsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize+intsize);
+           a5 := getint(params+intsize+intsize+intsize);
+           a6 := getadr(params+intsize+intsize); { string list }
+           a7 := getint(params+intsize);
+           a8 := getint(params);
+           graphics.tabbar(filtable[a1], a2, a3, a4, a5, getstrlst(a6), cnvtabori(a7), a8);
+           params := params+adrsize+intsize+intsize+intsize+intsize+intsize+intsize+intsize;
 
-       { tabbarg: strptr parameters are not yet marshalled }
-       419: errore(FunctionNotImplemented);
+       end;
 
-       { tabbarg: strptr parameters are not yet marshalled }
-       420: errore(FunctionNotImplemented);
+       418: begin { tabbar@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(toto }
+
+           a1 := getint(params+intsize+intsize+intsize+intsize+intsize+intsize);
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize);
+           a5 := getadr(params+intsize+intsize); { string list }
+           a6 := getint(params+intsize);
+           a7 := getint(params);
+           graphics.tabbar(a1, a2, a3, a4, getstrlst(a5), cnvtabori(a6), a7);
+           params := params+intsize+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
+
+       419: begin { tabbarg@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(t }
+
+           ad := getadr(params+intsize+intsize+intsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize+intsize);
+           a5 := getint(params+intsize+intsize+intsize);
+           a6 := getadr(params+intsize+intsize); { string list }
+           a7 := getint(params+intsize);
+           a8 := getint(params);
+           graphics.tabbarg(filtable[a1], a2, a3, a4, a5, getstrlst(a6), cnvtabori(a7), a8);
+           params := params+adrsize+intsize+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
+
+       420: begin { tabbarg@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(toto }
+
+           a1 := getint(params+intsize+intsize+intsize+intsize+intsize+intsize);
+           a2 := getint(params+intsize+intsize+intsize+intsize+intsize);
+           a3 := getint(params+intsize+intsize+intsize+intsize);
+           a4 := getint(params+intsize+intsize+intsize);
+           a5 := getadr(params+intsize+intsize); { string list }
+           a6 := getint(params+intsize);
+           a7 := getint(params);
+           graphics.tabbarg(a1, a2, a3, a4, getstrlst(a5), cnvtabori(a6), a7);
+           params := params+intsize+intsize+intsize+intsize+intsize+intsize+intsize;
+
+       end;
 
        421: begin { tabbarsiz@p_fc_x(totop,toright,tobottom,toleft)_i_ }
 
