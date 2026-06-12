@@ -690,51 +690,29 @@ var p, n, e: filnam; { path components }
     m:       boolean; { match flag }
     i:       integer;
 
-procedure makpth(view pn: string);
+procedure makpth(view pn, ext: string);
 
 begin
 
-   services.maknam(fns, pn, n, 'pas'); { construct a name }
+   services.maknam(fns, pn, n, ext); { construct a name }
    services.fulnam(fns); { rationalize }
-   if exists(fns) and not obj then begin
+   if exists(fns) then begin
 
       copy(fn, fns); { copy winning spec }
       m := true { set found }
-
-   end else begin
-
-      services.maknam(fns, pn, n, 'a'); { construct a name }
-      services.fulnam(fns); { rationalize }
-      if exists(fns) then begin
-
-         copy(fn, fns); { copy winning spec }
-         m := true { set found }
-
-      end else begin
-
-         services.maknam(fns, pn, n, 'o'); { construct a name }
-         services.fulnam(fns); { rationalize }
-         if exists(fns) then begin
-
-            copy(fn, fns); { copy winning spec }
-            m := true { set found }
-
-         end
-
-      end
 
    end
 
 end;
 
+procedure trypths(view ext: string);
+
 begin
 
-   services.brknam(fn, p, n, e); { break down filespec }
-   makpth(tarpath); { try target path }
+   makpth(tarpath, ext); { try target path }
    if not m and (modpth[1] <> ' ') then begin { module path is not empty }
 
       copy(pt, modpth); { copy module path }
-      m := false; { set no match }
       repeat { try path components }
 
          { extract a single path from the module path }
@@ -750,11 +728,24 @@ begin
             extract(pt, pt, i+1, len(pt)) { remove from module path }
 
          end;
-         makpth(w) { try that path }
+         makpth(w, ext) { try that path }
 
       until (pt[1] = ' ') or m { until path is empty or matched }
 
    end
+
+end;
+
+begin
+
+   { search all paths for a source before considering binary forms, so that
+     a path entry carrying only a flavored archive (the link override) does
+     not capture the module registration }
+   services.brknam(fn, p, n, e); { break down filespec }
+   m := false; { set no match }
+   if not obj then trypths('pas'); { sources across all paths first }
+   if not m then trypths('a'); { then archives }
+   if not m then trypths('o') { then objects }
 
 end;
 
@@ -1417,9 +1408,11 @@ begin
 
    end else begin
 
-      { try .a extension }
+      { try .a extension; the module path may carry an override for the
+        archive (a flavored archive placed ahead of the standard one) }
       services.brknam(fn, p, n, e); { break down name }
       services.maknam(fns, p, n, 'a'); { remake }
+      fndfilmod(fns); { allow module path override }
       if exists(fns) then begin
 
          { place name in link list }

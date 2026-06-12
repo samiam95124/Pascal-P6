@@ -18,7 +18,7 @@ joins services; { system services }
 
 uses strings,   { string functions }
      exttables, { external symbol tables }
-     extterm,   { terminal external execution (flavored by module path) }
+     extexec,   { external model execution (flavored by module path) }
      pint_mem;  { low level vm access for pint }
 
 { the public surface: symbol lookup and routine execution }
@@ -93,6 +93,12 @@ begin
 
       for i := 1 to nterminal do
          if matchpre(symbol, terminaltab[i]) then routine := nservices+i
+
+   end else if compp(modulen, 'graphics') then begin
+
+      for i := 1 to ngraphics do
+         if matchpre(symbol, graphicstab[i]) then
+            routine := nservices+nterminal+i
 
    end
 
@@ -1487,7 +1493,9 @@ procedure ExecuteExternal(
 begin
 
     if routine <= nservices then execservices(routine, params)
-    else execterminal(routine-nservices, params)
+    else if routine <= nservices+nterminal then
+       execterminal(routine-nservices, params)
+    else execgraph(routine-nservices-nterminal, params)
 
 end;
 
@@ -1503,7 +1511,7 @@ function NumExternal: integer;
 
 begin
 
-    NumExternal := nservices+nterminal
+    NumExternal := nservices+nterminal+ngraphics
 
 end;
 

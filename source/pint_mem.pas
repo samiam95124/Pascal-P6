@@ -304,6 +304,30 @@ begin
 
 end;
 
+{ The interpreted machine top of code (set by the interpreter after load,
+  before vmhost runs; the standard file id cells sit at vmpctop+inputoff
+  etc.) }
+
+var vmpctop: address;
+
+{ Standard file redirection: a hosting flavor places general file numbers
+  here and the interpreter's file validation attaches the interpreted
+  standard input and output to them instead of the console (zero means no
+  redirection). }
+
+var vmstdin:  fileno;
+    vmstdout: fileno;
+
+{ Host setup hook: called by the interpreter after the program is loaded and
+  before it runs. The default does nothing; a hosting flavor (the graphics
+  interpreter) overrides it to give the interpreted program its own window
+  and redirect the standard files. }
+
+virtual procedure vmhost;
+
+begin
+end;
+
 virtual procedure errore(ei: integer);
 
 begin

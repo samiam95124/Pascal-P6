@@ -123,6 +123,24 @@ if [ $? -ne 0 ]; then
 
 fi
 cp source/pint bin/pintt
+#
+# pintg is the graphics-hosted interpreter: the graph flavor links the
+# "blonde" graphics archive (no automatic standard I/O window) and hosts
+# the interpreted program's standard files in an openwin window.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building source/pint (graphics flavor) as pintg..."
+echo "**********************************************************************"
+echo ""
+pc source/pint -mp=source/graph -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pint bin/pintg
 pc source/pint -r $OPTIONS
 if [ $? -ne 0 ]; then
 

@@ -364,6 +364,7 @@ const
       maxwth      = 10;   { maximum number of watched addresses }
       maxana      = 10;   { maximum depth of analyzer traces }
       maxsym      = 4000; { maximum length of symbol/module name }
+      extvecmax   = 1024; { reserved external vector table slots }
 
 type
 
@@ -3139,8 +3140,12 @@ procedure load;
 
 begin (*load*)
   init;
-  extvecs := 0;
-  extvecs := NumExternal;
+  { The vector table reserves a fixed number of slots so that program
+    addresses do not shift as the module external tables grow (the debug
+    compare files are address sensitive). Grow the reservation if the
+    externals ever pass it. }
+  extvecs := extvecmax;
+  if NumExternal > extvecmax then errorl('Too many externals       ');
   pc := 0;
   { insert start sequence:
 
@@ -3268,8 +3273,12 @@ override procedure valfil(fa: address); { attach file to file entry }
 var i,ff: integer;
 begin
    if store[fa] = 0 then begin { no file }
-     if fa = pctop+inputoff then ff := inputfn
-     else if fa = pctop+outputoff then ff := outputfn
+     if fa = pctop+inputoff then begin
+       { a hosting flavor may redirect the standard files }
+       if vmstdin <> 0 then ff := vmstdin else ff := inputfn
+     end else if fa = pctop+outputoff then begin
+       if vmstdout <> 0 then ff := vmstdout else ff := outputfn
+     end
      else if fa = pctop+prdoff then ff := prdfn
      else if fa = pctop+prroff then ff := prrfn
      else if fa = pctop+erroroff then ff := errorfn
@@ -7966,6 +7975,13 @@ begin (* main *)
   { initialize file state }
   for i := 1 to maxfil do
     begin filstate[i] := fnone; filanamtab[i] := false end;
+
+  { give a hosting flavor its chance to place the interpreted program's
+    standard files (the graphics interpreter opens a window here) }
+  vmstdin := 0;
+  vmstdout := 0;
+  vmpctop := pctop;
+  vmhost;
 
   pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 0;
   expadr := 0; expstk := 0; expmrk := 0;
