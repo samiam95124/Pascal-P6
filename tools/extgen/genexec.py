@@ -141,6 +141,26 @@ class Gen:
         hasfile = len(ptoks) > 0 and ptoks[0] == 'fc'
         if name in ('eventover', 'eventsover'):
             return self.gencallback(idx, name)
+        if self.module == 'graphics' and name == 'menu' and hasfile:
+            self.maxint = max(self.maxint, 1)
+            return ['       %d: begin { menu@p_fc_pr }' % idx, '',
+                    '           a1 := getadr(params); { interpreted menu list }',
+                    '           ad := getadr(params+adrsize); valfil(ad); fn := getbyt(ad);',
+                    '           if fn <= commandfn then errore(FileModeIncorrect);',
+                    '           graphics.menu(filtable[fn], getmenu(a1));',
+                    '           params := params+adrsize+adrsize', '',
+                    '       end;', '']
+        if self.module == 'graphics' and name == 'stdmenu':
+            self.maxint = max(self.maxint, 2)
+            return ['       %d: begin { stdmenu@p_i_pr_pr }' % idx, '',
+                    '           a1 := getadr(params); { append list }',
+                    '           ad2 := getadr(params+adrsize); { var sm result cell }',
+                    '           a2 := getint(params+adrsize*2); { selections }',
+                    '           mnu := nil;',
+                    '           graphics.stdmenu(a2, mnu, getmenu(a1));',
+                    '           putadr(ad2, putmenu(mnu));',
+                    '           params := params+adrsize*2+intsize', '',
+                    '       end;', '']
         d = self.match_decl(name, hasfile, len(ptoks))
         if d is None:
             self.stubs.append((idx, name, 'no interface match'))
@@ -485,6 +505,8 @@ end;
                 '    st:       settype;']
         if self.evcodes:
             head.append('    er:       %s.evtrec;' % self.module)
+        if self.module == 'graphics':
+            head.append('    mnu:      graphics.menuptr;')
         head += ['', 'begin', '', '    case routine of', '']
         tail = ['    else errore(FunctionNotImplemented)', '', '    end', '',
                 'end;', '']
@@ -556,6 +578,78 @@ begin
    refer(params);
 
    errore(FunctionNotImplemented)
+
+end;
+'''
+
+MENUHELP = '''{ Menu conversion: the interpreted menu list (next:0, branch:8, onoff:16,
+  oneof:17, bar:18, id:20, face pstring:28 -- offsets from the signature
+  digest) converts to a native list for menu, and a native list converts
+  back into interpreted heap for the stdmenu result. }
+
+function getmenu(ad: address): graphics.menuptr;
+
+var mp: graphics.menuptr;
+    sa: address;
+    l, i: integer;
+
+begin
+
+   if ad = 0 then getmenu := nil
+   else begin
+
+      new(mp);
+      mp^.next := getmenu(getadr(ad));
+      mp^.branch := getmenu(getadr(ad+8));
+      mp^.onoff := getbyt(ad+16) <> 0;
+      mp^.oneof := getbyt(ad+17) <> 0;
+      mp^.bar := getbyt(ad+18) <> 0;
+      mp^.id := getint(ad+20);
+      sa := getadr(ad+28); { face string }
+      if sa = 0 then mp^.face := nil
+      else begin
+
+         l := getint(sa);
+         new(mp^.face, l);
+         for i := 1 to l do mp^.face^[i] := chr(getbyt(sa+intsize+i-1))
+
+      end;
+      getmenu := mp
+
+   end
+
+end;
+
+function putmenu(mp: graphics.menuptr): address;
+
+var ad, sa: address;
+    l, i: integer;
+
+begin
+
+   if mp = nil then putmenu := 0
+   else begin
+
+      newspc(36, ad); { a menu record in interpreted layout }
+      putadr(ad, putmenu(mp^.next));
+      putadr(ad+8, putmenu(mp^.branch));
+      putbyt(ad+16, ord(mp^.onoff));
+      putbyt(ad+17, ord(mp^.oneof));
+      putbyt(ad+18, ord(mp^.bar));
+      putint(ad+20, mp^.id);
+      if mp^.face = nil then putadr(ad+28, 0)
+      else begin
+
+         l := max(mp^.face^);
+         newspc(intsize+l, sa);
+         putint(sa, l);
+         for i := 1 to l do putbyt(sa+intsize+i-1, ord(mp^.face^[i]));
+         putadr(ad+28, sa)
+
+      end;
+      putmenu := ad
+
+   end
 
 end;
 '''
@@ -639,7 +733,7 @@ def main():
 *******************************************************************************}''',
         'joins terminal; { terminal model I/O }', '\n'.join(tbody))
 
-    gbody = [HELPERS, VMHOST]
+    gbody = [HELPERS, VMHOST, MENUHELP]
     gbody += graph.converters()
     gbody += graph.evtprocs()
     gbody += graph.callbacks()

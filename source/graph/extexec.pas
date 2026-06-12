@@ -118,6 +118,77 @@ begin
 
 end;
 
+{ Menu conversion: the interpreted menu list (next:0, branch:8, onoff:16,
+  oneof:17, bar:18, id:20, face pstring:28 -- offsets from the signature
+  digest) converts to a native list for menu, and a native list converts
+  back into interpreted heap for the stdmenu result. }
+
+function getmenu(ad: address): graphics.menuptr;
+
+var mp: graphics.menuptr;
+    sa: address;
+    l, i: integer;
+
+begin
+
+   if ad = 0 then getmenu := nil
+   else begin
+
+      new(mp);
+      mp^.next := getmenu(getadr(ad));
+      mp^.branch := getmenu(getadr(ad+8));
+      mp^.onoff := getbyt(ad+16) <> 0;
+      mp^.oneof := getbyt(ad+17) <> 0;
+      mp^.bar := getbyt(ad+18) <> 0;
+      mp^.id := getint(ad+20);
+      sa := getadr(ad+28); { face string }
+      if sa = 0 then mp^.face := nil
+      else begin
+
+         l := getint(sa);
+         new(mp^.face, l);
+         for i := 1 to l do mp^.face^[i] := chr(getbyt(sa+intsize+i-1))
+
+      end;
+      getmenu := mp
+
+   end
+
+end;
+
+function putmenu(mp: graphics.menuptr): address;
+
+var ad, sa: address;
+    l, i: integer;
+
+begin
+
+   if mp = nil then putmenu := 0
+   else begin
+
+      newspc(36, ad); { a menu record in interpreted layout }
+      putadr(ad, putmenu(mp^.next));
+      putadr(ad+8, putmenu(mp^.branch));
+      putbyt(ad+16, ord(mp^.onoff));
+      putbyt(ad+17, ord(mp^.oneof));
+      putbyt(ad+18, ord(mp^.bar));
+      putint(ad+20, mp^.id);
+      if mp^.face = nil then putadr(ad+28, 0)
+      else begin
+
+         l := max(mp^.face^);
+         newspc(intsize+l, sa);
+         putint(sa, l);
+         for i := 1 to l do putbyt(sa+intsize+i-1, ord(mp^.face^[i]));
+         putadr(ad+28, sa)
+
+      end;
+      putmenu := ad
+
+   end
+
+end;
+
 { convert ordinal to color }
 
 function cnvcolor(i: integer): graphics.color;
@@ -563,6 +634,7 @@ var a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, 
     fn:       fileno;
     st:       settype;
     er:       graphics.evtrec;
+    mnu:      graphics.menuptr;
 
 begin
 
@@ -3200,8 +3272,15 @@ begin
 
        end;
 
-       { menu: menuptr parameters are not yet marshalled }
-       260: errore(FunctionNotImplemented);
+       260: begin { menu@p_fc_pr }
+
+           a1 := getadr(params); { interpreted menu list }
+           ad := getadr(params+adrsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           graphics.menu(filtable[fn], getmenu(a1));
+           params := params+adrsize+adrsize
+
+       end;
 
        { menu: menuptr parameters are not yet marshalled }
        261: errore(FunctionNotImplemented);
@@ -5022,8 +5101,17 @@ begin
 
        end;
 
-       { stdmenu: menuptr parameters are not yet marshalled }
-       404: errore(FunctionNotImplemented);
+       404: begin { stdmenu@p_i_pr_pr }
+
+           a1 := getadr(params); { append list }
+           ad2 := getadr(params+adrsize); { var sm result cell }
+           a2 := getint(params+adrsize*2); { selections }
+           mnu := nil;
+           graphics.stdmenu(a2, mnu, getmenu(a1));
+           putadr(ad2, putmenu(mnu));
+           params := params+adrsize*2+intsize
+
+       end;
 
        405: begin { strikeout@p_fc_i }
 
