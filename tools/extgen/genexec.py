@@ -595,7 +595,7 @@ var mp: graphics.menuptr;
 
 begin
 
-   if ad = 0 then getmenu := nil
+   if (ad = 0) or (ad = nilval) then getmenu := nil
    else begin
 
       new(mp);
@@ -606,7 +606,7 @@ begin
       mp^.bar := getbyt(ad+18) <> 0;
       mp^.id := getint(ad+20);
       sa := getadr(ad+28); { face string }
-      if sa = 0 then mp^.face := nil
+      if (sa = 0) or (sa = nilval) then mp^.face := nil
       else begin
 
          l := getint(sa);
@@ -627,7 +627,7 @@ var ad, sa: address;
 
 begin
 
-   if mp = nil then putmenu := 0
+   if mp = nil then putmenu := nilval
    else begin
 
       newspc(36, ad); { a menu record in interpreted layout }
@@ -637,7 +637,7 @@ begin
       putbyt(ad+17, ord(mp^.oneof));
       putbyt(ad+18, ord(mp^.bar));
       putint(ad+20, mp^.id);
-      if mp^.face = nil then putadr(ad+28, 0)
+      if mp^.face = nil then putadr(ad+28, nilval)
       else begin
 
          l := max(mp^.face^);
