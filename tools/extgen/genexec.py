@@ -112,7 +112,7 @@ class Gen:
         self.sets = None
         self.stubs = []
         self.nsvars = set()
-        self.maxint = 3; self.maxrel = 1
+        self.maxint = 3; self.maxrel = 1; self.maxstr = 1
         ev = [s for s in self.syms if s.startswith('event@p_fc_r')]
         if ev:
             self.evcodes, self.evvars = parse_evtrec(
@@ -178,7 +178,7 @@ class Gen:
             acc = acc + '+' + self.slot(mode, typ)
         offs.reverse()
         total = '+'.join(self.slot(m,t) for m,_,t in d['params'])
-        pre=[]; post=[]; args=[]; ni=0; nr=0; filevars=[]
+        pre=[]; post=[]; args=[]; ni=0; nr=0; nstr=0; filevars=[]
         for (mode, pn, typ), off in zip(d['params'], offs):
             base = typ.split()[0]
             if typ == 'text':
@@ -209,17 +209,22 @@ class Gen:
                 else:
                     post.append('           putevt(er, ad2);')
             elif typ == 'string':
+                # each string parameter needs its own buffer (s, s2, s3 ...);
+                # sharing one would make every string argument the last value
+                nstr += 1
+                sv = 's' if nstr == 1 else 's%d' % nstr
+                self.maxstr = max(self.maxstr, nstr)
                 if mode == 'view':
-                    pre.append('           getstr(%s, s);' % off)
-                    args.append('s')
+                    pre.append('           getstr(%s, %s);' % (off, sv))
+                    args.append(sv)
                 else:
-                    { } # var string: output only -- do not read the
-                    # possibly-undefined content, blank the buffer instead
+                    # var string: output only -- do not read the possibly
+                    # undefined content, blank the buffer instead
                     ni += 1; v = 'a%d' % ni
                     pre.append('           %s := %s; { var string base }' % (v, off))
-                    pre.append('           for rv := 1 to strmax do s[rv] := \' \';')
-                    args.append('s')
-                    post.append('           putstr(s, %s);' % v)
+                    pre.append('           for rv := 1 to strmax do %s[rv] := \' \';' % sv)
+                    args.append(sv)
+                    post.append('           putstr(%s, %s);' % (sv, v))
             elif base in self.module_enums():
                 ni += 1; v = 'a%d' % ni
                 pre.append('           %s := getint(%s);' % (v, off))
@@ -524,7 +529,7 @@ end;
         head = ['procedure %s(routine: integer; var params: integer);' % procname,
                 '', 'var %s, rv: integer;' % ints,
                 '    %s: real;' % rels,
-                '    s:        str;',
+                '    %s: str;' % ', '.join(['s'] + ['s%d' % i for i in range(2, self.maxstr+1)]),
                 '    ad, ad2:  address;',
                 '    fn:       fileno;',
                 '    st:       settype;']

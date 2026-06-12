@@ -741,7 +741,7 @@ procedure execgraph(routine: integer; var params: integer);
 
 var a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, rv: integer;
     r1, r2: real;
-    s:        str;
+    s, s2: str;
     ad, ad2:  address;
     fn:       fileno;
     st:       settype;
@@ -1341,8 +1341,8 @@ begin
        62: begin { alert@p_vc_vc }
 
            getstr(params+strparsiz, s);
-           getstr(params, s);
-           graphics.alert(s, s);
+           getstr(params, s2);
+           graphics.alert(s, s2);
            params := params+strparsiz+strparsiz;
 
        end;
@@ -4186,13 +4186,13 @@ begin
            a1 := params+adrsize+strparsiz; { var string base }
            for rv := 1 to strmax do s[rv] := ' ';
            a2 := params+adrsize; { var string base }
-           for rv := 1 to strmax do s[rv] := ' ';
+           for rv := 1 to strmax do s2[rv] := ' ';
            a3 := getadr(params);
            getset(a3, st);
            nsqfropts := cnvqfropts(st);
-           graphics.queryfindrep(s, s, nsqfropts);
+           graphics.queryfindrep(s, s2, nsqfropts);
            putstr(s, a1);
-           putstr(s, a2);
+           putstr(s2, a2);
            putset(a3, uncqfropts(nsqfropts));
            params := params+strparsiz+strparsiz+adrsize;
 
