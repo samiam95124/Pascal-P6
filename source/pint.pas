@@ -364,6 +364,7 @@ const
       maxwth      = 10;   { maximum number of watched addresses }
       maxana      = 10;   { maximum depth of analyzer traces }
       maxsym      = 4000; { maximum length of symbol/module name }
+      extvecmax   = 1024; { reserved external vector table slots }
 
 type
 
@@ -3139,8 +3140,12 @@ procedure load;
 
 begin (*load*)
   init;
-  extvecs := 0;
-  extvecs := NumExternal;
+  { The vector table reserves a fixed number of slots so that program
+    addresses do not shift as the module external tables grow (the debug
+    compare files are address sensitive). Grow the reservation if the
+    externals ever pass it. }
+  extvecs := extvecmax;
+  if NumExternal > extvecmax then errorl('Too many externals       ');
   pc := 0;
   { insert start sequence:
 
