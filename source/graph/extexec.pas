@@ -297,6 +297,22 @@ begin
 
 end;
 
+{ convert qfnopts to set }
+
+function uncqfnopts(view ns: graphics.qfnopts): settype;
+
+var st: settype;
+
+begin
+
+   st := [];
+   if graphics.qfncase in ns then st := st + [0];
+   if graphics.qfnup in ns then st := st + [1];
+   if graphics.qfnre in ns then st := st + [2];
+   uncqfnopts := st
+
+end;
+
 { convert set to qfropts }
 
 function cnvqfropts(view st: settype): graphics.qfropts;
@@ -313,6 +329,25 @@ begin
    if 4 in st then ns := ns + [graphics.qfrallfil];
    if 5 in st then ns := ns + [graphics.qfralllin];
    cnvqfropts := ns
+
+end;
+
+{ convert qfropts to set }
+
+function uncqfropts(view ns: graphics.qfropts): settype;
+
+var st: settype;
+
+begin
+
+   st := [];
+   if graphics.qfrcase in ns then st := st + [0];
+   if graphics.qfrup in ns then st := st + [1];
+   if graphics.qfrre in ns then st := st + [2];
+   if graphics.qfrfind in ns then st := st + [3];
+   if graphics.qfrallfil in ns then st := st + [4];
+   if graphics.qfralllin in ns then st := st + [5];
+   uncqfropts := st
 
 end;
 
@@ -345,6 +380,35 @@ begin
 
 end;
 
+{ convert qfteffects to set }
+
+function uncqfteffects(view ns: graphics.qfteffects): settype;
+
+var st: settype;
+
+begin
+
+   st := [];
+   if graphics.qfteblink in ns then st := st + [0];
+   if graphics.qftereverse in ns then st := st + [1];
+   if graphics.qfteunderline in ns then st := st + [2];
+   if graphics.qftesuperscript in ns then st := st + [3];
+   if graphics.qftesubscript in ns then st := st + [4];
+   if graphics.qfteitalic in ns then st := st + [5];
+   if graphics.qftebold in ns then st := st + [6];
+   if graphics.qftestrikeout in ns then st := st + [7];
+   if graphics.qftestandout in ns then st := st + [8];
+   if graphics.qftecondensed in ns then st := st + [9];
+   if graphics.qfteextended in ns then st := st + [10];
+   if graphics.qftexlight in ns then st := st + [11];
+   if graphics.qftelight in ns then st := st + [12];
+   if graphics.qftexbold in ns then st := st + [13];
+   if graphics.qftehollow in ns then st := st + [14];
+   if graphics.qfteraised in ns then st := st + [15];
+   uncqfteffects := st
+
+end;
+
 { convert set to winmodset }
 
 function cnvwinmodset(view st: settype): graphics.winmodset;
@@ -358,6 +422,22 @@ begin
    if 1 in st then ns := ns + [graphics.wmsize];
    if 2 in st then ns := ns + [graphics.wmsysbar];
    cnvwinmodset := ns
+
+end;
+
+{ convert winmodset to set }
+
+function uncwinmodset(view ns: graphics.winmodset): settype;
+
+var st: settype;
+
+begin
+
+   st := [];
+   if graphics.wmframe in ns then st := st + [0];
+   if graphics.wmsize in ns then st := st + [1];
+   if graphics.wmsysbar in ns then st := st + [2];
+   uncwinmodset := st
 
 end;
 
@@ -659,7 +739,7 @@ end;
 
 procedure execgraph(routine: integer; var params: integer);
 
-var a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, rv: integer;
+var a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, rv: integer;
     r1, r2: real;
     s:        str;
     ad, ad2:  address;
@@ -667,6 +747,9 @@ var a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, 
     st:       settype;
     er:       graphics.evtrec;
     mnu:      graphics.menuptr;
+    nsqfnopts: graphics.qfnopts;
+    nsqfropts: graphics.qfropts;
+    nsqfteffects: graphics.qfteffects;
 
 begin
 
@@ -4088,9 +4171,12 @@ begin
 
            a1 := params+adrsize; { var string base }
            for rv := 1 to strmax do s[rv] := ' ';
-           getset(params, st);
-           graphics.queryfind(s, cnvqfnopts(st));
+           a2 := getadr(params);
+           getset(a2, st);
+           nsqfnopts := cnvqfnopts(st);
+           graphics.queryfind(s, nsqfnopts);
            putstr(s, a1);
+           putset(a2, uncqfnopts(nsqfnopts));
            params := params+strparsiz+adrsize;
 
        end;
@@ -4101,10 +4187,13 @@ begin
            for rv := 1 to strmax do s[rv] := ' ';
            a2 := params+adrsize; { var string base }
            for rv := 1 to strmax do s[rv] := ' ';
-           getset(params, st);
-           graphics.queryfindrep(s, s, cnvqfropts(st));
+           a3 := getadr(params);
+           getset(a3, st);
+           nsqfropts := cnvqfropts(st);
+           graphics.queryfindrep(s, s, nsqfropts);
            putstr(s, a1);
            putstr(s, a2);
+           putset(a3, uncqfropts(nsqfropts));
            params := params+strparsiz+strparsiz+adrsize;
 
        end;
@@ -4130,8 +4219,10 @@ begin
            a15 := 0;
            a16 := getadr(params+adrsize);
            a17 := 0;
-           getset(params, st);
-           graphics.queryfont(filtable[a1], a3, a5, a7, a9, a11, a13, a15, a17, cnvqfteffects(st));
+           a18 := getadr(params);
+           getset(a18, st);
+           nsqfteffects := cnvqfteffects(st);
+           graphics.queryfont(filtable[a1], a3, a5, a7, a9, a11, a13, a15, a17, nsqfteffects);
            putint(a2, a3);
            putint(a4, a5);
            putint(a6, a7);
@@ -4140,6 +4231,7 @@ begin
            putint(a12, a13);
            putint(a14, a15);
            putint(a16, a17);
+           putset(a18, uncqfteffects(nsqfteffects));
            params := params+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize;
 
        end;
@@ -4162,8 +4254,10 @@ begin
            a14 := 0;
            a15 := getadr(params+adrsize);
            a16 := 0;
-           getset(params, st);
-           graphics.queryfont(a2, a4, a6, a8, a10, a12, a14, a16, cnvqfteffects(st));
+           a17 := getadr(params);
+           getset(a17, st);
+           nsqfteffects := cnvqfteffects(st);
+           graphics.queryfont(a2, a4, a6, a8, a10, a12, a14, a16, nsqfteffects);
            putint(a1, a2);
            putint(a3, a4);
            putint(a5, a6);
@@ -4172,6 +4266,7 @@ begin
            putint(a11, a12);
            putint(a13, a14);
            putint(a15, a16);
+           putset(a17, uncqfteffects(nsqfteffects));
            params := params+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize;
 
        end;

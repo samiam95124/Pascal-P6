@@ -111,6 +111,7 @@ class Gen:
         self.enums = None
         self.sets = None
         self.stubs = []
+        self.nsvars = set()
         self.maxint = 3; self.maxrel = 1
         ev = [s for s in self.syms if s.startswith('event@p_fc_r')]
         if ev:
@@ -224,8 +225,21 @@ class Gen:
                 pre.append('           %s := getint(%s);' % (v, off))
                 args.append('cnv%s(%s)' % (base, v))
             elif base in self.module_sets():
-                pre.append('           getset(%s, st);' % off)
-                args.append('cnv%s(st)' % base)
+                if mode in ('var','out'):
+                    ni += 1; av = 'a%d' % ni
+                    nstv = 'ns%s' % base
+                    self.nsvars.add((nstv, base))
+                    pre.append('           %s := getadr(%s);' % (av, off))
+                    if mode == 'var':
+                        pre.append('           getset(%s, st);' % av)
+                        pre.append('           %s := cnv%s(st);' % (nstv, base))
+                    else:
+                        pre.append('           %s := [];' % nstv)
+                    args.append(nstv)
+                    post.append('           putset(%s, unc%s(%s));' % (av, base, nstv))
+                else:
+                    pre.append('           getset(%s, st);' % off)
+                    args.append('cnv%s(st)' % base)
             elif typ == 'real':
                 nr += 1; v = 'r%d' % nr
                 if mode in ('var','out'):
@@ -363,6 +377,13 @@ class Gen:
             for i, e in enumerate(elems):
                 out.append('   if %d in st then ns := ns + [%s.%s];' % (i, self.module, e))
             out += ['   cnv%s := ns' % typ, '', 'end;', '']
+            out += ['{ convert %s to set }' % typ, '',
+                    'function unc%s(view ns: %s.%s): settype;' % (typ, self.module, typ),
+                    '', 'var st: settype;', '', 'begin', '',
+                    '   st := [];']
+            for i, e in enumerate(elems):
+                out.append('   if %s.%s in ns then st := st + [%d];' % (self.module, e, i))
+            out += ['   unc%s := st' % typ, '', 'end;', '']
         return out
 
     def evtprocs(self):
@@ -511,6 +532,8 @@ end;
             head.append('    er:       %s.evtrec;' % self.module)
         if self.module == 'graphics':
             head.append('    mnu:      graphics.menuptr;')
+        for nm, base in sorted(self.nsvars):
+            head.append('    %s: %s.%s;' % (nm, self.module, base))
         head += ['', 'begin', '', '    case routine of', '']
         tail = ['    else errore(FunctionNotImplemented)', '', '    end', '',
                 'end;', '']
