@@ -224,11 +224,12 @@ class Gen:
                 args.append('chr(%s)' % v)
             else: # integer family
                 if mode in ('var','out'):
+                    # the model's var scalars are outputs: the content may be
+                    # undefined, so it is not read before the call
                     ni += 1; av = 'a%d' % ni
                     ni += 1; v = 'a%d' % ni
                     pre.append('           %s := getadr(%s);' % (av, off))
-                    if mode == 'var':
-                        pre.append('           %s := getint(%s);' % (v, av))
+                    pre.append('           %s := 0;' % v)
                     args.append(v)
                     post.append('           putint(%s, %s);' % (av, v))
                 else:
