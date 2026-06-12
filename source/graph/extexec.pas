@@ -118,6 +118,77 @@ begin
 
 end;
 
+{ Menu conversion: the interpreted menu list (next:0, branch:8, onoff:16,
+  oneof:17, bar:18, id:20, face pstring:28 -- offsets from the signature
+  digest) converts to a native list for menu, and a native list converts
+  back into interpreted heap for the stdmenu result. }
+
+function getmenu(ad: address): graphics.menuptr;
+
+var mp: graphics.menuptr;
+    sa: address;
+    l, i: integer;
+
+begin
+
+   if (ad = 0) or (ad = nilval) then getmenu := nil
+   else begin
+
+      new(mp);
+      mp^.next := getmenu(getadr(ad));
+      mp^.branch := getmenu(getadr(ad+8));
+      mp^.onoff := getbyt(ad+16) <> 0;
+      mp^.oneof := getbyt(ad+17) <> 0;
+      mp^.bar := getbyt(ad+18) <> 0;
+      mp^.id := getint(ad+20);
+      sa := getadr(ad+28); { face string }
+      if (sa = 0) or (sa = nilval) then mp^.face := nil
+      else begin
+
+         l := getint(sa);
+         new(mp^.face, l);
+         for i := 1 to l do mp^.face^[i] := chr(getbyt(sa+intsize+i-1))
+
+      end;
+      getmenu := mp
+
+   end
+
+end;
+
+function putmenu(mp: graphics.menuptr): address;
+
+var ad, sa: address;
+    l, i: integer;
+
+begin
+
+   if mp = nil then putmenu := nilval
+   else begin
+
+      newspc(36, ad); { a menu record in interpreted layout }
+      putadr(ad, putmenu(mp^.next));
+      putadr(ad+8, putmenu(mp^.branch));
+      putbyt(ad+16, ord(mp^.onoff));
+      putbyt(ad+17, ord(mp^.oneof));
+      putbyt(ad+18, ord(mp^.bar));
+      putint(ad+20, mp^.id);
+      if mp^.face = nil then putadr(ad+28, nilval)
+      else begin
+
+         l := max(mp^.face^);
+         newspc(intsize+l, sa);
+         putint(sa, l);
+         for i := 1 to l do putbyt(sa+intsize+i-1, ord(mp^.face^[i]));
+         putadr(ad+28, sa)
+
+      end;
+      putmenu := ad
+
+   end
+
+end;
+
 { convert ordinal to color }
 
 function cnvcolor(i: integer): graphics.color;
@@ -563,6 +634,7 @@ var a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, 
     fn:       fileno;
     st:       settype;
     er:       graphics.evtrec;
+    mnu:      graphics.menuptr;
 
 begin
 
@@ -1556,9 +1628,9 @@ begin
            a1 := fn;
            getstr(params+adrsize+adrsize, s);
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.buttonsiz(filtable[a1], s, a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -1570,9 +1642,9 @@ begin
 
            getstr(params+adrsize+adrsize, s);
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.buttonsiz(s, a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -1587,9 +1659,9 @@ begin
            a1 := fn;
            getstr(params+adrsize+adrsize, s);
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.buttonsizg(filtable[a1], s, a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -1601,9 +1673,9 @@ begin
 
            getstr(params+adrsize+adrsize, s);
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.buttonsizg(s, a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -1692,9 +1764,9 @@ begin
            a1 := fn;
            getstr(params+adrsize+adrsize, s);
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.checkboxsiz(filtable[a1], s, a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -1706,9 +1778,9 @@ begin
 
            getstr(params+adrsize+adrsize, s);
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.checkboxsiz(s, a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -1723,9 +1795,9 @@ begin
            a1 := fn;
            getstr(params+adrsize+adrsize, s);
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.checkboxsizg(filtable[a1], s, a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -1737,9 +1809,9 @@ begin
 
            getstr(params+adrsize+adrsize, s);
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.checkboxsizg(s, a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -2041,9 +2113,9 @@ begin
            a1 := fn;
            getstr(params+adrsize+adrsize, s);
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.editboxsiz(filtable[a1], s, a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -2055,9 +2127,9 @@ begin
 
            getstr(params+adrsize+adrsize, s);
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.editboxsiz(s, a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -2072,9 +2144,9 @@ begin
            a1 := fn;
            getstr(params+adrsize+adrsize, s);
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.editboxsizg(filtable[a1], s, a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -2086,9 +2158,9 @@ begin
 
            getstr(params+adrsize+adrsize, s);
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.editboxsizg(s, a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -2715,9 +2787,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.getsiz(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -2728,9 +2800,9 @@ begin
        215: begin { getsiz@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.getsiz(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -2744,9 +2816,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.getsizg(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -2757,9 +2829,9 @@ begin
        217: begin { getsizg@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.getsizg(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -2859,13 +2931,13 @@ begin
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a4 := getadr(params+adrsize+adrsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+adrsize+adrsize);
-           a7 := getint(a6);
+           a7 := 0;
            a8 := getadr(params+adrsize);
-           a9 := getint(a8);
+           a9 := 0;
            a10 := getadr(params);
-           a11 := getint(a10);
+           a11 := 0;
            graphics.groupsiz(filtable[a1], s, a2, a3, a5, a7, a9, a11);
            putint(a4, a5);
            putint(a6, a7);
@@ -2881,13 +2953,13 @@ begin
            a1 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a3 := getadr(params+adrsize+adrsize+adrsize);
-           a4 := getint(a3);
+           a4 := 0;
            a5 := getadr(params+adrsize+adrsize);
-           a6 := getint(a5);
+           a6 := 0;
            a7 := getadr(params+adrsize);
-           a8 := getint(a7);
+           a8 := 0;
            a9 := getadr(params);
-           a10 := getint(a9);
+           a10 := 0;
            graphics.groupsiz(s, a1, a2, a4, a6, a8, a10);
            putint(a3, a4);
            putint(a5, a6);
@@ -2906,13 +2978,13 @@ begin
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a4 := getadr(params+adrsize+adrsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+adrsize+adrsize);
-           a7 := getint(a6);
+           a7 := 0;
            a8 := getadr(params+adrsize);
-           a9 := getint(a8);
+           a9 := 0;
            a10 := getadr(params);
-           a11 := getint(a10);
+           a11 := 0;
            graphics.groupsizg(filtable[a1], s, a2, a3, a5, a7, a9, a11);
            putint(a4, a5);
            putint(a6, a7);
@@ -2928,13 +3000,13 @@ begin
            a1 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a3 := getadr(params+adrsize+adrsize+adrsize);
-           a4 := getint(a3);
+           a4 := 0;
            a5 := getadr(params+adrsize+adrsize);
-           a6 := getint(a5);
+           a6 := 0;
            a7 := getadr(params+adrsize);
-           a8 := getint(a7);
+           a8 := 0;
            a9 := getadr(params);
-           a10 := getint(a9);
+           a10 := 0;
            graphics.groupsizg(s, a1, a2, a4, a6, a8, a10);
            putint(a3, a4);
            putint(a5, a6);
@@ -3200,8 +3272,15 @@ begin
 
        end;
 
-       { menu: menuptr parameters are not yet marshalled }
-       260: errore(FunctionNotImplemented);
+       260: begin { menu@p_fc_pr }
+
+           a1 := getadr(params); { interpreted menu list }
+           ad := getadr(params+adrsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           graphics.menu(filtable[fn], getmenu(a1));
+           params := params+adrsize+adrsize
+
+       end;
 
        { menu: menuptr parameters are not yet marshalled }
        261: errore(FunctionNotImplemented);
@@ -3297,9 +3376,9 @@ begin
            a2 := getint(params+adrsize+adrsize+intsize);
            a3 := getint(params+adrsize+adrsize);
            a4 := getadr(params+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params);
-           a7 := getint(a6);
+           a7 := 0;
            graphics.numselboxsiz(filtable[a1], a2, a3, a5, a7);
            putint(a4, a5);
            putint(a6, a7);
@@ -3312,9 +3391,9 @@ begin
            a1 := getint(params+adrsize+adrsize+intsize);
            a2 := getint(params+adrsize+adrsize);
            a3 := getadr(params+adrsize);
-           a4 := getint(a3);
+           a4 := 0;
            a5 := getadr(params);
-           a6 := getint(a5);
+           a6 := 0;
            graphics.numselboxsiz(a1, a2, a4, a6);
            putint(a3, a4);
            putint(a5, a6);
@@ -3330,9 +3409,9 @@ begin
            a2 := getint(params+adrsize+adrsize+intsize);
            a3 := getint(params+adrsize+adrsize);
            a4 := getadr(params+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params);
-           a7 := getint(a6);
+           a7 := 0;
            graphics.numselboxsizg(filtable[a1], a2, a3, a5, a7);
            putint(a4, a5);
            putint(a6, a7);
@@ -3345,9 +3424,9 @@ begin
            a1 := getint(params+adrsize+adrsize+intsize);
            a2 := getint(params+adrsize+adrsize);
            a3 := getadr(params+adrsize);
-           a4 := getint(a3);
+           a4 := 0;
            a5 := getadr(params);
-           a6 := getint(a5);
+           a6 := 0;
            graphics.numselboxsizg(a1, a2, a4, a6);
            putint(a3, a4);
            putint(a5, a6);
@@ -3548,9 +3627,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.progbarsiz(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -3561,9 +3640,9 @@ begin
        288: begin { progbarsiz@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.progbarsiz(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -3577,9 +3656,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.progbarsizg(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -3590,9 +3669,9 @@ begin
        290: begin { progbarsizg@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.progbarsizg(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -3624,11 +3703,11 @@ begin
        293: begin { querycolor@p_i_i_i }
 
            a1 := getadr(params+adrsize+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params+adrsize);
-           a4 := getint(a3);
+           a4 := 0;
            a5 := getadr(params);
-           a6 := getint(a5);
+           a6 := 0;
            graphics.querycolor(a2, a4, a6);
            putint(a1, a2);
            putint(a3, a4);
@@ -3668,21 +3747,21 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize);
-           a7 := getint(a6);
+           a7 := 0;
            a8 := getadr(params+adrsize+adrsize+adrsize+adrsize+adrsize);
-           a9 := getint(a8);
+           a9 := 0;
            a10 := getadr(params+adrsize+adrsize+adrsize+adrsize);
-           a11 := getint(a10);
+           a11 := 0;
            a12 := getadr(params+adrsize+adrsize+adrsize);
-           a13 := getint(a12);
+           a13 := 0;
            a14 := getadr(params+adrsize+adrsize);
-           a15 := getint(a14);
+           a15 := 0;
            a16 := getadr(params+adrsize);
-           a17 := getint(a16);
+           a17 := 0;
            getset(params, st);
            graphics.queryfont(filtable[a1], a3, a5, a7, a9, a11, a13, a15, a17, cnvqfteffects(st));
            putint(a2, a3);
@@ -3700,21 +3779,21 @@ begin
        297: begin { queryfont@p_i_i_i_i_i_i_i_i_sx(qfteblink,qfterever }
 
            a1 := getadr(params+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize);
-           a4 := getint(a3);
+           a4 := 0;
            a5 := getadr(params+adrsize+adrsize+adrsize+adrsize+adrsize+adrsize);
-           a6 := getint(a5);
+           a6 := 0;
            a7 := getadr(params+adrsize+adrsize+adrsize+adrsize+adrsize);
-           a8 := getint(a7);
+           a8 := 0;
            a9 := getadr(params+adrsize+adrsize+adrsize+adrsize);
-           a10 := getint(a9);
+           a10 := 0;
            a11 := getadr(params+adrsize+adrsize+adrsize);
-           a12 := getint(a11);
+           a12 := 0;
            a13 := getadr(params+adrsize+adrsize);
-           a14 := getint(a13);
+           a14 := 0;
            a15 := getadr(params+adrsize);
-           a16 := getint(a15);
+           a16 := 0;
            getset(params, st);
            graphics.queryfont(a2, a4, a6, a8, a10, a12, a14, a16, cnvqfteffects(st));
            putint(a1, a2);
@@ -3814,9 +3893,9 @@ begin
            a1 := fn;
            getstr(params+adrsize+adrsize, s);
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.radiobuttonsiz(filtable[a1], s, a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -3828,9 +3907,9 @@ begin
 
            getstr(params+adrsize+adrsize, s);
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.radiobuttonsiz(s, a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -3845,9 +3924,9 @@ begin
            a1 := fn;
            getstr(params+adrsize+adrsize, s);
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.radiobuttonsizg(filtable[a1], s, a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -3859,9 +3938,9 @@ begin
 
            getstr(params+adrsize+adrsize, s);
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.radiobuttonsizg(s, a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4021,9 +4100,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.scncen(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4034,9 +4113,9 @@ begin
        323: begin { scncen@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.scncen(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4050,9 +4129,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.scnceng(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4063,9 +4142,9 @@ begin
        325: begin { scnceng@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.scnceng(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4079,9 +4158,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.scnsiz(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4092,9 +4171,9 @@ begin
        327: begin { scnsiz@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.scnsiz(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4108,9 +4187,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.scnsizg(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4121,9 +4200,9 @@ begin
        329: begin { scnsizg@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.scnsizg(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4233,9 +4312,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.scrollhorizsiz(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4246,9 +4325,9 @@ begin
        339: begin { scrollhorizsiz@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.scrollhorizsiz(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4262,9 +4341,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.scrollhorizsizg(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4275,9 +4354,9 @@ begin
        341: begin { scrollhorizsizg@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.scrollhorizsizg(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4387,9 +4466,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.scrollvertsiz(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4400,9 +4479,9 @@ begin
        351: begin { scrollvertsiz@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.scrollvertsiz(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4416,9 +4495,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.scrollvertsizg(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4429,9 +4508,9 @@ begin
        353: begin { scrollvertsizg@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.scrollvertsizg(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4835,9 +4914,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.slidehorizsiz(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4848,9 +4927,9 @@ begin
        391: begin { slidehorizsiz@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.slidehorizsiz(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4864,9 +4943,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.slidehorizsizg(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4877,9 +4956,9 @@ begin
        393: begin { slidehorizsizg@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.slidehorizsizg(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4951,9 +5030,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.slidevertsiz(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4964,9 +5043,9 @@ begin
        399: begin { slidevertsiz@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.slidevertsiz(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -4980,9 +5059,9 @@ begin
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
            a2 := getadr(params+adrsize);
-           a3 := getint(a2);
+           a3 := 0;
            a4 := getadr(params);
-           a5 := getint(a4);
+           a5 := 0;
            graphics.slidevertsizg(filtable[a1], a3, a5);
            putint(a2, a3);
            putint(a4, a5);
@@ -4993,9 +5072,9 @@ begin
        401: begin { slidevertsizg@p_i_i }
 
            a1 := getadr(params+adrsize);
-           a2 := getint(a1);
+           a2 := 0;
            a3 := getadr(params);
-           a4 := getint(a3);
+           a4 := 0;
            graphics.slidevertsizg(a2, a4);
            putint(a1, a2);
            putint(a3, a4);
@@ -5022,8 +5101,17 @@ begin
 
        end;
 
-       { stdmenu: menuptr parameters are not yet marshalled }
-       404: errore(FunctionNotImplemented);
+       404: begin { stdmenu@p_i_pr_pr }
+
+           a1 := getadr(params); { append list }
+           ad2 := getadr(params+adrsize); { var sm result cell }
+           a2 := getint(params+adrsize*2); { selections }
+           mnu := nil;
+           graphics.stdmenu(a2, mnu, getmenu(a1));
+           putadr(ad2, putmenu(mnu));
+           params := params+adrsize*2+intsize
+
+       end;
 
        405: begin { strikeout@p_fc_i }
 
@@ -5110,13 +5198,13 @@ begin
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a4 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a5 := getadr(params+adrsize+adrsize+adrsize);
-           a6 := getint(a5);
+           a6 := 0;
            a7 := getadr(params+adrsize+adrsize);
-           a8 := getint(a7);
+           a8 := 0;
            a9 := getadr(params+adrsize);
-           a10 := getint(a9);
+           a10 := 0;
            a11 := getadr(params);
-           a12 := getint(a11);
+           a12 := 0;
            graphics.tabbarclient(filtable[a1], cnvtabori(a2), a3, a4, a6, a8, a10, a12);
            putint(a5, a6);
            putint(a7, a8);
@@ -5132,13 +5220,13 @@ begin
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a4 := getadr(params+adrsize+adrsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+adrsize+adrsize);
-           a7 := getint(a6);
+           a7 := 0;
            a8 := getadr(params+adrsize);
-           a9 := getint(a8);
+           a9 := 0;
            a10 := getadr(params);
-           a11 := getint(a10);
+           a11 := 0;
            graphics.tabbarclient(cnvtabori(a1), a2, a3, a5, a7, a9, a11);
            putint(a4, a5);
            putint(a6, a7);
@@ -5157,13 +5245,13 @@ begin
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a4 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a5 := getadr(params+adrsize+adrsize+adrsize);
-           a6 := getint(a5);
+           a6 := 0;
            a7 := getadr(params+adrsize+adrsize);
-           a8 := getint(a7);
+           a8 := 0;
            a9 := getadr(params+adrsize);
-           a10 := getint(a9);
+           a10 := 0;
            a11 := getadr(params);
-           a12 := getint(a11);
+           a12 := 0;
            graphics.tabbarclientg(filtable[a1], cnvtabori(a2), a3, a4, a6, a8, a10, a12);
            putint(a5, a6);
            putint(a7, a8);
@@ -5179,13 +5267,13 @@ begin
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a4 := getadr(params+adrsize+adrsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+adrsize+adrsize);
-           a7 := getint(a6);
+           a7 := 0;
            a8 := getadr(params+adrsize);
-           a9 := getint(a8);
+           a9 := 0;
            a10 := getadr(params);
-           a11 := getint(a10);
+           a11 := 0;
            graphics.tabbarclientg(cnvtabori(a1), a2, a3, a5, a7, a9, a11);
            putint(a4, a5);
            putint(a6, a7);
@@ -5216,13 +5304,13 @@ begin
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a4 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a5 := getadr(params+adrsize+adrsize+adrsize);
-           a6 := getint(a5);
+           a6 := 0;
            a7 := getadr(params+adrsize+adrsize);
-           a8 := getint(a7);
+           a8 := 0;
            a9 := getadr(params+adrsize);
-           a10 := getint(a9);
+           a10 := 0;
            a11 := getadr(params);
-           a12 := getint(a11);
+           a12 := 0;
            graphics.tabbarsiz(filtable[a1], cnvtabori(a2), a3, a4, a6, a8, a10, a12);
            putint(a5, a6);
            putint(a7, a8);
@@ -5238,13 +5326,13 @@ begin
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a4 := getadr(params+adrsize+adrsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+adrsize+adrsize);
-           a7 := getint(a6);
+           a7 := 0;
            a8 := getadr(params+adrsize);
-           a9 := getint(a8);
+           a9 := 0;
            a10 := getadr(params);
-           a11 := getint(a10);
+           a11 := 0;
            graphics.tabbarsiz(cnvtabori(a1), a2, a3, a5, a7, a9, a11);
            putint(a4, a5);
            putint(a6, a7);
@@ -5263,13 +5351,13 @@ begin
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a4 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a5 := getadr(params+adrsize+adrsize+adrsize);
-           a6 := getint(a5);
+           a6 := 0;
            a7 := getadr(params+adrsize+adrsize);
-           a8 := getint(a7);
+           a8 := 0;
            a9 := getadr(params+adrsize);
-           a10 := getint(a9);
+           a10 := 0;
            a11 := getadr(params);
-           a12 := getint(a11);
+           a12 := 0;
            graphics.tabbarsizg(filtable[a1], cnvtabori(a2), a3, a4, a6, a8, a10, a12);
            putint(a5, a6);
            putint(a7, a8);
@@ -5285,13 +5373,13 @@ begin
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize);
            a4 := getadr(params+adrsize+adrsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+adrsize+adrsize);
-           a7 := getint(a6);
+           a7 := 0;
            a8 := getadr(params+adrsize);
-           a9 := getint(a8);
+           a9 := 0;
            a10 := getadr(params);
-           a11 := getint(a10);
+           a11 := 0;
            graphics.tabbarsizg(cnvtabori(a1), a2, a3, a5, a7, a9, a11);
            putint(a4, a5);
            putint(a6, a7);
@@ -5449,9 +5537,9 @@ begin
            a2 := getint(params+intsize+adrsize+adrsize+intsize);
            a3 := getint(params+intsize+adrsize+adrsize);
            a4 := getadr(params+intsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+intsize);
-           a7 := getint(a6);
+           a7 := 0;
            getset(params, st);
            graphics.winclient(filtable[a1], a2, a3, a5, a7, cnvwinmodset(st));
            putint(a4, a5);
@@ -5465,9 +5553,9 @@ begin
            a1 := getint(params+intsize+adrsize+adrsize+intsize);
            a2 := getint(params+intsize+adrsize+adrsize);
            a3 := getadr(params+intsize+adrsize);
-           a4 := getint(a3);
+           a4 := 0;
            a5 := getadr(params+intsize);
-           a6 := getint(a5);
+           a6 := 0;
            getset(params, st);
            graphics.winclient(a1, a2, a4, a6, cnvwinmodset(st));
            putint(a3, a4);
@@ -5484,9 +5572,9 @@ begin
            a2 := getint(params+intsize+adrsize+adrsize+intsize);
            a3 := getint(params+intsize+adrsize+adrsize);
            a4 := getadr(params+intsize+adrsize);
-           a5 := getint(a4);
+           a5 := 0;
            a6 := getadr(params+intsize);
-           a7 := getint(a6);
+           a7 := 0;
            getset(params, st);
            graphics.winclientg(filtable[a1], a2, a3, a5, a7, cnvwinmodset(st));
            putint(a4, a5);
@@ -5500,9 +5588,9 @@ begin
            a1 := getint(params+intsize+adrsize+adrsize+intsize);
            a2 := getint(params+intsize+adrsize+adrsize);
            a3 := getadr(params+intsize+adrsize);
-           a4 := getint(a3);
+           a4 := 0;
            a5 := getadr(params+intsize);
-           a6 := getint(a5);
+           a6 := 0;
            getset(params, st);
            graphics.winclientg(a1, a2, a4, a6, cnvwinmodset(st));
            putint(a3, a4);
