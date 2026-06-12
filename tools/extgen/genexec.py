@@ -1,31 +1,72 @@
 #!/usr/bin/env python3
-# Generate the execterminal procedure body for source/term/extterm.pas from the
-# terminal symbol list. Each symbol's signature digest drives the parameter
-# marshalling; the case index matches the exttables terminal table order.
+# Generate the per-module external executors for the interpreter's flavored
+# extterm modules (source/{plain,term,graph}/extterm.pas).
 #
-# Marshalling model (mirrors the hand-written services cases):
+# Ground truth is twofold: the module's symbol list (<module>.syms, in .p6
+# declaration order -- the table index is the routine number) carries the
+# mangled signature digests, and the module's Pascaline interface
+# (libs/<module>.pas) carries what the digest cannot: parameter modes
+# (value/var/out/view) and type names. The two are matched by name and form
+# (presence of the leading file parameter).
+#
+# Marshalling model (the services cases are the original exemplars):
 # - Parameters sit on the VM stack from `params` upward in reverse
-#   declaration order (the last parameter at `params`); each scalar slot is
-#   intsize, a view string is strparsiz (pointer+length), the file and var
-#   parameters are addresses (adrsize).
+#   declaration order; scalar and address slots are 8 bytes, a string
+#   (view or var) is 16 (pointer+length).
 # - A function's return slot is at `params` after it is advanced past all
-#   parameters.
-# - The file parameter maps the VM logical file to the interpreter's own
-#   console files: the event routine takes input, everything else output;
-#   general files are an error (the terminal model manages the console).
-# - Colors convert between the VM ordinal and the native enumeration.
-# - The eventover/eventsover forms take procedure parameters (callbacks into
-#   interpreted code); the generator emits error stubs for them, and the real
-#   implementations (interpreter re-entry through callvm) are maintained by
-#   hand in source/term/extterm.pas -- re-merge them after regenerating.
-import os, re
+#   parameters; integer-family results store with putint, reals with putrel.
+# - File parameters: terminal maps them to the interpreter console (event
+#   reads the input side); graphics requires general files (the hosted
+#   window files live in the file table) and passes filtable[fn].
+# - Enumerations convert by succ-loop from the type's first value; sets
+#   convert elementwise; both use the declared type names.
+# - The event record converts to/from VM memory with offsets parsed from
+#   the digest (putevt for event, getevt for sendevent).
+# - eventover/eventsover register global-level interpreted handlers; a
+#   native thunk re-enters the interpreter through callvm. Nested-level
+#   handlers error (they need the planned thunk securing).
+# - Parameters with types the interpreter does not yet marshal (window
+#   menus, widget string lists) make the routine error as not implemented;
+#   the generator lists them at the end of the run.
+import os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT  = os.path.join(HERE, 'execterminal.frag')
+ROOT = os.path.dirname(os.path.dirname(HERE))
+
+# ----------------------------------------------------------------------------
+# parse the module's Pascaline interface for external declarations
+# ----------------------------------------------------------------------------
+
+def parse_interface(path):
+    """return list of decls: {name, isfunc, ret, params:[(mode,name,type)]}"""
+    src = open(path).read()
+    decls = []
+    for m in re.finditer(
+        r'(?:overload\s+)?(procedure|function)\s+([a-z0-9]+)\s*(\(([^()]*)\))?\s*(:\s*([a-z0-9]+))?\s*;\s*\n?\s*external\s*;',
+        src, re.S):
+        kind, name, _, plist, _, ret = m.groups()
+        params = []
+        if plist:
+            for grp in plist.split(';'):
+                grp = ' '.join(grp.split())
+                if not grp: continue
+                gm = re.match(r'(var|out|view)?\s*([a-z0-9, ]+):\s*(.+)', grp)
+                if not gm: continue
+                mode, names, typ = gm.groups()
+                mode = mode or 'val'
+                typ = ' '.join(typ.split())
+                for nm in names.split(','):
+                    params.append((mode, nm.strip(), typ))
+        decls.append({'name': name, 'isfunc': kind == 'function',
+                      'ret': ret, 'params': params})
+    return decls
+
+# ----------------------------------------------------------------------------
+# signature digest helpers
+# ----------------------------------------------------------------------------
 
 def toks(sig):
-    """split a signature digest into top-level tokens after the kind"""
-    out=[]; i=0; depth=0; cur=''
+    out=[]; depth=0; cur=''
     for ch in sig:
         if ch=='_' and depth==0:
             if cur: out.append(cur)
@@ -37,99 +78,614 @@ def toks(sig):
     if cur: out.append(cur)
     return out
 
-syms=[l.rstrip('\n') for l in open(os.path.join(HERE,'terminal.syms')) if l.strip()]
+def parse_evtrec(digest):
+    """parse r(winid:0:i,handled:8:b,etype:9:x(names)(variants))"""
+    m = re.match(r'r\(winid:0:i,handled:8:b,etype:9:x\(([a-z,]+)\)\((.*)\)\)$',
+                 digest)
+    assert m, 'unexpected event record digest'
+    codes = m.group(1).split(',')
+    variants = {}
+    for vm in re.finditer(r'(\d+)\(([^)]*)\)', m.group(2)):
+        tag = int(vm.group(1)); fields = []
+        if vm.group(2):
+            for f in vm.group(2).split(','):
+                fn, off, ft = f.split(':')
+                fields.append((fn, int(off), ft))
+        variants[tag] = fields
+    return codes, variants
 
-body=[]
-for idx, sym in enumerate(syms, start=1):
-    name, sig = sym.split('@', 1)
-    tl = toks(sig)
-    kind, params = tl[0], tl[1:]
-    isfunc = kind == 'f'
+# ----------------------------------------------------------------------------
+# per-module generation
+# ----------------------------------------------------------------------------
 
-    if name in ('eventover', 'eventsover'):
-        body.append('       { %s takes procedure parameters (callbacks into'
-                    % name)
-        body.append('         interpreted code) and is not implemented }')
-        body.append('       %d: errore(NotImplemented);' % idx)
-        body.append('')
-        continue
+HARDTYPES = {'menuptr', 'strptr', 'imageptr', 'widget'}
 
-    # declared-order parameter list with stack slot sizes
-    sizes=[]
-    for p in params:
-        if p=='fc': sizes.append(('file','adrsize'))
-        elif p=='vc': sizes.append(('vstr','strparsiz'))
-        elif p=='b': sizes.append(('bool','intsize'))
-        elif p=='c': sizes.append(('char','intsize'))
-        elif p.startswith('x('): sizes.append(('color','intsize'))
-        elif p.startswith('r('): sizes.append(('evtrec','adrsize'))
-        elif p=='i': sizes.append(('int','intsize'))
-        else: raise SystemExit('unhandled token %r in %s' % (p, sym))
+class Gen:
 
-    # stack offsets: last declared parameter at params+0
-    offs=[]; acc='params'
-    for kindp, size in reversed(sizes):
-        offs.append(acc)
-        acc = acc + '+' + size
-    offs.reverse()  # offs[i] = address expression of declared param i
-    total = '+'.join(s for _, s in sizes)
+    def __init__(self, module):
+        self.module = module
+        self.syms = [l.rstrip('\n') for l in
+                     open(os.path.join(HERE, module + '.syms')) if l.strip()]
+        self.decls = parse_interface(os.path.join(ROOT, 'libs',
+                                                  module + '.pas'))
+        self.enums = None
+        self.sets = None
+        self.stubs = []
+        self.maxint = 3; self.maxrel = 1
+        ev = [s for s in self.syms if s.startswith('event@p_fc_r')]
+        if ev:
+            self.evcodes, self.evvars = parse_evtrec(
+                ev[0].split('@',1)[1].split('_',2)[2])
+        else:
+            self.evcodes, self.evvars = None, None
 
-    # emit
-    args=[]; pre=[]; post=[]
-    vi=0
-    filearg = 'input' if name=='event' else 'output'
-    for (kindp, size), off in zip(sizes, offs):
-        if kindp=='file':
-            pre.append('           ad := getadr(%s); valfil(ad); fn := getbyt(ad);' % off)
-            if name=='event':
-                pre.append('           if (fn <> inputfn) and (fn > commandfn) then')
-                pre.append('              errore(FileModeIncorrect);')
+    def match_decl(self, name, hasfile, nparams):
+        for d in self.decls:
+            if d['name'] != name: continue
+            p = d['params']
+            df = len(p) > 0 and p[0][2] == 'text' and p[0][0] == 'var'
+            if df != hasfile: continue
+            if len(p) != nparams: continue
+            return d
+        return None
+
+    def slot(self, mode, typ):
+        if typ == 'string': return 'strparsiz'
+        if mode in ('var','out') or typ in ('text','evtrec'): return 'adrsize'
+        return 'intsize'
+
+    def gencase(self, idx, sym):
+        name, sig = sym.split('@', 1)
+        tl = toks(sig); kind, ptoks = tl[0], tl[1:]
+        isfunc = kind == 'f'
+        hasfile = len(ptoks) > 0 and ptoks[0] == 'fc'
+        if name in ('eventover', 'eventsover'):
+            return self.gencallback(idx, name)
+        d = self.match_decl(name, hasfile, len(ptoks))
+        if d is None:
+            self.stubs.append((idx, name, 'no interface match'))
+            return ['       %d: errore(FunctionNotImplemented);' % idx, '']
+        for mode, pn, typ in d['params']:
+            if typ.split()[0] in HARDTYPES:
+                self.stubs.append((idx, name, typ))
+                return ['       { %s: %s parameters are not yet marshalled }'
+                        % (name, typ),
+                        '       %d: errore(FunctionNotImplemented);' % idx, '']
+        offs = []; acc = 'params'
+        for mode, pn, typ in reversed(d['params']):
+            offs.append(acc)
+            acc = acc + '+' + self.slot(mode, typ)
+        offs.reverse()
+        total = '+'.join(self.slot(m,t) for m,_,t in d['params'])
+        pre=[]; post=[]; args=[]; ni=0; nr=0; filevars=[]
+        for (mode, pn, typ), off in zip(d['params'], offs):
+            base = typ.split()[0]
+            if typ == 'text':
+                pre.append('           ad := getadr(%s); valfil(ad); fn := getbyt(ad);' % off)
+                if self.module == 'terminal':
+                    if name == 'event':
+                        pre.append('           if (fn <> inputfn) and (fn > commandfn) then')
+                        pre.append('              errore(FileModeIncorrect);')
+                        args.append('input')
+                    else:
+                        pre.append('           if fn > commandfn then errore(FileModeIncorrect);')
+                        args.append('output')
+                else:
+                    ni += 1; v = 'a%d' % ni
+                    pre.append('           if fn <= commandfn then errore(FileModeIncorrect);')
+                    pre.append('           %s := fn;' % v)
+                    args.append('filtable[%s]' % v)
+                    filevars.append(v)
+            elif typ == 'evtrec':
+                pre.append('           ad2 := getadr(%s);' % off)
+                args.append('er')
+                if name == 'sendevent':
+                    pre.append('           getevt(er, ad2);')
+                else:
+                    post.append('           putevt(er, ad2);')
+            elif typ == 'string':
+                if mode == 'view':
+                    pre.append('           getstr(%s, s);' % off)
+                    args.append('s')
+                else:
+                    { } # var string: output only -- do not read the
+                    # possibly-undefined content, blank the buffer instead
+                    ni += 1; v = 'a%d' % ni
+                    pre.append('           %s := %s; { var string base }' % (v, off))
+                    pre.append('           for rv := 1 to strmax do s[rv] := \' \';')
+                    args.append('s')
+                    post.append('           putstr(s, %s);' % v)
+            elif base in self.module_enums():
+                ni += 1; v = 'a%d' % ni
+                pre.append('           %s := getint(%s);' % (v, off))
+                args.append('cnv%s(%s)' % (base, v))
+            elif base in self.module_sets():
+                pre.append('           getset(%s, st);' % off)
+                args.append('cnv%s(st)' % base)
+            elif typ == 'real':
+                nr += 1; v = 'r%d' % nr
+                if mode in ('var','out'):
+                    ni += 1; av = 'a%d' % ni
+                    pre.append('           %s := getadr(%s);' % (av, off))
+                    if mode == 'var':
+                        pre.append('           %s := getrel(%s);' % (v, av))
+                    args.append(v)
+                    post.append('           putrel(%s, %s);' % (av, v))
+                else:
+                    pre.append('           %s := getrel(%s);' % (v, off))
+                    args.append(v)
+            elif typ == 'boolean':
+                ni += 1; v = 'a%d' % ni
+                pre.append('           %s := getint(%s);' % (v, off))
+                args.append('%s <> 0' % v)
+            elif typ == 'char':
+                ni += 1; v = 'a%d' % ni
+                pre.append('           %s := getint(%s);' % (v, off))
+                args.append('chr(%s)' % v)
+            else: # integer family
+                if mode in ('var','out'):
+                    ni += 1; av = 'a%d' % ni
+                    ni += 1; v = 'a%d' % ni
+                    pre.append('           %s := getadr(%s);' % (av, off))
+                    if mode == 'var':
+                        pre.append('           %s := getint(%s);' % (v, av))
+                    args.append(v)
+                    post.append('           putint(%s, %s);' % (av, v))
+                else:
+                    ni += 1; v = 'a%d' % ni
+                    pre.append('           %s := getint(%s);' % (v, off))
+                    args.append(v)
+        self.maxint = max(self.maxint, ni); self.maxrel = max(self.maxrel, nr)
+        call = '%s.%s' % (self.module, name)
+        if args: call += '(' + ', '.join(args) + ')'
+        out = ['       %d: begin { %s@%s }' % (idx, name, sig[:40]), '']
+        out += pre
+        if isfunc:
+            if d['ret'] == 'real':
+                out.append('           r1 := %s;' % call)
+                if total: out.append('           params := params+%s;' % total)
+                out.append('           putrel(params, r1);')
             else:
-                pre.append('           if fn > commandfn then errore(FileModeIncorrect);')
-            args.append(filearg)
-        elif kindp=='int':
-            vi+=1; v='a' if vi==1 else 'a%d' % vi
-            pre.append('           %s := getint(%s);' % (v, off))
-            args.append(v)
-        elif kindp=='bool':
-            vi+=1; v='a' if vi==1 else 'a%d' % vi
-            pre.append('           %s := getint(%s);' % (v, off))
-            args.append('%s <> 0' % v)
-        elif kindp=='char':
-            vi+=1; v='a' if vi==1 else 'a%d' % vi
-            pre.append('           %s := getint(%s);' % (v, off))
-            args.append('chr(%s)' % v)
-        elif kindp=='color':
-            vi+=1; v='a' if vi==1 else 'a%d' % vi
-            pre.append('           %s := getint(%s);' % (v, off))
-            args.append('int2color(%s)' % v)
-        elif kindp=='vstr':
-            pre.append('           getstr(%s, s);' % off)
-            args.append('s')
-        elif kindp=='evtrec':
-            pre.append('           ad2 := getadr(%s);' % off)
-            args.append('er')
-            post.append('           putevt(er, ad2);')
+                out.append('           rv := ord(%s);' % call)
+                if total: out.append('           params := params+%s;' % total)
+                out.append('           putint(params, rv);')
+        else:
+            out.append('           %s;' % call)
+            if name == 'openwin' and len(filevars) >= 2:
+                out.append('           { the bound window files become readable and writable }')
+                out.append('           filstate[%s] := fread;' % filevars[0])
+                out.append('           filstate[%s] := fwrite;' % filevars[1])
+            out += post
+            if total: out.append('           params := params+%s;' % total)
+        out += ['', '       end;', '']
+        return out
 
-    call = 'terminal.%s(%s)' % (name, ', '.join(args)) if args \
-           else 'terminal.%s' % name
-    body.append('       %d: begin { %s@%s }' % (idx, name, sig[:40]))
-    body.append('')
-    body += pre
-    if isfunc:
-        # all terminal function results fit the integer return slot
-        # (ints, booleans via ord, chars via ord)
-        rname = name
-        body.append('           a9 := ord(%s);' % call)
-        if total: body.append('           params := params+%s;' % total)
-        body.append('           putint(params, a9);')
-    else:
-        body.append('           %s;' % call)
-        body += post
-        if total: body.append('           params := params+%s;' % total)
-    body.append('')
-    body.append('       end;')
-    body.append('')
+    def gencallback(self, idx, name):
+        out = ['       %d: begin { %s }' % (idx, name), '']
+        out.append('           evtsetup;')
+        out.append('           ad := getadr(params); { out oeh }')
+        out.append('           ad2 := getadr(params+adrsize); { handler address }')
+        out.append('           a1 := getadr(params+adrsize+ptrsize); { handler frame }')
+        out.append('           { only global-level handlers: nested ones need the')
+        out.append('             planned thunk securing }')
+        out.append('           if ad2 <> 0 then if a1 <> globalframe then')
+        out.append('              errore(FunctionNotImplemented);')
+        if name == 'eventover':
+            out.append('           a2 := getint(params+adrsize+ptrsize*2); { event code }')
+            out.append('           putint(ad, vmhand[a2+1]);')
+            out.append('           vmhand[a2+1] := ad2;')
+            out.append('           if not hooked[a2+1] then begin')
+            out.append('')
+            out.append('              %s.eventover(cnvevtcod(a2), evtthunk, a3);' % self.module)
+            out.append('              hooked[a2+1] := true')
+            out.append('')
+            out.append('           end;')
+            out.append('           params := params+adrsize+ptrsize*2+intsize')
+        else:
+            out.append('           putint(ad, vmhandall);')
+            out.append('           vmhandall := ad2;')
+            out.append('           if not hookedall then begin')
+            out.append('')
+            out.append('              %s.eventsover(evtsthunk, a3);' % self.module)
+            out.append('              hookedall := true')
+            out.append('')
+            out.append('           end;')
+            out.append('           params := params+adrsize+ptrsize*2')
+        out += ['', '       end;', '']
+        return out
 
-open(OUT,'w').write('\n'.join(body)+'\n')
-print('execterminal.frag: %d cases' % len(syms))
+    def collect_types(self):
+        if self.enums is not None: return
+        self.enums = {}; self.sets = {}
+        if self.evcodes:
+            self.enums['evtcod'] = self.evcodes[0]
+        for sym in self.syms:
+            name, sig = sym.split('@',1)
+            tl = toks(sig); ptoks = tl[1:]
+            hasfile = len(ptoks)>0 and ptoks[0]=='fc'
+            d = self.match_decl(name, hasfile, len(ptoks))
+            if not d: continue
+            for (mode,pn,typ), tok in zip(d['params'], ptoks):
+                base = typ.split()[0]
+                if tok.startswith('x(') and base not in self.enums:
+                    self.enums[base] = tok[2:-1].split(',')[0]
+                if tok.startswith('sx(') and base not in self.sets:
+                    self.sets[base] = tok[3:-1].split(',')
+
+    def module_enums(self):
+        self.collect_types()
+        return self.enums
+
+    def module_sets(self):
+        self.collect_types()
+        return self.sets
+
+    def converters(self):
+        out=[]
+        for typ, first in sorted(self.module_enums().items()):
+            out += ['{ convert ordinal to %s }' % typ, '',
+                    'function cnv%s(i: integer): %s.%s;' % (typ, self.module, typ),
+                    '', 'var c: %s.%s;' % (self.module, typ),
+                    '    j: integer;', '', 'begin', '',
+                    '   c := %s.%s;' % (self.module, first),
+                    '   for j := 1 to i do c := succ(c);',
+                    '   cnv%s := c' % typ, '', 'end;', '']
+        for typ, elems in sorted(self.module_sets().items()):
+            out += ['{ convert set to %s }' % typ, '',
+                    'function cnv%s(view st: settype): %s.%s;' % (typ, self.module, typ),
+                    '', 'var ns: %s.%s;' % (self.module, typ), '', 'begin', '',
+                    '   ns := [];']
+            for i, e in enumerate(elems):
+                out.append('   if %d in st then ns := ns + [%s.%s];' % (i, self.module, e))
+            out += ['   cnv%s := ns' % typ, '', 'end;', '']
+        return out
+
+    def evtprocs(self):
+        if not self.evcodes: return []
+        out = ['{ place event record to client memory }', '',
+               'procedure putevt(view er: %s.evtrec; ad: address);' % self.module,
+               '', 'begin', '',
+               '   putint(ad, er.winid); { winid at 0 }',
+               '   putbyt(ad+8, ord(er.handled)); { handled at 8 }',
+               '   putbyt(ad+9, ord(er.etype)); { etype tag at 9 }',
+               '   case er.etype of { variant data, reverse order from 12 }', '']
+        for tag in sorted(self.evvars):
+            fields = self.evvars[tag]
+            if not fields: continue
+            code = self.evcodes[tag]
+            sets=[]
+            for fn, off, ft in fields:
+                if ft in ('c','b'):
+                    sets.append('putbyt(ad+%d, ord(er.%s))' % (off, fn))
+                else:
+                    sets.append('putint(ad+%d, er.%s)' % (off, fn))
+            pre = '      %s.%s: ' % (self.module, code)
+            if len(sets) == 1:
+                out.append(pre + sets[0] + ';')
+            else:
+                out.append(pre + 'begin ' + ';\n         '.join(sets) + ' end;')
+        out += ['      else { events without parameter data }', '   end', '',
+                'end;', '',
+                '{ get event record from client memory }', '',
+                'procedure getevt(out er: %s.evtrec; ad: address);' % self.module,
+                '', 'var i: integer;', '    c: %s.evtcod;' % self.module, '',
+                'begin', '',
+                '   i := getbyt(ad+9); { etype tag }',
+                '   c := %s.etchar;' % self.module,
+                '   while i > 0 do begin c := succ(c); i := i-1 end;',
+                '   case c of { construct against the variant }', '']
+        for tag in sorted(self.evvars):
+            fields = self.evvars[tag]
+            code = self.evcodes[tag]
+            sets=['er.etype := %s.%s' % (self.module, code)]
+            for fn, off, ft in fields:
+                if ft == 'c':
+                    sets.append('er.%s := chr(getbyt(ad+%d))' % (fn, off))
+                elif ft == 'b':
+                    sets.append('er.%s := getbyt(ad+%d) <> 0' % (fn, off))
+                else:
+                    sets.append('er.%s := getint(ad+%d)' % (fn, off))
+            out.append('      %s.%s: begin ' % (self.module, code) +
+                       ';\n         '.join(sets) + ' end;')
+        out += ['      else er.etype := c', '   end;',
+                '   er.winid := getint(ad);',
+                '   er.handled := getbyt(ad+8) <> 0', '', 'end;', '']
+        return out
+
+    def callbacks(self):
+        if not self.evcodes: return []
+        return ['''{{ Event callback support: interpreted programs register global-level
+  handlers through eventover/eventsover; a native thunk converts the event
+  record into interpreted memory, runs the handler through the interpreter
+  (callvm), and carries the handled flag back. Old vectors are opaque
+  integers by the interface with no reinstall facility, so registration
+  replaces the previous interpreted handler. }}
+
+const nevtcod = {n}; {{ number of event codes }}
+      evtrecvmsiz = 96; {{ interpreted event record scratch size }}
+
+var vmhand:    array [1..nevtcod] of address; {{ per-event handlers }}
+    vmhandall: address; {{ master handler }}
+    hooked:    array [1..nevtcod] of boolean; {{ native vector hooked }}
+    hookedall: boolean;
+    evtinit:   boolean; {{ tables initialized }}
+
+{{ initialize the callback tables on first use }}
+
+procedure evtsetup;
+
+var i: integer;
+
+begin
+
+   if not evtinit then begin
+
+      for i := 1 to nevtcod do begin vmhand[i] := 0; hooked[i] := false end;
+      vmhandall := 0;
+      hookedall := false;
+      evtinit := true
+
+   end
+
+end;
+
+{{ run an interpreted handler against an event record }}
+
+procedure callhand(h: address; var er: {m}.evtrec);
+
+var ad: address;
+
+begin
+
+   ad := resvm(evtrecvmsiz); {{ scratch on the interpreted stack }}
+   putevt(er, ad);
+   callvm(globalframe, h, ad);
+   er.handled := getbyt(ad+8) <> 0; {{ carry the handled flag back }}
+   relvm(evtrecvmsiz)
+
+end;
+
+{{ native thunk for per-event vectors }}
+
+procedure evtthunk(var er: {m}.evtrec);
+
+var h: address;
+
+begin
+
+   h := vmhand[ord(er.etype)+1];
+   if h <> 0 then callhand(h, er)
+
+end;
+
+{{ native thunk for the master vector }}
+
+procedure evtsthunk(var er: {m}.evtrec);
+
+begin
+
+   if vmhandall <> 0 then callhand(vmhandall, er)
+
+end;
+'''.format(n=len(self.evcodes), m=self.module)]
+
+    def executor(self, procname):
+        body=[]
+        for i, sym in enumerate(self.syms, start=1):
+            body += self.gencase(i, sym)
+        ints = ', '.join('a%d' % i for i in range(1, self.maxint+1))
+        rels = ', '.join('r%d' % i for i in range(1, self.maxrel+1))
+        head = ['procedure %s(routine: integer; var params: integer);' % procname,
+                '', 'var %s, rv: integer;' % ints,
+                '    %s: real;' % rels,
+                '    s:        str;',
+                '    ad, ad2:  address;',
+                '    fn:       fileno;',
+                '    st:       settype;']
+        if self.evcodes:
+            head.append('    er:       %s.evtrec;' % self.module)
+        head += ['', 'begin', '', '    case routine of', '']
+        tail = ['    else errore(FunctionNotImplemented)', '', '    end', '',
+                'end;', '']
+        return head + body + tail
+
+# ----------------------------------------------------------------------------
+# flavor file assembly
+# ----------------------------------------------------------------------------
+
+HELPERS = '''
+const strmax = 1000; { size of string buffers }
+      strparsiz = ptrsize+intsize; { size of string parameter }
+      FileModeIncorrect = 28; { file mode incorrect }
+      FunctionNotImplemented = 90; { external function not implemented }
+
+type str = packed array [1..strmax] of char;
+
+{ load string from vm }
+
+procedure getstr(sa: address; var s: string);
+
+var ad: address;
+    l:  integer;
+    i:  integer;
+
+begin
+
+   for i := 1 to max(s) do s[i] := ' '; { clear result }
+   ad := getadr(sa); { get base address of string }
+   l := getint(sa+ptrsize); { get logical length }
+   if l > max(s) then l := max(s); { limit to buffer }
+   for i := 1 to l do begin { transfer string }
+
+      s[i] := chr(getbyt(ad)); { get character }
+      ad := ad+1 { next }
+
+   end
+
+end;
+
+{ store string to vm }
+
+procedure putstr(var s: str; sa: address);
+
+var ad: address;
+    l:  integer;
+    i:  integer;
+
+begin
+
+   ad := getadr(sa); { get base address of string }
+   l := getint(sa+ptrsize); { get logical length }
+   if l > strmax then l := strmax;
+   for i := 1 to l do begin
+
+      putbyt(ad, ord(s[i]));
+      ad := ad+1
+
+   end
+
+end;
+'''
+
+STUB = '''procedure %s(routine: integer; var params: integer);
+
+begin
+
+   refer(routine);
+   refer(params);
+
+   errore(FunctionNotImplemented)
+
+end;
+'''
+
+VMHOST = '''
+var nilwin: text; { never-opened file: openwin takes it as no parent }
+
+{ find a free general file slot }
+
+function frefil: fileno;
+
+var i, ff: integer;
+
+begin
+
+   ff := 0;
+   for i := commandfn+1 to maxfil do
+      if (filstate[i] = fnone) and (ff = 0) then ff := i;
+   if ff = 0 then errore(FunctionNotImplemented);
+   frefil := ff
+
+end;
+
+{ host the interpreted program in its own window }
+
+override procedure vmhost;
+
+var fi, fo: fileno;
+
+begin
+
+   fi := frefil; filstate[fi] := fread; { reserve the input side }
+   fo := frefil; filstate[fo] := fwrite; { reserve the output side }
+   { open the window against the file table entries }
+   graphics.openwin(filtable[fi], filtable[fo], nilwin, 1);
+   { the interpreted standard files attach to the window }
+   vmstdin := fi;
+   vmstdout := fo
+
+end;
+'''
+
+def writeflavor(path, header, joins, body):
+    out = [header, '', 'module extterm;', '']
+    if joins:
+        out.append(joins)
+        out.append('')
+    out.append('uses pint_mem; { low level vm access for pint }')
+    out.append('')
+    out.append('procedure execterminal(routine: integer; var params: integer); forward;')
+    out.append('procedure execgraph(routine: integer; var params: integer); forward;')
+    out.append('')
+    out.append('private')
+    out.append('')
+    out.append(body)
+    out.append('begin')
+    out.append('end.')
+    open(path, 'w').write('\n'.join(out) + '\n')
+
+def main():
+    term = Gen('terminal')
+    graph = Gen('graphics')
+
+    tbody = [HELPERS]
+    tbody += term.converters()
+    tbody += term.evtprocs()
+    tbody += term.callbacks()
+    tbody += term.executor('execterminal')
+    tbody.append(STUB % 'execgraph')
+    writeflavor(os.path.join(ROOT, 'source/term/extterm.pas'),
+'''{*******************************************************************************
+*                                                                              *
+*                       Terminal external execution                            *
+*                                                                              *
+* The terminal flavor of the external execution module, selected for the      *
+* pintt interpreter by module path: terminal externals execute against the    *
+* native terminal model; graphics externals error.                            *
+*                                                                              *
+* Generated by tools/extgen/genexec.py; do not edit by hand.                  *
+*                                                                              *
+*******************************************************************************}''',
+        'joins terminal; { terminal model I/O }', '\n'.join(tbody))
+
+    gbody = [HELPERS, VMHOST]
+    gbody += graph.converters()
+    gbody += graph.evtprocs()
+    gbody += graph.callbacks()
+    gbody += graph.executor('execgraph')
+    gbody.append(STUB % 'execterminal')
+    writeflavor(os.path.join(ROOT, 'source/graph/extterm.pas'),
+'''{*******************************************************************************
+*                                                                              *
+*                       Terminal external execution                            *
+*                                                                              *
+* The graphics flavor of the external execution module, selected for the      *
+* pintg interpreter by module path. Joining graphics links the "blonde"       *
+* graphics archive (also placed in this directory): the model installs no     *
+* automatic window over the interpreter's standard files. The vmhost hook     *
+* opens a window through openwin into two general file table entries and the  *
+* interpreted standard files attach to them, so the program's standard I/O    *
+* flows to the window; further windows the interpreted program opens bind to  *
+* general files the same way. Graphics externals execute against the native   *
+* graphics model with the window files passed from the file table; terminal   *
+* externals error.                                                            *
+*                                                                              *
+* Generated by tools/extgen/genexec.py; do not edit by hand.                  *
+*                                                                              *
+*******************************************************************************}''',
+        'joins graphics; { graphics model I/O (the blonde archive) }',
+        '\n'.join(gbody))
+
+    pbody = 'const FunctionNotImplemented = 90;\n\n' + \
+            (STUB % 'execterminal') + '\n' + (STUB % 'execgraph')
+    writeflavor(os.path.join(ROOT, 'source/plain/extterm.pas'),
+'''{*******************************************************************************
+*                                                                              *
+*                       Terminal external execution                            *
+*                                                                              *
+* The plain flavor of the external execution module: the plain interpreter    *
+* hosts no I/O model, so executing a terminal or graphics external is an      *
+* error. The pintt and pintg interpreters select the real flavors by module   *
+* path.                                                                        *
+*                                                                              *
+* Generated by tools/extgen/genexec.py; do not edit by hand.                  *
+*                                                                              *
+*******************************************************************************}''',
+        None, pbody)
+
+    print('terminal: %d cases, %d stubs' % (len(term.syms), len(term.stubs)))
+    for i, n, r in term.stubs: print('   stub %d %s (%s)' % (i, n, r))
+    print('graphics: %d cases, %d stubs' % (len(graph.syms), len(graph.stubs)))
+    for i, n, r in graph.stubs: print('   stub %d %s (%s)' % (i, n, r))
+
+main()
