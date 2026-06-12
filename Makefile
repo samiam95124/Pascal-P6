@@ -84,7 +84,8 @@ endif
 
 all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a \
-	$(LIBS)/terminal.a $(LIBS)/graphics.a $(LIBS)/gnome_widgets.o \
+	$(LIBS)/terminal.a $(LIBS)/graphics.a source/graph/graphics.a \
+	$(LIBS)/gnome_widgets.o \
 	$(LIBS)/sound.a $(LIBS)/network.a
 
 ################################################################################
@@ -273,6 +274,26 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 	ar rc $(LIBS)/graphics.a $(BUILD)/libs/graphics_wrapper_asm.o \
 		$(BUILD)/libs/graphics_wrapper.o $(BUILD)/libs/graphics_support.o \
 		$(BUILD)/libs/graphics.o $(BUILD)/libs/graph_services.o \
+		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o \
+		$(BUILD)/libs/support.o
+
+#
+# The "blonde" graphics archive for the graphics-hosted interpreter (pintg):
+# graphics.c compiled with NOSTDWIN, which skips binding stdin/stdout to an
+# automatic main window. The model does nothing until an openwin call, so the
+# interpreter keeps its own console and gives the interpreted program a
+# window. All other members are shared with the standard archive. Placed in
+# source/graph so the interpreter's flavor module path selects it ahead of
+# libs/graphics.a.
+#
+source/graph/graphics.a: $(LIBS)/graphics.a
+	mkdir -p source/graph
+	$(CC) $(CFLAGS) $(GRAPHCPP) -DNOSTDWIN \
+		-o $(BUILD)/libs/graphics_blonde.o -c $(AMI)/graphics.c
+	rm -f source/graph/graphics.a
+	ar rc source/graph/graphics.a $(BUILD)/libs/graphics_wrapper_asm.o \
+		$(BUILD)/libs/graphics_wrapper.o $(BUILD)/libs/graphics_support.o \
+		$(BUILD)/libs/graphics_blonde.o $(BUILD)/libs/graph_services.o \
 		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o \
 		$(BUILD)/libs/support.o
 
