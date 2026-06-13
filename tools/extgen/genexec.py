@@ -98,7 +98,7 @@ def parse_evtrec(digest):
 # per-module generation
 # ----------------------------------------------------------------------------
 
-HARDTYPES = {'menuptr', 'strptr', 'imageptr', 'widget'}
+HARDTYPES = {'menuptr', 'imageptr', 'widget'}
 
 class Gen:
 
@@ -111,7 +111,8 @@ class Gen:
         self.enums = None
         self.sets = None
         self.stubs = []
-        self.maxint = 3; self.maxrel = 1
+        self.nsvars = set()
+        self.maxint = 3; self.maxrel = 1; self.maxstr = 1
         ev = [s for s in self.syms if s.startswith('event@p_fc_r')]
         if ev:
             self.evcodes, self.evvars = parse_evtrec(
@@ -177,7 +178,7 @@ class Gen:
             acc = acc + '+' + self.slot(mode, typ)
         offs.reverse()
         total = '+'.join(self.slot(m,t) for m,_,t in d['params'])
-        pre=[]; post=[]; args=[]; ni=0; nr=0; filevars=[]
+        pre=[]; post=[]; args=[]; ni=0; nr=0; nstr=0; filevars=[]
         for (mode, pn, typ), off in zip(d['params'], offs):
             base = typ.split()[0]
             if typ == 'text':
@@ -196,6 +197,10 @@ class Gen:
                     pre.append('           %s := fn;' % v)
                     args.append('filtable[%s]' % v)
                     filevars.append(v)
+            elif base == 'strptr':
+                ni += 1; v = 'a%d' % ni
+                pre.append('           %s := getadr(%s); { string list }' % (v, off))
+                args.append('getstrlst(%s)' % v)
             elif typ == 'evtrec':
                 pre.append('           ad2 := getadr(%s);' % off)
                 args.append('er')
@@ -204,24 +209,42 @@ class Gen:
                 else:
                     post.append('           putevt(er, ad2);')
             elif typ == 'string':
+                # each string parameter needs its own buffer (s, s2, s3 ...);
+                # sharing one would make every string argument the last value
+                nstr += 1
+                sv = 's' if nstr == 1 else 's%d' % nstr
+                self.maxstr = max(self.maxstr, nstr)
                 if mode == 'view':
-                    pre.append('           getstr(%s, s);' % off)
-                    args.append('s')
+                    pre.append('           getstr(%s, %s);' % (off, sv))
+                    args.append(sv)
                 else:
-                    { } # var string: output only -- do not read the
-                    # possibly-undefined content, blank the buffer instead
+                    # var string: output only -- do not read the possibly
+                    # undefined content, blank the buffer instead
                     ni += 1; v = 'a%d' % ni
                     pre.append('           %s := %s; { var string base }' % (v, off))
-                    pre.append('           for rv := 1 to strmax do s[rv] := \' \';')
-                    args.append('s')
-                    post.append('           putstr(s, %s);' % v)
+                    pre.append('           for rv := 1 to strmax do %s[rv] := \' \';' % sv)
+                    args.append(sv)
+                    post.append('           putstr(%s, %s);' % (sv, v))
             elif base in self.module_enums():
                 ni += 1; v = 'a%d' % ni
                 pre.append('           %s := getint(%s);' % (v, off))
                 args.append('cnv%s(%s)' % (base, v))
             elif base in self.module_sets():
-                pre.append('           getset(%s, st);' % off)
-                args.append('cnv%s(st)' % base)
+                if mode in ('var','out'):
+                    ni += 1; av = 'a%d' % ni
+                    nstv = 'ns%s' % base
+                    self.nsvars.add((nstv, base))
+                    pre.append('           %s := getadr(%s);' % (av, off))
+                    if mode == 'var':
+                        pre.append('           getset(%s, st);' % av)
+                        pre.append('           %s := cnv%s(st);' % (nstv, base))
+                    else:
+                        pre.append('           %s := [];' % nstv)
+                    args.append(nstv)
+                    post.append('           putset(%s, unc%s(%s));' % (av, base, nstv))
+                else:
+                    pre.append('           getset(%s, st);' % off)
+                    args.append('cnv%s(st)' % base)
             elif typ == 'real':
                 nr += 1; v = 'r%d' % nr
                 if mode in ('var','out'):
@@ -359,6 +382,13 @@ class Gen:
             for i, e in enumerate(elems):
                 out.append('   if %d in st then ns := ns + [%s.%s];' % (i, self.module, e))
             out += ['   cnv%s := ns' % typ, '', 'end;', '']
+            out += ['{ convert %s to set }' % typ, '',
+                    'function unc%s(view ns: %s.%s): settype;' % (typ, self.module, typ),
+                    '', 'var st: settype;', '', 'begin', '',
+                    '   st := [];']
+            for i, e in enumerate(elems):
+                out.append('   if %s.%s in ns then st := st + [%d];' % (self.module, e, i))
+            out += ['   unc%s := st' % typ, '', 'end;', '']
         return out
 
     def evtprocs(self):
@@ -499,7 +529,7 @@ end;
         head = ['procedure %s(routine: integer; var params: integer);' % procname,
                 '', 'var %s, rv: integer;' % ints,
                 '    %s: real;' % rels,
-                '    s:        str;',
+                '    %s: str;' % ', '.join(['s'] + ['s%d' % i for i in range(2, self.maxstr+1)]),
                 '    ad, ad2:  address;',
                 '    fn:       fileno;',
                 '    st:       settype;']
@@ -507,6 +537,8 @@ end;
             head.append('    er:       %s.evtrec;' % self.module)
         if self.module == 'graphics':
             head.append('    mnu:      graphics.menuptr;')
+        for nm, base in sorted(self.nsvars):
+            head.append('    %s: %s.%s;' % (nm, self.module, base))
         head += ['', 'begin', '', '    case routine of', '']
         tail = ['    else errore(FunctionNotImplemented)', '', '    end', '',
                 'end;', '']
@@ -648,6 +680,38 @@ begin
 
       end;
       putmenu := ad
+
+   end
+
+end;
+
+{ String list conversion: the interpreted list (next:0, str pstring:8 --
+  offsets from the signature digest) converts to a native list for the
+  list and drop box widgets. }
+
+function getstrlst(ad: address): graphics.strptr;
+
+var sp: graphics.strptr;
+    sa: address;
+    l, i: integer;
+
+begin
+
+   if (ad = 0) or (ad = nilval) then getstrlst := nil
+   else begin
+
+      new(sp);
+      sp^.next := getstrlst(getadr(ad));
+      sa := getadr(ad+8); { string }
+      if (sa = 0) or (sa = nilval) then sp^.str := nil
+      else begin
+
+         l := getint(sa);
+         new(sp^.str, l);
+         for i := 1 to l do sp^.str^[i] := chr(getbyt(sa+intsize+i-1))
+
+      end;
+      getstrlst := sp
 
    end
 
