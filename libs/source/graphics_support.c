@@ -354,14 +354,45 @@ void wrapper_openwin(pfile infile, pfile outfile, pfile parent, int wid)
 void wrapper_queryfind(string s, int sl, long* opt)
 {
     int topt = (int)*opt;
-    ami_queryfind(s, sl, &topt);
+    char buff[1024];
+    int n;
+
+    /* The query dialog treats the search string as a zero-terminated C
+       string; the Pascaline string is space padded. Bridge in both
+       directions: trim the input padding to a C string, run the dialog,
+       then space pad the result back. (A buffer that arrives all spaces --
+       e.g. a blanked out parameter -- trims to empty, so the dialog opens
+       with no default rather than a field of spaces.) */
+    n = sl < (int)sizeof(buff)-1 ? sl : (int)sizeof(buff)-1;
+    memcpy(buff, s, n);
+    while (n > 0 && buff[n-1] == ' ') n--; /* trim trailing pad */
+    buff[n] = 0;
+    ami_queryfind(buff, sizeof(buff), &topt);
+    n = strlen(buff); if (n > sl) n = sl;
+    memcpy(s, buff, n);
+    while (n < sl) s[n++] = ' '; /* space pad the result */
     *opt = topt;
 }
 
 void wrapper_queryfindrep(string s, int sl, string r, int rl, long* opt)
 {
     int topt = (int)*opt;
-    ami_queryfindrep(s, sl, r, rl, &topt);
+    char sbuff[1024], rbuff[1024];
+    int n, m;
+
+    /* bridge both strings between space-padded Pascaline and C convention,
+       as wrapper_queryfind does */
+    n = sl < (int)sizeof(sbuff)-1 ? sl : (int)sizeof(sbuff)-1;
+    memcpy(sbuff, s, n);
+    while (n > 0 && sbuff[n-1] == ' ') n--; sbuff[n] = 0;
+    m = rl < (int)sizeof(rbuff)-1 ? rl : (int)sizeof(rbuff)-1;
+    memcpy(rbuff, r, m);
+    while (m > 0 && rbuff[m-1] == ' ') m--; rbuff[m] = 0;
+    ami_queryfindrep(sbuff, sizeof(sbuff), rbuff, sizeof(rbuff), &topt);
+    n = strlen(sbuff); if (n > sl) n = sl;
+    memcpy(s, sbuff, n); while (n < sl) s[n++] = ' ';
+    m = strlen(rbuff); if (m > rl) m = rl;
+    memcpy(r, rbuff, m); while (m < rl) r[m++] = ' ';
     *opt = topt;
 }
 
