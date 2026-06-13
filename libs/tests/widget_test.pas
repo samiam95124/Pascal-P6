@@ -60,19 +60,31 @@ var
 
 { wait return to be pressed, or handle terminate }
 
-procedure waitnext;
+{ set the window title with the chapter frame number, as graphics_test does;
+  called at the start of each chapter so every screen is numbered, including
+  the interactive chapters that wait on their own event loop instead of
+  waitnext }
 
-var er: evtrec;
-    ts: pstring; { title string }
+procedure setframe;
+
+var ts: pstring; { title string }
 
 begin
 
-   { set title with frame number (recycled dynamic string) }
    framenum := framenum+1;
    openstring;
    ts := cat('widget_test: frame ', ints(framenum));
    title(output, ts^);
-   closestring;
+   closestring
+
+end;
+
+procedure waitnext;
+
+var er: evtrec;
+
+begin
+
    repeat event(input, er) until (er.etype = etenter) or (er.etype = etterm);
    if er.etype = etterm then goto 99
 
@@ -123,6 +135,8 @@ begin
 
    { ************************** Background test ************************* }
 
+   setframe;
+
    bcolor(output, backcolor); { the system widget face color }
    page;
    writeln('Background pa_color test');
@@ -132,6 +146,8 @@ begin
    bcolor(output, white);
 
    { ********************** Terminal Button test ************************ }
+
+   setframe;
 
    page;
    chrgrid;
@@ -184,6 +200,8 @@ begin
    killwidget(output, 3);
 
    { ********************* Graphical Buttons test *********************** }
+
+   setframe;
 
    page;
    writeln('Graphical buttons test');
@@ -243,6 +261,8 @@ begin
    killwidget(output, 3);
 
    { ********************* Terminal Checkbox test *********************** }
+
+   setframe;
 
    page;
    chrgrid;
@@ -328,6 +348,8 @@ begin
    killwidget(output, 3);
 
    { ********************* Graphical Checkbox test ********************** }
+
+   setframe;
 
    page;
    writeln('Graphical checkbox test');
@@ -417,6 +439,8 @@ begin
 
    { ******************* Terminal radio button test ********************* }
 
+   setframe;
+
    page;
    chrgrid;
    binvis(output);
@@ -501,6 +525,8 @@ begin
    killwidget(output, 3);
 
    { ******************* Graphical radio button test ******************** }
+
+   setframe;
 
    page;
    writeln('Graphical radio button test');
@@ -590,6 +616,8 @@ begin
 
    { ******************** Terminal Group box test *********************** }
 
+   setframe;
+
    page;
    chrgrid;
    binvis(output);
@@ -617,6 +645,8 @@ begin
    killwidget(output, 2);
 
    { ******************** Graphical Group box test ********************** }
+
+   setframe;
 
    page;
    writeln('Graphical group box test');
@@ -651,6 +681,8 @@ begin
 
    { ******************** Terminal background test ********************** }
 
+   setframe;
+
    page;
    chrgrid;
    binvis(output);
@@ -667,6 +699,8 @@ begin
    killwidget(output, 2);
 
    { ******************** Graphical background test ********************* }
+
+   setframe;
 
    page;
    writeln('Graphical background test');
@@ -689,6 +723,8 @@ begin
    killwidget(output, 2);
 
    { ******************** Terminal scroll bar test ********************** }
+
+   setframe;
 
    page;
    chrgrid;
@@ -728,6 +764,8 @@ begin
    killwidget(output, 2);
 
    { **************** Terminal scroll bar sizing test ******************* }
+
+   setframe;
 
    page;
    chrgrid;
@@ -771,6 +809,8 @@ begin
 
    { *************** Terminal scroll bar minimums test ****************** }
 
+   setframe;
+
    page;
    chrgrid;
    binvis(output);
@@ -804,6 +844,8 @@ begin
    killwidget(output, 2);
 
    { ********** Terminal scroll bar fat and skinny bars test ************ }
+
+   setframe;
 
    page;
    chrgrid;
@@ -843,6 +885,8 @@ begin
 
    { ******************** Graphical scroll bar test ********************* }
 
+   setframe;
+
    page;
    writeln('Graphical scroll bar test');
    writeln;
@@ -879,6 +923,8 @@ begin
    killwidget(output, 2);
 
    { **************** Graphical scroll bar sizing test ****************** }
+
+   setframe;
 
    page;
    writeln('Graphical scroll bar sizing test');
@@ -926,6 +972,8 @@ begin
 
    { *************** Graphical scroll bar minimums test ***************** }
 
+   setframe;
+
    page;
    writeln('Graphical scroll bar minimums test');
    writeln;
@@ -962,6 +1010,8 @@ begin
    killwidget(output, 2);
 
    { ********** Graphical scroll bar fat and skinny bars test *********** }
+
+   setframe;
 
    page;
    writeln('Graphical scroll bar fat and skinny bars test');
@@ -1005,6 +1055,8 @@ begin
 
    { *************** Terminal number select box test ******************** }
 
+   setframe;
+
    page;
    chrgrid;
    binvis(output);
@@ -1023,6 +1075,8 @@ begin
 
    { *************** Graphical number select box test ******************* }
 
+   setframe;
+
    page;
    writeln('Graphical number select box test');
    writeln;
@@ -1038,6 +1092,8 @@ begin
    killwidget(output, 1);
 
    { ********************* Terminal edit box test *********************** }
+
+   setframe;
 
    page;
    chrgrid;
@@ -1063,6 +1119,8 @@ begin
 
    { ********************* Graphical edit box test ********************** }
 
+   setframe;
+
    page;
    writeln('Graphical edit box test');
    writeln;
@@ -1084,6 +1142,8 @@ begin
    killwidget(output, 1);
 
    { ******************* Terminal progress bar test ********************* }
+
+   setframe;
 
    page;
    chrgrid;
@@ -1121,6 +1181,8 @@ begin
 
    { ******************* Graphical progress bar test ******************** }
 
+   setframe;
+
    page;
    writeln('Graphical progress bar test');
    writeln;
@@ -1154,6 +1216,8 @@ begin
    killwidget(output, 1);
 
    { ********************* Terminal list box test *********************** }
+
+   setframe;
 
    page;
    chrgrid;
@@ -1194,6 +1258,8 @@ begin
 
    { ********************* Graphical list box test ********************** }
 
+   setframe;
+
    page;
    writeln('Graphical list box test');
    writeln;
@@ -1227,6 +1293,8 @@ begin
    killwidget(output, 1);
 
    { ******************* Terminal dropdown box test ********************* }
+
+   setframe;
 
    page;
    chrgrid;
@@ -1267,6 +1335,8 @@ begin
 
    { ******************* Graphical dropdown box test ******************** }
 
+   setframe;
+
    page;
    writeln('Graphical dropdown box test');
    writeln;
@@ -1300,6 +1370,8 @@ begin
    killwidget(output, 1);
 
    { **************** Terminal dropdown edit box test ******************* }
+
+   setframe;
 
    page;
    chrgrid;
@@ -1338,6 +1410,8 @@ begin
 
    { **************** Graphical dropdown edit box test ****************** }
 
+   setframe;
+
    page;
    writeln('Graphical dropdown edit box test');
    writeln;
@@ -1370,6 +1444,8 @@ begin
 
    { ********************** Terminal slider test ************************ }
 
+   setframe;
+
    page;
    chrgrid;
    binvis(output);
@@ -1397,6 +1473,8 @@ begin
    killwidget(output, 4);
 
    { ********************** Graphical slider test *********************** }
+
+   setframe;
 
    page;
    writeln('Graphical slider test');
@@ -1434,6 +1512,8 @@ begin
    killwidget(output, 4);
 
    { ********************** Terminal tab bar test *********************** }
+
+   setframe;
 
    page;
    chrgrid;
@@ -1542,6 +1622,8 @@ begin
    killwidget(output, 4);
 
    { ********************** Graphical tab bar test ********************** }
+
+   setframe;
 
    page;
    writeln('Graphical tab bar test');
@@ -1670,6 +1752,8 @@ begin
 
    { ****************** Terminal overlaid tab bar test ****************** }
 
+   setframe;
+
    page;
    chrgrid;
    binvis(output);
@@ -1778,6 +1862,8 @@ begin
 
    { ***************** Graphical overlaid tab bar test ****************** }
 
+   setframe;
+
    page;
    writeln('Graphical overlaid tab bar test');
    writeln;
@@ -1883,6 +1969,8 @@ begin
 
    { ************************** Alert test ****************************** }
 
+   setframe;
+
    page;
    writeln('Alert test');
    writeln;
@@ -1894,6 +1982,8 @@ begin
    waitnext;
 
    { *********************** Color query test *************************** }
+
+   setframe;
 
    page;
    writeln('Color query test');
@@ -1912,6 +2002,8 @@ begin
 
    { ********************* Open file query test ************************* }
 
+   setframe;
+
    page;
    writeln('Open file query test');
    writeln;
@@ -1927,6 +2019,8 @@ begin
 
    { ********************* Save file query test ************************* }
 
+   setframe;
+
    page;
    writeln('Save file query test');
    writeln;
@@ -1941,6 +2035,8 @@ begin
    waitnext;
 
    { *********************** Find query test **************************** }
+
+   setframe;
 
    page;
    writeln('Find query test');
@@ -1963,6 +2059,8 @@ begin
    waitnext;
 
    { ******************** Find/replace query test *********************** }
+
+   setframe;
 
    page;
    writeln('Find/replace query test');
@@ -1994,6 +2092,8 @@ begin
    waitnext;
 
    { ************************ Font query test *************************** }
+
+   setframe;
 
    page;
    writeln('Font query test');
