@@ -14,6 +14,12 @@
 # --package Generate mach code and run as standalone package
 # --pgen    Generate native code for AMD64 (default).
 #
+# The test files live in pascaline_tests/ (test_path). pcom/pgen require the
+# test directory to be the working directory with bare filenames -- a
+# path-qualified input produces a malformed assembly -- so the script changes
+# into test_path. This runs in its own process, so it does not alter the
+# caller's working directory.
+#
 
 #
 # default to pgen
@@ -25,7 +31,10 @@ if [ -z "$param1" ]; then
 
 fi
 
-cd pascaline_tests
+# directory holding the test files
+test_path=pascaline_tests
+
+cd "$test_path" || { echo "*** testpascaline: cannot enter $test_path"; exit 1; }
 
 #
 # Compile sources
@@ -59,7 +68,7 @@ if [ "$param1" = "--pmach" ]; then
     pmach pascaline.p6o temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
     diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
     wc -l pascaline.dif
-    
+
 elif [ "$param1" = "--cmach" ]; then
 
 	echo Running with cmach
@@ -67,7 +76,7 @@ elif [ "$param1" = "--cmach" ]; then
     cmach pascaline.p6o headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
     diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
     wc -l pascaline.dif
-    
+
 elif [ "$param1" = "--pgen" ]; then
 
 	echo Running with pgen

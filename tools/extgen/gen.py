@@ -25,7 +25,7 @@ OUT  = os.path.join(ROOT, 'source', 'exttables.pas')
 
 WIDTH = 80  # prefix width; collision-checked below
 
-MODULES = ['services', 'terminal', 'graphics']
+MODULES = ['services', 'terminal', 'graphics', 'sound', 'network']
 
 tables = {}
 for m in MODULES:

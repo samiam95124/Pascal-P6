@@ -76,7 +76,7 @@ const
 { name of network library }        networklib = 'network';
 { maximum length of command line } cmdmax = 250;
 { maximum length of filename }     filmax = 1000;
-{ maximum size of input line }     maxlin = 1000;
+{ maximum size of input line }     maxlin = 2000;
 
 type
 
@@ -153,6 +153,7 @@ var
 { generate html documentation }            fhtml:   boolean;
 { print help }                             fhelp:   boolean;
 { no graphical windows mode }              fngwin:  boolean;
+{ link the executable statically }         fstatic: boolean;
 { default to terminal mode }               fdeftrm: boolean;
 { default to graphical mode }              fdefgra: boolean;
 { compile for pint (interpreter) }         fpint, spint:   boolean;
@@ -405,6 +406,7 @@ begin
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
+      setflg('static', fstatic); { link static (-static) or dynamic (-nstatic) }
       setflg('dt', 'defaultterminal', fdeftrm); { default to terminal mode }
       setflg('dg', 'defaultgraphical', fdefgra); { default to graphical mode }
       { passthrough options for the compiler. Note most of these are the long
@@ -1836,7 +1838,7 @@ begin
 
          i := 1; { set 1st command filename }
          clears(cmdbuf); { clear command buffer }
-         putstr('gcc -static -g3');
+         if fstatic then putstr('gcc -static -g3') else putstr('gcc -g3');
          putchr(' ');
          putstr('-c');
          putchr(' ');
@@ -2152,7 +2154,7 @@ begin { dolink }
       { build gcc command }
       clears(cmdbuf); { clear command buffer }
       i := 1; { set 1st char }
-      putstr('gcc -static -g3');
+      if fstatic then putstr('gcc -static -g3') else putstr('gcc -g3');
       putchr(' ');
       { An I/O library (terminal or graphics) installs its I/O overrides from a
         constructor in its module object. A program that does not call any of
@@ -2637,6 +2639,7 @@ begin
    fdoc := false; { generate documentation }
    fhtml := false; { generate html documentation }
    fhelp := false; { print help }
+   fstatic := true; { link static by default (for portability) }
    fdeftrm := false; { set no default to terminal mode }
    fdefgra := false; { set no default to graphical mode }
    fpint := false; { set no pint (interpreter) }
@@ -2740,6 +2743,7 @@ begin
       writeln('       -pgen                Compile for pgen mode (executable)');
       writeln('  -ktw -keepterminalwindow  Keep terminal window');
       writeln('  -sc  -symcoff             Generate COFF symbols');
+      writeln('       -static -nstatic     Link static (default) or dynamic');
       writeln('  -dt  -defaultterminal     Default to terminal mode');
       writeln('  -dg  -defaultgraphical    Default to graphical mode');
       writeln('  -mp  -modulepath=<path>   Set module search path');

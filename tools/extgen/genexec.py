@@ -98,6 +98,8 @@ def parse_evtrec(digest):
 # per-module generation
 # ----------------------------------------------------------------------------
 
+# Types whose parameter marshalling is not yet generated; routines using them
+# are stubbed to errore(FunctionNotImplemented).
 HARDTYPES = {'menuptr', 'imageptr', 'widget'}
 
 class Gen:
@@ -112,6 +114,9 @@ class Gen:
         self.sets = None
         self.stubs = []
         self.nsvars = set()
+        self.tvarmax = {}  # typed scalar var-param pools: typename -> max count
+        self.usesbyte = False  # module has a bytarr (open byte array) parameter
+        self.usescert = False  # module has a certptr (certificate list) parameter
         self.maxint = 3; self.maxrel = 1; self.maxstr = 1
         ev = [s for s in self.syms if s.startswith('event@p_fc_r')]
         if ev:
@@ -131,7 +136,9 @@ class Gen:
         return None
 
     def slot(self, mode, typ):
-        if typ == 'string': return 'strparsiz'
+        # open arrays (string of char, bytarr of byte) pass as a descriptor of
+        # base address plus logical length, view or var alike
+        if typ in ('string', 'bytarr'): return 'strparsiz'
         if mode in ('var','out') or typ in ('text','evtrec'): return 'adrsize'
         return 'intsize'
 
@@ -162,6 +169,41 @@ class Gen:
                     '           putadr(ad2, putmenu(mnu));',
                     '           params := params+adrsize*2+intsize', '',
                     '       end;', '']
+        # The certificate-list routines return a native linked list/tree of
+        # certfield records (certptr). putcertlist translates that to vm memory
+        # (and frees the native side); freecertlist frees the vm structure.
+        if self.module == 'network' and name == 'certlistnet':
+            self.maxint = max(self.maxint, 2); self.usescert = True
+            return ['       %d: begin { certlistnet@p_fc_i_pr }' % idx, '',
+                    '           ad := getadr(params+adrsize+intsize); valfil(ad); fn := getbyt(ad);',
+                    '           if fn <= commandfn then errore(FileModeIncorrect);',
+                    '           a1 := fn;',
+                    '           a2 := getint(params+adrsize); { which }',
+                    '           ad2 := getadr(params); { var list result cell }',
+                    '           cp := nil;',
+                    '           network.certlistnet(filtable[a1], a2, cp);',
+                    '           putadr(ad2, putcertlist(cp));',
+                    '           params := params+adrsize+intsize+adrsize', '',
+                    '       end;', '']
+        if self.module == 'network' and name == 'certlistmsg':
+            self.maxint = max(self.maxint, 2); self.usescert = True
+            return ['       %d: begin { certlistmsg@p_i_i_pr }' % idx, '',
+                    '           a1 := getint(params+adrsize+intsize); { connection }',
+                    '           a2 := getint(params+adrsize); { which }',
+                    '           ad2 := getadr(params); { var list result cell }',
+                    '           cp := nil;',
+                    '           network.certlistmsg(a1, a2, cp);',
+                    '           putadr(ad2, putcertlist(cp));',
+                    '           params := params+intsize+intsize+adrsize', '',
+                    '       end;', '']
+        if self.module == 'network' and name == 'certlistfree':
+            self.usescert = True
+            return ['       %d: begin { certlistfree@p_pr }' % idx, '',
+                    '           ad2 := getadr(params); { var list cell }',
+                    '           freecertlist(getadr(ad2));',
+                    '           putadr(ad2, nilval);',
+                    '           params := params+adrsize', '',
+                    '       end;', '']
         d = self.match_decl(name, hasfile, len(ptoks))
         if d is None:
             self.stubs.append((idx, name, 'no interface match'))
@@ -178,7 +220,7 @@ class Gen:
             acc = acc + '+' + self.slot(mode, typ)
         offs.reverse()
         total = '+'.join(self.slot(m,t) for m,_,t in d['params'])
-        pre=[]; post=[]; args=[]; ni=0; nr=0; nstr=0; filevars=[]
+        pre=[]; post=[]; args=[]; ni=0; nr=0; nstr=0; filevars=[]; tvn={}
         for (mode, pn, typ), off in zip(d['params'], offs):
             base = typ.split()[0]
             if typ == 'text':
@@ -225,6 +267,21 @@ class Gen:
                     pre.append('           for rv := 1 to strmax do %s[rv] := \' \';' % sv)
                     args.append(sv)
                     post.append('           putstr(%s, %s);' % (sv, v))
+            elif base == 'bytarr':
+                # open array of byte: a wide pointer of (base address, length).
+                # Allocate a container array of the runtime length so the call
+                # passes that exact length (max(bp^)); copy bytes in, and for a
+                # var parameter copy the result back. getabyte/putabyte free it.
+                self.usesbyte = True
+                if mode == 'view':
+                    pre.append('           getabyte(%s, bp);' % off)
+                    post.append('           dispose(bp);')
+                else:
+                    # var (output): allocate without reading the undefined vm
+                    # buffer; the native routine fills it, then copy it back
+                    pre.append('           newabyte(%s, bp);' % off)
+                    post.append('           putabyte(%s, bp);' % off)
+                args.append('bp^')
             elif base in self.module_enums():
                 ni += 1; v = 'a%d' % ni
                 pre.append('           %s := getint(%s);' % (v, off))
@@ -270,8 +327,15 @@ class Gen:
                     # the model's var scalars are outputs: the content may be
                     # undefined, so it is not read before the call
                     ni += 1; av = 'a%d' % ni
-                    ni += 1; v = 'a%d' % ni
                     pre.append('           %s := getadr(%s);' % (av, off))
+                    if base == 'integer':
+                        ni += 1; v = 'a%d' % ni
+                    else:
+                        # a named integer-subrange type (e.g. lcardinal): the
+                        # var parameter requires a variable of that exact type,
+                        # not a plain integer, so draw one from a typed pool
+                        tvn[base] = tvn.get(base, 0) + 1
+                        v = '%s%d' % (base, tvn[base])
                     pre.append('           %s := 0;' % v)
                     args.append(v)
                     post.append('           putint(%s, %s);' % (av, v))
@@ -280,23 +344,33 @@ class Gen:
                     pre.append('           %s := getint(%s);' % (v, off))
                     args.append(v)
         self.maxint = max(self.maxint, ni); self.maxrel = max(self.maxrel, nr)
+        for t, c in tvn.items():
+            self.tvarmax[t] = max(self.tvarmax.get(t, 0), c)
         call = '%s.%s' % (self.module, name)
         if args: call += '(' + ', '.join(args) + ')'
         out = ['       %d: begin { %s@%s }' % (idx, name, sig[:40]), '']
         out += pre
         if isfunc:
+            # post (var/out copy-back, container free) runs after the call but
+            # before params advances: it writes to the original parameter slots
             if d['ret'] == 'real':
                 out.append('           r1 := %s;' % call)
+                out += post
                 if total: out.append('           params := params+%s;' % total)
                 out.append('           putrel(params, r1);')
             else:
                 out.append('           rv := ord(%s);' % call)
+                out += post
                 if total: out.append('           params := params+%s;' % total)
                 out.append('           putint(params, rv);')
         else:
             out.append('           %s;' % call)
-            if name == 'openwin' and len(filevars) >= 2:
-                out.append('           { the bound window files become readable and writable }')
+            # Routines that open a connection into a pair of var text files
+            # (a window, a tcp/secure socket): mark the bound files readable and
+            # writable so the program's reads and writes on them are permitted.
+            if name in ('openwin', 'opennet', 'opennetv6', 'waitnet') \
+               and len(filevars) >= 2:
+                out.append('           { the bound connection files become readable and writable }')
                 out.append('           filstate[%s] := fread;' % filevars[0])
                 out.append('           filstate[%s] := fwrite;' % filevars[1])
             out += post
@@ -351,7 +425,13 @@ class Gen:
             if not d: continue
             for (mode,pn,typ), tok in zip(d['params'], ptoks):
                 base = typ.split()[0]
-                if tok.startswith('x(') and base not in self.enums:
+                # A true enumeration digest is x(elem,elem,...) with named
+                # elements and no base-type suffix, so the token ends with ')'.
+                # An integer subrange is x(low,high)<base> (e.g. x(0,255)i) and
+                # ends with the base-type char; those pass as plain integers and
+                # must not be mistaken for enums needing a value converter.
+                if tok.startswith('x(') and tok.endswith(')') \
+                   and base not in self.enums:
                     self.enums[base] = tok[2:-1].split(',')[0]
                 if tok.startswith('sx(') and base not in self.sets:
                     self.sets[base] = tok[3:-1].split(',')
@@ -535,10 +615,19 @@ end;
                 '    st:       settype;']
         if self.evcodes:
             head.append('    er:       %s.evtrec;' % self.module)
+        if self.usesbyte:
+            head.append('    bp:       bytconp;')
+        if self.usescert:
+            head.append('    cp:       network.certptr;')
         if self.module == 'graphics':
             head.append('    mnu:      graphics.menuptr;')
         for nm, base in sorted(self.nsvars):
             head.append('    %s: %s.%s;' % (nm, self.module, base))
+        for t in sorted(self.tvarmax):
+            # these are built-in integer-family scalar types (e.g. lcardinal),
+            # named but not module-qualified
+            names = ', '.join('%s%d' % (t, i) for i in range(1, self.tvarmax[t]+1))
+            head.append('    %s: %s;' % (names, t))
         head += ['', 'begin', '', '    case routine of', '']
         tail = ['    else errore(FunctionNotImplemented)', '', '    end', '',
                 'end;', '']
@@ -549,12 +638,17 @@ end;
 # ----------------------------------------------------------------------------
 
 HELPERS = '''
-const strmax = 1000; { size of string buffers }
+const strmax = 10000; { size of string buffers; large enough for a PEM
+                        certificate (network certnet/certmsg return one through
+                        a var string), matching the binding's certificate buffer
+                        convention }
       strparsiz = ptrsize+intsize; { size of string parameter }
       FileModeIncorrect = 28; { file mode incorrect }
       FunctionNotImplemented = 90; { external function not implemented }
 
 type str = packed array [1..strmax] of char;
+     bytcon = packed array of byte; { container for open byte-array params }
+     bytconp = ^bytcon;
 
 { load string from vm }
 
@@ -598,6 +692,67 @@ begin
       ad := ad+1
 
    end
+
+end;
+
+{ allocate an output byte-array container of the vm array's length, without
+  reading the (possibly undefined) vm contents -- for a var parameter the native
+  routine fills the buffer, so the vm side need not be defined first }
+
+procedure newabyte(sa: address; var bp: bytconp);
+
+var l: integer;
+    i: integer;
+
+begin
+
+   l := getint(sa+ptrsize); { logical length (the array bound) }
+   new(bp, l);
+   for i := 1 to l do bp^[i] := 0 { defined, native overwrites what it returns }
+
+end;
+
+{ load open byte array from vm into a freshly allocated container }
+
+procedure getabyte(sa: address; var bp: bytconp);
+
+var ad: address;
+    l:  integer;
+    i:  integer;
+
+begin
+
+   ad := getadr(sa); { base address of the array }
+   l := getint(sa+ptrsize); { logical length (the array bound) }
+   new(bp, l); { container of the runtime length, so max(bp^) = l }
+   for i := 1 to l do begin { transfer bytes in }
+
+      bp^[i] := getbyt(ad);
+      ad := ad+1
+
+   end
+
+end;
+
+{ store open byte array container back to vm and free it }
+
+procedure putabyte(sa: address; bp: bytconp);
+
+var ad: address;
+    l:  integer;
+    i:  integer;
+
+begin
+
+   ad := getadr(sa); { base address of the array }
+   l := getint(sa+ptrsize); { logical length }
+   for i := 1 to l do begin { transfer bytes back }
+
+      putbyt(ad, bp^[i]);
+      ad := ad+1
+
+   end;
+   dispose(bp)
 
 end;
 '''
@@ -765,6 +920,8 @@ def writeflavor(path, header, joins, body):
     out.append('')
     out.append('procedure execterminal(routine: integer; var params: integer); forward;')
     out.append('procedure execgraph(routine: integer; var params: integer); forward;')
+    out.append('procedure execsound(routine: integer; var params: integer); forward;')
+    out.append('procedure execnetwork(routine: integer; var params: integer); forward;')
     out.append('')
     out.append('private')
     out.append('')
@@ -773,15 +930,106 @@ def writeflavor(path, header, joins, body):
     out.append('end.')
     open(path, 'w').write('\n'.join(out) + '\n')
 
+CERTHELP = '''{ Certificate-list translation. The native network.certlist* routines build a
+  linked list/tree of certfield records (name@0 data@8 critical@16 fork@20
+  next@28, record size 36, with name/data as pstrings). putcertlist rebuilds it
+  in vm memory, freeing the native side; freecertlist frees the vm structure. }
+
+function putcertlist(cp: network.certptr): address;
+
+var ad, sa: address;
+    l, i:   integer;
+    lp:     network.certptr;
+
+begin
+
+   if cp = nil then putcertlist := nilval
+   else begin
+
+      newspc(36, ad); { a certfield record in interpreted layout }
+      { name pstring at +0 }
+      if cp^.name = nil then putadr(ad, nilval)
+      else begin
+         l := max(cp^.name^);
+         newspc(intsize+l, sa);
+         putint(sa, l);
+         for i := 1 to l do putbyt(sa+intsize+i-1, ord(cp^.name^[i]));
+         putadr(ad, sa)
+      end;
+      { data pstring at +8 }
+      if cp^.data = nil then putadr(ad+8, nilval)
+      else begin
+         l := max(cp^.data^);
+         newspc(intsize+l, sa);
+         putint(sa, l);
+         for i := 1 to l do putbyt(sa+intsize+i-1, ord(cp^.data^[i]));
+         putadr(ad+8, sa)
+      end;
+      putbyt(ad+16, ord(cp^.critical)); { critical at +16 }
+      putadr(ad+20, putcertlist(cp^.fork)); { fork sublist at +20 }
+      putadr(ad+28, putcertlist(cp^.next)); { next at +28 }
+      { release the native entry; the sublist and next are freed by recursion }
+      lp := cp;
+      if lp^.name <> nil then dispose(lp^.name);
+      if lp^.data <> nil then dispose(lp^.data);
+      dispose(lp);
+      putcertlist := ad
+
+   end
+
+end;
+
+procedure freecertlist(ad: address);
+
+var sa: address;
+
+begin
+
+   if (ad <> 0) and (ad <> nilval) then begin
+
+      sa := getadr(ad); { name string }
+      if (sa <> 0) and (sa <> nilval) then dspspc(0, sa);
+      sa := getadr(ad+8); { data string }
+      if (sa <> 0) and (sa <> nilval) then dspspc(0, sa);
+      freecertlist(getadr(ad+20)); { fork sublist }
+      freecertlist(getadr(ad+28)); { next entry }
+      dspspc(0, ad) { the record }
+
+   end
+
+end;
+'''
+
+def addmods(body, mods):
+    """Append the converters, event procs, callbacks and executor of each
+       module in mods to body. Sound and network carry no events or callbacks,
+       so those contribute nothing; their executor name is exec<module>. The
+       network module also gets the certificate-list translators before its
+       executor."""
+    for g in mods:
+        body += g.converters()
+        body += g.evtprocs()
+        body += g.callbacks()
+        if g.module == 'network':
+            body.append(CERTHELP)
+        body += g.executor('exec'+g.module)
+    return body
+
 def main():
     term = Gen('terminal')
     graph = Gen('graphics')
+    sound = Gen('sound')
+    network = Gen('network')
+
+    # Sound and network are standard in every flavor (plain, term, graph): the
+    # interpreter is no longer a portability path, so all variants host them.
 
     tbody = [HELPERS]
     tbody += term.converters()
     tbody += term.evtprocs()
     tbody += term.callbacks()
     tbody += term.executor('execterminal')
+    addmods(tbody, [sound, network])
     tbody.append(STUB % 'execgraph')
     writeflavor(os.path.join(ROOT, 'source/term/extexec.pas'),
 '''{*******************************************************************************
@@ -789,19 +1037,21 @@ def main():
 *                       External model execution                               *
 *                                                                              *
 * The terminal flavor of the external execution module, selected for the      *
-* pintt interpreter by module path: terminal externals execute against the    *
-* native terminal model; graphics externals error.                            *
+* pintt interpreter by module path: terminal, sound and network externals     *
+* execute against their native models; graphics externals error.              *
 *                                                                              *
 * Generated by tools/extgen/genexec.py; do not edit by hand.                  *
 *                                                                              *
 *******************************************************************************}''',
-        'joins terminal; { terminal model I/O }', '\n'.join(tbody))
+        'joins terminal, sound, network; { terminal, sound and network model I/O }',
+        '\n'.join(tbody))
 
     gbody = [HELPERS, VMHOST, MENUHELP]
     gbody += graph.converters()
     gbody += graph.evtprocs()
     gbody += graph.callbacks()
     gbody += graph.executor('execgraph')
+    addmods(gbody, [sound, network])
     gbody.append(STUB % 'execterminal')
     writeflavor(os.path.join(ROOT, 'source/graph/extexec.pas'),
 '''{*******************************************************************************
@@ -816,35 +1066,44 @@ def main():
 * interpreted standard files attach to them, so the program's standard I/O    *
 * flows to the window; further windows the interpreted program opens bind to  *
 * general files the same way. Graphics externals execute against the native   *
-* graphics model with the window files passed from the file table; terminal   *
-* externals error.                                                            *
+* graphics model with the window files passed from the file table; sound and  *
+* network externals execute against their native models; terminal externals   *
+* error.                                                                       *
 *                                                                              *
 * Generated by tools/extgen/genexec.py; do not edit by hand.                  *
 *                                                                              *
 *******************************************************************************}''',
-        'joins graphics; { graphics model I/O (the blonde archive) }',
+        'joins graphics, sound, network; { graphics (blonde archive), sound and network model I/O }',
         '\n'.join(gbody))
 
-    pbody = 'const FunctionNotImplemented = 90;\n\n' + \
-            (STUB % 'execterminal') + '\n' + (STUB % 'execgraph')
+    pbody = [HELPERS]
+    addmods(pbody, [sound, network])
+    pbody.append(STUB % 'execterminal')
+    pbody.append(STUB % 'execgraph')
     writeflavor(os.path.join(ROOT, 'source/plain/extexec.pas'),
 '''{*******************************************************************************
 *                                                                              *
 *                       External model execution                               *
 *                                                                              *
 * The plain flavor of the external execution module: the plain interpreter    *
-* hosts no I/O model, so executing a terminal or graphics external is an      *
-* error. The pintt and pintg interpreters select the real flavors by module   *
-* path.                                                                        *
+* hosts no terminal or graphics model, so those externals error. Sound and    *
+* network are standard in every flavor and execute against their native       *
+* models. The pintt and pintg interpreters add the terminal and graphics      *
+* models by module path.                                                      *
 *                                                                              *
 * Generated by tools/extgen/genexec.py; do not edit by hand.                  *
 *                                                                              *
 *******************************************************************************}''',
-        None, pbody)
+        'joins sound, network; { sound and network model I/O }',
+        '\n'.join(pbody))
 
     print('terminal: %d cases, %d stubs' % (len(term.syms), len(term.stubs)))
     for i, n, r in term.stubs: print('   stub %d %s (%s)' % (i, n, r))
     print('graphics: %d cases, %d stubs' % (len(graph.syms), len(graph.stubs)))
     for i, n, r in graph.stubs: print('   stub %d %s (%s)' % (i, n, r))
+    print('sound: %d cases, %d stubs' % (len(sound.syms), len(sound.stubs)))
+    for i, n, r in sound.stubs: print('   stub %d %s (%s)' % (i, n, r))
+    print('network: %d cases, %d stubs' % (len(network.syms), len(network.stubs)))
+    for i, n, r in network.stubs: print('   stub %d %s (%s)' % (i, n, r))
 
 main()

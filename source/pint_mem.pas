@@ -237,6 +237,18 @@ begin
 
 end;
 
+virtual procedure dspspc(len, blk: address);
+
+begin
+
+    refer(len);
+    refer(blk);
+
+    writeln('*** pint_mem: dspspc: abstract function not defined');
+    halt
+
+end;
+
 virtual procedure valfil(fa: address);
 
 begin
