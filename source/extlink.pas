@@ -16,10 +16,11 @@ module extlink;
 
 joins services; { system services }
 
-uses strings,   { string functions }
-     exttables, { external symbol tables }
-     extexec,   { external model execution (flavored by module path) }
-     pint_mem;  { low level vm access for pint }
+uses strings,    { string functions }
+     exttables,  { external symbol tables }
+     extexec,    { terminal/graphics executors (flavored by module path) }
+     execcommon, { sound/network executors (standard in every flavor) }
+     pint_mem;   { low level vm access for pint }
 
 { the public surface: symbol lookup and routine execution }
 
@@ -126,7 +127,7 @@ routines below.
 *******************************************************************************}
 
 
-const 
+const
 
     strmax = 1000; { size of string buffers }
 
