@@ -202,7 +202,7 @@ var er: evtrec;
 begin
 
    st := false; { set no space terminate }
-   timer(output, 1, t, 0);
+   timer(output, 1, t, false);
    repeat event(input, er)
    until (er.etype = ettim) or (er.etype = etterm) or
          (er.etype = etchar) or (er.etype = etenter);
@@ -489,7 +489,7 @@ begin
       baltbl[i].c := intcolor(randr(ord(red), ord(magenta))) { random color }
 
    end;
-   curvis(output, 0); { turn off cursor }
+   curvis(output, false); { turn off cursor }
    cd := 0; { set 1st display }
    { place squares on display }
    for i := 1 to maxsquare do
@@ -542,7 +542,7 @@ var fsiz:    integer;
 
 begin
 
-   auto(output, 0);
+   auto(output, false);
    font(output, ftsign);
    fsiz := chrsizy(output); { save character size to restore }
    fontsiz(output, maxyg(output) div 20);
@@ -643,8 +643,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    linewidth(output, w);
    c := clock;
@@ -675,8 +675,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    linewidth(output, w);
    c := clock;
@@ -707,8 +707,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    linewidth(output, w);
    c := clock;
@@ -740,8 +740,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    c := clock;
    for i := 1 to t do begin
@@ -771,8 +771,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    c := clock;
    for i := 1 to t do begin
@@ -803,8 +803,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    linewidth(output, w);
    c := clock;
@@ -835,8 +835,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    c := clock;
    for i := 1 to t do begin
@@ -867,8 +867,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    linewidth(output, w);
    c := clock;
@@ -907,8 +907,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    c := clock;
    for i := 1 to t do begin
@@ -946,8 +946,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    c := clock;
    for i := 1 to t do begin
@@ -984,8 +984,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    c := clock;
    for i := 1 to t do begin
@@ -1016,8 +1016,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    c := clock;
    for i := 1 to t do begin
@@ -1053,8 +1053,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    loadpict(output, 1, 'mypic');
    c := clock;
@@ -1086,8 +1086,8 @@ var
 
 begin
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    page;
    loadpict(output, 1, 'mypic');
    xs := pictsizx(output, 1);
@@ -1158,8 +1158,8 @@ begin
    framenum := 0;
 
    { start frame timer }
-   frametimer(output, 1);
-   curvis(output, 0);
+   frametimer(output, true);
+   curvis(output, false);
    binvis(output);
    writeln('Graphics screen test vs. 0.1');
    writeln;
@@ -1220,7 +1220,7 @@ begin
    page;
    chrgrid;
    prtcen(maxy(output), 'Standard fonts test');
-   auto(output, 0);
+   auto(output, false);
    home(output);
    binvis(output);
    fontnam(output, ftterm, fns);
@@ -1290,7 +1290,7 @@ begin
    { ********************** Graphical cursor movement test ******************* }
 
    page;
-   auto(output, 0);
+   auto(output, false);
    prtcen(maxy(output), 'Graphical cursor movement test');
    x := 1;
    y := 1;
@@ -2692,7 +2692,7 @@ begin
    grid;
    fsiz := chrsizy(output); { save character size to restore }
    h := 10;
-   auto(output, 0);
+   auto(output, false);
    font(output, ftsign);
    c1 := black;
    c2 := blue;
@@ -2724,7 +2724,7 @@ begin
    grid;
    fsiz := chrsizy(output); { save character size to restore }
    ps := 6.0;
-   auto(output, 0);
+   auto(output, false);
    font(output, ftsign);
    c1 := black;
    c2 := blue;
@@ -2787,7 +2787,7 @@ begin
 
    page;
    grid;
-   auto(output, 0);
+   auto(output, false);
    bcolor(output, cyan);
    bover(output);
    cnt := fonts(output);
@@ -2824,7 +2824,7 @@ begin
 
    page;
    grid;
-   auto(output, 0);
+   auto(output, false);
    font(output, ftsign);
    condensed(output, 1);
    writeln('Condensed');
@@ -2855,7 +2855,7 @@ begin
 
    page;
    grid;
-   auto(output, 0);
+   auto(output, false);
    fsiz := chrsizy(output); { save character size to restore }
    font(output, ftsign);
    fontsiz(output, maxyg(output) div 12);
@@ -2894,7 +2894,7 @@ begin
 
    page;
    grid;
-   auto(output, 0); { rotated text is incompatible with the text grid }
+   auto(output, false); { rotated text is incompatible with the text grid }
    x := maxxg(output) div 2; { window center }
    y := maxyg(output) div 2;
    l := chrsizx(output)*5; { start radius - 5 char widths from center }
@@ -2924,13 +2924,13 @@ begin
    binvis(output);
    prtcen(maxy(output), 'Polar text lines');
    waitnext;
-   auto(output, 1); { re-enable the text grid }
+   auto(output, true); { re-enable the text grid }
 
    { ******** Graphical tabbing test ******** }
 
    page;
    grid;
-   auto(output, 0);
+   auto(output, false);
    font(output, ftterm);
    for i := 1 to 5 do begin
 
@@ -3095,8 +3095,8 @@ begin
    { ************************** View offset test ************************** }
 
    page;
-   auto(output, 0); { turn off autoscroll }
-   curvis(output, 0); { turn off cursor }
+   auto(output, false); { turn off autoscroll }
+   curvis(output, false); { turn off cursor }
    edge;
    { move the origin right and down }
    viewoffg(output, maxxg(output) div 2, maxyg(output) div 2);
@@ -3110,14 +3110,14 @@ begin
    prtcen(maxy(output), 'View offset test');
    prtcen(1, 'The 1,1 origin is now at screen center');
    waitnext;
-   auto(output, 1); { back to normal character }
-   curvis(output, 1); { turn on cursor }
+   auto(output, true); { back to normal character }
+   curvis(output, true); { turn on cursor }
 
    { ************************** View scale test ************************** }
 
    page;
-   auto(output, 0);
-   curvis(output, 0); { turn off cursor }
+   auto(output, false);
+   curvis(output, false); { turn off cursor }
    edge;
    viewscale(output, 0.5, 0.5);
    grid;
@@ -3130,14 +3130,14 @@ begin
    prtcen(1, 'Logical coordinates are now 1/2 size');
    prtcen(maxy(output), 'View scale test');
    waitnext;
-   auto(output, 1); { back to normal character }
-   curvis(output, 1); { turn on cursor }
+   auto(output, true); { back to normal character }
+   curvis(output, true); { turn on cursor }
 
    { ************************ Viewport scaling test ************************** }
 
    page;
-   auto(output, 0);
-   curvis(output, 0); { turn off cursor }
+   auto(output, false);
+   curvis(output, false); { turn off cursor }
    fsiz := chrsizy(output); { save default font size }
    font(output, ftsign);
    cx := maxxg(output) div 2; { center x }
@@ -3266,7 +3266,7 @@ begin
    { reset to identity }
    viewscale(output, 1.0, 1.0);
    viewoffg(output, 0, 0);
-   curvis(output, 0); { turn off cursor }
+   curvis(output, false); { turn off cursor }
 
    { ************************** Benchmarks **************************** }
 
@@ -3460,7 +3460,7 @@ begin
    99: ; { terminate }
 
    page;
-   auto(output, 0);
+   auto(output, false);
    font(output, ftsign);
    fontsiz(output, 50);
    prtceng(maxy(output) div 2, 'Test complete')

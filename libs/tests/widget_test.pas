@@ -127,7 +127,7 @@ begin
 
    framenum := 0;
 
-   curvis(output, 0);
+   curvis(output, false);
    writeln('Widget test vs. 0.1');
    writeln;
    writeln('Hit return in any window to continue for each test');
@@ -1152,7 +1152,7 @@ begin
    writeln;
    progbarsiz(output, x, y);
    progbar(output, 10, 10, 10+x-1, 10+y-1, 1);
-   timer(output, 1, second, 1);
+   timer(output, 1, second, true);
    prog := 1;
    repeat
 
@@ -1188,7 +1188,7 @@ begin
    writeln;
    progbarsizg(output, x, y);
    progbarg(output, 100, 100, 100+x-1, 100+y-1, 1);
-   timer(output, 1, second, 1);
+   timer(output, 1, second, true);
    prog := 1;
    repeat
 

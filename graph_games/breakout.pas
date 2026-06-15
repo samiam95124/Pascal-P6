@@ -477,8 +477,8 @@ begin
    starttimeout; { start sequencer running }
    jchr := i32max div ((maxxg(output)-2) div 2); { find basic joystick
                                                    increment }
-   curvis(output, 0); { remove drawing cursor }
-   auto(output, 0); { turn off scrolling }
+   curvis(output, false); { remove drawing cursor }
+   auto(output, false); { turn off scrolling }
    font(output, ftsign); { sign font }
    wall := maxyg(output) div 20; { set wall thickness }
    brkh := maxyg(output) div 25; { set brick thickness }
@@ -489,10 +489,10 @@ begin
    pwdis := padh div 4; { set distance of paddle to wall }
    padw := maxxg(output) div 8; { set paddle width }
    hpadw := padw div 2; { half paddle width }
-   bold(output, 1);
+   bold(output, true);
    fontsiz(output, wall-2); { font fits in the wall }
    binvis(output); { no background writes }
-   timer(output, 1, balmov, 1); { enable timer }
+   timer(output, 1, balmov, true); { enable timer }
 
    88: { start new game }
 

@@ -1226,14 +1226,14 @@ begin
    if randstate < 0 then randstate := randstate+i32max;
 
    title(output, 'Defenders');
-   curvis(output, 0);
-   auto(output, 0);
+   curvis(output, false);
+   auto(output, false);
    { stay in buffered mode for select double buffering }
    font(output, ftsign);
-   bold(output, 1);
+   bold(output, true);
    binvis(output);
    bcolorg(output, 0, 0, 0);
-   frametimer(output, 1);
+   frametimer(output, true);
    flip := 0;
 
    opensynthout(synth_out);
@@ -1247,8 +1247,8 @@ begin
    draw_all;
 
    { start game timers }
-   timer(output, timer_afire, afire_min+randn(afire_max-afire_min-1), 0);
-   timer(output, timer_ufo, ufo_interval, 0);
+   timer(output, timer_afire, afire_min+randn(afire_max-afire_min-1), false);
+   timer(output, timer_ufo, ufo_interval, false);
 
    mouse_x := scr_w div 2;
 
@@ -1391,7 +1391,7 @@ begin
                alien_fire;
                { restart alien fire timer with random interval }
                timer(output, timer_afire,
-                     afire_min+randn(afire_max-afire_min-1), 0)
+                     afire_min+randn(afire_max-afire_min-1), false)
 
             end
 
@@ -1399,7 +1399,7 @@ begin
             if game_started and (not game_over) then begin
 
             spawn_ufo;
-            timer(output, timer_ufo, ufo_interval, 0)
+            timer(output, timer_ufo, ufo_interval, false)
 
          end
 
@@ -1411,8 +1411,8 @@ begin
 
             init_game;
             timer(output, timer_afire,
-                  afire_min+randn(afire_max-afire_min-1), 0);
-            timer(output, timer_ufo, ufo_interval, 0);
+                  afire_min+randn(afire_max-afire_min-1), false);
+            timer(output, timer_ufo, ufo_interval, false);
             draw_all
 
          end else if er.menuid = menu_exit then goto 99

@@ -293,8 +293,8 @@ begin
    instchange(synth_out, 0, 1, inst_lead_1_square);
    { find basic joystick increment }
    jchr := i32max div ((maxxg(output)-2) div 2);
-   curvis(output, 0); { remove drawing cursor }
-   auto(output, 0); { turn off scrolling }
+   curvis(output, false); { remove drawing cursor }
+   auto(output, false); { turn off scrolling }
    font(output, ftsign); { sign font }
    wall := maxyg(output) div 20; { set wall thickness }
    balls := maxyg(output) div 20; { set ball size }
@@ -303,10 +303,10 @@ begin
    pwdis := padh div 4; { set distance of paddle to wall }
    padw := maxxg(output) div 8; { set paddle width }
    hpadw := padw div 2; { half paddle width }
-   bold(output, 1);
+   bold(output, true);
    fontsiz(output, wall-2); { font fits in the wall }
    binvis(output); { no background writes }
-   timer(output, 1, balmov, 1); { enable timer }
+   timer(output, 1, balmov, true); { enable timer }
 
    1: { newgame: start new game }
 
