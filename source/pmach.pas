@@ -1631,7 +1631,7 @@ end;
 
 { dispose of space in heap }
 
-procedure dspspc(len, blk: address);
+override procedure dspspc(len, blk: address);
 var ad: address;
 begin
    len := len; { shut up compiler check }

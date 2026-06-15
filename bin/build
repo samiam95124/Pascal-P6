@@ -54,6 +54,10 @@ pc libs/source/terminal -pint -r
 cp libs/source/terminal.p6 libs
 pc libs/source/graphics -pint -r
 cp libs/source/graphics.p6 libs
+pc libs/source/sound -pint -r
+cp libs/source/sound.p6 libs
+pc libs/source/network -pint -r
+cp libs/source/network.p6 libs
 
 #
 # General library modules in Pascaline.
@@ -87,9 +91,16 @@ compprog pc/pc
 compprog pc/hashtabr
 compprog pc/hashtabs
 compprog source/genobj
-compprog libs/tests/strtst
-compprog libs/tests/services_test
-compprog libs/tests/services_test1
+#
+# Test programs in libs/tests: build each as a native executable and place it
+# in bin. pc detects each program's modules (graphics, sound, network,
+# terminal, services) and links the matching libraries, so windowed, sound and
+# network tests build the same way. Adding a new test to libs/tests is picked
+# up here automatically.
+#
+for testprog in libs/tests/*.pas; do
+   compprog "${testprog%.pas}"
+done
 #
 # pgen and pcom must be a matched set
 #

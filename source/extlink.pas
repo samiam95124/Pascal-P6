@@ -100,6 +100,18 @@ begin
          if matchpre(symbol, graphicstab[i]) then
             routine := nservices+nterminal+i
 
+   end else if compp(modulen, 'sound') then begin
+
+      for i := 1 to nsound do
+         if matchpre(symbol, soundtab[i]) then
+            routine := nservices+nterminal+ngraphics+i
+
+   end else if compp(modulen, 'network') then begin
+
+      for i := 1 to nnetwork do
+         if matchpre(symbol, networktab[i]) then
+            routine := nservices+nterminal+ngraphics+nsound+i
+
    end
 
 end;
@@ -1495,7 +1507,11 @@ begin
     if routine <= nservices then execservices(routine, params)
     else if routine <= nservices+nterminal then
        execterminal(routine-nservices, params)
-    else execgraph(routine-nservices-nterminal, params)
+    else if routine <= nservices+nterminal+ngraphics then
+       execgraph(routine-nservices-nterminal, params)
+    else if routine <= nservices+nterminal+ngraphics+nsound then
+       execsound(routine-nservices-nterminal-ngraphics, params)
+    else execnetwork(routine-nservices-nterminal-ngraphics-nsound, params)
 
 end;
 
@@ -1511,7 +1527,7 @@ function NumExternal: integer;
 
 begin
 
-    NumExternal := nservices+nterminal+ngraphics
+    NumExternal := nservices+nterminal+ngraphics+nsound+nnetwork
 
 end;
 

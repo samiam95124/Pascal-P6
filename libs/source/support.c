@@ -90,7 +90,9 @@ void rempad(char* cs, int* l)
  * call coexist.
  */
 #define CSTRZBUF 8    /* number of rotating conversion buffers */
-#define CSTRZLEN 1024 /* maximum converted string length */
+#define CSTRZLEN 2048 /* maximum converted string length; covers a full pc
+                         build command (pc.pas maxlin), e.g. the static link of
+                         a graphics+sound+network interpreter passed via execw */
 
 char* cstrz(char* s, int l)
 {
