@@ -161,3 +161,42 @@ if [ $? -ne 0 ]; then
 fi
 cp source/pint bin
 compprog source/pmach
+#
+# pmacht and pmachg are the same source built with the terminal and graphics
+# module flavors first on the module path, mirroring pintt and pintg. The plain
+# interpreter is rebuilt afterward so source/pmach matches its instruction file.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building source/pmach (terminal flavor) as pmacht..."
+echo "**********************************************************************"
+echo ""
+pc source/pmach -mp=source/term -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pmach bin/pmacht
+echo ""
+echo "**********************************************************************"
+echo "Building source/pmach (graphics flavor) as pmachg..."
+echo "**********************************************************************"
+echo ""
+pc source/pmach -mp=source/graph -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pmach bin/pmachg
+pc source/pmach -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pmach bin
