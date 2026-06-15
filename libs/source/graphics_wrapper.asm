@@ -4,9 +4,9 @@
     .globl  graphics.alert$p_vc_vc
     .globl  graphics.arc$p_fc_i_i_i_i_i_i
     .globl  graphics.arc$p_i_i_i_i_i_i
-    .globl  graphics.auto$p_fc_i
-    .globl  graphics.auto$p_i
-    .globl  graphics.autohold$p_i
+    .globl  graphics.auto$p_fc_b
+    .globl  graphics.auto$p_b
+    .globl  graphics.autohold$p_b
     .globl  graphics.back$p
     .globl  graphics.back$p_fc
     .globl  graphics.background$p_fc_i_i_i_i_i
@@ -27,12 +27,12 @@
     .globl  graphics.bcolorg$p_i_i_i
     .globl  graphics.binvis$p
     .globl  graphics.binvis$p_fc
-    .globl  graphics.blink$p_fc_i
-    .globl  graphics.blink$p_i
+    .globl  graphics.blink$p_fc_b
+    .globl  graphics.blink$p_b
     .globl  graphics.blor$p
     .globl  graphics.blor$p_fc
-    .globl  graphics.bold$p_fc_i
-    .globl  graphics.bold$p_i
+    .globl  graphics.bold$p_fc_b
+    .globl  graphics.bold$p_b
     .globl  graphics.bover$p
     .globl  graphics.bover$p_fc
     .globl  graphics.buffer$p_fc_i
@@ -75,8 +75,8 @@
     .globl  graphics.cursor$p_i_i
     .globl  graphics.cursorg$p_fc_i_i
     .globl  graphics.cursorg$p_i_i
-    .globl  graphics.curvis$p_fc_i
-    .globl  graphics.curvis$p_i
+    .globl  graphics.curvis$p_fc_b
+    .globl  graphics.curvis$p_b
     .globl  graphics.curx$f
     .globl  graphics.curx$f_fc
     .globl  graphics.curxg$f
@@ -163,8 +163,8 @@
     .globl  graphics.fover$p_fc
     .globl  graphics.frame$p_fc_i
     .globl  graphics.frame$p_i
-    .globl  graphics.frametimer$p_fc_i
-    .globl  graphics.frametimer$p_i
+    .globl  graphics.frametimer$p_fc_b
+    .globl  graphics.frametimer$p_b
     .globl  graphics.frect$p_fc_i_i_i_i
     .globl  graphics.frect$p_i_i_i_i
     .globl  graphics.front$p
@@ -200,8 +200,8 @@
     .globl  graphics.hollow$p_i
     .globl  graphics.home$p
     .globl  graphics.home$p_fc
-    .globl  graphics.italic$p_fc_i
-    .globl  graphics.italic$p_i
+    .globl  graphics.italic$p_fc_b
+    .globl  graphics.italic$p_b
     .globl  graphics.joyaxis$f_fc_i
     .globl  graphics.joyaxis$f_i
     .globl  graphics.joybutton$f_fc_i
@@ -310,8 +310,8 @@
     .globl  graphics.restab$p_i
     .globl  graphics.restabg$p_fc_i
     .globl  graphics.restabg$p_i
-    .globl  graphics.reverse$p_fc_i
-    .globl  graphics.reverse$p_i
+    .globl  graphics.reverse$p_fc_b
+    .globl  graphics.reverse$p_b
     .globl  graphics.right$p
     .globl  graphics.right$p_fc
     .globl  graphics.rrect$p_fc_i_i_i_i_i_i
@@ -400,17 +400,17 @@
     .globl  graphics.slidevertsiz$p_i_i
     .globl  graphics.slidevertsizg$p_fc_i_i
     .globl  graphics.slidevertsizg$p_i_i
-    .globl  graphics.standout$p_fc_i
-    .globl  graphics.standout$p_i
+    .globl  graphics.standout$p_fc_b
+    .globl  graphics.standout$p_b
     .globl  graphics.stdmenu$p_i_pr$next$0$p2$branch$8$p2$onoff$16$b$oneof$17$b$bar$18$b$id$20$i$face$28$pvc$_pr$next$0$p2$branch$8$p2$onoff$16$b$oneof$17$b$bar$18$b$id$20$i$face$28$pvc$
-    .globl  graphics.strikeout$p_fc_i
-    .globl  graphics.strikeout$p_i
+    .globl  graphics.strikeout$p_fc_b
+    .globl  graphics.strikeout$p_b
     .globl  graphics.strsiz$f_fc_vc
     .globl  graphics.strsiz$f_vc
-    .globl  graphics.subscript$p_fc_i
-    .globl  graphics.subscript$p_i
-    .globl  graphics.superscript$p_fc_i
-    .globl  graphics.superscript$p_i
+    .globl  graphics.subscript$p_fc_b
+    .globl  graphics.subscript$p_b
+    .globl  graphics.superscript$p_fc_b
+    .globl  graphics.superscript$p_b
     .globl  graphics.sysbar$p_fc_i
     .globl  graphics.sysbar$p_i
     .globl  graphics.tabbar$p_fc_i_i_i_i_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i
@@ -427,12 +427,12 @@
     .globl  graphics.tabbarsizg$p_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
     .globl  graphics.tabsel$p_fc_i_i
     .globl  graphics.tabsel$p_i_i
-    .globl  graphics.timer$p_fc_i_i_i
-    .globl  graphics.timer$p_i_i_i
+    .globl  graphics.timer$p_fc_i_i_b
+    .globl  graphics.timer$p_i_i_b
     .globl  graphics.title$p_fc_vc
     .globl  graphics.title$p_vc
-    .globl  graphics.underline$p_fc_i
-    .globl  graphics.underline$p_i
+    .globl  graphics.underline$p_fc_b
+    .globl  graphics.underline$p_b
     .globl  graphics.up$p
     .globl  graphics.up$p_fc
     .globl  graphics.viewoffg$p_fc_i_i
@@ -463,13 +463,13 @@ graphics.arc$p_fc_i_i_i_i_i_i:
 graphics.arc$p_i_i_i_i_i_i:
     jmp     wrapper_arc
 
-graphics.auto$p_fc_i:
+graphics.auto$p_fc_b:
     jmp     wrapper_autof
 
-graphics.auto$p_i:
+graphics.auto$p_b:
     jmp     wrapper_auto
 
-graphics.autohold$p_i:
+graphics.autohold$p_b:
     jmp     wrapper_autohold
 
 graphics.back$p:
@@ -532,10 +532,10 @@ graphics.binvis$p:
 graphics.binvis$p_fc:
     jmp     wrapper_binvisf
 
-graphics.blink$p_fc_i:
+graphics.blink$p_fc_b:
     jmp     wrapper_blinkf
 
-graphics.blink$p_i:
+graphics.blink$p_b:
     jmp     wrapper_blink
 
 graphics.blor$p:
@@ -544,10 +544,10 @@ graphics.blor$p:
 graphics.blor$p_fc:
     jmp     wrapper_blor
 
-graphics.bold$p_fc_i:
+graphics.bold$p_fc_b:
     jmp     wrapper_boldf
 
-graphics.bold$p_i:
+graphics.bold$p_b:
     jmp     wrapper_bold
 
 graphics.bover$p:
@@ -676,10 +676,10 @@ graphics.cursorg$p_fc_i_i:
 graphics.cursorg$p_i_i:
     jmp     wrapper_cursorg
 
-graphics.curvis$p_fc_i:
+graphics.curvis$p_fc_b:
     jmp     wrapper_curvisf
 
-graphics.curvis$p_i:
+graphics.curvis$p_b:
     jmp     wrapper_curvis
 
 graphics.curx$f:
@@ -940,10 +940,10 @@ graphics.frame$p_fc_i:
 graphics.frame$p_i:
     jmp     wrapper_frame
 
-graphics.frametimer$p_fc_i:
+graphics.frametimer$p_fc_b:
     jmp     wrapper_frametimerf
 
-graphics.frametimer$p_i:
+graphics.frametimer$p_b:
     jmp     wrapper_frametimer
 
 graphics.frect$p_fc_i_i_i_i:
@@ -1051,10 +1051,10 @@ graphics.home$p:
 graphics.home$p_fc:
     jmp     wrapper_homef
 
-graphics.italic$p_fc_i:
+graphics.italic$p_fc_b:
     jmp     wrapper_italicf
 
-graphics.italic$p_i:
+graphics.italic$p_b:
     jmp     wrapper_italic
 
 graphics.joyaxis$f_fc_i:
@@ -1381,10 +1381,10 @@ graphics.restabg$p_fc_i:
 graphics.restabg$p_i:
     jmp     wrapper_restabg
 
-graphics.reverse$p_fc_i:
+graphics.reverse$p_fc_b:
     jmp     wrapper_reversef
 
-graphics.reverse$p_i:
+graphics.reverse$p_b:
     jmp     wrapper_reverse
 
 graphics.right$p:
@@ -1651,19 +1651,19 @@ graphics.slidevertsizg$p_fc_i_i:
 graphics.slidevertsizg$p_i_i:
     jmp     wrapper_slidevertsizg
 
-graphics.standout$p_fc_i:
+graphics.standout$p_fc_b:
     jmp     wrapper_standoutf
 
-graphics.standout$p_i:
+graphics.standout$p_b:
     jmp     wrapper_standout
 
 graphics.stdmenu$p_i_pr$next$0$p2$branch$8$p2$onoff$16$b$oneof$17$b$bar$18$b$id$20$i$face$28$pvc$_pr$next$0$p2$branch$8$p2$onoff$16$b$oneof$17$b$bar$18$b$id$20$i$face$28$pvc$:
     jmp     wrapper_stdmenu
 
-graphics.strikeout$p_fc_i:
+graphics.strikeout$p_fc_b:
     jmp     wrapper_strikeoutf
 
-graphics.strikeout$p_i:
+graphics.strikeout$p_b:
     jmp     wrapper_strikeout
 
 graphics.strsiz$f_fc_vc:
@@ -1672,16 +1672,16 @@ graphics.strsiz$f_fc_vc:
 graphics.strsiz$f_vc:
     jmp     wrapper_strsiz
 
-graphics.subscript$p_fc_i:
+graphics.subscript$p_fc_b:
     jmp     wrapper_subscriptf
 
-graphics.subscript$p_i:
+graphics.subscript$p_b:
     jmp     wrapper_subscript
 
-graphics.superscript$p_fc_i:
+graphics.superscript$p_fc_b:
     jmp     wrapper_superscriptf
 
-graphics.superscript$p_i:
+graphics.superscript$p_b:
     jmp     wrapper_superscript
 
 graphics.sysbar$p_fc_i:
@@ -1732,10 +1732,10 @@ graphics.tabsel$p_fc_i_i:
 graphics.tabsel$p_i_i:
     jmp     wrapper_tabsel
 
-graphics.timer$p_fc_i_i_i:
+graphics.timer$p_fc_i_i_b:
     jmp     wrapper_timerf
 
-graphics.timer$p_i_i_i:
+graphics.timer$p_i_i_b:
     jmp     wrapper_timer
 
 graphics.title$p_fc_vc:
@@ -1744,10 +1744,10 @@ graphics.title$p_fc_vc:
 graphics.title$p_vc:
     jmp     wrapper_title
 
-graphics.underline$p_fc_i:
+graphics.underline$p_fc_b:
     jmp     wrapper_underlinef
 
-graphics.underline$p_i:
+graphics.underline$p_b:
     jmp     wrapper_underline
 
 graphics.up$p:

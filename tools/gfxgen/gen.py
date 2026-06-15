@@ -28,6 +28,17 @@ POINTEROUT = {
 }
 RETMAP = {'void': None, 'int': 'integer', 'float': 'real'}
 
+# int params/returns that are actually boolean on the Pascal side (the C side
+# uses int). These are terminal-style toggle flags; graphics is upward-compatible
+# with terminal, whose flags are boolean, so they must match.
+BOOLPARAM = {
+    'auto': 'e', 'autohold': 'e', 'blink': 'e', 'bold': 'e', 'curvis': 'e',
+    'frametimer': 'e', 'italic': 'e', 'reverse': 'e', 'standout': 'e',
+    'strikeout': 'e', 'subscript': 'e', 'superscript': 'e', 'underline': 'e',
+    'timer': 'r',
+}
+BOOLRET = {'curbnd'}
+
 def parse_proto(line):
     m = re.match(r'^(.*?\bami_([a-z0-9]+))\s*\((.*)\)$', line)
     if not m: return None
@@ -90,7 +101,10 @@ def gen_decl(ret, name, params):
                 i += 1; continue
             # simple mapped types
             if cn in TYPEMAP:
-                frags.append(f'{pn}: {TYPEMAP[cn]}')
+                pt = TYPEMAP[cn]
+                if cn == 'int' and BOOLPARAM.get(name) == pn:
+                    pt = 'boolean'
+                frags.append(f'{pn}: {pt}')
                 i += 1; continue
             notes.append(f'?{ctype}')
             frags.append(f'{pn}: {{?{ctype}}}')
@@ -98,6 +112,8 @@ def gen_decl(ret, name, params):
         return frags
 
     pasret = RETMAP.get(ret, f'{{?{ret}}}')
+    if name in BOOLRET and ret == 'int':
+        pasret = 'boolean'
     kw = 'function' if pasret else 'procedure'
     suffix = f': {pasret}' if pasret else ''
 
