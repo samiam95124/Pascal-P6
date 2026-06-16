@@ -50,7 +50,13 @@ SLOTC = {'strparsiz': '(PTRSIZE+INTSIZE)', 'adrsize': 'ADRSIZE',
 # parameter kinds whose C marshalling is not yet generated; the routine is
 # stubbed and reported, exactly as genpexec stubs HARDTYPES.
 CSTUBKINDS = {'string-list', 'byte-array', 'event-record', 'set', 'menu',
-              'cert', 'list-struct', 'callback'}
+              'cert', 'list-struct', 'callback', 'pstring'}
+
+# function return types that are not a scalar the executor can store with
+# putint/putrel: a pstring/string return needs VM-heap allocation (the native
+# binding has no ami_* for it -- these are Pascal-side overloads), so the routine
+# is stubbed until that marshalling is added.
+NONSCALARRET = {'pstring', 'string'}
 
 
 class CGen(Gen):
@@ -77,7 +83,11 @@ class CGen(Gen):
         if d is None:
             self.stubs.append((idx, name, 'no interface match'))
             return ['        case %d: errore(FunctionNotImplemented); break;' % idx]
-        # reject kinds not yet handled in C
+        # a non-scalar (pstring/string) function return needs VM-heap marshalling
+        if isfunc and d['ret'] in NONSCALARRET:
+            self.stubs.append((idx, name, 'returns %s' % d['ret']))
+            return self._stub(idx, name, 'non-scalar return %s' % d['ret'])
+        # reject parameter kinds not yet handled in C
         for mode, pn, typ in d['params']:
             base = typ.split()[0]
             k = self._kind(mode, typ, base)
@@ -100,17 +110,22 @@ class CGen(Gen):
                 pre.append('            %s = fn;' % v)
                 args.append('filtable[%s]' % v)
             elif typ == 'string':
+                # native ABI: a view string passes the buffer alone; a var/out
+                # string passes (buffer, length) -- the length is the VM string's
+                # logical size, the buffer the native may fill.
                 nstr += 1
                 sv = 's' if nstr == 1 else 's%d' % nstr
                 self.maxstr = max(self.maxstr, nstr)
                 if mode == 'view':
                     pre.append('            getstr(%s, %s);' % (off, sv))
+                    args.append(sv)
                 else:
                     ni += 1; v = 'a%d' % ni
-                    pre.append('            %s = %s; /* var string base */' % (v, off))
+                    pre.append('            %s = %s; /* var string descriptor */' % (v, off))
                     pre.append('            %s[0] = 0;' % sv)
+                    args.append(sv)
+                    args.append('getint(%s+PTRSIZE)' % off)
                     post.append('            putstr(%s, %s);' % (sv, v))
-                args.append(sv)
             elif typ == 'real':
                 nr += 1; v = 'r%d' % nr
                 if mode in ('var', 'out'):
@@ -177,6 +192,8 @@ class CGen(Gen):
         """Classify a parameter so cgencase can stub the ones not yet ported."""
         if typ in ('string', 'text', 'real', 'boolean', 'char'):
             return 'scalar'
+        if base == 'pstring':
+            return 'pstring'
         if base == 'strptr':
             return 'string-list'
         if base == 'bytarr':
@@ -241,33 +258,68 @@ def lookup_table(gens):
     return out
 
 
+# C marshalling helpers emitted into extern.inc. STRMAX matches the Pascal
+# generator's strmax (large enough for a PEM certificate returned through a var
+# string). getstr loads a VM string parameter into a zero-terminated C buffer
+# (inputs zero-terminate); putstr stores a C buffer back into a var string,
+# space-padded (outputs space-pad, no terminator) -- the Ami string convention.
+C_HELPERS = '''#define STRMAX 10000 /* C string buffer size for marshalling */
+
+/* load a VM string parameter (descriptor at sa) into a zero-terminated buffer */
+static void getstr(address sa, char* s)
+{
+    address ad; long l, i;
+    ad = getadr(sa);          /* base address of string */
+    l = getint(sa+PTRSIZE);   /* logical length */
+    if (l > STRMAX-1) l = STRMAX-1;
+    for (i = 0; i < l; i++) s[i] = getchr(ad+i);
+    s[l] = 0;                 /* terminate */
+}
+
+/* store a zero-terminated buffer back into a VM var string (descriptor at sa),
+   space-padded to the string's logical length */
+static void putstr(char* s, address sa)
+{
+    address ad; long l, i;
+    ad = getadr(sa);          /* base address of string */
+    l = getint(sa+PTRSIZE);   /* logical length */
+    for (i = 0; i < l; i++) putchr(ad+i, ' ');
+    for (i = 0; i < l && s[i]; i++) putchr(ad+i, s[i]);
+}'''
+
+
 def main():
     gens = {m: CGen(m) for m in MODORDER}
     total = number(gens)
 
+    # services, sound, network are hosted in plain cmach; terminal and graphics
+    # are stubbed here (the cmacht/cmachg flavors will replace those cases).
+    hosted = ('services', 'sound', 'network')
+    bodies = {m: gens[m].cexecutor() for m in hosted}  # populates max counts
+    maxint = max(gens[m].maxint for m in hosted)
+    maxrel = max(gens[m].maxrel for m in hosted)
+    maxstr = max(gens[m].maxstr for m in hosted)
+
     out = ['/* Generated by tools/extgen/gencexec.py; do not edit by hand. The',
            '   external executor and symbol table for the cmach interpreter. */',
-           '']
+           '', C_HELPERS, '']
     out += lookup_table(gens)
     out.append('int NumExternal(void) { return %d; }' % total)
     out.append('')
     out.append('void ExecuteExternal(int routine, address* params)')
     out.append('{')
-    out.append('    long a1, a2, a3, a4, a5, a6, a7, a8, rv;')
-    out.append('    double r1, r2;')
+    out.append('    long %s, rv;' % ', '.join('a%d' % i for i in range(1, maxint + 1)))
+    out.append('    double %s;' % ', '.join('r%d' % i for i in range(1, maxrel + 1)))
     out.append('    address ad, ad2;')
     out.append('    int fn;')
-    # services, sound, network are hosted in plain cmach; terminal and graphics
-    # are stubbed here (the cmacht/cmachg flavors will replace those cases).
-    maxstr = max(gens[m].maxstr for m in ('services', 'sound', 'network'))
     out.append('    char %s;' % ', '.join('s%s[STRMAX]' % ('' if i == 1 else str(i))
                                           for i in range(1, maxstr + 1)))
     out.append('')
     out.append('    switch (routine) {')
     out.append('')
-    for m in ('services', 'sound', 'network'):
+    for m in hosted:
         out.append('    /* ---- %s ---- */' % m)
-        out += gens[m].cexecutor()
+        out += bodies[m]
     out.append('')
     out.append('    default: errore(FunctionNotImplemented);')
     out.append('')
