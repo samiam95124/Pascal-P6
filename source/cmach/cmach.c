@@ -1173,6 +1173,42 @@ address extvecbase = EXTVECBASE;
 void valfil(address fa);
 void errore(long ei);
 #include "extern.inc"
+
+/* STDIO_BYPASS bridge. The Ami archives are built with -DSTDIO_BYPASS, so their
+   file I/O routes through these to reach the interpreter file table. A pasfil*
+   is a pointer to the Pascal file variable in store; its first byte is the
+   logical file number once valfil has allocated one. */
+
+FILE* psystem_libcrdfil(unsigned char* f)
+{
+    address ad = (address)(f-store);
+    int fn;
+
+    valfil(ad);          /* allocate a logical file if not yet assigned */
+    fn = store[ad];      /* logical file number */
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case INPUTFN: return stdin;
+        case PRDFN:   return filtable[PRDFN];
+        default:      errore(FILEMODEINCORRECT);
+
+    }
+    return filtable[fn];
+}
+
+void psystem_libcatcfil(unsigned char* f, FILE* fp, long wr)
+{
+    address ad = (address)(f-store);
+    int fn;
+
+    valfil(ad);          /* allocate a logical file if not yet assigned */
+    fn = store[ad];      /* logical file number */
+    if (fn <= COMMANDFN) errore(FILEMODEINCORRECT);
+    /* close any file currently open on this logical file */
+    if (filstate[fn] == fsread || filstate[fn] == fswrite) fclose(filtable[fn]);
+    filtable[fn] = fp;   /* attach the libc file */
+    filstate[fn] = wr ? fswrite : fsread;
+}
 #endif
 
 /*--------------------------------------------------------------------*/

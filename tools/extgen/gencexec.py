@@ -136,10 +136,17 @@ class CGen(Gen):
             base = typ.split()[0]
             if typ == 'text':
                 ni += 1; v = 'a%d' % ni
-                pre.append('            ad = getadr(%s); valfil(ad); fn = getbyt(ad);' % off)
-                pre.append('            if (fn <= COMMANDFN) errore(FILEMODEINCORRECT);')
-                pre.append('            %s = fn;' % v)
-                args.append('filtable[%s]' % v)
+                if name in WRAPPED:
+                    # the binding wrapper takes a pasfil* (pointer to the file
+                    # variable in store) and attaches the opened connection into
+                    # the file table itself, via the STDIO_BYPASS bridge
+                    pre.append('            %s = getadr(%s); /* file var address */' % (v, off))
+                    args.append('(unsigned char*)(store+%s)' % v)
+                else:
+                    pre.append('            ad = getadr(%s); valfil(ad); fn = getbyt(ad);' % off)
+                    pre.append('            if (fn <= COMMANDFN) errore(FILEMODEINCORRECT);')
+                    pre.append('            %s = fn;' % v)
+                    args.append('filtable[%s]' % v)
                 filevars.append(v)
             elif typ == 'string':
                 # native ABI: a view string passes the buffer alone; a var/out
@@ -219,10 +226,8 @@ class CGen(Gen):
                 out.append('            putint(*params, rv);')
         else:
             out.append('            %s;' % call)
-            # the connection files a wrapper binds become readable and writable
-            if name in WRAPPED and len(filevars) >= 2:
-                out.append('            filstate[%s] = fsread;' % filevars[0])
-                out.append('            filstate[%s] = fswrite;' % filevars[1])
+            # the wrapper's bindnet attaches the connection files and sets their
+            # read/write state through the bridge, so nothing more is needed here
             out += post
             if total:
                 out.append('            *params += %s;' % total)
