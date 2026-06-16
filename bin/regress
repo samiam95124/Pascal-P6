@@ -374,10 +374,10 @@ else models="pint pmach cmach package pgen"; fi
 # Launch each model concurrently (each in its own subshell). Each model's
 # console output is captured to its own log so the parallel models do not
 # interleave on the terminal; the logs are replayed in model order after the
-# run. Only a brief start notice is printed live.
+# run.
 #
+pids=""
 for m in $models; do
-    echo "Starting $m model..."
     case "$m" in
         pint)    run_model --pint    pint    ;;
         pmach)   run_model --pmach   pmach   ;;
@@ -385,8 +385,40 @@ for m in $models; do
         package) run_model --package package ;;
         pgen)    run_model --pgen    pgen    ;;
     esac > "$WORK/$m.log" 2>&1 &
+    pids="$pids $!"
+done
+
+#
+# Live status on this console while the models run: clear the page once, then
+# at the home position each second redraw a line per model -- its log and report
+# line counts, and "done" once it has written its totals. Loop until every model
+# subshell has exited (\033[K clears each line so shrinking values leave no
+# trailing characters).
+#
+printf '\033[2J'
+while true; do
+
+    printf '\033[H'
+    printf 'Regression running  %s\033[K\n\033[K\n' "`date +%T`"
+    for m in $models; do
+
+        log=0
+        rep=0
+        stat='....'
+        if [ -f "$WORK/$m.log" ];    then log=`wc -l < "$WORK/$m.log"`; fi
+        if [ -f "$WORK/$m.report" ]; then rep=`wc -l < "$WORK/$m.report"`; fi
+        if [ -f "$WORK/$m.totals" ]; then stat='done'; fi
+        printf '  %-8s %s  log=%-7s report=%-5s\033[K\n' "$m" "$stat" "$log" "$rep"
+
+    done
+    alive=0
+    for p in $pids; do if kill -0 "$p" 2>/dev/null; then alive=1; fi; done
+    if [ "$alive" = "0" ]; then break; fi
+    sleep 1
+
 done
 wait
+echo ""
 
 #
 # Merge the per-model report fragments (in model order) and sum the totals.
