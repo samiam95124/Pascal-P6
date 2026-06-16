@@ -2800,7 +2800,7 @@ procedure load;
 
    procedure assemble; (*translate symbolic code into machine code and store*)
       var name :alfa; r :real; s :settype;
-          i,x,s1,lb,ub,l:integer; c: char;
+          i,x,s1,lb,ub,l,v:integer; c: char;
           str: packed array [1..stringlgth] of char; { buffer for string constants }
 
       procedure lookup(x: labelrg); (* search in label table*)
@@ -3062,8 +3062,20 @@ procedure load;
                          repeat
                            if eoln(prd) then errorl('unterminated string      ');
                            getnxt;
-                           c := ch; if (ch = '''') and (prd^ = '''') then begin
-                             getnxt; c := ' '
+                           c := ch;
+                           if (ch = '''') and (prd^ = '''') then begin getnxt; c := ' ' end
+                           else if ch = chr(92) then begin { backslash escape (pcom wresc) }
+                             getnxt;
+                             if ch <> chr(92) then begin { \$NN -> control char }
+                               getnxt; { past '$' to first hex digit }
+                               if ch <= '9' then v := ord(ch)-ord('0')
+                                             else v := ord(ch)-ord('a')+10;
+                               getnxt;
+                               if ch <= '9' then v := v*16+ord(ch)-ord('0')
+                                             else v := v*16+ord(ch)-ord('a')+10;
+                               ch := chr(v)
+                             end;
+                             c := ' '
                            end;
                            if c <> '''' then begin
                              if i >= stringlgth then errorl('string overflow          ');

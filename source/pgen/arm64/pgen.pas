@@ -100,7 +100,7 @@ end;
 override procedure assemble; (*translate symbolic code into machine code and store*)
 
   var name :alfa; r :real; s :settype;
-      i,s1,lb,ub,l:integer; c: char;
+      i,s1,lb,ub,l,v:integer; c,dc: char;
       str: strbuf; { buffer for string constants }
       cstp: cstptr;
       ep, ep2, ep3, ep4, ep5: expptr;
@@ -2225,11 +2225,24 @@ begin { assemble }
       repeat
         if eolinp then error('unterminated string');
         getnxt;
-        c := ch; if (ch = '''') and (chla = '''') then
-          begin getnxt; c := ' ' end;
+        c := ch; dc := ch; { dc = the decoded char (ch is a function, read-only) }
+        if (ch = '''') and (chla = '''') then begin getnxt; c := ' '; dc := '''' end
+        else if ch = chr(92) then begin { backslash escape (see pcom wresc) }
+          getnxt;
+          if ch = chr(92) then dc := chr(92) { \\ -> backslash }
+          else begin { \$NN -> control char }
+            getnxt; { past '$' to first hex digit }
+            if ch <= '9' then v := ord(ch)-ord('0') else v := ord(ch)-ord('a')+10;
+            getnxt;
+            if ch <= '9' then v := v*16+ord(ch)-ord('0')
+                          else v := v*16+ord(ch)-ord('a')+10;
+            dc := chr(v)
+          end;
+          c := ' '
+        end;
         if c <> '''' then begin
           if i >= strlen then error('string overflow');
-          str[i+1] := ch; { accumulate string }
+          str[i+1] := dc; { accumulate string }
           i := i+1
         end
       until c = '''';
