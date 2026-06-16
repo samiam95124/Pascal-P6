@@ -396,10 +396,12 @@ done
 # trailing characters).
 #
 printf '\033[2J'
+SECONDS=0
 while true; do
 
     printf '\033[H'
-    printf 'Regression running  %s\033[K\n\033[K\n' "`date +%T`"
+    printf 'Regression running  elapsed %d:%02d:%02d\033[K\n\033[K\n' \
+        $((SECONDS/3600)) $(((SECONDS%3600)/60)) $((SECONDS%60))
     for m in $models; do
 
         log=0
