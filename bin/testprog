@@ -49,9 +49,18 @@ options=""
 list="0"
 listoption="--list-"
 
+#
+# When REGRESS_OUT is set (by regress for a parallel per-model run), the
+# products (.lst, .dif, the collected .p6) and the temp files (temp.p6, tmp1,
+# tmp2) go there; compile and run honor it too. Inputs (.pas, .cmp, .inp) are
+# read from the source path. ob() maps a source path to its output base.
+#
+if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; else tmpd=""; fi
+ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
+
 #echo "testprog: command line: $@"
 
-for param in "$@" 
+for param in "$@"
 do
 
     if [ "$param" = "--pint" ]; then
@@ -186,7 +195,7 @@ do
 			fi
     		#echo "Compiling $param..."
             # clean any previous products
-            rm -f $param.lst $param.dif $param.ecd
+            rm -f $(ob $param).lst $(ob $param).dif $(ob $param).ecd
     		compile $listoption --noerrmsg $options $pintoption $pmachoption \
                 $cmachoption $packageoption $pgenoption $param
     		if [ $? -ne 0 ]; then
@@ -203,7 +212,7 @@ do
     			#
     			# Collect module sections to single intermediate
     			#
-    			cat $param.p6 >> temp.p6
+    			cat $(ob $param).p6 >> ${tmpd}temp.p6
     			
     		fi
     		#
@@ -240,7 +249,7 @@ fi
 # Move final collected intermediate to target.
 # Note that even the main file will have its intermediate added to the last.
 #
-mv temp.p6 $progfile.p6
+mv ${tmpd}temp.p6 $(ob $progfile).p6
 
 if [ ! -f $progfile.inp ]
 then
@@ -265,17 +274,16 @@ if [ $? -eq 0 ]; then
     #
     # Check output matches the compare file
     #
-    strip $progfile.lst tmp1
-    strip $cmpfile.cmp tmp2
-    # echo "Will execute: dif -w tmp1 tmp2 > $progfile.dif"
-    dif -w tmp1 tmp2 > $progfile.dif
-    rm -f tmp1
-    rm -f tmp2
-    ls -l $progfile.dif > $progfile.tmp
-    grep ".dif" $progfile.tmp
-    rm -f $progfile.tmp
+    strip $(ob $progfile).lst ${tmpd}tmp1
+    strip $cmpfile.cmp ${tmpd}tmp2
+    dif -w ${tmpd}tmp1 ${tmpd}tmp2 > $(ob $progfile).dif
+    rm -f ${tmpd}tmp1
+    rm -f ${tmpd}tmp2
+    ls -l $(ob $progfile).dif > ${tmpd}lsout.tmp
+    grep ".dif" ${tmpd}lsout.tmp
+    rm -f ${tmpd}lsout.tmp
     ## pass if diff file is empty
-    if test -s $progfile.dif
+    if test -s $(ob $progfile).dif
     then
         if [ "$noerrmsg" = "0" ]; then
     		    
