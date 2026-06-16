@@ -105,6 +105,11 @@ class CGen(Gen):
         if name in ('writetime', 'writedate') and not hasfile:
             self.stubs.append((idx, name, 'no-file form needs default output'))
             return self._stub(idx, name, 'no-file %s' % name)
+        # the pstring-returning getenv overload: fetch into a buffer with the
+        # native getenv, then allocate a vm heap string and return its address
+        if self.module == 'services' and name == 'getenv' and isfunc:
+            self.maxstr = max(self.maxstr, 2)
+            return self._getenv(idx)
         d = self.match_decl(name, hasfile, len(ptoks))
         if d is None:
             self.stubs.append((idx, name, 'no interface match'))
@@ -258,6 +263,24 @@ class CGen(Gen):
         if base in ('filptr', 'envptr') or typ in ('filptr', 'envptr'):
             return 'list-struct'
         return 'scalar'
+
+    def _getenv(self, idx):
+        """getenv(view ls): pstring -- native ami_getenv(ls, ds, dsl) into a
+           buffer, then a vm heap string [len][chars] whose address is the
+           returned pstring."""
+        return [
+            '        case %d: { /* getenv@f_vc -> pstring */' % idx,
+            '            long l, i; address sa;',
+            '            getstr((*params), s);',
+            '            ami_getenv(s, s2, STRMAX);',
+            '            l = 0; while (s2[l]) l++; /* strlen */',
+            '            newspc(INTSIZE+l, &sa); /* heap string */',
+            '            putint(sa, l);',
+            '            for (i = 0; i < l; i++) putbyt(sa+INTSIZE+i, s2[i]);',
+            '            *params += (PTRSIZE+INTSIZE);',
+            '            putadr(*params, sa);',
+            '        } break;',
+        ]
 
     def _stub(self, idx, name, why):
         return ['        /* %s: %s not yet marshalled in C */' % (name, why),
