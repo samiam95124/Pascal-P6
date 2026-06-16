@@ -253,6 +253,20 @@ function run_model {
     report="$WORK/$prefix.report"
     diftot=0
     fails=0
+    #
+    # Give each model a distinct loopback port range for network_test, so the
+    # models that run it (pint/pmach/pgen) do not contend for the same ports
+    # when running concurrently. network_test reads NETTEST_PORTBASE and shifts
+    # all its ports by it; the ranges are spaced wider than the port count.
+    #
+    case "$prefix" in
+        pint)    NETTEST_PORTBASE=0  ;;
+        pmach)   NETTEST_PORTBASE=10 ;;
+        cmach)   NETTEST_PORTBASE=20 ;;
+        package) NETTEST_PORTBASE=30 ;;
+        pgen)    NETTEST_PORTBASE=40 ;;
+    esac
+    export NETTEST_PORTBASE
     echo "$prefix run ***************************************" > "$report"
     do_regress
     echo "$diftot $fails" > "$WORK/$prefix.totals"
@@ -352,16 +366,20 @@ elif [ "$pgen" = "1" ]; then models="pgen"
 else models="pint pmach cmach package pgen"; fi
 
 #
-# Launch each model concurrently (each in its own subshell).
+# Launch each model concurrently (each in its own subshell). Each model's
+# console output is captured to its own log so the parallel models do not
+# interleave on the terminal; the logs are replayed in model order after the
+# run. Only a brief start notice is printed live.
 #
 for m in $models; do
+    echo "Starting $m model..."
     case "$m" in
-        pint)    run_model --pint    pint    & ;;
-        pmach)   run_model --pmach   pmach   & ;;
-        cmach)   run_model --cmach   cmach   & ;;
-        package) run_model --package package & ;;
-        pgen)    run_model --pgen    pgen    & ;;
-    esac
+        pint)    run_model --pint    pint    ;;
+        pmach)   run_model --pmach   pmach   ;;
+        cmach)   run_model --cmach   cmach   ;;
+        package) run_model --package package ;;
+        pgen)    run_model --pgen    pgen    ;;
+    esac > "$WORK/$m.log" 2>&1 &
 done
 wait
 
@@ -375,6 +393,16 @@ for m in $models; do
     read d f < "$WORK/$m.totals"
     diftot=$((diftot+d))
     fails=$((fails+f))
+done
+
+#
+# Replay each model's captured console output, grouped in model order, so the
+# run is followable without the parallel models interleaving on the terminal.
+#
+for m in $models; do
+    echo ""
+    echo "===================== $m model output ====================="
+    cat "$WORK/$m.log"
 done
 
 #
