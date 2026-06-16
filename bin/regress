@@ -352,8 +352,13 @@ echo Line counts should be 0 for pass >> regress_report.txt
 # parallel; each model also writes its products into <dir>/test_results/<model>.
 #
 WORK="build/regress"
-rm -rf "$WORK"
+#
+# Clear the work directory IN PLACE rather than rm -rf'ing and recreating it,
+# so a shell sitting in it (watching the per-model logs) keeps the same inode
+# and still sees the new run's files instead of a stale, deleted directory.
+#
 mkdir -p "$WORK"
+find "$WORK" -mindepth 1 -delete 2>/dev/null
 
 #
 # A single --pXXX flag selects just that model; otherwise all models run.
