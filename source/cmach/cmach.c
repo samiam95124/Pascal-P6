@@ -1160,7 +1160,19 @@ void swpstk(address l)
 /* external routines */
 
 #ifdef EXTERNALS
-#include "externals.inc"
+/* The external vector base: the vector table sits after pint's loader prelude
+   (lnp q + cal q + stp = 9+9+1 = 19 bytes), so the deck bakes vector addresses
+   against this base, matching pmach. */
+#define EXTVECBASE 19
+address extvecbase = EXTVECBASE;
+/* native Ami binding declarations, so ami_* return types are not truncated */
+#include "services.h"
+#include "sound.h"
+#include "network.h"
+/* defined further below in this file; the executor references them */
+void valfil(address fa);
+void errore(long ei);
+#include "extern.inc"
 #endif
 
 /*--------------------------------------------------------------------*/
@@ -3339,17 +3351,17 @@ void sinins()
 
     case pi_eext:
 #ifdef EXTERNALS
-                    ExecuteExternal(pc-extvecbase);
-                    /* set stack below function result, if any */
-                    sp = mp;
-                    {???fixme???}
                     {
-                    pc = getadr(mp+MARKRA);
-                    }
-                    ep = getadr(mp+MARKEP);
-                    {???fixme???}
-                    {
-                    mp = getadr(mp+MARKDL);
+                      /* The external vector slot was reached by a call that
+                         pushed the return address at sp; the parameters sit
+                         above it. Mirror pmach: pass the parameter base, let
+                         ExecuteExternal advance it past the parameters (and, for
+                         a function, leave the result at that slot), then pop the
+                         return address and drop the stack to the result. */
+                      address pb = sp+ADRSIZE;
+                      ExecuteExternal(pc-extvecbase, &pb);
+                      popadr(pc); /* load return address */
+                      sp = pb;    /* skip parameters; result, if any, at pb */
                     }
 #else
                     errorv(EXTERNALSNOTENABLED);

@@ -28,13 +28,25 @@
 # driven by the parsed native header signatures rather than the Pascal parameter
 # list to get the call shapes (and the length arguments) right. Until then the
 # emitted extern.inc is not wired into cmach's build (EXTERNALS stays undefined).
-import os, sys
+import os, sys, re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 
 from genpexec import Gen, toks  # shared spec parsing
+
+
+def void_natives(module):
+    """Names (without the ami_ prefix) of native functions that return void, read
+       from amitk/include/<module>.h. A Pascal routine declared as a function but
+       backed by a void ami_* is a binding mismatch (the Pascal form synthesizes
+       the result through a wrapper); such routines are stubbed here for now."""
+    path = os.path.join(ROOT, 'amitk', 'include', module + '.h')
+    if not os.path.exists(path):
+        return set()
+    txt = open(path).read()
+    return set(re.findall(r'\bvoid\s+ami_([a-z0-9]+)\s*\(', txt))
 
 # Module flat-numbering order, matching source/exttables.pas: a symbol's routine
 # number is its position in this concatenation (services 1..101, then terminal,
@@ -58,9 +70,17 @@ CSTUBKINDS = {'string-list', 'byte-array', 'event-record', 'set', 'menu',
 # is stubbed until that marshalling is added.
 NONSCALARRET = {'pstring', 'string'}
 
+# routines whose native call is the wrapper_<name> binding (a returned FILE*
+# bound to a pair of var text files) rather than ami_<name>.
+WRAPPED = {'opennet', 'opennetv6', 'waitnet', 'openwin'}
+
 
 class CGen(Gen):
     """Emit the per-routine executor cases as C for cmach."""
+
+    def __init__(self, module):
+        super().__init__(module)
+        self.voidnat = void_natives(module)
 
     def slotc(self, mode, typ):
         return SLOTC[self.slot(mode, typ)]
@@ -79,14 +99,25 @@ class CGen(Gen):
            (self.module == 'network' and
             name in ('certlistnet', 'certlistmsg', 'certlistfree')):
             return self._stub(idx, name, 'callback/struct routine')
+        # the no-file writetime/writedate overloads map to a native that requires
+        # a FILE* the Pascal form supplies internally (default output) -- not yet
+        # marshalled here
+        if name in ('writetime', 'writedate') and not hasfile:
+            self.stubs.append((idx, name, 'no-file form needs default output'))
+            return self._stub(idx, name, 'no-file %s' % name)
         d = self.match_decl(name, hasfile, len(ptoks))
         if d is None:
             self.stubs.append((idx, name, 'no interface match'))
-            return ['        case %d: errore(FunctionNotImplemented); break;' % idx]
+            return ['        case %d: errore(FUNCTIONNOTIMPLEMENTED); break;' % idx]
         # a non-scalar (pstring/string) function return needs VM-heap marshalling
         if isfunc and d['ret'] in NONSCALARRET:
             self.stubs.append((idx, name, 'returns %s' % d['ret']))
             return self._stub(idx, name, 'non-scalar return %s' % d['ret'])
+        # a Pascal function backed by a void native is a wrapper-synthesized
+        # result the C side does not reproduce yet
+        if isfunc and name in self.voidnat:
+            self.stubs.append((idx, name, 'native ami_%s is void' % name))
+            return self._stub(idx, name, 'function maps to void ami_%s' % name)
         # reject parameter kinds not yet handled in C
         for mode, pn, typ in d['params']:
             base = typ.split()[0]
@@ -100,15 +131,16 @@ class CGen(Gen):
             acc = acc + '+' + self.slotc(mode, typ)
         offs.reverse()
         total = '+'.join(self.slotc(m, t) for m, _, t in d['params'])
-        pre = []; post = []; args = []; ni = 0; nr = 0; nstr = 0
+        pre = []; post = []; args = []; ni = 0; nr = 0; nstr = 0; filevars = []
         for (mode, pn, typ), off in zip(d['params'], offs):
             base = typ.split()[0]
             if typ == 'text':
                 ni += 1; v = 'a%d' % ni
                 pre.append('            ad = getadr(%s); valfil(ad); fn = getbyt(ad);' % off)
-                pre.append('            if (fn <= commandfn) errore(FileModeIncorrect);')
+                pre.append('            if (fn <= COMMANDFN) errore(FILEMODEINCORRECT);')
                 pre.append('            %s = fn;' % v)
                 args.append('filtable[%s]' % v)
+                filevars.append(v)
             elif typ == 'string':
                 # native ABI: a view string passes the buffer alone; a var/out
                 # string passes (buffer, length) -- the length is the VM string's
@@ -163,7 +195,12 @@ class CGen(Gen):
                     pre.append('            %s = getint(%s);' % (v, off))
                     args.append(v)
         self.maxint = max(self.maxint, ni); self.maxrel = max(self.maxrel, nr)
-        call = 'ami_%s' % name
+        # The file-binding routines (a native FILE* returned and bound to a pair
+        # of var text files) go through a C wrapper with the Pascal-shaped
+        # signature -- wrapper_<name>(infile, outfile, ...) in network_support.c --
+        # not the raw ami_<name>. Everything else calls ami_<name> directly.
+        prefix = 'wrapper_' if name in WRAPPED else 'ami_'
+        call = '%s%s' % (prefix, name)
         call += '(' + ', '.join(args) + ')' if args else '()'
         out = ['        case %d: { /* %s@%s */' % (idx, name, sig[:36])]
         out += pre
@@ -182,6 +219,10 @@ class CGen(Gen):
                 out.append('            putint(*params, rv);')
         else:
             out.append('            %s;' % call)
+            # the connection files a wrapper binds become readable and writable
+            if name in WRAPPED and len(filevars) >= 2:
+                out.append('            filstate[%s] = fsread;' % filevars[0])
+                out.append('            filstate[%s] = fswrite;' % filevars[1])
             out += post
             if total:
                 out.append('            *params += %s;' % total)
@@ -215,7 +256,7 @@ class CGen(Gen):
 
     def _stub(self, idx, name, why):
         return ['        /* %s: %s not yet marshalled in C */' % (name, why),
-                '        case %d: errore(FunctionNotImplemented); break;' % idx]
+                '        case %d: errore(FUNCTIONNOTIMPLEMENTED); break;' % idx]
 
     def cexecutor(self):
         """Emit the C cases for this module's routines, numbered from base."""
@@ -301,9 +342,14 @@ def main():
     maxstr = max(gens[m].maxstr for m in hosted)
 
     out = ['/* Generated by tools/extgen/gencexec.py; do not edit by hand. The',
-           '   external executor and symbol table for the cmach interpreter. */',
+           '   external executor for the cmach interpreter.',
+           '',
+           '   cmach runs a machine deck pre-assembled by pint --machdeck, in which',
+           '   external references are already resolved to the external vector',
+           '   (extvecbase+routine-1), so there is no load-time LookupExternal --',
+           '   only ExecuteExternal, dispatched on the flat routine number whose',
+           '   order matches source/exttables.pas (MODORDER). */',
            '', C_HELPERS, '']
-    out += lookup_table(gens)
     out.append('int NumExternal(void) { return %d; }' % total)
     out.append('')
     out.append('void ExecuteExternal(int routine, address* params)')
@@ -321,7 +367,7 @@ def main():
         out.append('    /* ---- %s ---- */' % m)
         out += bodies[m]
     out.append('')
-    out.append('    default: errore(FunctionNotImplemented);')
+    out.append('    default: errore(FUNCTIONNOTIMPLEMENTED);')
     out.append('')
     out.append('    }')
     out.append('}')
