@@ -52,32 +52,39 @@ fails=0
 # 3: test file name
 #
 
+# setout ddirectory
+#
+# Point REGRESS_OUT at the per-model results directory for the given destination
+# (e.g. p2/test_results/pint) and create it. The runners write all their
+# products and temps there, so different models never collide. Kept relative to
+# the repo root so the runners' relative paths (and ./exe) work.
+#
+function setout {
+
+    REGRESS_OUT="$1/test_results/$prefix"
+    mkdir -p "$REGRESS_OUT"
+    export REGRESS_OUT
+
+}
+
 # dotestresult sdirectory ddirectory testfile
+#
+# The runner already wrote the products into REGRESS_OUT, so just account for
+# the result there -- no copy. Accumulates into the per-model $diftot/$fails and
+# appends to the per-model $report.
+#
 function dotestresult {
 
     if [ $? -ne 0 ]; then
 
         echo "*** $1/$3: compile/run fail"
-        echo "*** $1/$3: compile/run fail" >> regress_report.txt
-        if [ -f $1/$3.err ]; then
-
-            cp $1/$3.err $2/test_results/$prefix
-
-        fi
+        echo "*** $1/$3: compile/run fail" >> "$report"
         fails=$(($fails+1))
 
     else
 
-        mkdir -p $2/test_results/$prefix
-        cp $1/$3.lst $2/test_results/$prefix
-        cp $1/$3.dif $2/test_results/$prefix
-        if [ -f $1/$3.err ]; then
-
-            cp $1/$3.err $2/test_results/$prefix
-
-        fi
-        wc -l $1/$3.dif >> regress_report.txt
-        diftot=$(($diftot+`cat $1/$3.dif | wc -l`))
+        wc -l "$REGRESS_OUT/$3.dif" >> "$report"
+        diftot=$(($diftot+`cat "$REGRESS_OUT/$3.dif" | wc -l`))
 
     fi
 
@@ -100,8 +107,8 @@ function dotestresult {
 # dotestprog sdirectory ddirectory testfile extraoptions
 function dotestprog {
 
-    #echo "Will run: testprog --noerrmsg $option $3 $1/$2"
     echo "Testing $1/$3..."
+    setout "$2"
     testprog --noerrmsg $option $4 $1/$3
     dotestresult $1 $2 $3
 
@@ -130,39 +137,67 @@ function do_regress {
     # Run previous versions of the system and Pascal-S
     #
     echo "Testing Pascal-s..."
-    echo "Pascal-s run" >> regress_report.txt
+    echo "Pascal-s run" >> "$report"
+    setout sample_programs
     testpascals $option
     dotestresult sample_programs sample_programs roman
 
     echo "Testing Pascal-P2..."
-    echo "Pascal-P2 run" >> regress_report.txt
+    echo "Pascal-P2 run" >> "$report"
+    setout p2
     testp2 $option
     dotestresult p2 p2 roman
 
     echo "Testing Pascal-P4..."
-    echo "Pascal-P4 run" >> regress_report.txt
+    echo "Pascal-P4 run" >> "$report"
+    setout p4
     testp4 $option
     dotestresult p4 p4 standardp
 
     echo "Testing PRT..."
-    echo "PRT run" >> regress_report.txt
+    echo "PRT run" >> "$report"
+    setout standard_tests
     testprt $option
     dotestresult standard_tests standard_tests iso7185prt
 
     echo "Testing Pascaline..."
-    echo "Pascaline run" >> regress_report.txt
+    echo "Pascaline run" >> "$report"
+    setout pascaline_tests
     testpascaline $option
     dotestresult pascaline_tests pascaline_tests pascaline
 
     #
+    # Run the library/Ami text tests against their gold standards. These use
+    # library modules hosted by the interpreter externals, which the C-machine
+    # based models (cmach and package) do not provide yet, so they are skipped
+    # there.
+    #
+    if [ "$option" != "--cmach" ] && [ "$option" != "--package" ]; then
+
+        echo "Testing strings_test..."
+        echo "strings_test run" >> "$report"
+        setout libs/tests
+        testlibprog $option strings_test
+        dotestresult libs/tests libs/tests strings_test
+
+        echo "Testing network_test..."
+        echo "network_test run" >> "$report"
+        setout libs/tests
+        testlibprog $option network_test
+        dotestresult libs/tests libs/tests network_test
+
+    fi
+
+    #
     # Run debug test
-    # 
+    #
     # Note debug test only runs in pint mode.
     #
     if [ "$option" = "--pint" ]; then
 
         echo "Testing debug..."
-        echo "Debug test run" >> regress_report.txt
+        echo "Debug test run" >> "$report"
+        setout pascaline_tests
         testdebug
         dotestresult pascaline_tests pascaline_tests debug_test
 
@@ -171,12 +206,14 @@ function do_regress {
     if [ "$full" = "1" ]; then
 
         echo "Running Pascal-P5"
-        echo "Pascal-P5 run" >> regress_report.txt
+        echo "Pascal-P5 run" >> "$report"
+        setout p5
         testp5 $option
         dotestresult standard_tests p5 iso7185pat
 
         echo "Running Pascal-P6"
-        echo "Pascal-P6 run" >> regress_report.txt
+        echo "Pascal-P6 run" >> "$report"
+        setout build
         testp6 $option
         dotestresult standard_tests build iso7185pat
 
@@ -184,22 +221,59 @@ function do_regress {
         #
         # Run pcom self compile \(note this runs on P5/P6 only\)
         #
-        echo "pcom self compile" >> regress_report.txt
+        echo "pcom self compile" >> "$report"
+        setout build
         cpcoms $option
         dotestresult source build pcom.mpp
-        
+
         #
         # Run pint self compile \(note this runs on P5/P6 only\)
         #
-        echo "pint self compile" >> regress_report.txt
+        echo "pint self compile" >> "$report"
+        setout build
         cpints $option
-        dotestresult source build pcom.mpp
-    
+        dotestresult standard_tests build iso7185pats
+
 	fi
 
 }
 
-for param in "$@" 
+#
+# run_model option prefix
+#
+# Run one model's full regression in its own subshell: its products go to the
+# per-model test_results/<model> directories (via setout/REGRESS_OUT), its
+# report section to $WORK/$prefix.report, and its (diftot fails) totals to
+# $WORK/$prefix.totals. Launched in the background, models run in parallel.
+#
+function run_model {
+
+    option="$1"
+    prefix="$2"
+    report="$WORK/$prefix.report"
+    diftot=0
+    fails=0
+    #
+    # Give each model a distinct loopback port range for network_test, so the
+    # models that run it (pint/pmach/pgen) do not contend for the same ports
+    # when running concurrently. network_test reads NETTEST_PORTBASE and shifts
+    # all its ports by it; the ranges are spaced wider than the port count.
+    #
+    case "$prefix" in
+        pint)    NETTEST_PORTBASE=0  ;;
+        pmach)   NETTEST_PORTBASE=10 ;;
+        cmach)   NETTEST_PORTBASE=20 ;;
+        package) NETTEST_PORTBASE=30 ;;
+        pgen)    NETTEST_PORTBASE=40 ;;
+    esac
+    export NETTEST_PORTBASE
+    echo "$prefix run ***************************************" > "$report"
+    do_regress
+    echo "$diftot $fails" > "$WORK/$prefix.totals"
+
+}
+
+for param in "$@"
 do
 
     if [ "$param" = "--full" ]; then
@@ -272,61 +346,103 @@ done
 echo "************ Regression Summary *************" > regress_report.txt
 date >> regress_report.txt
 echo Line counts should be 0 for pass >> regress_report.txt
-if [ "$pint" = "1" ]; then
 
-    option="--pint"
-    echo "pint run ***************************************" >> regress_report.txt
-    do_regress
+#
+# Per-model report fragments and totals collect here while the models run in
+# parallel; each model also writes its products into <dir>/test_results/<model>.
+#
+WORK="build/regress"
+#
+# Clear the work directory IN PLACE rather than rm -rf'ing and recreating it,
+# so a shell sitting in it (watching the per-model logs) keeps the same inode
+# and still sees the new run's files instead of a stale, deleted directory.
+#
+mkdir -p "$WORK"
+find "$WORK" -mindepth 1 -delete 2>/dev/null
 
-elif [ "$pmach" = "1" ]; then
+#
+# A single --pXXX flag selects just that model; otherwise all models run.
+#
+if [ "$pint" = "1" ]; then models="pint"
+elif [ "$pmach" = "1" ]; then models="pmach"
+elif [ "$cmach" = "1" ]; then models="cmach"
+elif [ "$package" = "1" ]; then models="package"
+elif [ "$pgen" = "1" ]; then models="pgen"
+else models="pint pmach cmach package pgen"; fi
 
-    option="--pmach"
-    echo "pmach run ***************************************" >> regress_report.txt
-    do_regress
+#
+# Launch each model concurrently (each in its own subshell). Each model's
+# console output is captured to its own log so the parallel models do not
+# interleave on the terminal; the logs are replayed in model order after the
+# run.
+#
+pids=""
+for m in $models; do
+    case "$m" in
+        pint)    run_model --pint    pint    ;;
+        pmach)   run_model --pmach   pmach   ;;
+        cmach)   run_model --cmach   cmach   ;;
+        package) run_model --package package ;;
+        pgen)    run_model --pgen    pgen    ;;
+    esac > "$WORK/$m.log" 2>&1 &
+    pids="$pids $!"
+done
 
-elif [ "$cmach" = "1" ]; then
+#
+# Live status on this console while the models run: clear the page once, then
+# at the home position each second redraw a line per model -- its log and report
+# line counts, and "done" once it has written its totals. Loop until every model
+# subshell has exited (\033[K clears each line so shrinking values leave no
+# trailing characters).
+#
+printf '\033[2J'
+SECONDS=0
+while true; do
 
-    option="--cmach"
-    echo "cmach run ***************************************" >> regress_report.txt
-    do_regress
+    printf '\033[H'
+    printf 'Regression running  elapsed %d:%02d:%02d\033[K\n\033[K\n' \
+        $((SECONDS/3600)) $(((SECONDS%3600)/60)) $((SECONDS%60))
+    for m in $models; do
 
-elif [ "$package" = "1" ]; then
+        log=0
+        rep=0
+        stat='....'
+        if [ -f "$WORK/$m.log" ];    then log=`wc -l < "$WORK/$m.log"`; fi
+        if [ -f "$WORK/$m.report" ]; then rep=`wc -l < "$WORK/$m.report"`; fi
+        if [ -f "$WORK/$m.totals" ]; then stat='done'; fi
+        printf '  %-8s %s  log=%-7s report=%-5s\033[K\n' "$m" "$stat" "$log" "$rep"
 
-    option="--package"
-    echo "package run ***************************************" >> regress_report.txt
-    do_regress
+    done
+    alive=0
+    for p in $pids; do if kill -0 "$p" 2>/dev/null; then alive=1; fi; done
+    if [ "$alive" = "0" ]; then break; fi
+    sleep 1
 
-elif [ "$pgen" = "1" ]; then
+done
+wait
+echo ""
 
-    option="--pgen"
-    echo "pgen run ***************************************" >> regress_report.txt
-    do_regress
+#
+# Merge the per-model report fragments (in model order) and sum the totals.
+#
+diftot=0
+fails=0
+for m in $models; do
+    cat "$WORK/$m.report" >> regress_report.txt
+    read d f < "$WORK/$m.totals"
+    diftot=$((diftot+d))
+    fails=$((fails+f))
+done
 
-else
-
-    # run all modes
-    option="--pint"
-    prefix="pint"
-    echo "pint run ***************************************" >> regress_report.txt
-    do_regress
-    option="--pmach"
-    prefix="pmach"
-    echo "pmach run ***************************************" >> regress_report.txt
-    do_regress
-    option="--cmach"
-    prefix="cmach"
-    echo "cmach run ***************************************" >> regress_report.txt
-    do_regress
-    option="--package"
-    prefix="package"
-    echo "package run ***************************************" >> regress_report.txt
-    do_regress
-    option="--pgen"
-    prefix="pgen"
-    echo "pgen run ***************************************" >> regress_report.txt
-    do_regress
-
-fi
+#
+# Replay each model's captured console output, grouped in model order, so the
+# run is followable without the parallel models interleaving on the terminal.
+#
+for m in $models; do
+    echo ""
+    echo "===================== $m model output ====================="
+    cat "$WORK/$m.log"
+done
 
 #
 # Print collected status

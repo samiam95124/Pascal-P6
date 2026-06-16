@@ -133,58 +133,70 @@ if [ -z "$progfile" ]; then
 
 	echo "*** Error: No run file specified"
 	exit 1
-	
+
 fi
 
-if [ ! -f "$progfile.p6" ]; then
-	
-	echo "$progfile.p6 does not exist"
+#
+# Intermediates, the executable, products and temp files go to REGRESS_OUT when
+# it is set, so several models can run in parallel into their own
+# test_results/<model> directories. When unset they go next to the source as
+# before. Input files (.inp, .dat) are always read from the source path.
+#
+if [ -n "$REGRESS_OUT" ]; then
+    obase="$REGRESS_OUT/$(basename $progfile)"
+    tmpd="$REGRESS_OUT/"
+else
+    obase="$progfile"
+    tmpd=""
+fi
+
+if [ ! -f "$obase.p6" ]; then
+
+	echo "$obase.p6 does not exist"
 	exit 1
-			
+
 fi
 if [ ! -f "$progfile.inp" ]; then
-		
+
 	echo "$progfile.inp does not exist"
 	exit 1
-			
+
 fi
 
 if [ "$pmach" = "1" ]; then
 
 	echo Running with pmach
-    echo "o e+" > temp
-    cat temp $progfile.p6 > temp2.p6
-    pint temp2.p6 $progfile.p6o > temp
-    cat $progfile.p6o $progfile.dat > temp.p6o
-    pmach temp.p6o $progfile.out $options < $progfile.inp &> $progfile.lst
-    rm temp temp2.p6
-    
+    echo "o e+" > ${tmpd}temp
+    cat ${tmpd}temp $obase.p6 > ${tmpd}temp2.p6
+    pint ${tmpd}temp2.p6 $obase.p6o > ${tmpd}temp
+    cat $obase.p6o $progfile.dat > ${tmpd}temp.p6o
+    pmach ${tmpd}temp.p6o $obase.out $options < $progfile.inp &> $obase.lst
+    rm ${tmpd}temp ${tmpd}temp2.p6
+
 elif [ "$cmach" = "1" ]; then
 
 	echo Running with cmach
-    pint $progfile.p6 $progfile.p6o --machdeck > temp
-    #echo "Will execute: cmach $progfile.p6o $options $progfile.dat $progfile.out < $progfile.inp &> $progfile.lst"
-    cmach $progfile.p6o $options $progfile.dat $progfile.out < $progfile.inp &> $progfile.lst
-    rm temp
+    pint $obase.p6 $obase.p6o --machdeck > ${tmpd}temp
+    cmach $obase.p6o $options $progfile.dat $obase.out < $progfile.inp &> $obase.lst
+    rm ${tmpd}temp
 
 elif [ "$package" = "1" ]; then
 
     echo Running with package
-    ./$progfile $options $progfile.dat $progfile.out < $progfile.inp &> $progfile.lst
+    ./$obase $options $progfile.dat $obase.out < $progfile.inp &> $obase.lst
 
 elif [ "$pgen" = "1" ]; then
 
     echo Running with pgen
-    ./$progfile $progfile.dat $progfile.out $options < $progfile.inp &> $progfile.lst
+    ./$obase $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
 
 else
 
 	echo Running with pint
-    cat $progfile.p6 $progfile.dat > temp.p6
-    #echo "Will execute: pint temp $progfile.out $options < $progfile.inp &> $progfile.lst"
-    pint temp.p6 $progfile.out $options < $progfile.inp &> $progfile.lst
-    rm temp.p6
-    
+    cat $obase.p6 $progfile.dat > ${tmpd}temp.p6
+    pint ${tmpd}temp.p6 $obase.out $options < $progfile.inp &> $obase.lst
+    rm ${tmpd}temp.p6
+
 fi
 
 #
@@ -192,6 +204,6 @@ fi
 #
 if [ "$nolist" = "0" ]; then
 
-    cat $progfile.lst
+    cat $obase.lst
 
 fi

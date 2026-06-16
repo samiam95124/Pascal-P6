@@ -34,6 +34,23 @@ fi
 # directory holding the test files
 test_path=pascaline_tests
 
+#
+# For a parallel per-model run (REGRESS_OUT set), copy the inputs into the
+# per-model directory and work there instead, so the bare-filename products
+# (pascaline.p6/.s/.lst/.dif/.p6o and the executable) do not collide with other
+# models. pcom/pgen still see bare filenames in the working directory.
+#
+if [ -n "$REGRESS_OUT" ]; then
+    mkdir -p "$REGRESS_OUT"
+    cp "$test_path"/pascaline2.pas "$test_path"/pascaline1.pas "$test_path"/pascaline.pas \
+       "$test_path"/pascaline.inp "$test_path"/pascaline.cmp \
+       "$test_path"/headertest1 "$test_path"/headertest2 "$test_path"/readtest.txt "$REGRESS_OUT"/
+    test_path="$REGRESS_OUT"
+    # cd below puts us inside the per-model dir, so the sub-tools (compile, pint,
+    # pgen) must write here with bare filenames -- not re-apply REGRESS_OUT.
+    unset REGRESS_OUT
+fi
+
 cd "$test_path" || { echo "*** testpascaline: cannot enter $test_path"; exit 1; }
 
 #

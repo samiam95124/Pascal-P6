@@ -2,66 +2,71 @@
 #
 # Script to test pascal-s compile and run
 #
+# When REGRESS_OUT is set (a parallel per-model regress run), all generated
+# files go to that per-model directory; inputs (the .pas/.cmp) are read from
+# sample_programs/. When unset, everything stays in sample_programs/ as before.
+#
+if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; incd="$REGRESS_OUT"
+else tmpd=""; incd="."; fi
+ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
+
+#
 # Compile pascals
 #
 echo "Compiling pascals to intermediate code"
 compile --list- $1 sample_programs/pascals
-cat sample_programs/pascals.err
+cat $(ob sample_programs/pascals).err
 #
 # Create null input file
 #
-echo > sample_programs/pascals.inp
+echo > ${tmpd}pascals.inp
 #
 # Now run pascals on pint, which runs the test program.
 #
-# Note that temp is unused (prr out), and roman.p2 and temp2 are read from the
-# command line at level 2. temp2 is unused (prr out, second level).
-#
 if [ "$1" = "--pmach" ]; then
 
-    pint sample_programs/pascals.p6 sample_programs/pascals.p6o --machdeck
-    pmach sample_programs/pascals.p6o temp sample_programs/roman.pas temp2 < sample_programs/pascals.inp > sample_programs/pascals.lst
+    pint $(ob sample_programs/pascals).p6 $(ob sample_programs/pascals).p6o --machdeck
+    pmach $(ob sample_programs/pascals).p6o ${tmpd}temp sample_programs/roman.pas ${tmpd}temp2 < ${tmpd}pascals.inp > $(ob sample_programs/pascals).lst
 
 elif [ "$1" = "--cmach" ]; then
 
-    pint sample_programs/pascals.p6 sample_programs/pascals.p6o --machdeck
-    cmach sample_programs/pascals.p6o sample_programs/roman.pas temp < sample_programs/pascals.inp > sample_programs/pascals.lst
+    pint $(ob sample_programs/pascals).p6 $(ob sample_programs/pascals).p6o --machdeck
+    cmach $(ob sample_programs/pascals).p6o sample_programs/roman.pas ${tmpd}temp < ${tmpd}pascals.inp > $(ob sample_programs/pascals).lst
 
 elif [ "$1" = "--package" ]; then
 
-    pint sample_programs/pascals.p6 sample_programs/pascals.p6o --machdeck
-    genobj sample_programs/pascals.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o sample_programs/pascals $PASCALP6/source/cmach/cmach.c -lm
-	sample_programs/pascals sample_programs/roman.pas temp $options < sample_programs/pascals.inp > sample_programs/pascals.lst
+    pint $(ob sample_programs/pascals).p6 $(ob sample_programs/pascals).p6o --machdeck
+    genobj $(ob sample_programs/pascals).p6o ${tmpd}program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I$incd -o $(ob sample_programs/pascals) $PASCALP6/source/cmach/cmach.c -lm
+	$(ob sample_programs/pascals) sample_programs/roman.pas ${tmpd}temp $options < ${tmpd}pascals.inp > $(ob sample_programs/pascals).lst
 
 elif [ "$1" = "--pgen" ]; then
 
-    pgen sample_programs/pascals.p6 sample_programs/pascals.s
+    pgen $(ob sample_programs/pascals).p6 $(ob sample_programs/pascals).s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
         -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
-        $PASCALP6/source/pgen/amd64/main.asm sample_programs/pascals.s -o sample_programs/pascals -lm
-    #echo "Will execute: sample_programs/pascals sample_programs/roman.pas temp $options < sample_programs/pascals.inp > sample_programs/pascals.lst"
-	sample_programs/pascals sample_programs/roman.pas temp $options < sample_programs/pascals.inp > sample_programs/pascals.lst
+        $PASCALP6/source/pgen/amd64/main.asm $(ob sample_programs/pascals).s -o $(ob sample_programs/pascals) -lm
+	$(ob sample_programs/pascals) sample_programs/roman.pas ${tmpd}temp $options < ${tmpd}pascals.inp > $(ob sample_programs/pascals).lst
 
 else
 
-    pint sample_programs/pascals.p6 temp sample_programs/roman.pas < sample_programs/pascals.inp > sample_programs/pascals.lst
+    pint $(ob sample_programs/pascals).p6 ${tmpd}temp sample_programs/roman.pas < ${tmpd}pascals.inp > $(ob sample_programs/pascals).lst
 
 fi
 #
 # Now compare with reference
 #
 echo Comparing PAT result to reference
-strip sample_programs/pascals.lst tmp1
-strip sample_programs/pascals.cmp tmp2
-diff -B tmp1 tmp2 > sample_programs/pascals.dif
-rm -f tmp1
-rm -f tmp2
-ls -l sample_programs/pascals.dif > tmp1
-grep ".dif" tmp1
-rm -f tmp1
+strip $(ob sample_programs/pascals).lst ${tmpd}tmp1
+strip sample_programs/pascals.cmp ${tmpd}tmp2
+diff -B ${tmpd}tmp1 ${tmpd}tmp2 > $(ob sample_programs/pascals).dif
+rm -f ${tmpd}tmp1
+rm -f ${tmpd}tmp2
+ls -l $(ob sample_programs/pascals).dif > ${tmpd}tmp1
+grep ".dif" ${tmpd}tmp1
+rm -f ${tmpd}tmp1
 ## pass if diff file is empty
-if test -s sample_programs/pascals.dif
+if test -s $(ob sample_programs/pascals).dif
 then
     echo "*** FAIL"
     exit 1

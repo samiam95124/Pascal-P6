@@ -5,6 +5,11 @@
 # Same as diff, but ignores the DOS/Unix line ending differences.
 # Strips decorations from the files, see the strip script.
 #
+# All temporaries are unique per-invocation (mktemp) so this is safe to run
+# concurrently -- several regression models call it at once from the same
+# working directory, and the old fixed tmp1/tmp2/tmp1s/tmp2s names would collide
+# and cross-contaminate results.
+#
 
 if [ -z "$1" ]
 then
@@ -36,11 +41,17 @@ then
    exit 1
 fi
 
-cp $1 tmp1
-cp $2 tmp2
-flip -u -b tmp1
-flip -u -b tmp2
-strip tmp1 tmp1s
-strip tmp2 tmp2s
-diff -Bw tmp1s tmp2s
-rm tmp1 tmp2 tmp1s tmp2s
+tmp1=`mktemp`
+tmp2=`mktemp`
+tmp1s=`mktemp`
+tmp2s=`mktemp`
+cp "$1" "$tmp1"
+cp "$2" "$tmp2"
+flip -u -b "$tmp1"
+flip -u -b "$tmp2"
+strip "$tmp1" "$tmp1s"
+strip "$tmp2" "$tmp2s"
+diff -Bw "$tmp1s" "$tmp2s"
+status=$?
+rm -f "$tmp1" "$tmp2" "$tmp1s" "$tmp2s"
+exit $status

@@ -49,7 +49,18 @@ amd64_sysvoption=""
 catints=""
 caterrs=""
 
-for param in "$@" 
+#
+# When REGRESS_OUT is set, all generated files -- per-module intermediates and
+# objects, the combined deck, the executable, and the shared temp/error files
+# (temp, prd, caterrs.err, catints.p6, program_code.c) -- go to that per-model
+# directory so models can build in parallel. Inputs are read from the source
+# path. ob() maps a source path to its output base in that directory.
+#
+if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; incd="$REGRESS_OUT"
+else tmpd=""; incd="."; fi
+ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
+
+for param in "$@"
 do
 
     if [ "$param" = "--pint" ]; then
@@ -149,29 +160,28 @@ do
 		echo Compiling $param...
         thisfail=0
         #echo "Will execute: pcom $param.pas $param.p6 $options $amd64_sysvoption"
-        pcom $param.pas $param.p6 $options $amd64_sysvoption > temp
+        pcom $param.pas $(ob $param).p6 $options $amd64_sysvoption > ${tmpd}temp
         if [ "$?" != "0" ]; then
 
             fails=1
             thisfail=1
 
         fi
-        cat temp >> caterrs.err
-        rm temp
+        cat ${tmpd}temp >> ${tmpd}caterrs.err
+        rm ${tmpd}temp
         if [ "$pgen" = "1" ] && [ "$thisfail" = "0" ]; then
 
             # generate .s assembly files
-            cp $param.p6 prd
-            #echo "Will execute: pgen $param.p6 $param.s >> temp.err"
-            pgen $param.p6 $param.s >> caterrs.err
+            cp $(ob $param).p6 ${tmpd}prd
+            pgen $(ob $param).p6 $(ob $param).s >> ${tmpd}caterrs.err
             # form list of objects
-            objects="$objects $param.s"
+            objects="$objects $(ob $param).s"
 
         fi
         # generate concatenated intermediates
         if [ "$thisfail" = "0" ]; then
 
-	        cat $param.p6 >> catints.p6
+	        cat $(ob $param).p6 >> ${tmpd}catints.p6
 
         fi
 		progfile="$param"
@@ -190,19 +200,19 @@ fi
 #
 # Put intermediate and error under the program filename
 #
-if [ -f "catints.p6" ]; then
+if [ -f "${tmpd}catints.p6" ]; then
 
-    mv catints.p6 $progfile.p6
+    mv ${tmpd}catints.p6 $(ob $progfile).p6
 
 fi
-mv caterrs.err $progfile.err
+mv ${tmpd}caterrs.err $(ob $progfile).err
 
 #
 # Print errors unless supressed
 #
 if [ "$noerrmsg" = "0" ]; then
 
-    cat $progfile.err
+    cat $(ob $progfile).err
 
 fi
 
@@ -220,23 +230,22 @@ fi
 #
 if [ "$pmach" = "1" ]; then
 
-	pint -machdeck $progfile.p6 $progfile.p6o
-	
+	pint -machdeck $(ob $progfile).p6 $(ob $progfile).p6o
+
 elif [ "$cmach" = "1" ]; then
 
-	pint -machdeck $progfile.p6 $progfile.p6o
-	
+	pint -machdeck $(ob $progfile).p6 $(ob $progfile).p6o
+
 elif [ "$package" = "1" ]; then
 
-	pint -machdeck $progfile.p6 $progfile.p6o
-	genobj $progfile.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
+	pint -machdeck $(ob $progfile).p6 $(ob $progfile).p6o
+	genobj $(ob $progfile).p6o ${tmpd}program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I$incd -o $(ob $progfile) $PASCALP6/source/cmach/cmach.c -lm
 
 elif [ "$pgen" = "1" ]; then
 
-    #echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/pgen/psystem.c -x assembler $PASCALP6/source/pgen/amd64/psystem.asm $PASCALP6/source/pgen/amd64/main.asm $objects -o $progfile -lm"
     gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/pgen/psystem.c \
         -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
-        $PASCALP6/source/pgen/amd64/main.asm $objects -o $progfile -lm >> $progfile.err 2>&1
+        $PASCALP6/source/pgen/amd64/main.asm $objects -o $(ob $progfile) -lm >> $(ob $progfile).err 2>&1
 
 fi

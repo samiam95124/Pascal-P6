@@ -75,6 +75,8 @@ var
    role:    packed array [1..rolemax] of char; { server role word }
    port:    integer; { server role port }
    secure:  integer; { server role secure flag }
+   portbase: integer; { per-instance port offset, from NETTEST_PORTBASE }
+   pb:      pstring; { environment value scratch }
 
 { ************************************************************************
 
@@ -398,9 +400,9 @@ var addr:   lcardinal;
 
 begin
 
-   spawn('tcpserver', portcert, 1);
+   spawn('tcpserver', portcert+portbase, 1);
    addrnet('localhost', addr);
-   opennet(fi, fo, addr, portcert, 1);
+   opennet(fi, fo, addr, portcert+portbase, 1);
 
    { raw certificate is retrievable and non-empty }
    r := certnet(fi, 1, cert);
@@ -461,6 +463,7 @@ begin
 
    passes := 0;
    fails := 0;
+   portbase := 0;
    getrole;
    if lenstr(role) = 0 then begin
 
@@ -468,15 +471,23 @@ begin
       writeln('Network test vs. 0.1');
       writeln;
 
+      { Per-instance port offset: when NETTEST_PORTBASE is set, shift every
+        loopback port by it. This lets several copies of the test run at once
+        (e.g. the parallel regression's models) without contending for the
+        same ports. The spawned servers receive the resolved port on their
+        command line, so they need no offset of their own. }
+      pb := getenv('NETTEST_PORTBASE');
+      if len(pb) > 0 then portbase := intv(pb);
+
       taddrnet;
-      ttcp('TCP exchange in the clear', porttcp, 0);
+      ttcp('TCP exchange in the clear', porttcp+portbase, 0);
       { The secured TCP exchange is commented out for now: Ami has the
         capability, but the Pascaline binding has not implemented it yet --
         the connection's bridged write side does not route through the
         tracked TLS path, so the exchange goes out in the clear. }
-      { ttcp('TCP exchange secured (TLS)', porttls, 1); }
-      tmsg('message exchange in the clear', portmsg, 0);
-      tmsg('message exchange secured (DTLS)', portdtls, 1);
+      { ttcp('TCP exchange secured (TLS)', porttls+portbase, 1); }
+      tmsg('message exchange in the clear', portmsg+portbase, 0);
+      tmsg('message exchange secured (DTLS)', portdtls+portbase, 1);
       tmsglim;
       tcert;
 

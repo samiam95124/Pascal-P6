@@ -6,9 +6,23 @@
 #
 # testdebug
 #
-# Note this only runs in ping mode, and so has no flags.
+# Note this only runs in pint mode, and so has no flags.
 #
-cd pascaline_tests
+# For a parallel per-model run (REGRESS_OUT set), copy the inputs into the
+# per-model directory and work there so the bare-filename products do not
+# collide with other models. When unset, work in pascaline_tests as before.
+#
+test_path=pascaline_tests
+if [ -n "$REGRESS_OUT" ]; then
+    mkdir -p "$REGRESS_OUT"
+    cp "$test_path"/debug_test1.pas "$test_path"/debug_test.pas \
+       "$test_path"/debug_test.inp "$test_path"/debug_test.cmp "$REGRESS_OUT"/
+    test_path="$REGRESS_OUT"
+    # cd below puts us inside the per-model dir; p6 writes here with bare names.
+    unset REGRESS_OUT
+fi
+
+cd "$test_path" || { echo "*** testdebug: cannot enter $test_path"; exit 1; }
 
 p6 --pint --list+ debug_test1 debug_test --debug --debugsrc --echoline < debug_test.inp > debug_test.lst
 diffnole debug_test.lst debug_test.cmp > debug_test.dif

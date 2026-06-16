@@ -2,7 +2,10 @@
 #
 # Difference without line endings
 #
-# Same as diff, but ignores the DOS/Unix line ending differences.
+# Same as diff, but ignores the DOS/Unix line ending differences. All
+# temporaries are unique per-invocation (mktemp) so this is safe to run
+# concurrently -- several regression models call it at once from the same
+# working directory, and the old fixed tmp1/tmp2 names would collide.
 #
 
 if [ -z "$1" ]
@@ -35,10 +38,13 @@ then
    exit 1
 fi
 
-cp $1 tmp1
-cp $2 tmp2
-flip -u -b tmp1
-flip -u -b tmp2
-diff tmp1 tmp2
-rm tmp1
-rm tmp2
+tmp1=`mktemp`
+tmp2=`mktemp`
+cp "$1" "$tmp1"
+cp "$2" "$tmp2"
+flip -u -b "$tmp1"
+flip -u -b "$tmp2"
+diff "$tmp1" "$tmp2"
+status=$?
+rm -f "$tmp1" "$tmp2"
+exit $status
