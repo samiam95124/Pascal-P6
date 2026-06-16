@@ -670,7 +670,7 @@ begin
    if overlaymsg <> nil then dispose(overlaymsg);
    overlaymsg := copy(msg);
    overlayactive := true;
-   timer(output, timermsg, msgduration, 0)
+   timer(output, timermsg, msgduration, false)
 
 end;
 
@@ -881,7 +881,7 @@ begin
    animplayer := player;
    animframe := 0;
    animating := true;
-   timer(output, timeranim, animtick, 1)
+   timer(output, timeranim, animtick, true)
 
 end;
 
@@ -2534,7 +2534,7 @@ begin
    if (diceremaining > 0) and hasanymove(turn) then begin
 
       { schedule another AI move }
-      timer(output, timerai, 300, 0);
+      timer(output, timerai, 300, false);
       aipending := true
 
    end else endturn;
@@ -2717,7 +2717,7 @@ begin
       if not hasanymove(turn) then begin
 
          { no legal moves, end turn after brief display }
-         timer(output, timerai, 500, 0);
+         timer(output, timerai, 500, false);
          aipending := true
 
       end;
@@ -3079,12 +3079,12 @@ begin
    undotop := 0;
 
    title(output, 'Backgammon');
-   curvis(output, 0);
-   auto(output, 0);
-   autohold(0); { override automatic hold }
+   curvis(output, false);
+   auto(output, false);
+   autohold(false); { override automatic hold }
    buffer(output, 0);
    font(output, ftsign);
-   bold(output, 1);
+   bold(output, true);
    binvis(output);
 
    { restore saved window size/position if available }
@@ -3163,7 +3163,7 @@ begin
                      if iscomputerturn then
                         if not aipending then begin
 
-                           timer(output, timerai, 300, 0);
+                           timer(output, timerai, 300, false);
                            aipending := true
 
                         end
@@ -3198,7 +3198,7 @@ begin
                   if gamestate = gsroll then
                      if iscomputerturn then begin
 
-                        timer(output, timerai, 300, 0);
+                        timer(output, timerai, 300, false);
                         aipending := true
 
                      end
@@ -3213,7 +3213,7 @@ begin
 
                   if hasanymove(turn) then begin
 
-                     timer(output, timerai, 400, 0);
+                     timer(output, timerai, 400, false);
                      aipending := true
 
                   end else begin
@@ -3223,7 +3223,7 @@ begin
                      if gamestate = gsroll then
                         if iscomputerturn then begin
 
-                           timer(output, timerai, 300, 0);
+                           timer(output, timerai, 300, false);
                            aipending := true
 
                         end
@@ -3243,7 +3243,7 @@ begin
                      if iscomputerturn then
                         if not aipending then begin
 
-                           timer(output, timerai, 500, 0);
+                           timer(output, timerai, 500, false);
                            aipending := true
 
                         end
@@ -3261,7 +3261,7 @@ begin
                   drawall;
                   if iscomputerturn then begin
 
-                     timer(output, timerai, 300, 0);
+                     timer(output, timerai, 300, false);
                      aipending := true
 
                   end
@@ -3299,7 +3299,7 @@ begin
                   drawall;
                   if iscomputerturn then begin
 
-                     timer(output, timerai, 300, 0);
+                     timer(output, timerai, 300, false);
                      aipending := true
 
                   end
@@ -3313,7 +3313,7 @@ begin
                   drawall;
                   if iscomputerturn then begin
 
-                     timer(output, timerai, 300, 0);
+                     timer(output, timerai, 300, false);
                      aipending := true
 
                   end

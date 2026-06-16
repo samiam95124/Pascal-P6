@@ -160,7 +160,7 @@ var er: evtrec;
 
 begin
 
-   timer(output, 1, t, 0);
+   timer(output, 1, t, false);
    repeat event(input, er)
    until (er.etype = ettim) or (er.etype = etterm);
    if er.etype = etterm then goto 99
@@ -327,8 +327,8 @@ begin
 
    framenum := 0;
 
-   auto(output, 0);
-   curvis(output, 0);
+   auto(output, false);
+   curvis(output, false);
    writeln('Managed screen test vs. 0.1');
    writeln;
    scnsiz(output, x, y);
@@ -359,10 +359,10 @@ begin
    { ************************** Multiple windows ************************** }
 
    page;
-   curvis(output, 1);
+   curvis(output, true);
    prtceng(maxyg(output)-chrsizy(output), 'Multiple window test');
    home(output);
-   auto(output, 1);
+   auto(output, true);
    write('This is the main window');
    writeln;
    writeln('Select back and forth between each window, and make sure the');
@@ -381,8 +381,8 @@ begin
    page;
    writeln('Second window now closed');
    waitnext;
-   curvis(output, 0);
-   auto(output, 0);
+   curvis(output, false);
+   auto(output, false);
 
    { ********************* Resize buffer window character ******************** }
 
@@ -554,7 +554,7 @@ begin
    sqrrat(xs, ys, 8); { find square ratio }
    cs := chrsizy(output); { save the character size }
    page;
-   auto(output, 0);
+   auto(output, false);
    writeln('Position window for font/back test');
    writeln('Then hit space to flip font/back status, or return to stop');
    fb := false; { clear front/back status }
@@ -592,7 +592,7 @@ begin
    home(output);
    fontsiz(output, cs);
    font(output, ftterm);
-   auto(output, 1);
+   auto(output, true);
 
    { ************************* Frame controls test buffered ****************** }
 
@@ -647,7 +647,7 @@ begin
 
    { ********************************* Menu test ***************************** }
 
-   auto(output, 1);
+   auto(output, true);
    page;
    fcolor(output, cyan);
    rect(output, 1, 1, maxxg(output), maxyg(output));
@@ -728,7 +728,7 @@ begin
    { ****************************** Standard menu test ******************** }
 
    page;
-   auto(output, 1);
+   auto(output, true);
    ml := nil; { clear menu list }
    newmenu(mp, false, false, false, smone, 'one');
    appendmenu(ml, mp);
@@ -801,17 +801,17 @@ begin
    chrgrid;
    prtcen(maxy(output), 'Child windows test character');
    openwin(input, win2, output, 2);
-   curvis(win2, 0);
+   curvis(win2, false);
    setpos(win2, 1, 10);
    sizbuf(win2, 20, 10);
    setsiz(win2, 20, 10);
    openwin(input, win3, output, 3);
-   curvis(win3, 0);
+   curvis(win3, false);
    setpos(win3, 21, 10);
    sizbuf(win3, 20, 10);
    setsiz(win3, 20, 10);
    openwin(input, win4, output, 4);
-   curvis(win4, 0);
+   curvis(win4, false);
    setpos(win4, 41, 10);
    sizbuf(win4, 20, 10);
    setsiz(win4, 20, 10);
@@ -848,17 +848,17 @@ begin
    sqrrat(xs, ys, 2.5); { find square ratio }
    prtcen(maxy(output), 'Child windows test pixel');
    openwin(input, win2, output, 2);
-   curvis(win2, 0);
+   curvis(win2, false);
    setposg(win2, xs*0+1, trunc(ys/2.5));
    sizbufg(win2, xs, ys);
    setsizg(win2, xs, ys);
    openwin(input, win3, output, 3);
-   curvis(win3, 0);
+   curvis(win3, false);
    setposg(win3, xs*1+1, trunc(ys/2.5));
    sizbufg(win3, xs, ys);
    setsizg(win3, xs, ys);
    openwin(input, win4, output, 4);
-   curvis(win4, 0);
+   curvis(win4, false);
    setposg(win4, xs*2+1, trunc(ys/2.5));
    sizbufg(win4, xs, ys);
    setsizg(win4, xs, ys);
@@ -892,7 +892,7 @@ begin
 
    { *************** Child windows independent test character ************ }
 
-   curvis(output, 1);
+   curvis(output, true);
    page;
    chrgrid;
    prtcen(maxy(output), 'Child windows independent test character');
@@ -944,7 +944,7 @@ begin
    writeln('                                                             ');
    writeln('                                                             ');
    writeln('                                                             ');
-   curvis(output, 0);
+   curvis(output, false);
    waitnext;
 
    { ******************** Child windows independent test pixel ************** }
@@ -1008,17 +1008,17 @@ begin
    sqrrat(xs, ys, 2.5); { find square ratio }
    prtcen(maxy(output), 'Child windows stacking test pixel');
    openwin(input, win2, output, 2);
-   curvis(win2, 0);
+   curvis(win2, false);
    setposg(win2, (xs div 2)*0+xs div 5, trunc(ys/2.5)+(ys*0) div 4);
    sizbufg(win2, xs, ys);
    setsizg(win2, xs, ys);
    openwin(input, win3, output, 3);
-   curvis(win3, 0);
+   curvis(win3, false);
    setposg(win3, (xs div 2)*1+xs div 5, trunc(ys/2.5)+(ys*1) div 4);
    sizbufg(win3, xs, ys);
    setsizg(win3, xs, ys);
    openwin(input, win4, output, 4);
-   curvis(win4, 0);
+   curvis(win4, false);
    setposg(win4, (xs div 2)*2+xs div 5, trunc(ys/2.5)+(ys*2) div 4);
    sizbufg(win4, xs, ys);
    setsizg(win4, xs, ys);
@@ -1060,7 +1060,7 @@ begin
 
    sqrrat(xs, ys, 5); { find square ratio }
    buffer(output, 0);
-   auto(output, 0);
+   auto(output, false);
    openwin(input, win2, output, 2);
    setposg(win2, (xs div 2)*1, (ys div 2)*1);
    sizbufg(win2, maxxg(output)-xs*2, maxyg(output)-ys*2);
@@ -1073,15 +1073,15 @@ begin
    setposg(win4, (xs div 2)*3, (ys div 2)*3);
    sizbufg(win4, maxxg(output)-xs*2, maxyg(output)-ys*2);
    setsizg(win4, maxxg(output)-xs*2, maxyg(output)-ys*2);
-   curvis(win2, 0);
+   curvis(win2, false);
    bcolor(win2, cyan);
    page(win2);
    writeln(win2, 'I am child window 1');
-   curvis(win3, 0);
+   curvis(win3, false);
    bcolor(win3, yellow);
    page(win3);
    writeln(win3, 'I am child window 2');
-   curvis(win4, 0);
+   curvis(win4, false);
    bcolor(win4, magenta);
    page(win4);
    writeln(win4, 'I am child window 3');
@@ -1115,20 +1115,20 @@ begin
    sqrrat(xs, ys, 20); { find square ratio }
    buffer(output, 0);
    openwin(input, win2, output, 2);
-   auto(win2, 0);
-   curvis(win2, 0);
+   auto(win2, false);
+   curvis(win2, false);
    setposg(win2, xs*1, ys*1);
    sizbufg(win2, strsiz(win2, 'I am child window 1'), chrsizy(win2));
    setsizg(win2, maxxg(output)-xs*1*2, maxyg(output)-ys*1*2);
    openwin(input, win3, output, 3);
-   auto(win3, 0);
-   curvis(win3, 0);
+   auto(win3, false);
+   curvis(win3, false);
    setposg(win3, xs*2, ys*2);
    sizbufg(win2, strsiz(win3, 'I am child window 2'), chrsizy(win3));
    setsizg(win3, maxxg(output)-xs*2*2, maxyg(output)-ys*2*2);
    openwin(input, win4, output, 4);
-   auto(win4, 0);
-   curvis(win4, 0);
+   auto(win4, false);
+   curvis(win4, false);
    setposg(win4, xs*3, ys*3);
    sizbufg(win2, strsiz(win4, 'I am child window 3'), chrsizy(win4));
    setsizg(win4, maxxg(output)-xs*3*2, maxyg(output)-ys*3*2);
@@ -1170,7 +1170,7 @@ begin
 
    page;
    cs := chrsizy(output); { save the character size }
-   auto(output, 0);
+   auto(output, false);
    buffer(output, 0);
    { initialize prime size information }
    x := maxxg(output);
@@ -1208,12 +1208,12 @@ begin
    fontsiz(output, cs);
    font(output, ftterm);
    home(output);
-   auto(output, 1);
+   auto(output, true);
 
    { ****************************** min/max/norm test ********************* }
 
    page;
-   auto(output, 0);
+   auto(output, false);
    buffer(output, 0);
    font(output, ftterm);
    mincnt := 0; { clear minimize counter }
@@ -1270,7 +1270,7 @@ begin
    rect(win2, 1, 1, 20*chrsizx(win2), 10*chrsizy(win2));
    line(win2, 1, 1, 20*chrsizx(win2), 10*chrsizy(win2));
    line(win2, 1, 10*chrsizy(win2), 20*chrsizx(win2), 1);
-   curvis(win2, 0);
+   curvis(win2, false);
    writeln('Check client window has (20, 10) surface');
    waitnext;
 
@@ -1296,7 +1296,7 @@ begin
    rect(win2, 1, 1, 20*chrsizx(win2), 10*chrsizy(win2));
    line(win2, 1, 1, 20*chrsizx(win2), 10*chrsizy(win2));
    line(win2, 1, 10*chrsizy(win2), 20*chrsizx(win2), 1);
-   curvis(win2, 0);
+   curvis(win2, false);
    writeln('Check client window has (20, 10) surface');
    waitnext;
 
@@ -1323,7 +1323,7 @@ begin
    rect(win2, 1, 1, 20*chrsizx(win2), 10*chrsizy(win2));
    line(win2, 1, 1, 20*chrsizx(win2), 10*chrsizy(win2));
    line(win2, 1, 10*chrsizy(win2), 20*chrsizx(win2), 1);
-   curvis(win2, 0);
+   curvis(win2, false);
    writeln('Check client window has (20, 10) surface');
    waitnext;
 
@@ -1350,7 +1350,7 @@ begin
    rect(win2, 1, 1, 20*chrsizx(win2), 10*chrsizy(win2));
    line(win2, 1, 1, 20*chrsizx(win2), 10*chrsizy(win2));
    line(win2, 1, 10*chrsizy(win2), 20*chrsizx(win2), 1);
-   curvis(win2, 0);
+   curvis(win2, false);
    writeln('Check client window has (20, 10) surface');
    waitnext;
 
@@ -1372,7 +1372,7 @@ begin
    rect(win2, 1, 1, xr, xr);
    line(win2, 1, 1, xr, xr);
    line(win2, 1, xr, xr, 1);
-   curvis(win2, 0);
+   curvis(win2, false);
    writeln('Check client window has (', xr:1, ', ', xr:1, ') surface');
    waitnext;
 
@@ -1480,7 +1480,7 @@ begin
    99: ; { terminate }
 
    page;
-   auto(output, 0);
+   auto(output, false);
    font(output, ftsign);
    fontsiz(output, 50);
    prtceng(maxyg(output) div 2-chrsizy(output) div 2, 'Test complete')

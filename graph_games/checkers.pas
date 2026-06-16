@@ -1179,11 +1179,11 @@ Main program
 begin
 
    title(output, 'Checkers');
-   curvis(output, 0);
-   auto(output, 0);
+   curvis(output, false);
+   auto(output, false);
    buffer(output, 0);
    font(output, font_sign);
-   bold(output, 1);
+   bold(output, true);
    binvis(output);
 
    opensynthout(synth_out);
@@ -1207,7 +1207,7 @@ begin
    { if computer goes first, schedule AI move }
    if is_computer_turn then begin
 
-      timer(output, timer_ai, 100, 0);
+      timer(output, timer_ai, 100, false);
       aipending := true;
       draw_all
 
@@ -1261,7 +1261,7 @@ begin
                      if not multijump then if gamestate = 0 then
                         if is_computer_turn then begin
 
-                        timer(output, timer_ai, 100, 0);
+                        timer(output, timer_ai, 100, false);
                         aipending := true;
                         draw_all
 
@@ -1299,7 +1299,7 @@ begin
                   if not multijump then if gamestate = 0 then
                      if is_computer_turn then begin
 
-                     timer(output, timer_ai, 100, 0);
+                     timer(output, timer_ai, 100, false);
                      aipending := true;
                      draw_all
 
@@ -1393,7 +1393,7 @@ begin
             draw_all;
             if is_computer_turn then begin
 
-               timer(output, timer_ai, 100, 0);
+               timer(output, timer_ai, 100, false);
                aipending := true;
                draw_all
 
@@ -1420,7 +1420,7 @@ begin
             draw_all;
             if is_computer_turn then begin
 
-               timer(output, timer_ai, 100, 0);
+               timer(output, timer_ai, 100, false);
                aipending := true;
                draw_all
 

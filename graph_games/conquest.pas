@@ -2297,14 +2297,14 @@ begin
    initplayercolors;
 
    title(output, 'Conquest');
-   curvis(output, 0);
-   auto(output, 0);
+   curvis(output, false);
+   auto(output, false);
    { stay in buffered mode for select double buffering }
    font(output, ftsign);
-   bold(output, 1);
+   bold(output, true);
    binvis(output);
    bcolorg(output, 0, 0, 0);
-   frametimer(output, 1);
+   frametimer(output, true);
    flip := 0;
 
    opensynthout(synth_out);

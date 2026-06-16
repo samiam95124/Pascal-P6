@@ -5,6 +5,15 @@
 # undefined graphics.* symbols and feed them to gen_asm.py.
 import re
 
+# int params/returns that are boolean on the Pascal side (must match gen.py)
+BOOLPARAM = {
+    'auto': 'e', 'autohold': 'e', 'blink': 'e', 'bold': 'e', 'curvis': 'e',
+    'frametimer': 'e', 'italic': 'e', 'reverse': 'e', 'standout': 'e',
+    'strikeout': 'e', 'subscript': 'e', 'superscript': 'e', 'underline': 'e',
+    'timer': 'r',
+}
+BOOLRET = {'curbnd'}
+
 def parse(line):
     m=re.match(r'^(.*?\bami_([a-z0-9]+))\s*\((.*)\)$',line)
     if not m: return None
@@ -17,10 +26,11 @@ def sp(p):
     m=re.match(r'^(.*?)\s*([A-Za-z_]\w*)$',p); return (m.group(1).strip(),m.group(2)) if m else (p,'')
 
 # dummy argument for each Pascaline param type
-def dummy(rest):
+def dummy(name, rest):
     args=[]; i=0
     while i<len(rest):
         ct,pn=sp(rest[i]); cn=ct.replace(' ','')
+        if cn=='int' and BOOLPARAM.get(name)==pn: args.append('bb'); i+=1; continue
         if cn=='char*' and i+1<len(rest) and sp(rest[i+1])[0].replace(' ','')=='int' and sp(rest[i+1])[1]==pn+'l':
             args.append('ss'); i+=2; continue
         if cn=='char*': args.append('ss'); i+=1; continue
@@ -49,8 +59,9 @@ for line in open('/tmp/gfxgen/funcs.txt'):
     ret,name,ps=pr
     hasfile = bool(ps) and sp(ps[0])[0].replace(' ','')=='FILE*'
     rest = ps[1:] if hasfile else ps
-    args=dummy(rest)
-    asn = 'ii := ' if ret=='int' else ('rr := ' if ret=='float' else '   ')
+    args=dummy(name, rest)
+    asn = ('bb := ' if name in BOOLRET else 'ii := ') if ret=='int' \
+          else ('rr := ' if ret=='float' else '   ')
     def call(arglist):
         return f'{asn}{name}({", ".join(arglist)});'
     if hasfile:
@@ -64,6 +75,7 @@ hdr='''program gstub(output);
 uses graphics;
 
 var ii, oo: integer;
+    bb:     boolean;
     rr:     real;
     ss:     packed array [1..100] of char;
     ee:     evtrec;
