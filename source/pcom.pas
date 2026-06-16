@@ -3702,6 +3702,26 @@ end;
     ic := ic + 1; mes(fop)
   end (*gen0*) ;
 
+  { Write one P-code-deck string character, escaped so the deck line stays all
+    printable: a quote doubles (existing convention), a backslash (chr 92)
+    doubles, and a control char (< ' ') becomes \$NN -- backslash, dollar, two
+    lowercase hex digits. Keeping control chars out of the deck text is what
+    stops a chr(13)/chr(10) in a string constant from truncating the line; the
+    lca string readers in pgen and pint decode this exactly. fl tracks the
+    emitted width for listing alignment. }
+  procedure wresc(c: char; var fl: integer);
+    procedure wrhd(b: integer);
+    begin if b <= 9 then write(prr, chr(ord('0')+b))
+          else write(prr, chr(ord('a')+b-10)) end;
+  begin
+    if c = '''' then begin write(prr, ''''''); fl := fl+2 end
+    else if c = chr(92) then begin write(prr, chr(92), chr(92)); fl := fl+2 end
+    else if c < ' ' then
+      begin write(prr, chr(92), '$'); wrhd(ord(c) div 16); wrhd(ord(c) mod 16);
+            fl := fl+4 end
+    else begin write(prr, c:1); fl := fl+1 end
+  end;
+
   procedure gen1s(fop: oprange; fp2: integer; symptr: ctp);
     var k, j: integer; p: strvsp; fl: integer;
   begin
@@ -3717,9 +3737,7 @@ end;
                begin with cstptr[fp2]^ do begin p := sval; j := 1;
                    write(prr,' ':5,slgth:1,' '''); fl := digits(slgth)+2;
                    for k := 1 to lenpv(p) do begin
-                     if p^.str[j] = '''' then 
-                       begin write(prr, ''''''); fl := fl+2 end
-                     else begin write(prr,p^.str[j]:1); fl := fl+1 end;
+                     wresc(p^.str[j], fl);
                      j := j+1; if j > varsqt then begin
                        p := p^.next; j := 1
                      end
@@ -4087,13 +4105,14 @@ end;
   end;
 
   procedure gensca(c: char);
+    var fl: integer;
   begin
     if prcode then begin
       write(prr,mn[(*lca*)38]:11, ' ':5);
-      write(prr,'1 ''');
-      if c = '''' then write(prr,'''') else write(prr,c);
-      write(prr,'''');
-      lftjst(parfld-1-5);
+      write(prr,'1 '''); fl := 3;
+      wresc(c, fl);
+      write(prr,''''); fl := fl+1;
+      lftjst(parfld-1-fl);
       intmsg((*lca*)38);
       mes(38)
     end
