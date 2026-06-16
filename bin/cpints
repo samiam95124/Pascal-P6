@@ -2,12 +2,24 @@
 #
 # Script to run a pint self compile
 #
+# When REGRESS_OUT is set (a parallel per-model regress run), all generated
+# files (the cpp'd source, intermediates, combined deck, .lst/.dif and temps)
+# go to that per-model directory; the pint.pas/iso7185pat.pas sources and the
+# .cmp gold are read canonically. When unset, everything stays under source/ and
+# standard_tests/ as before.
+#
+if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"
+else tmpd=""; fi
+ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
+
+#
 # First, change elide patterns to #ove prd and prr file statements.
-# The modified file goes in pintm.pas (pint modified).
+# The modified file goes in pint.mpp.pas (pint modified).
 #
-cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas source/pint.mpp.pas
+cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas $(ob source/pint.mpp).pas
 #
-# Compile the final target, the PAT
+# Compile the final target, the PAT. The iso7185pat.pas source is read
+# canonically; compile redirects its products into REGRESS_OUT.
 #
 echo Compiling the ISO 7185 PAT
 compile $1 standard_tests/iso7185pat
@@ -15,7 +27,7 @@ if [ $? -ne 0 ]
 then
 
     echo "*** Compile failed"
-    cat standard_tests/iso7185pat.err
+    cat $(ob standard_tests/iso7185pat).err
     exit 1
 
 fi
@@ -23,12 +35,12 @@ fi
 # Compile pint itself
 #
 echo Compiling pint to intermediate code
-compile $1 source/pint.mpp
+compile $1 $(ob source/pint.mpp)
 if [ $? -ne 0 ]
 then
 
     echo "*** Compile failed"
-    cat source/pint.mpp.err
+    cat $(ob source/pint.mpp).err
     exit 1
 
 fi
@@ -37,22 +49,22 @@ fi
 # This means that the version of pint will read and interpret
 # this.
 #
-cat source/pint.mpp.p6 standard_tests/iso7185pat.p6 > source/tmp.p6
-rm source/pint.mpp.p6
-mv source/tmp.p6 source/pint.mpp.p6
+cat $(ob source/pint.mpp).p6 $(ob standard_tests/iso7185pat).p6 > ${tmpd}tmp.p6
+rm $(ob source/pint.mpp).p6
+mv ${tmpd}tmp.p6 $(ob source/pint.mpp).p6
 #
 # Create null input file
 #
-echo > source/pint.mpp.inp
+echo > $(ob source/pint.mpp).inp
 #
 # Now run pint on pint, which runs the PAT.
 #
 echo Running pint on itself, to run the ISO 7185 PAT
-run $1 source/pint.mpp
-cp source/pint.mpp.lst standard_tests/iso7185pats.lst
+run $1 $(ob source/pint.mpp)
+cp $(ob source/pint.mpp).lst $(ob standard_tests/iso7185pats).lst
 echo -n "Comparing PAT result to reference ... "
-diffnole standard_tests/iso7185pats.lst standard_tests/iso7185pats.cmp > standard_tests/iso7185pats.dif
-if test -s iso7185pats.dif
+diffnole $(ob standard_tests/iso7185pats).lst standard_tests/iso7185pats.cmp > $(ob standard_tests/iso7185pats).dif
+if test -s $(ob standard_tests/iso7185pats).dif
 then
     echo FAILED
 else

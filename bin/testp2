@@ -2,11 +2,21 @@
 #
 # Script to test p2 compile and run
 #
+# When REGRESS_OUT is set (a parallel per-model regress run), all generated
+# files (the compiled P2 compiler, the roman.p2 intermediate, the .lst/.dif and
+# the shared temps) go to that per-model directory; inputs (the .pas/.cmp) are
+# read from p2/. When unset, everything stays in p2/ as before.
+#
+if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; incd="$REGRESS_OUT"
+else tmpd=""; incd="."; fi
+ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
+
+#
 # Compile P2
 #
 echo "Compiling pcomp to intermediate code"
 compile --list- $1 p2/pcomp
-cat p2/pcomp.err
+cat $(ob p2/pcomp).err
 #
 # Run the p2 compiler to get p2 intermediate
 #
@@ -14,20 +24,20 @@ cat p2/pcomp.err
 # at the second level.
 #
 if [ "$1" = "--pgen" ]; then
-    p2/pcomp p2/roman.p2 < p2/roman.pas
+    $(ob p2/pcomp) $(ob p2/roman).p2 < p2/roman.pas
 else
-    pint p2/pcomp.p6 temp p2/roman.p2 < p2/roman.pas
+    pint $(ob p2/pcomp).p6 ${tmpd}temp $(ob p2/roman).p2 < p2/roman.pas
 fi
 #
 # Compile pasint to intermediate code
 #
 echo Compiling pasint to intermediate
 compile --list- --reference- $1 p2/pasint
-cat p2/pasint.err
+cat $(ob p2/pasint).err
 #
 # Create null input file
 #
-echo > p2/pasint.inp
+echo > ${tmpd}pasint.inp
 #
 # Now run pasint on pint, which runs the test program.
 #
@@ -36,48 +46,48 @@ echo > p2/pasint.inp
 #
 if [ "$1" = "--pmach" ]; then
 
-    pint p2/pasint.p6 p2/pasint.p6o --machdeck
-    pmach p2/pasint.p6o temp p2/roman.p2 temp2 < p2/pasint.inp > p2/roman.lst
+    pint $(ob p2/pasint).p6 $(ob p2/pasint).p6o --machdeck
+    pmach $(ob p2/pasint).p6o ${tmpd}temp $(ob p2/roman).p2 ${tmpd}temp2 < ${tmpd}pasint.inp > $(ob p2/roman).lst
 
 elif [ "$1" = "--cmach" ]; then
 
-    pint p2/pasint.p6 p2/pasint.p6o --machdeck
-    cmach p2/pasint.p6o p2/roman.p2 temp < p2/pasint.inp > p2/roman.lst
+    pint $(ob p2/pasint).p6 $(ob p2/pasint).p6o --machdeck
+    cmach $(ob p2/pasint).p6o $(ob p2/roman).p2 ${tmpd}temp < ${tmpd}pasint.inp > $(ob p2/roman).lst
 
 elif [ "$1" = "--package" ]; then
 
-    pint p2/pasint.p6 p2/pasint.p6o --machdeck
-    genobj p2/pasint.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o p2/pasint $PASCALP6/source/cmach/cmach.c -lm
-	p2/pasint p2/roman.p2 temp $options < p2/pasint.inp > p2/roman.lst
+    pint $(ob p2/pasint).p6 $(ob p2/pasint).p6o --machdeck
+    genobj $(ob p2/pasint).p6o ${tmpd}program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I$incd -o $(ob p2/pasint) $PASCALP6/source/cmach/cmach.c -lm
+	$(ob p2/pasint) $(ob p2/roman).p2 ${tmpd}temp $options < ${tmpd}pasint.inp > $(ob p2/roman).lst
 
 elif [ "$1" = "--pgen" ]; then
 
-    pgen p2/pasint.p6 p2/pasint.s
+    pgen $(ob p2/pasint).p6 $(ob p2/pasint).s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
         -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
-        $PASCALP6/source/pgen/amd64/main.asm p2/pasint.s -o p2/pasint -lm
-	p2/pasint p2/roman.p2 temp $options < p2/pasint.inp > p2/roman.lst
+        $PASCALP6/source/pgen/amd64/main.asm $(ob p2/pasint).s -o $(ob p2/pasint) -lm
+	$(ob p2/pasint) $(ob p2/roman).p2 ${tmpd}temp $options < ${tmpd}pasint.inp > $(ob p2/roman).lst
 
 else
 
-    pint p2/pasint.p6 temp p2/roman.p2 temp2 < p2/pasint.inp > p2/roman.lst
+    pint $(ob p2/pasint).p6 ${tmpd}temp $(ob p2/roman).p2 ${tmpd}temp2 < ${tmpd}pasint.inp > $(ob p2/roman).lst
 
 fi
 #
 # Now compare with reference
 #
 echo Comparing PAT result to reference
-strip p2/roman.lst tmp1
-strip p2/roman.cmp tmp2
-diff -B tmp1 tmp2 > p2/roman.dif
-rm -f tmp1
-rm -f tmp2
-ls -l p2/roman.dif > tmp1
-grep ".dif" tmp1
-rm -f tmp1
+strip $(ob p2/roman).lst ${tmpd}tmp1
+strip p2/roman.cmp ${tmpd}tmp2
+diff -B ${tmpd}tmp1 ${tmpd}tmp2 > $(ob p2/roman).dif
+rm -f ${tmpd}tmp1
+rm -f ${tmpd}tmp2
+ls -l $(ob p2/roman).dif > ${tmpd}tmp1
+grep ".dif" ${tmpd}tmp1
+rm -f ${tmpd}tmp1
 ## pass if diff file is empty
-if test -s p2/roman.dif
+if test -s $(ob p2/roman).dif
 then
     echo "*** FAIL"
     exit 1

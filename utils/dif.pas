@@ -27,7 +27,7 @@ uses strings;
 
 const
 
-    { maximum number of lines per file } maxlines = 50000;
+    { maximum number of lines per file } maxlines = 200000;
     { maximum length of a single line } maxlinelen = 1000;
 
 type

@@ -1,0 +1,103 @@
+#!/bin/bash
+#
+# Test a libs/tests module-using program against a gold standard
+#
+# Execution:
+#
+# testlibprog [--pint|--pmach|--cmach|--pgen] <name>
+#
+# Compiles and runs libs/tests/<name> for the selected model and compares its
+# output to libs/tests/<name>.cmp (the gold standard), producing
+# libs/tests/<name>.dif. These programs use library modules (services, strings,
+# network, ...), so they are built with pc, which resolves the module path and
+# links the native archives -- the obsolete compile/run scripts do not.
+#
+# Must be run from the project root (the programs reach their data files by
+# paths relative to it, e.g. libs/source/strings_test.dat).
+#
+# The flags select the execution model:
+#
+# --pgen   Native code via pgen (the default).
+# --pint   Interpret the P-code deck with pint.
+# --pmach  Assemble a machine deck and run it with pmach.
+# --cmach  Not supported: the Ami externals are not hosted under cmach, so this
+#          exits success without testing (the caller skips cmach for these).
+#
+
+param1=$1
+name=$2
+if [ -z "$param1" ]; then param1="--pgen"; fi
+
+if [ -z "$name" ]; then
+   echo "*** testlibprog: no program name given"
+   exit 1
+fi
+
+base="libs/tests/$name"
+
+if [ ! -f "$base.pas" ]; then
+   echo "*** testlibprog: $base.pas does not exist"
+   exit 1
+fi
+
+#
+# cmach does not host the externals these tests use; skip without failing.
+#
+if [ "$param1" = "--cmach" ]; then
+   echo "testlibprog: $name not supported under cmach, skipped"
+   exit 0
+fi
+
+#
+# When REGRESS_OUT is set (a parallel per-model run), compile a copy of the
+# source there so pc's products (.p6, .s, .o, exe) land in the per-model
+# directory rather than the shared libs/tests. The program is still executed
+# from the repo root, so its relative input paths (libs/source/<x>.dat,
+# libs/services_test1, libs/tests/test_files/...) resolve. The gold .cmp is read
+# from the source location. When unset, everything stays in libs/tests.
+#
+if [ -n "$REGRESS_OUT" ]; then
+   mkdir -p "$REGRESS_OUT"
+   ob="$REGRESS_OUT/$name"
+   cp "$base.pas" "$ob.pas"
+else
+   ob="$base"
+fi
+rm -f "$ob.lst" "$ob.dif"
+
+# absolute path runs directly; relative needs the ./ prefix
+exe="$ob"; case "$ob" in /*) ;; *) exe="./$ob";; esac
+
+if [ "$param1" = "--pgen" ]; then
+
+   pc "$ob" -r > "$ob.err" 2>&1
+   if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
+   "$exe" > "$ob.lst" 2>/dev/null
+
+elif [ "$param1" = "--pint" ]; then
+
+   pc "$ob" -pint -r > "$ob.err" 2>&1
+   if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
+   pint "$ob.p6" > "$ob.lst" 2>/dev/null
+
+elif [ "$param1" = "--pmach" ]; then
+
+   pc "$ob" -pint -r > "$ob.err" 2>&1
+   if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
+   pint "$ob.p6" "$ob.p6o" --machdeck > /dev/null 2>&1
+   pmach "$ob.p6o" > "$ob.lst" 2>/dev/null
+
+else
+
+   echo "*** testlibprog: unrecognized model $param1"
+   exit 1
+
+fi
+
+if [ ! -f "$base.cmp" ]; then
+   echo "*** testlibprog: gold file $base.cmp does not exist"
+   exit 1
+fi
+
+diffnolestrip "$ob.lst" "$base.cmp" > "$ob.dif"
+wc -l "$ob.dif"

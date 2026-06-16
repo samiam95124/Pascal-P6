@@ -2,27 +2,43 @@
 #
 # Script to test p5 compile and run
 #
+# When REGRESS_OUT is set (a parallel per-model regress run), all generated
+# files (the cpp'd sources, intermediates, objects, executable, .lst/.dif and
+# the temps) go to that per-model directory; inputs (the .pas sources and the
+# .cmp gold) are read from their canonical locations. When unset, everything
+# stays under p5/source as before.
+#
+# Note: the original compared standard_tests/iso7185pat.lst (left by the earlier
+# PAT test) rather than this run's own output -- a latent inconsistency. Under
+# the redirect that stale file is not present, so the comparison now reads the
+# listing this run actually produced.
+#
+if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; incd="$REGRESS_OUT"
+else tmpd=""; incd="."; fi
+ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
+
+#
 # Compile p5/pcom to p6 intermediate
 #
 echo "Compiling pcom to intermediate code"
-cpp -DWRDSIZ64 -P -nostdinc -traditional-cpp p5/source/pcom.pas p5/source/pcom.mpp.pas
-compile --list- $1 p5/source/pcom.mpp
-cat p5/source/pcom.mpp.err
+cpp -DWRDSIZ64 -P -nostdinc -traditional-cpp p5/source/pcom.pas $(ob p5/source/pcom.mpp).pas
+compile --list- $1 $(ob p5/source/pcom.mpp)
+cat $(ob p5/source/pcom.mpp).err
 #
 # Run P5/pcom on P6/pint to compile iso7185pat to P5/intermediate
 #
-pint p5/source/pcom.mpp.p6 temp standard_tests/iso7185pat.pas p5/source/iso7185pat.p5
+pint $(ob p5/source/pcom.mpp).p6 ${tmpd}temp standard_tests/iso7185pat.pas $(ob p5/source/iso7185pat).p5
 #
 # Compile pint to p6/intermediate
 #
 echo "Compiling pint to intermediate code"
-cpp -DSMALL_MODEL -DWRDSIZ64 -P -nostdinc -traditional-cpp p5/source/pint.pas p5/source/pint.mpp.pas
-compile --list- $1 p5/source/pint.mpp
-cat p5/source/pint.mpp.err
+cpp -DSMALL_MODEL -DWRDSIZ64 -P -nostdinc -traditional-cpp p5/source/pint.pas $(ob p5/source/pint.mpp).pas
+compile --list- $1 $(ob p5/source/pint.mpp)
+cat $(ob p5/source/pint.mpp).err
 #
 # Create null input file
 #
-echo > p5/source/pint.inp
+echo > $(ob p5/source/pint).inp
 #
 # Now run pint(p4) on pint(p6), which runs the test program.
 #
@@ -32,52 +48,52 @@ echo > p5/source/pint.inp
 if [ "$1" = "--pmach" ]; then
 
     echo "Running pmach test..."
-    pint p5/source/pint.mpp.p6 p5/source/pint.p6o --machdeck
-    pmach p5/source/pint.p6o temp p5/source/iso7185pat.p5 temp1 < p5/source/pint.inp > p5/source/iso7185pat.lst
+    pint $(ob p5/source/pint.mpp).p6 $(ob p5/source/pint).p6o --machdeck
+    pmach $(ob p5/source/pint).p6o ${tmpd}temp $(ob p5/source/iso7185pat).p5 ${tmpd}temp1 < $(ob p5/source/pint).inp > $(ob p5/source/iso7185pat).lst
 
 elif [ "$1" = "--cmach" ]; then
 
     echo "Running cmach test..."
-    pint p5/source/pint.mpp.p6 p5/source/pint.p6o --machdeck
-    cmach p5/source/pint.p6o p5/source/iso7185pat.p5 temp < p5/source/pint.inp > p5/source/iso7185pat.lst
+    pint $(ob p5/source/pint.mpp).p6 $(ob p5/source/pint).p6o --machdeck
+    cmach $(ob p5/source/pint).p6o $(ob p5/source/iso7185pat).p5 ${tmpd}temp < $(ob p5/source/pint).inp > $(ob p5/source/iso7185pat).lst
 
 elif [ "$1" = "--package" ]; then
 
     echo "Running package test..."
-    pint p5/source/pint.mpp.p6 p5/source/pint.p6o --machdeck
-    genobj p5/source/pint.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o p5/source/pint $PASCALP6/source/cmach/cmach.c -lm
-	p5/pint p5/source/iso7185pat.p5 temp $options < p5/source/pint.inp > p5/source/iso7185pat.lst
+    pint $(ob p5/source/pint.mpp).p6 $(ob p5/source/pint).p6o --machdeck
+    genobj $(ob p5/source/pint).p6o ${tmpd}program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I$incd -o $(ob p5/source/pint) $PASCALP6/source/cmach/cmach.c -lm
+	$(ob p5/source/pint) $(ob p5/source/iso7185pat).p5 ${tmpd}temp $options < $(ob p5/source/pint).inp > $(ob p5/source/iso7185pat).lst
 
 elif [ "$1" = "--pgen" ]; then
 
     echo "Running pgen test..."
-    pgen p5/source/pint.mpp.p6 p5/source/pint.s
+    pgen $(ob p5/source/pint.mpp).p6 $(ob p5/source/pint).s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm 
-        $PASCALP6/source/pgen/amd64/main.asm p5/source/pint.s -o p5/source/pint -lm
-	p5/pint p5/source/iso7185pat.p5 temp $options < p5/source/pint.inp > p5/source/iso7185pat.lst
+        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
+        $PASCALP6/source/pgen/amd64/main.asm $(ob p5/source/pint).s -o $(ob p5/source/pint) -lm
+	$(ob p5/source/pint) $(ob p5/source/iso7185pat).p5 ${tmpd}temp $options < $(ob p5/source/pint).inp > $(ob p5/source/iso7185pat).lst
 
 else
 
     echo "Running pint test..."
-    pint p5/source/pint.mpp.p6 temp p5/source/iso7185pat.p5 temp2 \
-        < p5/source/pint.inp > p5/source/iso7185pat.lst
+    pint $(ob p5/source/pint.mpp).p6 ${tmpd}temp $(ob p5/source/iso7185pat).p5 ${tmpd}temp2 \
+        < $(ob p5/source/pint).inp > $(ob p5/source/iso7185pat).lst
 
 fi
 #
 # Now compare with reference
 #
 echo "Comparing PAT result to reference"
-strip standard_tests/iso7185pat.lst tmp1
-strip standard_tests/iso7185patp5c.cmp tmp2
-diff -B tmp1 tmp2 > standard_tests/iso7185pat.dif
-rm -f tmp1 tmp2
-ls -l standard_tests/iso7185pat.dif > tmp1
-grep ".dif" tmp1
-rm -f tmp1
+strip $(ob p5/source/iso7185pat).lst ${tmpd}tmp1
+strip standard_tests/iso7185patp5c.cmp ${tmpd}tmp2
+diff -B ${tmpd}tmp1 ${tmpd}tmp2 > $(ob standard_tests/iso7185pat).dif
+rm -f ${tmpd}tmp1 ${tmpd}tmp2
+ls -l $(ob standard_tests/iso7185pat).dif > ${tmpd}tmp1
+grep ".dif" ${tmpd}tmp1
+rm -f ${tmpd}tmp1
 ## pass if diff file is empty
-if test -s standard_tests/iso7185pat.dif
+if test -s $(ob standard_tests/iso7185pat).dif
 then
     echo "*** FAIL"
     exit 1
