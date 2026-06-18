@@ -200,3 +200,29 @@ if [ $? -ne 0 ]; then
 
 fi
 cp source/pmach bin
+
+#
+# cmacht is the terminal flavor of cmach, the same cmach.c built with -DTERMINAL
+# so it hosts the terminal model too (mirroring pmacht). Built by the Makefile.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building cmach terminal flavor as cmacht..."
+echo "**********************************************************************"
+echo ""
+make bin/cmacht
+if [ $? -ne 0 ]; then echo "*** Error: cmacht build failed"; exit 1; fi
+
+#
+# cmachg is the graphics flavor of cmach, the same cmach.c built with -DGRAPHICS.
+# It hosts an Ami graphics window over the interpreted program (mirroring pmachg),
+# linking the "blonde" NOSTDWIN graphics archive so the interpreter keeps its own
+# console and vmhost opens the program's window. Built by the Makefile.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building cmach graphics flavor as cmachg..."
+echo "**********************************************************************"
+echo ""
+make bin/cmachg
+if [ $? -ne 0 ]; then echo "*** Error: cmachg build failed"; exit 1; fi

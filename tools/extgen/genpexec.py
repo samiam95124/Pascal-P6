@@ -135,20 +135,51 @@ class Gen:
         else:
             self.evcodes, self.evvars = None, None
 
-    def match_decl(self, name, hasfile, nparams):
+    def match_decl(self, name, hasfile, ptoks):
+        # collect every overload of this name with the matching file-parameter
+        # presence and arity
+        cands = []
         for d in self.decls:
             if d['name'] != name: continue
             p = d['params']
             df = len(p) > 0 and p[0][2] == 'text' and p[0][0] == 'var'
             if df != hasfile: continue
-            if len(p) != nparams: continue
-            return d
-        return None
+            if len(p) != len(ptoks): continue
+            cands.append(d)
+        if not cands: return None
+        if len(cands) == 1: return cands[0]
+        # several overloads share the name and arity (e.g. brknam takes string or
+        # pstring outputs): disambiguate by matching the signature digest's type
+        # tokens (vc=string, pvc=pstring, fc=file) to the declared parameter
+        # types, so the marshalling -- and the parameter slot sizes it advances
+        # past -- match the actual call. Without this the wrong overload's slot
+        # sizes corrupt the vm stack.
+        for d in cands:
+            if self.toks_match(ptoks, d['params']): return d
+        return cands[0]
+
+    def toks_match(self, ptoks, params):
+        """True if each digest type token agrees with the declared parameter type
+           for the dimensions that distinguish overloads (string vs pstring vs
+           file). Other token kinds do not vary between same-arity overloads here,
+           so they are not checked."""
+        for tok, (mode, pn, typ) in zip(ptoks, params):
+            if tok == 'fc':
+                if typ != 'text': return False
+            elif tok == 'vc':
+                if typ != 'string': return False
+            elif tok == 'pvc':
+                if typ != 'pstring': return False
+        return True
 
     def slot(self, mode, typ):
         # open arrays (string of char, bytarr of byte) pass as a descriptor of
         # base address plus logical length, view or var alike
         if typ in ('string', 'bytarr'): return 'strparsiz'
+        # a pstring parameter is the inline [length][base] descriptor getpstr
+        # reads; it occupies a pointer-sized slot (extlink advances by ptrsize),
+        # distinct from the open-array string descriptor
+        if typ.split()[0] == 'pstring': return 'adrsize'
         if mode in ('var','out') or typ in ('text','evtrec'): return 'adrsize'
         return 'intsize'
 
@@ -214,7 +245,7 @@ class Gen:
                     '           putadr(ad2, nilval);',
                     '           params := params+adrsize', '',
                     '       end;', '']
-        d = self.match_decl(name, hasfile, len(ptoks))
+        d = self.match_decl(name, hasfile, ptoks)
         if d is None:
             self.stubs.append((idx, name, 'no interface match'))
             return ['       %d: errore(FunctionNotImplemented);' % idx, '']
@@ -431,7 +462,7 @@ class Gen:
             name, sig = sym.split('@',1)
             tl = toks(sig); ptoks = tl[1:]
             hasfile = len(ptoks)>0 and ptoks[0]=='fc'
-            d = self.match_decl(name, hasfile, len(ptoks))
+            d = self.match_decl(name, hasfile, ptoks)
             if not d: continue
             for (mode,pn,typ), tok in zip(d['params'], ptoks):
                 base = typ.split()[0]

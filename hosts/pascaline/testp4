@@ -2,21 +2,27 @@
 #
 # Script to test p4 compile and run
 #
+# When REGRESS_OUT is set (a parallel per-model regress run), all generated
+# files go to that per-model directory; inputs (the .pas/.cmp) are read from
+# p4/. When unset, everything stays in p4/ as before.
+#
+if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; incd="$REGRESS_OUT"
+else tmpd=""; incd="."; fi
+ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
+
+#
 # Compile p4
 #
 echo "Compiling pcom to intermediate code"
 compile --list- $1 p4/pcom
-cat p4/pcom.err
+cat $(ob p4/pcom).err
 #
 # Run the p4 compiler to get p4 intermediate
 #
-# Note temp is unused (prr out), and standardp.p4 is read from the command line
-# at the second level.
-#
 if [ "$1" = "--pgen" ]; then
-    p4/pcom p4/standardp.p4 < p4/standardp.pas
+    $(ob p4/pcom) $(ob p4/standardp).p4 < p4/standardp.pas
 else
-    pint p4/pcom.p6 temp p4/standardp.p4 < p4/standardp.pas
+    pint $(ob p4/pcom).p6 ${tmpd}temp $(ob p4/standardp).p4 < p4/standardp.pas
 fi
 #
 # Compile pint
@@ -24,76 +30,69 @@ fi
 echo Compiling pint to intermediate code
 compile --list- $1 p4/pint
 #
-# Add the final target program to the end of pint.
-# This means that the version of pint will read and interpret
-# this.
-#
 # Create null input file
 #
-echo > p4/pint.inp
+echo > ${tmpd}pint.inp
 #
 # Now run pint(p4) on pint(p6), which runs the test program.
-#
-# Note that temp is unused (prr out), and standardp.p2 and temp2 are read from the
-# command line at level 2. temp2 is unused (prr out, second level).
 #
 if [ "$1" = "--pmach" ]; then
 
     echo "Executing with pmach..."
-    pint p4/pint.p6 p4/pint.p6o --machdeck
-    pmach p4/pint.p6o temp p4/standardp.p4 temp1 < p4/pint.inp > p4/standardp.lst
+    pint $(ob p4/pint).p6 $(ob p4/pint).p6o --machdeck
+    pmach $(ob p4/pint).p6o ${tmpd}temp $(ob p4/standardp).p4 ${tmpd}temp1 < ${tmpd}pint.inp > $(ob p4/standardp).lst
 
 elif [ "$1" = "--cmach" ]; then
 
     echo "Executing with cmach..."
-    pint p4/pint.p6 p4/pint.p6o --machdeck
-    cmach p4/pint.p6o p4/standardp.p4 temp < p4/pint.inp > p4/standardp.lst
+    pint $(ob p4/pint).p6 $(ob p4/pint).p6o --machdeck
+    cmach $(ob p4/pint).p6o $(ob p4/standardp).p4 ${tmpd}temp < ${tmpd}pint.inp > $(ob p4/standardp).lst
 
 elif [ "$1" = "--package" ]; then
 
     echo "Executing with package..."
-    pint p4/pint.p6 p4/pint.p6o --machdeck
-    genobj p4/pint.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o p4/pint $PASCALP6/source/cmach/cmach.c -lm
-	p4/pint p4/standardp.p4 temp $options < p4/pint.inp > p4/standardp.lst
+    pint $(ob p4/pint).p6 $(ob p4/pint).p6o --machdeck
+    genobj $(ob p4/pint).p6o ${tmpd}program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I$incd -o $(ob p4/pint) $PASCALP6/source/cmach/cmach.c -lm
+	$(ob p4/pint) $(ob p4/standardp).p4 ${tmpd}temp $options < ${tmpd}pint.inp > $(ob p4/standardp).lst
 
 elif [ "$1" = "--pgen" ]; then
 
     echo "Executing with pgen..."
-    pgen p4/pint.p6 p4/pint.s
+    pgen $(ob p4/pint).p6 $(ob p4/pint).s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
         -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
-        $PASCALP6/source/pgen/amd64/main.asm p4/pint.s -o p4/pint -lm
-	p4/pint p4/standardp.p4 temp $options < p4/pint.inp > p4/standardp.lst
+        $PASCALP6/source/pgen/amd64/main.asm $(ob p4/pint).s -o $(ob p4/pint) -lm
+	$(ob p4/pint) $(ob p4/standardp).p4 ${tmpd}temp $options < ${tmpd}pint.inp > $(ob p4/standardp).lst
 
 else
 
     echo "Executing with pint..."
-    pint p4/pint.p6 temp p4/standardp.p4 temp4 < p4/pint.inp > p4/standardp.lst
+    pint $(ob p4/pint).p6 ${tmpd}temp $(ob p4/standardp).p4 ${tmpd}temp4 < ${tmpd}pint.inp > $(ob p4/standardp).lst
 
 fi
 #
 # Now compare with reference
 #
 echo Comparing PAT result to reference
-strip p4/standardp.lst tmp1
+strip $(ob p4/standardp).lst ${tmpd}tmp1
 if [ "$1" = "--cmach" ] || [ "$1" = "--package" ] || [ "$1" = "--pgen" ]; then
 
-    strip p4/standardpc.cmp tmp2
-	
+    strip p4/standardpc.cmp ${tmpd}tmp2
+
 else
 
-    strip p4/standardp.cmp tmp2
+    strip p4/standardp.cmp ${tmpd}tmp2
 
 fi
-diff -B tmp1 tmp2 > p4/standardp.dif
-rm -f tmp1
-rm -f tmp2
-ls -l p4/standardp.dif > tmp1
-grep ".dif" tmp1
-rm -f tmp1
+diff -B ${tmpd}tmp1 ${tmpd}tmp2 > $(ob p4/standardp).dif
+rm -f ${tmpd}tmp1
+rm -f ${tmpd}tmp2
+ls -l $(ob p4/standardp).dif > ${tmpd}tmp1
+grep ".dif" ${tmpd}tmp1
+rm -f ${tmpd}tmp1
 ## pass if diff file is empty
-if test -s p4/standardp.dif
+if test -s $(ob p4/standardp).dif
 then
     echo "*** FAIL"
     exit 1
@@ -101,5 +100,5 @@ else
     echo "PASS"
 fi
 
-rm -f p4/pcom.inp
-rm -f p4/pint.inp
+rm -f ${tmpd}pcom.inp
+rm -f ${tmpd}pint.inp

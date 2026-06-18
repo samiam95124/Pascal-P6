@@ -41,14 +41,6 @@ if [ ! -f "$base.pas" ]; then
 fi
 
 #
-# cmach does not host the externals these tests use; skip without failing.
-#
-if [ "$param1" = "--cmach" ]; then
-   echo "testlibprog: $name not supported under cmach, skipped"
-   exit 0
-fi
-
-#
 # When REGRESS_OUT is set (a parallel per-model run), compile a copy of the
 # source there so pc's products (.p6, .s, .o, exe) land in the per-model
 # directory rather than the shared libs/tests. The program is still executed
@@ -86,6 +78,16 @@ elif [ "$param1" = "--pmach" ]; then
    if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
    pint "$ob.p6" "$ob.p6o" --machdeck > /dev/null 2>&1
    pmach "$ob.p6o" > "$ob.lst" 2>/dev/null
+
+elif [ "$param1" = "--cmach" ]; then
+
+   # cmach hosts the services/sound/network externals (built with the Ami bypass
+   # stdio, like pmach), so the library tests run under it like pmach: compile,
+   # dump the machine deck, interpret it.
+   pc "$ob" -pint -r > "$ob.err" 2>&1
+   if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
+   pint "$ob.p6" "$ob.p6o" --machdeck > /dev/null 2>&1
+   cmach "$ob.p6o" > "$ob.lst" 2>/dev/null
 
 else
 
