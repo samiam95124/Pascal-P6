@@ -158,7 +158,7 @@ var
 { default to graphical mode }              fdefgra: boolean;
 { compile for pint (interpreter) }         fpint, spint:   boolean;
 { compile for pmach (interpreter) }        fpmach, spmach:  boolean;
-{ compile for cmach (compiler) }           fcmach, scmach:  boolean;
+{ compile for cmach (interpreter) }         fcmach, scmach:  boolean;
 { compile for package mode }               fpack, spack:   boolean;
 { compile for pgen mode (executable) }     fpgen, spgen:   boolean;
 { these are "pass through" options, options meant for programs we execute }
@@ -1720,12 +1720,14 @@ procedure plcpass(prefix: boolean);
 
 begin
 
+      putflg('prtlab', sprtlab, fprtlab, prefix);
       putflg('prtlabdef', sprtlabdef, fprtlabdef, prefix);
       putflg('lstcod', slstcod, flstcod, prefix);
       putflg('chk', schk, fchk, prefix);
       putflg('sourceset', ssourceset, fsourceset, prefix);
-      putflg('varblk', svarblk, svarblk, prefix);
+      putflg('varblk', svarblk, fvarblk, prefix);
       putflg('experror', sexperror, fexperror, prefix);
+      putflg('echoline', secholine, fecholine, prefix);
       putflg('list', slist, flist, prefix);
       putflg('breakheap', sbreakheap, fbreakheap, prefix);
       putflg('recycle', srecycle, frecycle, prefix);
@@ -2655,6 +2657,8 @@ begin
    { passthrough }
    fprtlabdef := false;  
    sprtlabdef := false;  
+   fprtlab := false;
+   sprtlab := false;
    flstcod := false;
    slstcod := false;
    fchk := false;
@@ -2738,7 +2742,7 @@ begin
       writeln('       -html                Generate HTML documentation');
       writeln('       -pint                Compile for pint (interpreter)');
       writeln('       -pmach               Compile for pmach (interpreter)');
-      writeln('       -cmach               Compile for cmach (compiler)');
+      writeln('       -cmach               Compile for cmach (interpreter)');
       writeln('       -package             Compile for package mode');
       writeln('       -pgen                Compile for pgen mode (executable)');
       writeln('  -ktw -keepterminalwindow  Keep terminal window');
