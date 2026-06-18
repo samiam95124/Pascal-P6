@@ -1,0 +1,3 @@
+# source/cmach/extern.inc is a generated file (tools/extgen/gencexec.py) but is
+# committed like the genpexec Pascal outputs (source/*/extexec.pas), so a clean
+# checkout builds cmach without running the generator.

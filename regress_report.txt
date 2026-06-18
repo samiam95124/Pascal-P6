@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Tue 16 Jun 2026 11:52:39 AM PDT
+Wed 17 Jun 2026 08:40:19 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/test_results/pint/hello.dif
@@ -74,6 +74,10 @@ PRT run
 0 standard_tests/test_results/cmach/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/test_results/cmach/pascaline.dif
+strings_test run
+0 libs/tests/test_results/cmach/strings_test.dif
+network_test run
+0 libs/tests/test_results/cmach/network_test.dif
 package run ***************************************
 0 sample_programs/test_results/package/hello.dif
 0 sample_programs/test_results/package/roman.dif
@@ -123,12 +127,12 @@ network_test run
 
 Total differences: 0
 Fails: 0
-Tue 16 Jun 2026 11:57:11 AM PDT
+Wed 17 Jun 2026 08:44:50 PM PDT
 Files sha256sum ***************************************
 Source files
 f25ec23f4aef59c8d9cfac87de925c3ed8fb6feea2572197a074cebb06720f67  -
 batch files
-9b91eadf60f196b814e5c0680db220bfa21f2c9273d326d5b1812f0353d4cc09  -
+b63e2dea5091bda4be62bd9940ccb25e7248ba92bdd2fb2faa28031a33e67965  -
 P2 files
 abb5a8a00d377dbcf7c793f9f399fb51e017f2e27ecab9607e4cace253472cfb  -
 p4 files
@@ -138,4 +142,4 @@ Sample program test files
 standard test files
 85681dea5220b4d1baf2fbb1069305ff321278f26d6f7e1f87ddb2d125b536b3  -
 other files
-3160bde824c25037cd65736b25831e00c28f1448380c859fa90ca38889a8bd40  -
+89b74e9b395104d5ee73e8d2398c1991baf90283279ff69fa74c1fc245f17c10  -

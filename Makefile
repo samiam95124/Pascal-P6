@@ -102,7 +102,8 @@ all: bin/cmach bin/spew \
 # Build psystem for AMD64, the Pascaline support library in C.
 #
 $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
-	$(SOURCE)/pgen/amd64/psystem.asm
+	$(SOURCE)/pgen/amd64/psystem.asm \
+	$(AMILIBC)/stdio.c
 	@echo
 	@echo "Building psystem..."
 	@echo
@@ -376,14 +377,95 @@ $(LIBS)/network.a: $(AMI)/network.c \
 #
 # Build cmach, an intermediate interpreter written in C.
 #
+# cmach is built with -DEXTERNALS so it hosts the Ami external models (services,
+# sound and network -- the same external executor pint and pmach carry, emitted
+# as C in source/cmach/extern.inc by tools/extgen/gencexec.py). Machine decks
+# that call the external libraries therefore run under cmach. The native
+# archives and their system-library closure are linked in; services.a routes its
+# file I/O through the STDIO_BYPASS bridge cmach implements (psystem_libcrdfil/
+# psystem_libcatcfil), backed by the ami stdio in psystem_stdio.o (produced by
+# the psystem.a build).
+#
+# cmach is compiled through the Ami bypass stdio (-DSTDIO_BYPASS -I$(AMILIBC), so
+# <stdio.h> resolves to amitk/libc/stdio.h), the same stdio world pmach's psystem
+# is built in. This makes cmach's file table hold Ami-stdio files, so the model
+# bindings -- which open connections as Ami files (network_support.c stdio_fdopen)
+# and write through the Ami stdio -- interoperate with cmach exactly as they do
+# with pmach. SEEK_* are supplied because the Ami stdio.h does not export them.
+CMACHEXT=-DEXTERNALS -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) \
+	-DSEEK_SET=0 -DSEEK_CUR=1 -DSEEK_END=2
+# The fluidsynth and dump synth backends self-register from constructors in
+# sound.a's fluidsynthplug.o / dumpsynthplug.o. Nothing references their symbols,
+# so an archive link drops both members (pc links the sound module's objects
+# directly, so its constructors always run). Without them opensynthout finds no
+# software synth and falls back to the raw ALSA sequencer -> no audio. Force both
+# members in with -u (whole-archiving sound.a would instead duplicate the
+# support.o that services.a already pulls).
+CMACHSYNTH=-Wl,-u,getparamfluid -Wl,-u,getparamdump
+# libasound links whole-archive (mirroring pc/pc.pas): ALSA's device plugins
+# resolve through a registry populated by per-member constructors, so a member
+# nothing references statically (e.g. the virtual rawmidi plugin) would be left
+# out of the link and lose its registration -> "_snd_rawmidi_virtual_open is not
+# defined inside [builtin]" at runtime.
+CMACHEXTLIBS=$(CMACHSYNTH) $(LIBS)/services.a $(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
+	-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpthread -ldl -lm
+
 cmach: bin/cmach
-bin/cmach: $(SOURCE)/cmach/cmach.c
+bin/cmach: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc \
+		$(LIBS)/services.a $(LIBS)/sound.a $(LIBS)/network.a $(LIBS)/psystem.a
 	@echo
 	@echo "Building cmach..."
 	@echo
 	mkdir -p $(BUILD)
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/cmach64le $(SOURCE)/cmach/cmach.c -lm
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -o $(BUILD)/cmach64le \
+		$(SOURCE)/cmach/cmach.c $(CMACHEXTLIBS)
 	cp $(BUILD)/cmach64le $(PASCALP6)/bin/cmach
+
+# cmacht and cmachg are the terminal and graphics flavors of cmach, mirroring
+# pmacht/pmachg: the same cmach.c built with -DTERMINAL / -DGRAPHICS so it hosts
+# the terminal / graphics model too (the flavor selects extern_term.inc /
+# extern_graph.inc). The flavor's native archive (terminal.a / graphics.a)
+# replaces nothing -- it is added; graphics.a is the "blonde" archive that
+# provides the terminal core too, so the graphics flavor links graphics.a (not
+# terminal.a -- they share the ami_* core and cannot co-link).
+cmacht: bin/cmacht
+bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
+		$(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/sound.a $(LIBS)/network.a \
+		$(LIBS)/psystem.a
+	@echo
+	@echo "Building cmacht (terminal flavor)..."
+	@echo
+	mkdir -p $(BUILD)
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -DTERMINAL -o $(BUILD)/cmacht64le \
+		$(SOURCE)/cmach/cmach.c $(CMACHSYNTH) \
+		$(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/sound.a $(LIBS)/network.a \
+		$(PSYSTEM_STDIO) -lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpthread -ldl -lm
+	cp $(BUILD)/cmacht64le $(PASCALP6)/bin/cmacht
+
+cmachg: bin/cmachg
+# cmachg hosts a graphics window over the interpreted program like pmachg/pintg,
+# so it links the "blonde" graphics archive (source/graph/graphics.a, graphics.c
+# built -DNOSTDWIN). That archive skips binding stdin/stdout to an automatic main
+# window at startup; the interpreter keeps its console and vmhost opens the
+# program's window via openwin. The standard libs/graphics.a auto-creates a main
+# window at init, which collides with vmhost's openwin and hangs.
+bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
+		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/gnome_widgets.o \
+		$(LIBS)/sound.a $(LIBS)/network.a $(LIBS)/psystem.a
+	@echo
+	@echo "Building cmachg (graphics flavor)..."
+	@echo
+	mkdir -p $(BUILD)
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -DGRAPHICS -o $(BUILD)/cmachg64le \
+		$(SOURCE)/cmach/cmach.c $(CMACHSYNTH) \
+		-Wl,--start-group \
+		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/gnome_widgets.o \
+		$(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
+		-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpthread -ldl -lm \
+		-lfontconfig -lfreetype -lXext -lX11 -lpng -lz -lbz2 \
+		-lexpat -luuid -lxcb -lXau -lXdmcp \
+		-Wl,--end-group
+	cp $(BUILD)/cmachg64le $(PASCALP6)/bin/cmachg
 
 #
 # Build spew, an automated test facillity.

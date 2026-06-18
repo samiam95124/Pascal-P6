@@ -649,6 +649,12 @@ char* optsl[] = {
 address pc;      /*program address register*/
 address pctop;   /* top of code store */
 address gbtop;   /* top of globals, size of globals */
+/* A hosting flavor (cmachg) may place the interpreted program's standard files.
+   0 means "not redirected" -- input/output resolve to the console; the graphics
+   flavor's vmhost() opens a window and sets these to its general file slots.
+   Mirrors pmach.pas vmstdin/vmstdout. */
+filnum vmstdin  = 0;
+filnum vmstdout = 0;
 instyp op; lvltyp p; address q;  /*instruction register*/
 address q1,q2; /* extra parameters */
 byte store[MAXSTR] /* complete program storage */
@@ -1160,7 +1166,114 @@ void swpstk(address l)
 /* external routines */
 
 #ifdef EXTERNALS
-#include "externals.inc"
+/* The external vector base: the vector table sits after pint's loader prelude
+   (lnp q + cal q + stp = 9+9+1 = 19 bytes), so the deck bakes vector addresses
+   against this base, matching pmach. */
+#define EXTVECBASE 19
+address extvecbase = EXTVECBASE;
+/* native Ami binding declarations, so ami_* return types are not truncated */
+#include "services.h"
+#include "sound.h"
+#include "network.h"
+/* the terminal/graphics flavors (cmacht/cmachg) host the terminal/graphics
+   models too; their headers bring ami_evtrec/ami_evtcod and the model routines.
+   graphics.h is upward-compatible -- it redeclares the terminal types -- so the
+   graphics flavor includes it alone (including terminal.h too would conflict). */
+#ifdef GRAPHICS
+#include "graphics.h"
+#elif defined(TERMINAL)
+#include "terminal.h"
+#endif
+/* defined further below in this file; the executor references them */
+void valfil(address fa);
+void errore(long ei);
+void newspc(address len, address* blk);
+void dspspc(address len, address blk);
+/* the connection-binding wrappers (libs/source/network_support.c): a returned
+   FILE* is bound to a pair of var text files via the STDIO_BYPASS bridge. pfile
+   is a pointer into store. Declared so the executor's calls are not implicit. */
+void wrapper_opennet(unsigned char* infile, unsigned char* outfile,
+                     long addr, int port, int secure);
+void wrapper_opennetv6(unsigned char* infile, unsigned char* outfile,
+                       long addrh, long addrl, int port, int secure);
+void wrapper_waitnet(unsigned char* infile, unsigned char* outfile,
+                     int port, int secure);
+/* the openwin bridge (libs/source/graphics_support.c): opens an Ami window and
+   binds its files to a pair of var text files. Declared so the graphics
+   executor's call is not implicit. */
+void wrapper_openwin(unsigned char* infile, unsigned char* outfile,
+                     unsigned char* parent, int wid);
+/* select the flavor's external executor: the terminal/graphics flavors host the
+   extra model on top of services/sound/network (graphics is upward-compatible
+   with terminal, so the graphics flavor hosts both). event() is synchronous --
+   it returns the next event -- so no interpreter re-entry is needed. */
+#if defined(GRAPHICS)
+#include "extern_graph.inc"
+#elif defined(TERMINAL)
+#include "extern_term.inc"
+#else
+#include "extern.inc"
+#endif
+
+/* STDIO_BYPASS bridge. The Ami archives are built with -DSTDIO_BYPASS, so their
+   file I/O routes through these to reach the interpreter file table. A pasfil*
+   is a pointer to the Pascal file variable in store; its first byte is the
+   logical file number once valfil has allocated one. */
+
+FILE* psystem_libcrdfil(unsigned char* f)
+{
+    address ad = (address)(f-store);
+    int fn;
+
+    valfil(ad);          /* allocate a logical file if not yet assigned */
+    fn = store[ad];      /* logical file number */
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case INPUTFN: return stdin;
+        case PRDFN:   return filtable[PRDFN];
+        default:      errore(FILEMODEINCORRECT);
+
+    }
+    return filtable[fn];
+}
+
+void psystem_libcatcfil(unsigned char* f, FILE* fp, long wr)
+{
+    address ad = (address)(f-store);
+    int fn;
+
+    valfil(ad);          /* allocate a logical file if not yet assigned */
+    fn = store[ad];      /* logical file number */
+    if (fn <= COMMANDFN) errore(FILEMODEINCORRECT);
+    /* close any file currently open on this logical file */
+    if (filstate[fn] == fsread || filstate[fn] == fswrite) fclose(filtable[fn]);
+    filtable[fn] = fp;   /* attach the libc file */
+    filstate[fn] = wr ? fswrite : fsread;
+}
+
+/* the write-side counterpart of psystem_libcrdfil: the graphics support layer
+   (graphics_support.c) routes window output through here. A hosted file already
+   resolves to a general slot (> COMMANDFN) via valfil, so the standard-file
+   switch only fires for an unredirected standard file. */
+FILE* psystem_libcwrfil(unsigned char* f)
+{
+    address ad = (address)(f-store);
+    int fn;
+
+    valfil(ad);
+    fn = store[ad];
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case OUTPUTFN: return stdout;
+        case PRRFN:    return filtable[PRRFN];
+        case ERRORFN:  return stdout;
+        case LISTFN:   return stdout;
+        case INPUTFN: case PRDFN:
+        case COMMANDFN: errore(WRITEONREADONLYFILE);
+
+    }
+    return filtable[fn];   /* general slot, incl. the hosted window output */
+}
 #endif
 
 /*--------------------------------------------------------------------*/
@@ -1415,8 +1528,10 @@ void valfil(address fa) /* attach file to file entry */
     long i,ff;
 
     if (store[fa] == 0) { /* no file */
-        if (fa == pctop+INPUTOFF) ff = INPUTFN;
-        else if (fa == pctop+OUTPUTOFF) ff = OUTPUTFN;
+        /* a hosting flavor may redirect the standard input/output to its window
+           files (mirrors pmach.pas:1420-1425) */
+        if (fa == pctop+INPUTOFF) ff = vmstdin != 0 ? vmstdin : INPUTFN;
+        else if (fa == pctop+OUTPUTOFF) ff = vmstdout != 0 ? vmstdout : OUTPUTFN;
         else if (fa == pctop+PRDOFF) ff = PRDFN;
         else if (fa == pctop+PRROFF) ff = PRRFN;
         else if (fa == pctop+ERROROFF) ff = ERRORFN;
@@ -3339,17 +3454,17 @@ void sinins()
 
     case pi_eext:
 #ifdef EXTERNALS
-                    ExecuteExternal(pc-extvecbase);
-                    /* set stack below function result, if any */
-                    sp = mp;
-                    {???fixme???}
                     {
-                    pc = getadr(mp+MARKRA);
-                    }
-                    ep = getadr(mp+MARKEP);
-                    {???fixme???}
-                    {
-                    mp = getadr(mp+MARKDL);
+                      /* The external vector slot was reached by a call that
+                         pushed the return address at sp; the parameters sit
+                         above it. Mirror pmach: pass the parameter base, let
+                         ExecuteExternal advance it past the parameters (and, for
+                         a function, leave the result at that slot), then pop the
+                         return address and drop the stack to the result. */
+                      address pb = sp+ADRSIZE;
+                      ExecuteExternal(pc-extvecbase, &pb);
+                      popadr(pc); /* load return address */
+                      sp = pb;    /* skip parameters; result, if any, at pb */
                     }
 #else
                     errorv(EXTERNALSNOTENABLED);
@@ -3363,6 +3478,43 @@ void sinins()
 
   }
 }
+
+#ifdef GRAPHICS
+/* find a free general file slot (after the header files). Mirrors genpexec
+   frefil. */
+static filnum frefil(void)
+{
+    long i, ff;
+
+    ff = 0;
+    for (i = COMMANDFN+1; i <= MAXFIL; i++)
+        if (filstate[i] == fsnone && ff == 0) ff = i;
+    if (ff == 0) errore(FUNCTIONNOTIMPLEMENTED);
+    return ff;
+}
+
+/* host the interpreted program in its own window (the graphics flavor's startup
+   hook, the C analog of pmach's override vmhost / genpexec VMHOST). Reserve an
+   input slot and an output slot, open a window against them as wrapper_openwin
+   does (the input side shares stdin -- events flow through it; the window output
+   comes back as a fresh FILE*), and point the interpreted standard files at the
+   two slots so the program's standard I/O flows to the window. */
+static void vmhost(void)
+{
+    filnum fi, fo;
+    FILE*  fin;
+    FILE*  fout;
+
+    fi = frefil(); filstate[fi] = fsread;
+    fo = frefil(); filstate[fo] = fswrite;
+    fin = stdin; fout = NULL;
+    ami_openwin(&fin, &fout, NULL, 1);
+    filtable[fi] = fin;
+    filtable[fo] = fout;
+    vmstdin = fi;
+    vmstdout = fo;
+}
+#endif
 
 int main (int argc, char *argv[])
 
@@ -3458,6 +3610,13 @@ int main (int argc, char *argv[])
     /* prep for the run */
     pc = 0; sp = MAXTOP; np = -1; mp = MAXTOP; ep = 5; srclin = 1;
     expadr = 0; expstk = 0; expmrk = 0;
+
+    /* give a hosting flavor its chance to place the program's standard files
+       (the graphics flavor opens a window over them here) */
+    vmstdin = 0; vmstdout = 0;
+#ifdef GRAPHICS
+    vmhost();
+#endif
 
 #ifndef PACKAGE
     printf("Running program\n");
