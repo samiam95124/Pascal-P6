@@ -1725,7 +1725,7 @@ begin
       putflg('lstcod', slstcod, flstcod, prefix);
       putflg('chk', schk, fchk, prefix);
       putflg('sourceset', ssourceset, fsourceset, prefix);
-      putflg('varblk', svarblk, svarblk, prefix);
+      putflg('varblk', svarblk, fvarblk, prefix);
       putflg('experror', sexperror, fexperror, prefix);
       putflg('echoline', secholine, fecholine, prefix);
       putflg('list', slist, flist, prefix);
