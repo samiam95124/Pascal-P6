@@ -3225,7 +3225,7 @@ end;
         with llp^ do
           begin labid := nil; labval := 0;
             if isid then strassvf(labid, id) { id type label }
-            else labval := val.ival; { numeric type label }
+            else if val.intval then labval := val.ival; { numeric type label }
             if labval > 9999 then error(261);
             genlabel(lbname); defined := false; nextlab := flabel;
             labname := lbname; vlevel := level; slevel := 0;
@@ -3539,14 +3539,16 @@ end;
     if fsp <> nil then begin
       t := basetype(fsp);
       if t = charptr then chart := true
-      else if (t^.form = arrays) and t^.packing then begin
-        if (t^.inxtype = nil) and (t^.size = 1) then chart := true
-        else if chart(t^.aeltype) and intt(t^.inxtype) then begin
-          getbounds(t^.inxtype,fmin,fmax);
-          if (fmin = 1) and (fmax = 1) then chart := true
+      else if t <> nil then begin
+        if (t^.form = arrays) and t^.packing then begin
+          if (t^.inxtype = nil) and (t^.size = 1) then chart := true
+          else if chart(t^.aeltype) and intt(t^.inxtype) then begin
+            getbounds(t^.inxtype,fmin,fmax);
+            if (fmin = 1) and (fmax = 1) then chart := true
+          end
+        end else if (t^.form = arrayc) and t^.packing then begin
+          if chart(t^.abstype) then chart := true
         end
-      end else if (t^.form = arrayc) and t^.packing then begin
-        if chart(t^.abstype) then chart := true
       end
     end
   end;
@@ -3836,11 +3838,12 @@ end;
                      mesl(cdxs[cdx[fop]][4])
                    end;
                 5: begin write(prr,'s',' ':4, '('); dc := 1;
-                     with cstptr[fp2]^ do
-                       for k := setlow to sethigh do
-                         if k in pval then begin
-                           write(prr,k:4); dc := dc+4
-                         end;
+                     if cstptr[fp2]^.cclass = pset then
+                       with cstptr[fp2]^ do
+                         for k := setlow to sethigh do
+                           if k in pval then begin
+                             write(prr,k:4); dc := dc+4
+                           end;
                      write(prr,')'); dc := dc+1;
                      if dc < parfld-1 then lftjst(parfld-dc-1);
                      mesl(cdxs[cdx[fop]][6])
@@ -5053,12 +5056,12 @@ end;
                     id := basetype(fcp^.idtype);
                     lsize := parmsize; if id <> nil then lsize := id^.size;
                     if amd64_sysv then begin
-                      if (fcp^.idtype <> nil) and
-                         not (fcp^.idtype^.form in [records, arrays, power])
-                      then
-                        dplmt := -((pflev+1)*ptrsize + 7*ptrsize)
-                      else
-                        dplmt := marksize+ptrsize+adrsize+parmspc7(pflist)
+                      { aggregate, or (error case) missing, result types take the
+                        frame address; simple results fit the FR upper half }
+                      dplmt := marksize+ptrsize+adrsize+parmspc7(pflist);
+                      if fcp^.idtype <> nil then
+                        if not (fcp^.idtype^.form in [records, arrays, power]) then
+                          dplmt := -((pflev+1)*ptrsize + 7*ptrsize)
                     end else
                       dplmt := marksize+ptrsize+adrsize+locpar { addr of fr }
                   end
@@ -10197,7 +10200,6 @@ end;
       next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
       si := 1; sl := 0; 
       lo := false; fio := true; use := isuse; uselist := nil;
-      if isuse then insertuse(fp);
       me := false;
       repeat
         me :=  incbuf[ii] = ' ';
@@ -10213,7 +10215,7 @@ end;
         end
       until ff or me;
       if not ff then begin err; error(264) end
-      else begin assign(f, fn); reset(f) end;
+      else begin assign(f, fn); reset(f); if isuse then insertuse(fp) end;
       if not ff then putstrs(fp^.mn)
     end;
     if not ff then dispose(fp)
@@ -10302,12 +10304,13 @@ end;
         end;
         insymbol; { skip id }
         if (sym = joinssy) and not dup then begin { post process joins level }
-          if ptop >= displimit then error(267)
-          else begin
-            pile[ptop] := display[top]; { copy out definitions from display }
-            pile[ptop].modnam := thismod; { put back module name }
-            ptop := ptop+1; top := top-1
-          end
+          if ff then { module file was found and a display level was thrown }
+            if ptop >= displimit then error(267)
+            else begin
+              pile[ptop] := display[top]; { copy out definitions from display }
+              pile[ptop].modnam := thismod; { put back module name }
+              ptop := ptop+1; top := top-1
+            end
         end else putstrs(thismod);
       end;
       sys := sy;
@@ -11679,7 +11682,7 @@ begin
   { open input file }
   new(fp); with fp^ do begin 
       next := incstk; incstk := fp; priv := false; linecount := 0; lineout := 0;
-      si := 1; sl := 0; lo := false; fio := false
+      si := 1; sl := 0; lo := false; fio := false; use := false; uselist := nil
   end;
   readline;
   insymbol;
