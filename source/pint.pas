@@ -4456,13 +4456,13 @@ begin (*callsp*)
                           filbuff[fn] := true
                         end;
            { extended Pascaline file handlers }
-           46 (*asst*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad);
+           46 (*asst*): begin popadr(ad1); popint(i); popadr(ad); valfil(ad);
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          assign(filtable[fn], fl1);
                          filanamtab[fn] := true
                        end;
-           56 (*assb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad);
+           56 (*assb*): begin popadr(ad1); popint(i); popadr(ad); valfil(ad);
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          assign(bfiltable[fn], fl1);
@@ -4490,11 +4490,11 @@ begin (*callsp*)
                          append(bfiltable[fn]); filstate[fn] := fwrite;
                          filbuff[fn] := false
                        end;
-           51 (*del*): begin popint(i); popadr(ad1); clrfn(fl1);
+           51 (*del*): begin popadr(ad1); popint(i); clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          delete(fl1)
                        end;
-           52 (*chg*): begin popint(i); popadr(ad1); popint(l); popadr(ad);
+           52 (*chg*): begin popadr(ad1); popint(i); popadr(ad); popint(l);
                          clrfn(fl1); clrfn(fl2);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          for j := 1 to l do fl2[j] := chr(store[ad+j-1]);
@@ -4506,7 +4506,7 @@ begin (*callsp*)
            54 (*loc*): begin popadr(ad); valfil(ad); fn := store[ad];
                          pshint(location(bfiltable[fn]))
                        end;
-           55 (*exs*): begin popint(i); popadr(ad1); clrfn(fl1);
+           55 (*exs*): begin popadr(ad1); popint(i); clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          pshint(ord(exists(fl1)))
                        end;
@@ -4514,7 +4514,7 @@ begin (*callsp*)
            60 (*ast*): begin popint(i);
                          if i = 0 then errorv(ProgramCodeAssertion);
                        end;
-           61 (*asts*): begin popint(i); popadr(ad); popint(j);
+           61 (*asts*): begin popadr(ad); popint(i); popint(j);
                          if j = 0 then errors(ad, i);
                        end;
            70(*rds*),

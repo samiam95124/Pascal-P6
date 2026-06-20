@@ -1946,9 +1946,24 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   procedure getparn(ep: expptr; pn: integer);
   var pp: expptr;
   begin
-      { pull parameters into list in reverse }
+      { pull parameters into list in reverse; pn counts NODES (one per parameter,
+        as for user procedure/function calls) }
       while (pn > 0) and (estack <> nil) do
         begin popstk(pp); pp^.next := ep^.pl; ep^.pl := pp; pn := pn-1 end
+  end;
+
+  { get system-call parameters into list; pn is a stack-WORD count (sppar). A
+    fat-pointer node (insr=2: ldp/mpc) is two words; every other node is one word
+    -- using the same insr=2 test as asspar, since call nodes (cuf/cup/cvf) carry
+    insr=0 and must not be subtracted by their insr. Counting words this way stops
+    exactly at the parameter boundary instead of over-popping a node that belongs
+    below (e.g. the store target of a function result). }
+  procedure getparc(ep: expptr; pn: integer);
+  var pp: expptr;
+  begin
+      while (pn > 0) and (estack <> nil) do
+        begin popstk(pp); pp^.next := ep^.pl; ep^.pl := pp;
+              if instab[pp^.op].insr = 2 then pn := pn-2 else pn := pn-1 end
   end;
 
   { get parameters of procedure/function/system call to parameters list }
@@ -2489,7 +2504,7 @@ begin { assemble }
       getexp(ep);
       if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then
         begin getparn(ep, maxint); revpar(ep); ordpar(ep) end
-      else getparn(ep, sfptab[q].sppar);
+      else getparc(ep, sfptab[q].sppar);
       if sfptab[q].spfunc then pshstk(ep) { non-terminal, stack it }
       else begin { terminal, execute here }
         if sfptab[ep^.q].spkeep then begin

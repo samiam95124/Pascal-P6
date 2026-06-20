@@ -6057,7 +6057,11 @@ end;
       if not stringt(gattr.typtr) then error(208);
       if gattr.typtr <> nil then begin
         len := gattr.typtr^.size div charmax;
-        if not complext(gattr.typtr) then gen2(51(*ldc*),1,len);
+        if not complext(gattr.typtr) then begin
+          gen2(51(*ldc*),1,len);
+          gen1(72(*swp*),stackelsize); { swap ptr and len }
+          gen2(124(*mpc*),0,0)
+        end;
         if lattr.typtr = textptr then { text }
           gen1(30(*csp*),49(*asst*))
         else { binary }
@@ -6108,7 +6112,9 @@ end;
       if gattr.typtr <> nil then begin
         if not complext(gattr.typtr) then begin
           len := gattr.typtr^.size div charmax;
-          gen2(51(*ldc*),1,len)
+          gen2(51(*ldc*),1,len);
+          gen1(72(*swp*),stackelsize); { swap ptr and len }
+          gen2(124(*mpc*),0,0)
         end;
         gen1(30(*csp*),54(*del*));
       end
@@ -6122,7 +6128,9 @@ end;
       if gattr.typtr <> nil then
         if not complext(gattr.typtr) then begin
           len := gattr.typtr^.size div charmax;
-          gen2(51(*ldc*),1,len)
+          gen2(51(*ldc*),1,len);
+          gen1(72(*swp*),stackelsize); { swap ptr and len }
+          gen2(124(*mpc*),0,0)
         end;
       if sy = comma then insymbol else error(20);
       expression(fsys + [rparent], false); loadaddress;
@@ -6130,9 +6138,11 @@ end;
       if gattr.typtr <> nil then
         if not complext(gattr.typtr) then begin
           len := gattr.typtr^.size div charmax;
-          gen2(51(*ldc*),1,len)
+          gen2(51(*ldc*),1,len);
+          gen1(72(*swp*),stackelsize); { swap ptr and len }
+          gen2(124(*mpc*),0,0)
         end;
-      gen1(30(*csp*),55(*del*));
+      gen1(30(*csp*),55(*chg*));
     end;
 
     procedure lengthlocationfunction;
@@ -6158,7 +6168,9 @@ end;
       if gattr.typtr <> nil then begin
         if not complext(gattr.typtr) then begin
           len := gattr.typtr^.size div charmax;
-          gen2(51(*ldc*),1,len)
+          gen2(51(*ldc*),1,len);
+          gen1(72(*swp*),stackelsize); { swap ptr and len }
+          gen2(124(*mpc*),0,0)
         end;
         gen1(30(*csp*),58(*exs*))
       end;
@@ -6183,7 +6195,9 @@ end;
         if gattr.typtr <> nil then begin
           if not complext(gattr.typtr) then begin
             len := gattr.typtr^.size div charmax;
-            gen2(51(*ldc*),1,len)
+            gen2(51(*ldc*),1,len);
+            gen1(72(*swp*),stackelsize); { swap ptr and len }
+            gen2(124(*mpc*),0,0)
           end;
           gen1(30(*csp*),64(*asts*))
         end

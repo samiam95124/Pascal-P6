@@ -2633,7 +2633,7 @@ void callsp(void)
                    break;
     /* extended Pascaline file handlers */
     case 46 /*asst*/:
-    case 56 /*assb*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
+    case 56 /*assb*/: popadr(ad1); popint(i); popadr(ad); valfil(ad);
                   fn = store[ad];
                   for (j = 0; j < i; j++) {
                     if (j >= FILLEN) errore(FILENAMETOOLONG);
@@ -2687,11 +2687,11 @@ void callsp(void)
                 }
                 filstate[fn] = fswrite; filbuff[fn] = FALSE;
                 break;
-    case 51 /*del*/: popint(i); popadr(ad1);
+    case 51 /*del*/: popadr(ad1); popint(i);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
                   i = remove(fl1); if (i) errorv(FILEDELETEFAIL);
                   break;
-    case 52 /*chg*/: popint(i); popadr(ad1); popint(l); popadr(ad);
+    case 52 /*chg*/: popadr(ad1); popint(i); popadr(ad); popint(l);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
                   for (j = 0; j < l; j++) fl2[j] = store[ad+j]; fl2[j] = 0;
                   if (rename(fl1, fl2)) errorv(FILENAMECHANGEFAIL);
@@ -2703,7 +2703,7 @@ void callsp(void)
                   if ((i = ftell(filtable[fn])) < 0) errorv(FILEPOSITIONFAIL);
                   pshint(i+1);
                   break;
-    case 55 /*exs*/: popint(i); popadr(ad1);
+    case 55 /*exs*/: popadr(ad1); popint(i);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
                   if ((fp = fopen(fl1, "r"))) fclose(fp);
                   pshint(!!fp);
@@ -2712,7 +2712,7 @@ void callsp(void)
     case 60 /*ast*/: popint(i);
                   if (i == 0) errorv(PROGRAMCODEASSERTION);
                  break;
-    case 61 /*asts*/: popint(i); popadr(ad); popint(j);
+    case 61 /*asts*/: popadr(ad); popint(i); popint(j);
                   if (j == 0) errors(ad, i);
                   break;
     case 70/*rds*/:
