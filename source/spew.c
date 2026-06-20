@@ -104,6 +104,7 @@ int chrcnts; /* save for chr */
 int totlin;  /* total lines in file */
 int totchr;  /* total characters in file */
 int done;    /* done with testing flag */
+int incomment; /* current test position lies within a comment */
 int single;  /* single fault mode */
 int randomm;  /* random/linear fault mode */
 int limit;   /* limit of iterations to perform */
@@ -120,6 +121,7 @@ typedef struct {
 } errrec;
 errrec errlog[10];
 char srcnam[250]; /* name of source file */
+char cmd[2048];   /* compiler command built from pass-through arguments */
 int chrlin[MAXLIN]; /* number of characters in each line */
 
 /*******************************************************************************
@@ -167,9 +169,22 @@ void countchar(/* source filename */ char* sn)
     cc = 0;
     while ((c = fgetc(sfp)) != EOF) {
 
+        if (c == '\0') { /* not a text source file (e.g. a binary) */
+
+            fprintf(stderr, "*** %s is not a text source file\n", sn);
+            exit(1);
+
+        }
         if (c == '\n') {
 
             totlin++; /* count lines */
+            if (totlin >= MAXLIN) { /* would overflow chrlin[] */
+
+                fprintf(stderr, "*** Source file %s exceeds the %d line limit\n",
+                        sn, MAXLIN);
+                exit(1);
+
+            }
             chrlin[totlin] = cc; /* set character count for this line */
             cc = 0; /* clear character count */
 
@@ -264,11 +279,21 @@ void createtemp(/* alternate character */ char ac,
     int fcc;   /* found line length */
     FILE* sfp; /* source file */
     FILE* dfp; /* destination file */
+    int incmt;  /* currently inside a comment */
+    int instr;  /* currently inside a string */
+    int prevc;  /* previous character (for (* and *) detection) */
+    int cmtbef; /* comment state on arriving at the current character */
+    int nxtl;   /* next testable line when a comment is skipped */
+    int nxtc;   /* next testable character */
+    int gotnxt; /* a next testable position has been found */
 
     lincnts = lincnt; /* save line and character */
     chrcnts = chrcnt;
     done = 0; /* set not done */
     found = 0; /* set not done */
+    incomment = 0; /* set target not in a comment */
+    incmt = 0; instr = 0; prevc = -1; /* clear comment/string scan state */
+    nxtl = 0; nxtc = 0; gotnxt = 0;
     sfp = fopen(sn, "r");
     if (!sfp) {
 
@@ -294,8 +319,29 @@ void createtemp(/* alternate character */ char ac,
             nc = c = getc(sfp); /* get next source file character */
             if (c != EOF) {
 
+                /* Track comment and string state. cmtbef is the state on
+                   arriving at this character; incmt is updated to the state
+                   after it. Comments are { ... } or (* ... *), do not nest, and
+                   either closer ends either opener. Strings are tracked so a
+                   '{' inside a literal is not taken for a comment opener. */
+                cmtbef = incmt;
+                if (incmt) {
+
+                    if (c == '}') incmt = 0;
+                    else if (prevc == '*' && c == ')') incmt = 0;
+
+                } else if (instr) {
+
+                    if (c == '\'') instr = 0;
+
+                } else if (c == '{') incmt = 1;
+                else if (prevc == '(' && c == '*') incmt = 1;
+                else if (c == '\'') instr = 1;
+                prevc = c;
+
                 /* if we are at the test location, replace the character with the
-                   alternate */
+                   alternate, and note whether it falls within a comment (as an
+                   opener, body, or closer) */
                 if (lc == lincnt && cc == chrcnt) {
 
                     /*
@@ -304,6 +350,16 @@ void createtemp(/* alternate character */ char ac,
                      */
                     if (c != '\n') nc = ac; /* replace character */
                     found = 1; /* flag replacement occurred */
+                    incomment = cmtbef || incmt; /* in a comment? */
+
+                }
+                /* once an in-comment target has been passed, remember the first
+                   testable (non-comment, non-string) position after it, so the
+                   whole comment can be skipped in a single step */
+                else if (found && incomment && !gotnxt &&
+                         !cmtbef && !incmt && !instr && c != '\n') {
+
+                    nxtl = lc; nxtc = cc; gotnxt = 1;
 
                 }
                 putc(nc, dfp); /* output to temp file */
@@ -316,6 +372,7 @@ void createtemp(/* alternate character */ char ac,
 
             /* if we found a line, then put the length of that line here */
             if (fcc == 0 && found) fcc = cc;
+            instr = 0; /* a string cannot span a line */
             lc = lc+1; /* count lines */
             cc = 1; /* reset characters */
 
@@ -324,16 +381,24 @@ void createtemp(/* alternate character */ char ac,
     } while (c != EOF);
     fclose(sfp); /* close files */
     fclose(dfp);
-    /* advance character count */
-    chrcnt = chrcnt+1;
-    if (chrcnt >= fcc) { /* off end of line, go next line */
+    /* advance to the next test position */
+    if (!found) done = 1; /* ran off the end of the file */
+    else if (!incomment) { /* normal single-character advance */
 
-        lincnt = lincnt+1; /* count off lines */
-        chrcnt = 1; /* reset character count */
+        chrcnt = chrcnt+1;
+        if (chrcnt >= fcc) { /* off end of line, go next line */
 
-    }
-    /* check test counter off end of file */
-    done = !found;
+            lincnt = lincnt+1; /* count off lines */
+            chrcnt = 1; /* reset character count */
+
+        }
+
+    } else if (gotnxt) { /* skip the entire comment in one step */
+
+        lincnt = nxtl;
+        chrcnt = nxtc;
+
+    } else done = 1; /* comment ran to the end of the file */
 
 }
 
@@ -442,6 +507,7 @@ void anaerr(void)
     int ec; /* error count */
     int ef; /* error line found */
     char* r;
+    char* ep; /* terminator position within the line */
 
     fp = fopen("spewtest.err", "r");
     if (fp) {
@@ -453,11 +519,14 @@ void anaerr(void)
             r = fgets(linbuf, MAXLEN, fp); /* get next line */
             if (r) { /* not EOF */
 
-                /* see if this is the error count line */
-                if (!strncmp(linbuf, "Errors in program: ", 19)) {
+                /* see if this is the error count line; it may be indented when
+                   a preceding message (e.g. an unreferenced-label warning)
+                   leaves the compiler output mid-line */
+                ep = strstr(linbuf, "Errors in program: ");
+                if (ep) {
 
                     /* found, get error count and flag */
-                    sscanf(linbuf, "Errors in program: %d", &ec);
+                    sscanf(ep, "Errors in program: %d", &ec);
                     ef = 1;
 
                 }
@@ -522,9 +591,12 @@ void testparse(/* Alternate character */ char ac,
 
 
     createtemp(ac, sn); /* create temp file */
-    if (!done) { /* not end of file */
+    if (!done && !incomment) { /* not end of file and not within a comment */
 
-        system("compile spewtest");
+        printf("Testing: Line: %d Char: %d\r", lincnts, chrcnts);
+        // printf("spew: will execute: %s\n", cmd);
+        fflush(stdout);
+        system(cmd);
         anaerr(); /* do error analisys */
 
     }
@@ -681,7 +753,48 @@ void main(/* Input argument count */ int argc,
 
     }
     strcpy(srcnam, argv[ai]);
+    /* supply a .pas extension if none is present */
+    {
+
+        int l = strlen(srcnam);
+        if (l < 4 || strcmp(srcnam+l-4, ".pas") != 0) {
+
+            if (l+4 >= (int)sizeof(srcnam)) {
+
+                fprintf(stderr, "*** Source filename too long: %s\n", srcnam);
+                exit(1);
+
+            }
+            strcat(srcnam, ".pas");
+
+        }
+
+    }
     printf("Testing with: %s\n", srcnam);
+    /* build the compiler command: the source under test is the mutated
+       spewtest.pas, and the rest of spew's command line (module paths and any
+       other compiler options) is passed straight through. The error listing is
+       captured into spewtest.err for analysis. */
+    {
+
+        int i; /* argument index */
+
+        strcpy(cmd, "pcom spewtest");
+        for (i = ai+1; argv[i] != NULL; i++) {
+
+            if (strlen(cmd)+strlen(argv[i])+32 >= sizeof(cmd)) {
+
+                fprintf(stderr, "*** Command line too long\n");
+                exit(1);
+
+            }
+            strcat(cmd, " ");
+            strcat(cmd, argv[i]);
+
+        }
+        strcat(cmd, " > spewtest.err 2>&1");
+
+    }
     countchar(srcnam); /* count characters and lines in file, recover previous position */
     if (again) findfault(); /* if again mode find old fault position */
     done = 0; /* set not done */
@@ -694,7 +807,6 @@ void main(/* Input argument count */ int argc,
             chrcnt = randn(chrlin[lincnt])+1;
 
         } while (!chrlin[lincnt]);
-        printf("Testing: Line: %d Char: %d\n", lincnt, chrcnt);
         testparse(ALTCHR, srcnam); /* with alternate character */
 
     } while (!done && --limit > 0 && !single); /* until end of source file
@@ -719,7 +831,9 @@ void main(/* Input argument count */ int argc,
         lincnt = errlog[0].errlin; /* set line */
         chrcnt = errlog[0].errchr; /* set character */
         createtemp(ALTCHR, srcnam); /* reproduce the file */
-        system("compile spewtest");
+        // printf("spew: will execute: %s\n", cmd);
+        fflush(stdout);
+        system(cmd);
         printf("The maximum error case has been reproduced in spewtest.pas\n");
         printf("\n");
 
