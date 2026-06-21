@@ -1,8 +1,3 @@
-P6 Pascal cmach interpreter vs. 0.2.x
-
-loading program
-Running program
-
 *******************************************************************************
 
                  TEST SUITE FOR ISO 7185 PASCAL
@@ -210,6 +205,11 @@ Integer145: 52 s/b 52
 Integer146: 0 s/b 0
 Integer147: 42 s/b 42
 Integer148: 1 2 3 4 5 6 7 8 9 10 11 12 13 s/b 1 2 3 4 5 6 7 8 9 10 11 12 13
+Integer149: 2 s/b 2
+Integer150: 2 s/b 2
+Integer151: 0 s/b 0
+Integer152: 1 s/b 1
+Integer153: 1 s/b 1
 
 ******************* Subranges *******************
 
@@ -524,6 +524,12 @@ true
 tru
 tr
 t
+Boolean47:   true s/b  true
+Boolean48:  false s/b false
+Boolean49:   true s/b  true
+Boolean50:  false s/b false
+Boolean51:   true s/b  true
+Boolean52:  false s/b false
 
 ******************* Scalar *******************
 
@@ -788,6 +794,9 @@ Real154: -8.42200000e+01 s/b -8.422000e+01
 Real155:  8.42200000e+01 s/b  8.422000e+01
 Real156:  -4.33300000e+01 s/b -4.333000e+01
 Real157:  8.42200000e+01 s/b  8.422000e+01
+Real158:  1.00000000e+00 s/b  1.000000e+00
+Real159:  5.00000000e-01 s/b  5.000000e-01
+Real160: -1.00000000e+00 s/b -1.000000e+00
 
 ******************* sets ******************************
 
@@ -927,6 +936,7 @@ s/b
  71  72  73  74  75  76  77  78  79  80
  81  82  83  84  85  86  87  88  89  90
  91  92  93  94  95  96  97  98  99  100
+Pointer26:  1 2 3 s/b 1 2 3
 
 ******************* arrays ******************************
 
@@ -1097,6 +1107,7 @@ Record27:  1 g s/b 1 g
 Record28:  20 19 18 17 16 15 14 13 12 11 s/b 20 19 18 17 16 15 14 13 12 11
 Record29: 42 false  true  1.234000000000000e+01 s/b 42 False True 1.234000000000000e+01
 Record30: 185 s/b 185
+Record31:  42 x s/b 42 x
 
 ******************* files ******************************
 
@@ -1172,6 +1183,7 @@ File19:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
 File20:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
 File21:   50 s/b 50
 File22:    true s/b true
+File23:   17 q s/b 17 q
 
 ************ Procedures and functions ******************
 
@@ -1214,5 +1226,3 @@ ProcedureFunction11:   52 s/b 52
 ProcedureFunction12:   a s/b a
 ProcedureFunction13:   37 s/b 37
 ProcedureFunction14:   35 s/b 35
-
-program complete

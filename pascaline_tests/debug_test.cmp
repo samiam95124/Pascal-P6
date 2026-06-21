@@ -829,9 +829,9 @@ debug> lc debug_test1 1
     000492: AE mrkl*          0000000000000007
    7:      0:        writeln('this is debug test1')
     000492: AE mrkl*          0000000000000007
-    00049B: 05 lao            00000000000036DA
+    00049B: 05 lao            00000000000036D2
     0004A4: 46 stra        02,FFFFFFFFFFFFFFE8
-    0004AE: 38 lca            00000000000036BA
+    0004AE: 38 lca            00000000000036B2
     0004B7: 7B ldci           0000000000000013
     0004C0: 76 swp            0000000000000008
     0004C9: 69 loda        02,FFFFFFFFFFFFFFE8
@@ -874,9 +874,9 @@ debug> lc debug_test1 1 100
     000492: AE mrkl*          0000000000000007
    7:      0:        writeln('this is debug test1')
     000492: AE mrkl*          0000000000000007
-    00049B: 05 lao            00000000000036DA
+    00049B: 05 lao            00000000000036D2
     0004A4: 46 stra        02,FFFFFFFFFFFFFFE8
-    0004AE: 38 lca            00000000000036BA
+    0004AE: 38 lca            00000000000036B2
     0004B7: 7B ldci           0000000000000013
     0004C0: 76 swp            0000000000000008
     0004C9: 69 loda        02,FFFFFFFFFFFFFFE8
@@ -932,9 +932,9 @@ debug> lc debug_test1 1:100
     000492: AE mrkl*          0000000000000007
    7:      0:        writeln('this is debug test1')
     000492: AE mrkl*          0000000000000007
-    00049B: 05 lao            00000000000036DA
+    00049B: 05 lao            00000000000036D2
     0004A4: 46 stra        02,FFFFFFFFFFFFFFE8
-    0004AE: 38 lca            00000000000036BA
+    0004AE: 38 lca            00000000000036B2
     0004B7: 7B ldci           0000000000000013
     0004C0: 76 swp            0000000000000008
     0004C9: 69 loda        02,FFFFFFFFFFFFFFE8
@@ -1189,9 +1189,9 @@ debug> lc debug_test 5 100
     000920: 00 lodi        02,FFFFFFFFFFFFFFD8
     00092A: A1 leqi        
     00092B: 18 fjp            00000000000009E7
-    000934: 05 lao            00000000000036DA
+    000934: 05 lao            00000000000036D2
     00093D: 46 stra        02,FFFFFFFFFFFFFFD0
-    000947: 38 lca            000000000000368F
+    000947: 38 lca            0000000000003687
     000950: 7B ldci           000000000000000B
     000959: 76 swp            0000000000000008
     000962: 69 loda        02,FFFFFFFFFFFFFFD0
@@ -1263,7 +1263,7 @@ debug> lc debug_test 5 100
   66:      0:        b := '6';
     000AA7: AE mrkl*          0000000000000042
     000AB0: 7F ldcc           0000000000000036
-    000AB2: 63 chkc           000000000000367F
+    000AB2: 63 chkc           0000000000003677
     000ABB: 4A strc        02,FFFFFFFFFFFFFFE7
     000AC5: AE mrkl*          0000000000000043
   67:      0:    
@@ -1280,9 +1280,9 @@ debug> lc debug_test 5 100
     000AFB: AE mrkl*          0000000000000046
   70:      0:        writeln('Step past me!');
     000AFB: AE mrkl*          0000000000000046
-    000B04: 05 lao            00000000000036DA
+    000B04: 05 lao            00000000000036D2
     000B0D: 46 stra        02,FFFFFFFFFFFFFFCC
-    000B17: 38 lca            000000000000366A
+    000B17: 38 lca            0000000000003662
     000B20: 7B ldci           000000000000000D
     000B29: 76 swp            0000000000000008
     000B32: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1294,9 +1294,9 @@ debug> lc debug_test 5 100
     000B54: AE mrkl*          0000000000000047
   71:      0:        writeln('And me too!');
     000B54: AE mrkl*          0000000000000047
-    000B5D: 05 lao            00000000000036DA
+    000B5D: 05 lao            00000000000036D2
     000B66: 46 stra        02,FFFFFFFFFFFFFFCC
-    000B70: 38 lca            0000000000003657
+    000B70: 38 lca            000000000000364F
     000B79: 7B ldci           000000000000000B
     000B82: 76 swp            0000000000000008
     000B8B: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1308,7 +1308,7 @@ debug> lc debug_test 5 100
     000BAD: AE mrkl*          0000000000000048
   72:      0:        writeln('1');
     000BAD: AE mrkl*          0000000000000048
-    000BB6: 05 lao            00000000000036DA
+    000BB6: 05 lao            00000000000036D2
     000BBF: 46 stra        02,FFFFFFFFFFFFFFCC
     000BC9: 7F ldcc           0000000000000031
     000BCB: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1320,7 +1320,7 @@ debug> lc debug_test 5 100
     000BF5: AE mrkl*          0000000000000049
   73:      0:        writeln('2');
     000BF5: AE mrkl*          0000000000000049
-    000BFE: 05 lao            00000000000036DA
+    000BFE: 05 lao            00000000000036D2
     000C07: 46 stra        02,FFFFFFFFFFFFFFCC
     000C11: 7F ldcc           0000000000000032
     000C13: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1332,7 +1332,7 @@ debug> lc debug_test 5 100
     000C3D: AE mrkl*          000000000000004A
   74:      0:        writeln('3');
     000C3D: AE mrkl*          000000000000004A
-    000C46: 05 lao            00000000000036DA
+    000C46: 05 lao            00000000000036D2
     000C4F: 46 stra        02,FFFFFFFFFFFFFFCC
     000C59: 7F ldcc           0000000000000033
     000C5B: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1350,7 +1350,7 @@ debug> lc debug_test 5 100
     000CA9: AE mrkl*          000000000000004C
   76:      0:        writeln('4');
     000CA9: AE mrkl*          000000000000004C
-    000CB2: 05 lao            00000000000036DA
+    000CB2: 05 lao            00000000000036D2
     000CBB: 46 stra        02,FFFFFFFFFFFFFFCC
     000CC5: 7F ldcc           0000000000000034
     000CC7: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1368,7 +1368,7 @@ debug> lc debug_test 5 100
     000D15: AE mrkl*          000000000000004E
   78:      0:        writeln('5');
     000D15: AE mrkl*          000000000000004E
-    000D1E: 05 lao            00000000000036DA
+    000D1E: 05 lao            00000000000036D2
     000D27: 46 stra        02,FFFFFFFFFFFFFFCC
     000D31: 7F ldcc           0000000000000035
     000D33: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1385,7 +1385,7 @@ debug> lc debug_test 5 100
     000D79: AE mrkl*          0000000000000050
   80:      0:        writeln('6');
     000D79: AE mrkl*          0000000000000050
-    000D82: 05 lao            00000000000036DA
+    000D82: 05 lao            00000000000036D2
     000D8B: 46 stra        02,FFFFFFFFFFFFFFCC
     000D95: 7F ldcc           0000000000000036
     000D97: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1403,7 +1403,7 @@ debug> lc debug_test 5 100
     000DE5: AE mrkl*          0000000000000052
   82:      0:        writeln('7');
     000DE5: AE mrkl*          0000000000000052
-    000DEE: 05 lao            00000000000036DA
+    000DEE: 05 lao            00000000000036D2
     000DF7: 46 stra        02,FFFFFFFFFFFFFFCC
     000E01: 7F ldcc           0000000000000037
     000E03: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1415,7 +1415,7 @@ debug> lc debug_test 5 100
     000E2D: AE mrkl*          0000000000000053
   83:      0:        writeln('8');
     000E2D: AE mrkl*          0000000000000053
-    000E36: 05 lao            00000000000036DA
+    000E36: 05 lao            00000000000036D2
     000E3F: 46 stra        02,FFFFFFFFFFFFFFCC
     000E49: 7F ldcc           0000000000000038
     000E4B: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1433,7 +1433,7 @@ debug> lc debug_test 5 100
     000E99: AE mrkl*          0000000000000055
   85:      0:        writeln('9');
     000E99: AE mrkl*          0000000000000055
-    000EA2: 05 lao            00000000000036DA
+    000EA2: 05 lao            00000000000036D2
     000EAB: 46 stra        02,FFFFFFFFFFFFFFCC
     000EB5: 7F ldcc           0000000000000039
     000EB7: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1445,9 +1445,9 @@ debug> lc debug_test 5 100
     000EE1: AE mrkl*          0000000000000056
   86:      0:        writeln('10');
     000EE1: AE mrkl*          0000000000000056
-    000EEA: 05 lao            00000000000036DA
+    000EEA: 05 lao            00000000000036D2
     000EF3: 46 stra        02,FFFFFFFFFFFFFFCC
-    000EFD: 38 lca            000000000000364D
+    000EFD: 38 lca            0000000000003645
     000F06: 7B ldci           0000000000000002
     000F0F: 76 swp            0000000000000008
     000F18: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1495,9 +1495,9 @@ debug> lc debug_test 5 100
     001000: AE mrkl*          000000000000005D
   93:      0:        writeln('11');
     001000: AE mrkl*          000000000000005D
-    001009: 05 lao            00000000000036DA
+    001009: 05 lao            00000000000036D2
     001012: 46 stra        02,FFFFFFFFFFFFFFCC
-    00101C: 38 lca            0000000000003643
+    00101C: 38 lca            000000000000363B
     001025: 7B ldci           0000000000000002
     00102E: 76 swp            0000000000000008
     001037: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1721,9 +1721,9 @@ debug> lc debug_test 5:100
     000920: 00 lodi        02,FFFFFFFFFFFFFFD8
     00092A: A1 leqi        
     00092B: 18 fjp            00000000000009E7
-    000934: 05 lao            00000000000036DA
+    000934: 05 lao            00000000000036D2
     00093D: 46 stra        02,FFFFFFFFFFFFFFD0
-    000947: 38 lca            000000000000368F
+    000947: 38 lca            0000000000003687
     000950: 7B ldci           000000000000000B
     000959: 76 swp            0000000000000008
     000962: 69 loda        02,FFFFFFFFFFFFFFD0
@@ -1795,7 +1795,7 @@ debug> lc debug_test 5:100
   66:      0:        b := '6';
     000AA7: AE mrkl*          0000000000000042
     000AB0: 7F ldcc           0000000000000036
-    000AB2: 63 chkc           000000000000367F
+    000AB2: 63 chkc           0000000000003677
     000ABB: 4A strc        02,FFFFFFFFFFFFFFE7
     000AC5: AE mrkl*          0000000000000043
   67:      0:    
@@ -1812,9 +1812,9 @@ debug> lc debug_test 5:100
     000AFB: AE mrkl*          0000000000000046
   70:      0:        writeln('Step past me!');
     000AFB: AE mrkl*          0000000000000046
-    000B04: 05 lao            00000000000036DA
+    000B04: 05 lao            00000000000036D2
     000B0D: 46 stra        02,FFFFFFFFFFFFFFCC
-    000B17: 38 lca            000000000000366A
+    000B17: 38 lca            0000000000003662
     000B20: 7B ldci           000000000000000D
     000B29: 76 swp            0000000000000008
     000B32: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1826,9 +1826,9 @@ debug> lc debug_test 5:100
     000B54: AE mrkl*          0000000000000047
   71:      0:        writeln('And me too!');
     000B54: AE mrkl*          0000000000000047
-    000B5D: 05 lao            00000000000036DA
+    000B5D: 05 lao            00000000000036D2
     000B66: 46 stra        02,FFFFFFFFFFFFFFCC
-    000B70: 38 lca            0000000000003657
+    000B70: 38 lca            000000000000364F
     000B79: 7B ldci           000000000000000B
     000B82: 76 swp            0000000000000008
     000B8B: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1840,7 +1840,7 @@ debug> lc debug_test 5:100
     000BAD: AE mrkl*          0000000000000048
   72:      0:        writeln('1');
     000BAD: AE mrkl*          0000000000000048
-    000BB6: 05 lao            00000000000036DA
+    000BB6: 05 lao            00000000000036D2
     000BBF: 46 stra        02,FFFFFFFFFFFFFFCC
     000BC9: 7F ldcc           0000000000000031
     000BCB: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1852,7 +1852,7 @@ debug> lc debug_test 5:100
     000BF5: AE mrkl*          0000000000000049
   73:      0:        writeln('2');
     000BF5: AE mrkl*          0000000000000049
-    000BFE: 05 lao            00000000000036DA
+    000BFE: 05 lao            00000000000036D2
     000C07: 46 stra        02,FFFFFFFFFFFFFFCC
     000C11: 7F ldcc           0000000000000032
     000C13: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1864,7 +1864,7 @@ debug> lc debug_test 5:100
     000C3D: AE mrkl*          000000000000004A
   74:      0:        writeln('3');
     000C3D: AE mrkl*          000000000000004A
-    000C46: 05 lao            00000000000036DA
+    000C46: 05 lao            00000000000036D2
     000C4F: 46 stra        02,FFFFFFFFFFFFFFCC
     000C59: 7F ldcc           0000000000000033
     000C5B: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1882,7 +1882,7 @@ debug> lc debug_test 5:100
     000CA9: AE mrkl*          000000000000004C
   76:      0:        writeln('4');
     000CA9: AE mrkl*          000000000000004C
-    000CB2: 05 lao            00000000000036DA
+    000CB2: 05 lao            00000000000036D2
     000CBB: 46 stra        02,FFFFFFFFFFFFFFCC
     000CC5: 7F ldcc           0000000000000034
     000CC7: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1900,7 +1900,7 @@ debug> lc debug_test 5:100
     000D15: AE mrkl*          000000000000004E
   78:      0:        writeln('5');
     000D15: AE mrkl*          000000000000004E
-    000D1E: 05 lao            00000000000036DA
+    000D1E: 05 lao            00000000000036D2
     000D27: 46 stra        02,FFFFFFFFFFFFFFCC
     000D31: 7F ldcc           0000000000000035
     000D33: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1917,7 +1917,7 @@ debug> lc debug_test 5:100
     000D79: AE mrkl*          0000000000000050
   80:      0:        writeln('6');
     000D79: AE mrkl*          0000000000000050
-    000D82: 05 lao            00000000000036DA
+    000D82: 05 lao            00000000000036D2
     000D8B: 46 stra        02,FFFFFFFFFFFFFFCC
     000D95: 7F ldcc           0000000000000036
     000D97: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1935,7 +1935,7 @@ debug> lc debug_test 5:100
     000DE5: AE mrkl*          0000000000000052
   82:      0:        writeln('7');
     000DE5: AE mrkl*          0000000000000052
-    000DEE: 05 lao            00000000000036DA
+    000DEE: 05 lao            00000000000036D2
     000DF7: 46 stra        02,FFFFFFFFFFFFFFCC
     000E01: 7F ldcc           0000000000000037
     000E03: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1947,7 +1947,7 @@ debug> lc debug_test 5:100
     000E2D: AE mrkl*          0000000000000053
   83:      0:        writeln('8');
     000E2D: AE mrkl*          0000000000000053
-    000E36: 05 lao            00000000000036DA
+    000E36: 05 lao            00000000000036D2
     000E3F: 46 stra        02,FFFFFFFFFFFFFFCC
     000E49: 7F ldcc           0000000000000038
     000E4B: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1965,7 +1965,7 @@ debug> lc debug_test 5:100
     000E99: AE mrkl*          0000000000000055
   85:      0:        writeln('9');
     000E99: AE mrkl*          0000000000000055
-    000EA2: 05 lao            00000000000036DA
+    000EA2: 05 lao            00000000000036D2
     000EAB: 46 stra        02,FFFFFFFFFFFFFFCC
     000EB5: 7F ldcc           0000000000000039
     000EB7: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -1977,9 +1977,9 @@ debug> lc debug_test 5:100
     000EE1: AE mrkl*          0000000000000056
   86:      0:        writeln('10');
     000EE1: AE mrkl*          0000000000000056
-    000EEA: 05 lao            00000000000036DA
+    000EEA: 05 lao            00000000000036D2
     000EF3: 46 stra        02,FFFFFFFFFFFFFFCC
-    000EFD: 38 lca            000000000000364D
+    000EFD: 38 lca            0000000000003645
     000F06: 7B ldci           0000000000000002
     000F0F: 76 swp            0000000000000008
     000F18: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -2027,9 +2027,9 @@ debug> lc debug_test 5:100
     001000: AE mrkl*          000000000000005D
   93:      0:        writeln('11');
     001000: AE mrkl*          000000000000005D
-    001009: 05 lao            00000000000036DA
+    001009: 05 lao            00000000000036D2
     001012: 46 stra        02,FFFFFFFFFFFFFFCC
-    00101C: 38 lca            0000000000003643
+    00101C: 38 lca            000000000000363B
     001025: 7B ldci           0000000000000002
     00102E: 76 swp            0000000000000008
     001037: 69 loda        02,FFFFFFFFFFFFFFCC
@@ -2081,7 +2081,7 @@ debug> li $0
 
     Addr    Op Ins         P  Q
 ----------------------------------
-    000000: 14 lnp*           000000000000407C
+    000000: 14 lnp*           0000000000004074
     000009: 15 cal            0000000000000413
     000012: 3A stp*        
     000013: F2 eext*       
@@ -2095,7 +2095,7 @@ debug> li $0 $100
 
     Addr    Op Ins         P  Q
 ----------------------------------
-    000000: 14 lnp*           000000000000407C
+    000000: 14 lnp*           0000000000004074
     000009: 15 cal            0000000000000413
     000012: 3A stp*        
     000013: F2 eext*       
@@ -2340,7 +2340,7 @@ debug> li $0:100
 
     Addr    Op Ins         P  Q
 ----------------------------------
-    000000: 14 lnp*           000000000000407C
+    000000: 14 lnp*           0000000000004074
     000009: 15 cal            0000000000000413
     000012: 3A stp*        
     000013: F2 eext*       
@@ -3187,7 +3187,7 @@ debug> p ar[6].rec.a[5]
 
 debug> p pi$
 
-4084
+407C
 
 debug> p pi^
 
@@ -3197,7 +3197,7 @@ debug>
 debug> d 0
 
 
-000000: 14 7C 40 00 00 00 00 00 00 15 13 04 00 00 00 00   .|@.............
+000000: 14 74 40 00 00 00 00 00 00 15 13 04 00 00 00 00   .t@.............
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 
@@ -3205,7 +3205,7 @@ debug> d 0
 debug> d 0 $100
 
 
-000000: 14 7C 40 00 00 00 00 00 00 15 13 04 00 00 00 00   .|@.............
+000000: 14 74 40 00 00 00 00 00 00 15 13 04 00 00 00 00   .t@.............
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 ******: ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **   ****************
@@ -3215,7 +3215,7 @@ debug> d 0 $100
 debug> d 0:$100
 
 
-000000: 14 7C 40 00 00 00 00 00 00 15 13 04 00 00 00 00   .|@.............
+000000: 14 74 40 00 00 00 00 00 00 15 13 04 00 00 00 00   .t@.............
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 
@@ -3979,7 +3979,7 @@ debug> p ar[6].rec.a[5]
 
 debug> p ip$
 
-4094
+408C
 
 debug> p ip^
 
@@ -4845,9 +4845,9 @@ debug> ds
 Storage areas occupied
 
 Program     000000-00303B (12348)
-Constants   00303C-0036D7 (1692)
-Globals     0036D8-00407B (2468)
-Stack/Heap  00407C-FFFFFF (16760708)
+Constants   00303C-0036CF (1684)
+Globals     0036D0-004073 (2468)
+Stack/Heap  004074-FFFFFF (16760716)
 
 debug> dd
 
@@ -5640,10 +5640,10 @@ debug> hs
 
 Heap space breakdown
 
-addr: 00407C:     16: alloc
-addr: 00408C:     16: alloc
-addr: 00409C:     16: alloc
-addr: 0040AC:     16: alloc
+addr: 004074:     16: alloc
+addr: 004084:     16: alloc
+addr: 004094:     16: alloc
+addr: 0040A4:     16: alloc
 debug> s
 
   92:      1:        dispose(d);
@@ -5654,10 +5654,10 @@ debug> hs
 
 Heap space breakdown
 
-addr: 00407C:     16: alloc
-addr: 00408C:     16: alloc
-addr: 00409C:     16: free
-addr: 0040AC:     16: alloc
+addr: 004074:     16: alloc
+addr: 004084:     16: alloc
+addr: 004094:     16: free
+addr: 0040A4:     16: alloc
 debug> tr
 debug> b stop8
 debug> r
@@ -5855,7 +5855,7 @@ debug> li @pc
 
     Addr    Op Ins         P  Q
 ----------------------------------
- *  002E46: 05 lao            00000000000036DA
+ *  002E46: 05 lao            00000000000036D2
     002E4F: 46 stra        01,FFFFFFFFFFFFFFF0
     002E59: 38 lca            000000000000304D
     002E62: 7B ldci           0000000000000008
@@ -5929,20 +5929,20 @@ b*  002E88: 0F csp            0000000000000006
     002E96: AE mrkl*          00000000000000F2
     002E9F: AE mrkl*          00000000000000F3
     002EA8: 7B ldci           0000000000000001
-    002EB1: 03 sroi           000000000000373D
+    002EB1: 03 sroi           0000000000003735
     002EBA: AE mrkl*          00000000000000F4
-    002EC3: 01 ldoi           000000000000373D
+    002EC3: 01 ldoi           0000000000003735
     002ECC: 7B ldci           0000000000000001
 debug> ! dump stack should have parameters on it.
 debug> dst
 00FFFF80: 0000000000000008 (8)
 00FFFF88: 000000000000304D (12365)
 00FFFF90: 0000000000000008 (8)
-00FFFF98: 00000000000036DA (14042)
+00FFFF98: 00000000000036D2 (14034)
 00FFFFA0: 000000000000000A (10)
 00FFFFA8: 0000000000000001 (1)
 00FFFFB0: 000000000000000A (10)
-00FFFFB8: 00000000000036DA (14042)
+00FFFFB8: 00000000000036D2 (14034)
 00FFFFC0: 0000000000FFFFC8 (16777160)
 00FFFFC8: 0000000001000000 (16777216)
 debug> ! step over wrs call
@@ -5962,9 +5962,9 @@ debug> li @pc
     002E96: AE mrkl*          00000000000000F2
     002E9F: AE mrkl*          00000000000000F3
     002EA8: 7B ldci           0000000000000001
-    002EB1: 03 sroi           000000000000373D
+    002EB1: 03 sroi           0000000000003735
     002EBA: AE mrkl*          00000000000000F4
-    002EC3: 01 ldoi           000000000000373D
+    002EC3: 01 ldoi           0000000000003735
     002ECC: 7B ldci           0000000000000001
     002ED5: 1C adi         
 debug> ! step over wln call
@@ -5977,12 +5977,12 @@ debug> li @pc:11
     002E96: AE mrkl*          00000000000000F2
     002E9F: AE mrkl*          00000000000000F3
     002EA8: 7B ldci           0000000000000001
-    002EB1: 03 sroi           000000000000373D
+    002EB1: 03 sroi           0000000000003735
     002EBA: AE mrkl*          00000000000000F4
-    002EC3: 01 ldoi           000000000000373D
+    002EC3: 01 ldoi           0000000000003735
     002ECC: 7B ldci           0000000000000001
     002ED5: 1C adi         
-    002ED6: 03 sroi           000000000000373D
+    002ED6: 03 sroi           0000000000003735
     002EDF: AE mrkl*          00000000000000F5
 debug> ! load analyzer buffer
 debug> an
@@ -6012,19 +6012,19 @@ b*  002EDF: AE mrkl*          00000000000000F5
     002F04: 7B ldci           0000000000000003
     002F0D: 02 stri        01,FFFFFFFFFFFFFFE8
     002F17: 00 lodi        01,FFFFFFFFFFFFFFF0
-    002F21: 03 sroi           0000000000003745
+    002F21: 03 sroi           000000000000373D
     002F2A: AE mrkl*          00000000000000F6
-    002F33: 01 ldoi           0000000000003745
+    002F33: 01 ldoi           000000000000373D
 debug> lia
 
 last instructions executed:
 
-    002ED6: 03 sroi           000000000000373D
+    002ED6: 03 sroi           0000000000003735
     002ED5: 1C adi         
     002ECC: 7B ldci           0000000000000001
-    002EC3: 01 ldoi           000000000000373D
+    002EC3: 01 ldoi           0000000000003735
     002EBA: AE mrkl*          00000000000000F4
-    002EB1: 03 sroi           000000000000373D
+    002EB1: 03 sroi           0000000000003735
     002EA8: 7B ldci           0000000000000001
     002E9F: AE mrkl*          00000000000000F3
     002E96: AE mrkl*          00000000000000F2
@@ -6046,13 +6046,13 @@ debug> li @pc:20
     002F04: 7B ldci           0000000000000003
     002F0D: 02 stri        01,FFFFFFFFFFFFFFE8
     002F17: 00 lodi        01,FFFFFFFFFFFFFFF0
-    002F21: 03 sroi           0000000000003745
+    002F21: 03 sroi           000000000000373D
     002F2A: AE mrkl*          00000000000000F6
-    002F33: 01 ldoi           0000000000003745
+    002F33: 01 ldoi           000000000000373D
     002F3C: 00 lodi        01,FFFFFFFFFFFFFFE8
     002F46: A1 leqi        
     002F47: 18 fjp            0000000000002FE1
-    002F50: 05 lao            00000000000036DA
+    002F50: 05 lao            00000000000036D2
     002F59: 46 stra        01,FFFFFFFFFFFFFFE0
     002F63: 38 lca            000000000000303C
     002F6C: 7B ldci           0000000000000009
@@ -6131,7 +6131,7 @@ debug> p @mp$
 debug> 
 debug> p @np$
 
-40BC
+40B4
 
 debug> st @np $1234
 debug> p @np$
@@ -6146,7 +6146,7 @@ debug> p @constants
 
 debug> p @heapbottom
 
-16508
+16500
 
 debug> 
 debug> ! exit complete
