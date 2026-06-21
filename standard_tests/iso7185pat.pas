@@ -50,28 +50,38 @@
 * available, both in source and in the text files that are processed. The     *
 * ISO 7185 standard does not technically require this.                        *
 *                                                                             *
-* The following sections need to be completed:                                *
+* The following sections track "context testing": the same operation battery  *
+* applied to each type across every access path. Status as of version 1.1:     *
 *                                                                             *
-* 1. Buffer variables. The full suite of handing tests need to be applied to  *
-* file buffer variables as well. This means all integer, character, boolean,  *
-* etc.                                                                        *
+* 1. Buffer variables. DONE. The per-type "xxxcontexts" procedures exercise    *
+* each type's operations through a file buffer variable (f^) alongside the     *
+* other access paths.                                                         *
 *                                                                             *
-* 2. Arrays, records and pointers containing files.                           *
+* 2. Arrays, records and pointers containing files. DONE. "filecontainers"     *
+* exercises a file held in a record field, an array element, a record-of-      *
+* array-of-files, an array-of-records-with-files, and a pointer.              *
 *                                                                             *
-* 3. Pointer variables, array variables, and other complex accesses need to   *
-* subjected to the same extentive tests that base variables are.              *
+* 3. Pointer variables, array variables, and other complex accesses subjected  *
+* to the same extensive tests as base variables. DONE. Each "xxxcontexts"      *
+* procedure sweeps the battery through local, array element, record field,     *
+* nested field, pointer, file buffer, value param, var param, and surrounding  *
+* local.                                                                      *
 *                                                                             *
-* 4. Need a test for access to locals of a surrounding procedure. This tests  *
-* access to a procedure that is local, but not in the same scope.             *
+* 4. Access to locals of a surrounding procedure. DONE. Each "xxxcontexts"     *
+* procedure includes a "surround" nested procedure that reaches its enclosing  *
+* procedure's local.                                                          *
 *                                                                             *
-* 5. Need a dynamic storage test that allocates various sizes, not just       *
-* integers.                                                                   *
+* 5. Dynamic storage that allocates various sizes, not just integers. DONE.    *
+* The pointer context in each "xxxcontexts" allocates that type (char through  *
+* record/array), and the record area tests variant new/dispose sizes.         *
 *                                                                             *
-* 6. Tests for reads from the "input" file, as well as explictly specifying   *
-* the output file.                                                            *
+* 6. Tests for reads from the "input" file, as well as explicitly specifying   *
+* the output file. DEFERRED. Binding a program parameter to an external entity *
+* is implementation-defined in ISO 7185; it is exercised in the Pascaline      *
+* tests where the binding is defined.                                         *
 *                                                                             *
-* 7. Test for page. This would just perform it, and leave it up to the reader *
-* as to what the effect is, since the action is undefined.                    *
+* 7. Test for page. DEFERRED. Its effect is undefined by ISO 7185, so there is *
+* nothing to self-check against.                                              *
 *                                                                             *
 ******************************************************************************}
 
@@ -780,7 +790,1991 @@ begin
   
   junk21 := true+false+real+boolean+text+abs+sqr+sqrt+sin+cos+arctan+ln+
             exp+trunc+round+ord+chr+succ+pred+odd+eoln+eof+read+readln+write+
-            writeln+rewrite+reset+put+get+page+new+dispose+pack+unpack 
+            writeln+rewrite+reset+put+get+page+new+dispose+pack+unpack
+
+end;
+
+{ Context tests: the integer operation battery (assign, +, -, *, div, mod, the
+  ISO non-negative mod on a negative dividend, abs/succ/sqr, relational, odd)
+  run through every access-path context -- local, array element, record field,
+  nested record-array field, pointer, file buffer, value and var parameters,
+  and a surrounding procedure's local. Each line states its expected result
+  inline. This is the prototype shape for sweeping every type through every
+  context. }
+procedure integercontexts;
+
+var lt: integer;
+
+   procedure intvalpar(t: integer); { value-parameter context }
+   begin
+      t := 5;
+      writeln('Int valpar 1:  ', t:1, ' s/b 5');
+      t := t+7; t := t*3; t := t-1;
+      writeln('Int valpar 2:  ', t:1, ' s/b 35');
+      t := t div 4; t := t mod 6;
+      writeln('Int valpar 3:  ', t:1, ' s/b 2');
+      t := t-10; t := t mod 3;
+      writeln('Int valpar 4:  ', t:1, ' s/b 1');
+      t := sqr(succ(abs(t)));
+      writeln('Int valpar 5:  ', t:1, ' s/b 4');
+      writeln('Int valpar 6:  ', (t = 4):5, ' ', odd(t):5, ' s/b  true false')
+   end;
+
+   procedure intvarpar(var t: integer); { var-parameter context }
+   begin
+      t := 5;
+      writeln('Int varpar 1:  ', t:1, ' s/b 5');
+      t := t+7; t := t*3; t := t-1;
+      writeln('Int varpar 2:  ', t:1, ' s/b 35');
+      t := t div 4; t := t mod 6;
+      writeln('Int varpar 3:  ', t:1, ' s/b 2');
+      t := t-10; t := t mod 3;
+      writeln('Int varpar 4:  ', t:1, ' s/b 1');
+      t := sqr(succ(abs(t)));
+      writeln('Int varpar 5:  ', t:1, ' s/b 4');
+      writeln('Int varpar 6:  ', (t = 4):5, ' ', odd(t):5, ' s/b  true false')
+   end;
+
+   procedure intsurround; { surrounding-procedure-local context: works on lt }
+   begin
+      lt := 5;
+      writeln('Int surround 1:  ', lt:1, ' s/b 5');
+      lt := lt+7; lt := lt*3; lt := lt-1;
+      writeln('Int surround 2:  ', lt:1, ' s/b 35');
+      lt := lt div 4; lt := lt mod 6;
+      writeln('Int surround 3:  ', lt:1, ' s/b 2');
+      lt := lt-10; lt := lt mod 3;
+      writeln('Int surround 4:  ', lt:1, ' s/b 1');
+      lt := sqr(succ(abs(lt)));
+      writeln('Int surround 5:  ', lt:1, ' s/b 4');
+      writeln('Int surround 6:  ', (lt = 4):5, ' ', odd(lt):5, ' s/b  true false')
+   end;
+
+begin
+
+   { local variable }
+   lt := 5;
+   writeln('Int local 1:  ', lt:1, ' s/b 5');
+   lt := lt+7; lt := lt*3; lt := lt-1;
+   writeln('Int local 2:  ', lt:1, ' s/b 35');
+   lt := lt div 4; lt := lt mod 6;
+   writeln('Int local 3:  ', lt:1, ' s/b 2');
+   lt := lt-10; lt := lt mod 3;
+   writeln('Int local 4:  ', lt:1, ' s/b 1');
+   lt := sqr(succ(abs(lt)));
+   writeln('Int local 5:  ', lt:1, ' s/b 4');
+   writeln('Int local 6:  ', (lt = 4):5, ' ', odd(lt):5, ' s/b  true false');
+
+   { array element a[i] }
+   a[3] := 5;
+   writeln('Int array 1:  ', a[3]:1, ' s/b 5');
+   a[3] := a[3]+7; a[3] := a[3]*3; a[3] := a[3]-1;
+   writeln('Int array 2:  ', a[3]:1, ' s/b 35');
+   a[3] := a[3] div 4; a[3] := a[3] mod 6;
+   writeln('Int array 3:  ', a[3]:1, ' s/b 2');
+   a[3] := a[3]-10; a[3] := a[3] mod 3;
+   writeln('Int array 4:  ', a[3]:1, ' s/b 1');
+   a[3] := sqr(succ(abs(a[3])));
+   writeln('Int array 5:  ', a[3]:1, ' s/b 4');
+   writeln('Int array 6:  ', (a[3] = 4):5, ' ', odd(a[3]):5, ' s/b  true false');
+
+   { record field arec.i }
+   arec.i := 5;
+   writeln('Int recfld 1:  ', arec.i:1, ' s/b 5');
+   arec.i := arec.i+7; arec.i := arec.i*3; arec.i := arec.i-1;
+   writeln('Int recfld 2:  ', arec.i:1, ' s/b 35');
+   arec.i := arec.i div 4; arec.i := arec.i mod 6;
+   writeln('Int recfld 3:  ', arec.i:1, ' s/b 2');
+   arec.i := arec.i-10; arec.i := arec.i mod 3;
+   writeln('Int recfld 4:  ', arec.i:1, ' s/b 1');
+   arec.i := sqr(succ(abs(arec.i)));
+   writeln('Int recfld 5:  ', arec.i:1, ' s/b 4');
+   writeln('Int recfld 6:  ', (arec.i = 4):5, ' ', odd(arec.i):5, ' s/b  true false');
+
+   { nested: record's array field arec.a[i] }
+   arec.a[3] := 5;
+   writeln('Int recarr 1:  ', arec.a[3]:1, ' s/b 5');
+   arec.a[3] := arec.a[3]+7; arec.a[3] := arec.a[3]*3; arec.a[3] := arec.a[3]-1;
+   writeln('Int recarr 2:  ', arec.a[3]:1, ' s/b 35');
+   arec.a[3] := arec.a[3] div 4; arec.a[3] := arec.a[3] mod 6;
+   writeln('Int recarr 3:  ', arec.a[3]:1, ' s/b 2');
+   arec.a[3] := arec.a[3]-10; arec.a[3] := arec.a[3] mod 3;
+   writeln('Int recarr 4:  ', arec.a[3]:1, ' s/b 1');
+   arec.a[3] := sqr(succ(abs(arec.a[3])));
+   writeln('Int recarr 5:  ', arec.a[3]:1, ' s/b 4');
+   writeln('Int recarr 6:  ', (arec.a[3] = 4):5, ' ', odd(arec.a[3]):5, ' s/b  true false');
+
+   { pointer ip^ }
+   new(ip);
+   ip^ := 5;
+   writeln('Int ptr 1:  ', ip^:1, ' s/b 5');
+   ip^ := ip^+7; ip^ := ip^*3; ip^ := ip^-1;
+   writeln('Int ptr 2:  ', ip^:1, ' s/b 35');
+   ip^ := ip^ div 4; ip^ := ip^ mod 6;
+   writeln('Int ptr 3:  ', ip^:1, ' s/b 2');
+   ip^ := ip^-10; ip^ := ip^ mod 3;
+   writeln('Int ptr 4:  ', ip^:1, ' s/b 1');
+   ip^ := sqr(succ(abs(ip^)));
+   writeln('Int ptr 5:  ', ip^:1, ' s/b 4');
+   writeln('Int ptr 6:  ', (ip^ = 4):5, ' ', odd(ip^):5, ' s/b  true false');
+   dispose(ip);
+
+   { file buffer fi^: swept as an ordinary variable, then the file round-trip
+     and buffer/eof status checks specific to its file nature }
+   rewrite(fi);
+   fi^ := 5;
+   writeln('Int buf 1:  ', fi^:1, ' s/b 5');
+   fi^ := fi^+7; fi^ := fi^*3; fi^ := fi^-1;
+   writeln('Int buf 2:  ', fi^:1, ' s/b 35');
+   fi^ := fi^ div 4; fi^ := fi^ mod 6;
+   writeln('Int buf 3:  ', fi^:1, ' s/b 2');
+   fi^ := fi^-10; fi^ := fi^ mod 3;
+   writeln('Int buf 4:  ', fi^:1, ' s/b 1');
+   fi^ := sqr(succ(abs(fi^)));
+   writeln('Int buf 5:  ', fi^:1, ' s/b 4');
+   fi^ := 42; put(fi);
+   reset(fi);
+   writeln('Int buf eof1:  ', eof(fi):5, ' s/b false');
+   writeln('Int buf rt:  ', fi^:1, ' s/b 42');
+   get(fi);
+   writeln('Int buf eof2:  ', eof(fi):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected) }
+   lt := 99;
+   intvalpar(lt);
+   writeln('Int valpar rt:  ', lt:1, ' s/b 99');
+
+   { var parameter (battery mutates the caller's lt in place) }
+   intvarpar(lt);
+   writeln('Int varpar rt:  ', lt:1, ' s/b 4');
+
+   { surrounding-procedure local (inner routine works on this proc's lt) }
+   intsurround;
+   writeln('Int surround rt:  ', lt:1, ' s/b 4')
+
+end;
+
+procedure charcontexts;
+
+type charr = array[1..5] of char;
+     chrec = record
+                f: char;
+                a: charr
+             end;
+     chptr = ^char;
+     chfil = file of char;
+
+var lt:   char;
+    la:   charr;
+    lr:   chrec;
+    lp:   chptr;
+    lf:   chfil;
+
+   procedure charbat_local;
+   begin
+      lt := 'm';
+      writeln('Char local 1:  ', lt, ' s/b m');
+      lt := succ(lt);
+      writeln('Char local 2:  ', lt, ' s/b n');
+      lt := pred(pred(lt));
+      writeln('Char local 3:  ', lt, ' s/b l');
+      writeln('Char local 4:  ', ord(lt):1, ' s/b 108');
+      writeln('Char local 5:  ', chr(ord(lt)), ' ', (chr(ord(lt)) = lt):5, ' s/b l  true');
+      writeln('Char local 6:  ', (lt = 'l'):5, ' ', (lt <> 'm'):5, ' s/b  true  true');
+      writeln('Char local 7:  ', (lt < 'm'):5, ' ', (lt <= 'l'):5, ' s/b  true  true');
+      writeln('Char local 8:  ', (lt > 'a'):5, ' ', (lt >= 'l'):5, ' s/b  true  true')
+   end;
+
+   procedure charvalpar(t: char); { value-parameter context }
+   begin
+      t := 'm';
+      writeln('Char valpar 1:  ', t, ' s/b m');
+      t := succ(t);
+      writeln('Char valpar 2:  ', t, ' s/b n');
+      t := pred(pred(t));
+      writeln('Char valpar 3:  ', t, ' s/b l');
+      writeln('Char valpar 4:  ', ord(t):1, ' s/b 108');
+      writeln('Char valpar 5:  ', chr(ord(t)), ' ', (chr(ord(t)) = t):5, ' s/b l  true');
+      writeln('Char valpar 6:  ', (t = 'l'):5, ' ', (t <> 'm'):5, ' s/b  true  true');
+      writeln('Char valpar 7:  ', (t < 'm'):5, ' ', (t <= 'l'):5, ' s/b  true  true');
+      writeln('Char valpar 8:  ', (t > 'a'):5, ' ', (t >= 'l'):5, ' s/b  true  true')
+   end;
+
+   procedure charvarpar(var t: char); { var-parameter context }
+   begin
+      t := 'm';
+      writeln('Char varpar 1:  ', t, ' s/b m');
+      t := succ(t);
+      writeln('Char varpar 2:  ', t, ' s/b n');
+      t := pred(pred(t));
+      writeln('Char varpar 3:  ', t, ' s/b l');
+      writeln('Char varpar 4:  ', ord(t):1, ' s/b 108');
+      writeln('Char varpar 5:  ', chr(ord(t)), ' ', (chr(ord(t)) = t):5, ' s/b l  true');
+      writeln('Char varpar 6:  ', (t = 'l'):5, ' ', (t <> 'm'):5, ' s/b  true  true');
+      writeln('Char varpar 7:  ', (t < 'm'):5, ' ', (t <= 'l'):5, ' s/b  true  true');
+      writeln('Char varpar 8:  ', (t > 'a'):5, ' ', (t >= 'l'):5, ' s/b  true  true')
+   end;
+
+   procedure charsurround; { surrounding-procedure-local context: works on lt }
+   begin
+      lt := 'm';
+      writeln('Char surround 1:  ', lt, ' s/b m');
+      lt := succ(lt);
+      writeln('Char surround 2:  ', lt, ' s/b n');
+      lt := pred(pred(lt));
+      writeln('Char surround 3:  ', lt, ' s/b l');
+      writeln('Char surround 4:  ', ord(lt):1, ' s/b 108');
+      writeln('Char surround 5:  ', chr(ord(lt)), ' ', (chr(ord(lt)) = lt):5, ' s/b l  true');
+      writeln('Char surround 6:  ', (lt = 'l'):5, ' ', (lt <> 'm'):5, ' s/b  true  true');
+      writeln('Char surround 7:  ', (lt < 'm'):5, ' ', (lt <= 'l'):5, ' s/b  true  true');
+      writeln('Char surround 8:  ', (lt > 'a'):5, ' ', (lt >= 'l'):5, ' s/b  true  true')
+   end;
+
+begin
+
+   { local variable }
+   charbat_local;
+
+   { array element a[i] }
+   la[3] := 'm';
+   writeln('Char array 1:  ', la[3], ' s/b m');
+   la[3] := succ(la[3]);
+   writeln('Char array 2:  ', la[3], ' s/b n');
+   la[3] := pred(pred(la[3]));
+   writeln('Char array 3:  ', la[3], ' s/b l');
+   writeln('Char array 4:  ', ord(la[3]):1, ' s/b 108');
+   writeln('Char array 5:  ', chr(ord(la[3])), ' ', (chr(ord(la[3])) = la[3]):5, ' s/b l  true');
+   writeln('Char array 6:  ', (la[3] = 'l'):5, ' ', (la[3] <> 'm'):5, ' s/b  true  true');
+   writeln('Char array 7:  ', (la[3] < 'm'):5, ' ', (la[3] <= 'l'):5, ' s/b  true  true');
+   writeln('Char array 8:  ', (la[3] > 'a'):5, ' ', (la[3] >= 'l'):5, ' s/b  true  true');
+
+   { record field lr.f }
+   lr.f := 'm';
+   writeln('Char recfld 1:  ', lr.f, ' s/b m');
+   lr.f := succ(lr.f);
+   writeln('Char recfld 2:  ', lr.f, ' s/b n');
+   lr.f := pred(pred(lr.f));
+   writeln('Char recfld 3:  ', lr.f, ' s/b l');
+   writeln('Char recfld 4:  ', ord(lr.f):1, ' s/b 108');
+   writeln('Char recfld 5:  ', chr(ord(lr.f)), ' ', (chr(ord(lr.f)) = lr.f):5, ' s/b l  true');
+   writeln('Char recfld 6:  ', (lr.f = 'l'):5, ' ', (lr.f <> 'm'):5, ' s/b  true  true');
+   writeln('Char recfld 7:  ', (lr.f < 'm'):5, ' ', (lr.f <= 'l'):5, ' s/b  true  true');
+   writeln('Char recfld 8:  ', (lr.f > 'a'):5, ' ', (lr.f >= 'l'):5, ' s/b  true  true');
+
+   { nested: record's array field lr.a[i] }
+   lr.a[3] := 'm';
+   writeln('Char recarr 1:  ', lr.a[3], ' s/b m');
+   lr.a[3] := succ(lr.a[3]);
+   writeln('Char recarr 2:  ', lr.a[3], ' s/b n');
+   lr.a[3] := pred(pred(lr.a[3]));
+   writeln('Char recarr 3:  ', lr.a[3], ' s/b l');
+   writeln('Char recarr 4:  ', ord(lr.a[3]):1, ' s/b 108');
+   writeln('Char recarr 5:  ', chr(ord(lr.a[3])), ' ', (chr(ord(lr.a[3])) = lr.a[3]):5, ' s/b l  true');
+   writeln('Char recarr 6:  ', (lr.a[3] = 'l'):5, ' ', (lr.a[3] <> 'm'):5, ' s/b  true  true');
+   writeln('Char recarr 7:  ', (lr.a[3] < 'm'):5, ' ', (lr.a[3] <= 'l'):5, ' s/b  true  true');
+   writeln('Char recarr 8:  ', (lr.a[3] > 'a'):5, ' ', (lr.a[3] >= 'l'):5, ' s/b  true  true');
+
+   { pointer lp^ }
+   new(lp);
+   lp^ := 'm';
+   writeln('Char ptr 1:  ', lp^, ' s/b m');
+   lp^ := succ(lp^);
+   writeln('Char ptr 2:  ', lp^, ' s/b n');
+   lp^ := pred(pred(lp^));
+   writeln('Char ptr 3:  ', lp^, ' s/b l');
+   writeln('Char ptr 4:  ', ord(lp^):1, ' s/b 108');
+   writeln('Char ptr 5:  ', chr(ord(lp^)), ' ', (chr(ord(lp^)) = lp^):5, ' s/b l  true');
+   writeln('Char ptr 6:  ', (lp^ = 'l'):5, ' ', (lp^ <> 'm'):5, ' s/b  true  true');
+   writeln('Char ptr 7:  ', (lp^ < 'm'):5, ' ', (lp^ <= 'l'):5, ' s/b  true  true');
+   writeln('Char ptr 8:  ', (lp^ > 'a'):5, ' ', (lp^ >= 'l'):5, ' s/b  true  true');
+   dispose(lp);
+
+   { file buffer lf^: swept as an ordinary variable, then the file round-trip
+     and buffer/eof status checks specific to its file nature }
+   rewrite(lf);
+   lf^ := 'm';
+   writeln('Char buf 1:  ', lf^, ' s/b m');
+   lf^ := succ(lf^);
+   writeln('Char buf 2:  ', lf^, ' s/b n');
+   lf^ := pred(pred(lf^));
+   writeln('Char buf 3:  ', lf^, ' s/b l');
+   writeln('Char buf 4:  ', ord(lf^):1, ' s/b 108');
+   writeln('Char buf 5:  ', chr(ord(lf^)), ' ', (chr(ord(lf^)) = lf^):5, ' s/b l  true');
+   writeln('Char buf 6:  ', (lf^ = 'l'):5, ' ', (lf^ <> 'm'):5, ' s/b  true  true');
+   writeln('Char buf 7:  ', (lf^ < 'm'):5, ' ', (lf^ <= 'l'):5, ' s/b  true  true');
+   writeln('Char buf 8:  ', (lf^ > 'a'):5, ' ', (lf^ >= 'l'):5, ' s/b  true  true');
+   lf^ := 'z'; put(lf);
+   reset(lf);
+   writeln('Char buf eof1:  ', eof(lf):5, ' s/b false');
+   writeln('Char buf rt:  ', lf^, ' s/b z');
+   get(lf);
+   writeln('Char buf eof2:  ', eof(lf):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected) }
+   lt := 'q';
+   charvalpar(lt);
+   writeln('Char valpar rt:  ', lt, ' s/b q');
+
+   { var parameter (battery mutates the caller's lt in place) }
+   charvarpar(lt);
+   writeln('Char varpar rt:  ', lt, ' s/b l');
+
+   { surrounding-procedure local (inner routine works on this proc's lt) }
+   lt := 'q';
+   charsurround;
+   writeln('Char surround rt:  ', lt, ' s/b l')
+
+end;
+
+procedure booleancontexts;
+
+type btyp = boolean;
+     barr = array[1..5] of btyp;
+     brec = record
+               f: btyp;
+               a: barr
+            end;
+     bptr = ^btyp;
+     bfil = file of btyp;
+
+var lt:   btyp;
+    a:    barr;
+    r:    brec;
+    p:    bptr;
+    fi:   bfil;
+
+   procedure boolbat_valpar(t: btyp); { value-parameter context }
+   begin
+      t := true;
+      writeln('Boolean valpar 1:  ', t:5, ' s/b  true');
+      t := t and false;
+      writeln('Boolean valpar 2:  ', t:5, ' s/b false');
+      t := t or true;
+      writeln('Boolean valpar 3:  ', t:5, ' s/b  true');
+      t := not t;
+      writeln('Boolean valpar 4:  ', t:5, ' s/b false');
+      writeln('Boolean valpar 5:  ', (false < true):5, ' ', (false <= true):5,
+              ' ', (true > false):5, ' ', (true >= false):5,
+              ' s/b  true  true  true  true');
+      writeln('Boolean valpar 6:  ', (false = false):5, ' ', (true <> false):5,
+              ' s/b  true  true');
+      writeln('Boolean valpar 7:  ', succ(false):5, ' ', pred(true):5,
+              ' s/b  true false');
+      writeln('Boolean valpar 8:  ', ord(false):1, ' ', ord(true):1,
+              ' s/b 0 1')
+   end;
+
+   procedure boolbat_varpar(var t: btyp); { var-parameter context }
+   begin
+      t := true;
+      writeln('Boolean varpar 1:  ', t:5, ' s/b  true');
+      t := t and false;
+      writeln('Boolean varpar 2:  ', t:5, ' s/b false');
+      t := t or true;
+      writeln('Boolean varpar 3:  ', t:5, ' s/b  true');
+      t := not t;
+      writeln('Boolean varpar 4:  ', t:5, ' s/b false');
+      writeln('Boolean varpar 5:  ', (false < true):5, ' ', (false <= true):5,
+              ' ', (true > false):5, ' ', (true >= false):5,
+              ' s/b  true  true  true  true');
+      writeln('Boolean varpar 6:  ', (false = false):5, ' ', (true <> false):5,
+              ' s/b  true  true');
+      writeln('Boolean varpar 7:  ', succ(false):5, ' ', pred(true):5,
+              ' s/b  true false');
+      writeln('Boolean varpar 8:  ', ord(false):1, ' ', ord(true):1,
+              ' s/b 0 1')
+   end;
+
+   procedure boolsurround; { surrounding-procedure-local context: works on lt }
+   begin
+      lt := true;
+      writeln('Boolean surround 1:  ', lt:5, ' s/b  true');
+      lt := lt and false;
+      writeln('Boolean surround 2:  ', lt:5, ' s/b false');
+      lt := lt or true;
+      writeln('Boolean surround 3:  ', lt:5, ' s/b  true');
+      lt := not lt;
+      writeln('Boolean surround 4:  ', lt:5, ' s/b false');
+      writeln('Boolean surround 5:  ', (false < true):5, ' ', (false <= true):5,
+              ' ', (true > false):5, ' ', (true >= false):5,
+              ' s/b  true  true  true  true');
+      writeln('Boolean surround 6:  ', (false = false):5, ' ', (true <> false):5,
+              ' s/b  true  true');
+      writeln('Boolean surround 7:  ', succ(false):5, ' ', pred(true):5,
+              ' s/b  true false');
+      writeln('Boolean surround 8:  ', ord(false):1, ' ', ord(true):1,
+              ' s/b 0 1')
+   end;
+
+begin
+
+   { local variable }
+   lt := true;
+   writeln('Boolean local 1:  ', lt:5, ' s/b  true');
+   lt := lt and false;
+   writeln('Boolean local 2:  ', lt:5, ' s/b false');
+   lt := lt or true;
+   writeln('Boolean local 3:  ', lt:5, ' s/b  true');
+   lt := not lt;
+   writeln('Boolean local 4:  ', lt:5, ' s/b false');
+   writeln('Boolean local 5:  ', (false < true):5, ' ', (false <= true):5,
+           ' ', (true > false):5, ' ', (true >= false):5,
+           ' s/b  true  true  true  true');
+   writeln('Boolean local 6:  ', (false = false):5, ' ', (true <> false):5,
+           ' s/b  true  true');
+   writeln('Boolean local 7:  ', succ(false):5, ' ', pred(true):5,
+           ' s/b  true false');
+   writeln('Boolean local 8:  ', ord(false):1, ' ', ord(true):1, ' s/b 0 1');
+
+   { array element a[i] }
+   a[3] := true;
+   writeln('Boolean array 1:  ', a[3]:5, ' s/b  true');
+   a[3] := a[3] and false;
+   writeln('Boolean array 2:  ', a[3]:5, ' s/b false');
+   a[3] := a[3] or true;
+   writeln('Boolean array 3:  ', a[3]:5, ' s/b  true');
+   a[3] := not a[3];
+   writeln('Boolean array 4:  ', a[3]:5, ' s/b false');
+   writeln('Boolean array 5:  ', (false < true):5, ' ', (false <= true):5,
+           ' ', (true > false):5, ' ', (true >= false):5,
+           ' s/b  true  true  true  true');
+   writeln('Boolean array 6:  ', (false = false):5, ' ', (true <> false):5,
+           ' s/b  true  true');
+   writeln('Boolean array 7:  ', succ(false):5, ' ', pred(true):5,
+           ' s/b  true false');
+   writeln('Boolean array 8:  ', ord(false):1, ' ', ord(true):1, ' s/b 0 1');
+
+   { record field r.f }
+   r.f := true;
+   writeln('Boolean recfld 1:  ', r.f:5, ' s/b  true');
+   r.f := r.f and false;
+   writeln('Boolean recfld 2:  ', r.f:5, ' s/b false');
+   r.f := r.f or true;
+   writeln('Boolean recfld 3:  ', r.f:5, ' s/b  true');
+   r.f := not r.f;
+   writeln('Boolean recfld 4:  ', r.f:5, ' s/b false');
+   writeln('Boolean recfld 5:  ', (false < true):5, ' ', (false <= true):5,
+           ' ', (true > false):5, ' ', (true >= false):5,
+           ' s/b  true  true  true  true');
+   writeln('Boolean recfld 6:  ', (false = false):5, ' ', (true <> false):5,
+           ' s/b  true  true');
+   writeln('Boolean recfld 7:  ', succ(false):5, ' ', pred(true):5,
+           ' s/b  true false');
+   writeln('Boolean recfld 8:  ', ord(false):1, ' ', ord(true):1, ' s/b 0 1');
+
+   { nested: record's array field r.a[i] }
+   r.a[3] := true;
+   writeln('Boolean recarr 1:  ', r.a[3]:5, ' s/b  true');
+   r.a[3] := r.a[3] and false;
+   writeln('Boolean recarr 2:  ', r.a[3]:5, ' s/b false');
+   r.a[3] := r.a[3] or true;
+   writeln('Boolean recarr 3:  ', r.a[3]:5, ' s/b  true');
+   r.a[3] := not r.a[3];
+   writeln('Boolean recarr 4:  ', r.a[3]:5, ' s/b false');
+   writeln('Boolean recarr 5:  ', (false < true):5, ' ', (false <= true):5,
+           ' ', (true > false):5, ' ', (true >= false):5,
+           ' s/b  true  true  true  true');
+   writeln('Boolean recarr 6:  ', (false = false):5, ' ', (true <> false):5,
+           ' s/b  true  true');
+   writeln('Boolean recarr 7:  ', succ(false):5, ' ', pred(true):5,
+           ' s/b  true false');
+   writeln('Boolean recarr 8:  ', ord(false):1, ' ', ord(true):1, ' s/b 0 1');
+
+   { pointer p^ }
+   new(p);
+   p^ := true;
+   writeln('Boolean ptr 1:  ', p^:5, ' s/b  true');
+   p^ := p^ and false;
+   writeln('Boolean ptr 2:  ', p^:5, ' s/b false');
+   p^ := p^ or true;
+   writeln('Boolean ptr 3:  ', p^:5, ' s/b  true');
+   p^ := not p^;
+   writeln('Boolean ptr 4:  ', p^:5, ' s/b false');
+   writeln('Boolean ptr 5:  ', (false < true):5, ' ', (false <= true):5,
+           ' ', (true > false):5, ' ', (true >= false):5,
+           ' s/b  true  true  true  true');
+   writeln('Boolean ptr 6:  ', (false = false):5, ' ', (true <> false):5,
+           ' s/b  true  true');
+   writeln('Boolean ptr 7:  ', succ(false):5, ' ', pred(true):5,
+           ' s/b  true false');
+   writeln('Boolean ptr 8:  ', ord(false):1, ' ', ord(true):1, ' s/b 0 1');
+   dispose(p);
+
+   { file buffer fi^: swept as an ordinary variable, then the file round-trip
+     and buffer/eof status checks specific to its file nature }
+   rewrite(fi);
+   fi^ := true;
+   writeln('Boolean buf 1:  ', fi^:5, ' s/b  true');
+   fi^ := fi^ and false;
+   writeln('Boolean buf 2:  ', fi^:5, ' s/b false');
+   fi^ := fi^ or true;
+   writeln('Boolean buf 3:  ', fi^:5, ' s/b  true');
+   fi^ := not fi^;
+   writeln('Boolean buf 4:  ', fi^:5, ' s/b false');
+   fi^ := true; put(fi);
+   reset(fi);
+   writeln('Boolean buf eof1:  ', eof(fi):5, ' s/b false');
+   writeln('Boolean buf rt:  ', fi^:5, ' s/b  true');
+   get(fi);
+   writeln('Boolean buf eof2:  ', eof(fi):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected) }
+   lt := false;
+   boolbat_valpar(lt);
+   writeln('Boolean valpar rt:  ', lt:5, ' s/b false');
+
+   { var parameter (battery mutates the caller's lt in place) }
+   boolbat_varpar(lt);
+   writeln('Boolean varpar rt:  ', lt:5, ' s/b false');
+
+   { surrounding-procedure local (inner routine works on this proc's lt) }
+   boolsurround;
+   writeln('Boolean surround rt:  ', lt:5, ' s/b false')
+
+end;
+
+procedure enumcontexts;
+
+type en = (one, two, three, four, five);
+     enarr = array[1..5] of en;
+     enrec = record f: en; a: enarr end;
+     enptr = ^en;
+
+var lt: en;
+    la: enarr;
+    lr: enrec;
+    lp: enptr;
+    lf: file of en;
+
+   procedure enumvalpar(t: en);
+   begin
+   t := three;
+   writeln('Enum valpar 1:  ', ord(t):1, ' s/b 2');
+   t := succ(t);
+   writeln('Enum valpar 2:  ', ord(t):1, ' s/b 3');
+   t := pred(pred(t));
+   writeln('Enum valpar 3:  ', ord(t):1, ' s/b 1');
+   writeln('Enum valpar 4:  ', (t = two):5, ' ', (t <> three):5, ' s/b  true  true');
+   writeln('Enum valpar 5:  ', (t < three):5, ' ', (t <= two):5, ' s/b  true  true');
+   writeln('Enum valpar 6:  ', (t > one):5, ' ', (t >= two):5, ' s/b  true  true')
+   end;
+
+   procedure enumvarpar(var t: en);
+   begin
+   t := three;
+   writeln('Enum varpar 1:  ', ord(t):1, ' s/b 2');
+   t := succ(t);
+   writeln('Enum varpar 2:  ', ord(t):1, ' s/b 3');
+   t := pred(pred(t));
+   writeln('Enum varpar 3:  ', ord(t):1, ' s/b 1');
+   writeln('Enum varpar 4:  ', (t = two):5, ' ', (t <> three):5, ' s/b  true  true');
+   writeln('Enum varpar 5:  ', (t < three):5, ' ', (t <= two):5, ' s/b  true  true');
+   writeln('Enum varpar 6:  ', (t > one):5, ' ', (t >= two):5, ' s/b  true  true')
+   end;
+
+   procedure enumsurround;
+   begin
+   lt := three;
+   writeln('Enum surround 1:  ', ord(lt):1, ' s/b 2');
+   lt := succ(lt);
+   writeln('Enum surround 2:  ', ord(lt):1, ' s/b 3');
+   lt := pred(pred(lt));
+   writeln('Enum surround 3:  ', ord(lt):1, ' s/b 1');
+   writeln('Enum surround 4:  ', (lt = two):5, ' ', (lt <> three):5, ' s/b  true  true');
+   writeln('Enum surround 5:  ', (lt < three):5, ' ', (lt <= two):5, ' s/b  true  true');
+   writeln('Enum surround 6:  ', (lt > one):5, ' ', (lt >= two):5, ' s/b  true  true')
+   end;
+
+begin
+
+   lt := three;
+   writeln('Enum local 1:  ', ord(lt):1, ' s/b 2');
+   lt := succ(lt);
+   writeln('Enum local 2:  ', ord(lt):1, ' s/b 3');
+   lt := pred(pred(lt));
+   writeln('Enum local 3:  ', ord(lt):1, ' s/b 1');
+   writeln('Enum local 4:  ', (lt = two):5, ' ', (lt <> three):5, ' s/b  true  true');
+   writeln('Enum local 5:  ', (lt < three):5, ' ', (lt <= two):5, ' s/b  true  true');
+   writeln('Enum local 6:  ', (lt > one):5, ' ', (lt >= two):5, ' s/b  true  true');
+
+   la[3] := three;
+   writeln('Enum array 1:  ', ord(la[3]):1, ' s/b 2');
+   la[3] := succ(la[3]);
+   writeln('Enum array 2:  ', ord(la[3]):1, ' s/b 3');
+   la[3] := pred(pred(la[3]));
+   writeln('Enum array 3:  ', ord(la[3]):1, ' s/b 1');
+   writeln('Enum array 4:  ', (la[3] = two):5, ' ', (la[3] <> three):5, ' s/b  true  true');
+   writeln('Enum array 5:  ', (la[3] < three):5, ' ', (la[3] <= two):5, ' s/b  true  true');
+   writeln('Enum array 6:  ', (la[3] > one):5, ' ', (la[3] >= two):5, ' s/b  true  true');
+
+   lr.f := three;
+   writeln('Enum recfld 1:  ', ord(lr.f):1, ' s/b 2');
+   lr.f := succ(lr.f);
+   writeln('Enum recfld 2:  ', ord(lr.f):1, ' s/b 3');
+   lr.f := pred(pred(lr.f));
+   writeln('Enum recfld 3:  ', ord(lr.f):1, ' s/b 1');
+   writeln('Enum recfld 4:  ', (lr.f = two):5, ' ', (lr.f <> three):5, ' s/b  true  true');
+   writeln('Enum recfld 5:  ', (lr.f < three):5, ' ', (lr.f <= two):5, ' s/b  true  true');
+   writeln('Enum recfld 6:  ', (lr.f > one):5, ' ', (lr.f >= two):5, ' s/b  true  true');
+
+   lr.a[3] := three;
+   writeln('Enum recarr 1:  ', ord(lr.a[3]):1, ' s/b 2');
+   lr.a[3] := succ(lr.a[3]);
+   writeln('Enum recarr 2:  ', ord(lr.a[3]):1, ' s/b 3');
+   lr.a[3] := pred(pred(lr.a[3]));
+   writeln('Enum recarr 3:  ', ord(lr.a[3]):1, ' s/b 1');
+   writeln('Enum recarr 4:  ', (lr.a[3] = two):5, ' ', (lr.a[3] <> three):5, ' s/b  true  true');
+   writeln('Enum recarr 5:  ', (lr.a[3] < three):5, ' ', (lr.a[3] <= two):5, ' s/b  true  true');
+   writeln('Enum recarr 6:  ', (lr.a[3] > one):5, ' ', (lr.a[3] >= two):5, ' s/b  true  true');
+
+   new(lp);
+   lp^ := three;
+   writeln('Enum ptr 1:  ', ord(lp^):1, ' s/b 2');
+   lp^ := succ(lp^);
+   writeln('Enum ptr 2:  ', ord(lp^):1, ' s/b 3');
+   lp^ := pred(pred(lp^));
+   writeln('Enum ptr 3:  ', ord(lp^):1, ' s/b 1');
+   writeln('Enum ptr 4:  ', (lp^ = two):5, ' ', (lp^ <> three):5, ' s/b  true  true');
+   writeln('Enum ptr 5:  ', (lp^ < three):5, ' ', (lp^ <= two):5, ' s/b  true  true');
+   writeln('Enum ptr 6:  ', (lp^ > one):5, ' ', (lp^ >= two):5, ' s/b  true  true');
+   dispose(lp);
+
+   rewrite(lf);
+   lf^ := three;
+   writeln('Enum buf 1:  ', ord(lf^):1, ' s/b 2');
+   lf^ := succ(lf^);
+   writeln('Enum buf 2:  ', ord(lf^):1, ' s/b 3');
+   lf^ := pred(pred(lf^));
+   writeln('Enum buf 3:  ', ord(lf^):1, ' s/b 1');
+   writeln('Enum buf 4:  ', (lf^ = two):5, ' ', (lf^ <> three):5, ' s/b  true  true');
+   writeln('Enum buf 5:  ', (lf^ < three):5, ' ', (lf^ <= two):5, ' s/b  true  true');
+   writeln('Enum buf 6:  ', (lf^ > one):5, ' ', (lf^ >= two):5, ' s/b  true  true');
+   lf^ := five; put(lf);
+   reset(lf);
+   writeln('Enum buf eof1:  ', eof(lf):5, ' s/b false');
+   writeln('Enum buf rt:  ', ord(lf^):1, ' ', (lf^ > four):5, ' s/b 4  true');
+   get(lf);
+   writeln('Enum buf eof2:  ', eof(lf):5, ' s/b  true');
+
+   lt := one;
+   enumvalpar(lt);
+   writeln('Enum valpar rt:  ', ord(lt):1, ' s/b 0');
+
+   enumvarpar(lt);
+   writeln('Enum varpar rt:  ', ord(lt):1, ' s/b 1');
+
+   lt := one;
+   enumsurround;
+   writeln('Enum surround rt:  ', ord(lt):1, ' s/b 1')
+
+end;
+
+procedure subrangecontexts;
+
+type sr = 1..100;
+
+var lt: sr;
+    a: array[1..5] of sr;
+    arec: record
+            f: sr;
+            a: array[1..5] of sr
+          end;
+    p: ^sr;
+    fi: file of sr;
+
+   procedure srvalpar(t: sr); { value-parameter context }
+   begin
+      t := 5;
+      writeln('Subrange valpar 1:  ', t:1, ' s/b 5');
+      t := t+7; t := t*3; t := t-1;
+      writeln('Subrange valpar 2:  ', t:1, ' s/b 35');
+      t := t div 4; t := t mod 6;
+      writeln('Subrange valpar 3:  ', t:1, ' s/b 2');
+      t := succ(t); t := succ(t); t := pred(t);
+      writeln('Subrange valpar 4:  ', t:1, ' s/b 3');
+      writeln('Subrange valpar 5:  ', (t = 3):5, ' ', (t > 2):5, ' ', (t < 3):5,
+              ' s/b  true  true false')
+   end;
+
+   procedure srvarpar(var t: sr); { var-parameter context }
+   begin
+      t := 5;
+      writeln('Subrange varpar 1:  ', t:1, ' s/b 5');
+      t := t+7; t := t*3; t := t-1;
+      writeln('Subrange varpar 2:  ', t:1, ' s/b 35');
+      t := t div 4; t := t mod 6;
+      writeln('Subrange varpar 3:  ', t:1, ' s/b 2');
+      t := succ(t); t := succ(t); t := pred(t);
+      writeln('Subrange varpar 4:  ', t:1, ' s/b 3');
+      writeln('Subrange varpar 5:  ', (t = 3):5, ' ', (t > 2):5, ' ', (t < 3):5,
+              ' s/b  true  true false')
+   end;
+
+   procedure srsurround; { surrounding-procedure-local context: works on lt }
+   begin
+      lt := 5;
+      writeln('Subrange surround 1:  ', lt:1, ' s/b 5');
+      lt := lt+7; lt := lt*3; lt := lt-1;
+      writeln('Subrange surround 2:  ', lt:1, ' s/b 35');
+      lt := lt div 4; lt := lt mod 6;
+      writeln('Subrange surround 3:  ', lt:1, ' s/b 2');
+      lt := succ(lt); lt := succ(lt); lt := pred(lt);
+      writeln('Subrange surround 4:  ', lt:1, ' s/b 3');
+      writeln('Subrange surround 5:  ', (lt = 3):5, ' ', (lt > 2):5, ' ', (lt < 3):5,
+              ' s/b  true  true false')
+   end;
+
+begin
+
+   { local variable }
+   lt := 5;
+   writeln('Subrange local 1:  ', lt:1, ' s/b 5');
+   lt := lt+7; lt := lt*3; lt := lt-1;
+   writeln('Subrange local 2:  ', lt:1, ' s/b 35');
+   lt := lt div 4; lt := lt mod 6;
+   writeln('Subrange local 3:  ', lt:1, ' s/b 2');
+   lt := succ(lt); lt := succ(lt); lt := pred(lt);
+   writeln('Subrange local 4:  ', lt:1, ' s/b 3');
+   writeln('Subrange local 5:  ', (lt = 3):5, ' ', (lt > 2):5, ' ', (lt < 3):5,
+           ' s/b  true  true false');
+
+   { array element a[i] }
+   a[3] := 5;
+   writeln('Subrange array 1:  ', a[3]:1, ' s/b 5');
+   a[3] := a[3]+7; a[3] := a[3]*3; a[3] := a[3]-1;
+   writeln('Subrange array 2:  ', a[3]:1, ' s/b 35');
+   a[3] := a[3] div 4; a[3] := a[3] mod 6;
+   writeln('Subrange array 3:  ', a[3]:1, ' s/b 2');
+   a[3] := succ(a[3]); a[3] := succ(a[3]); a[3] := pred(a[3]);
+   writeln('Subrange array 4:  ', a[3]:1, ' s/b 3');
+   writeln('Subrange array 5:  ', (a[3] = 3):5, ' ', (a[3] > 2):5, ' ', (a[3] < 3):5,
+           ' s/b  true  true false');
+
+   { record field arec.f }
+   arec.f := 5;
+   writeln('Subrange recfld 1:  ', arec.f:1, ' s/b 5');
+   arec.f := arec.f+7; arec.f := arec.f*3; arec.f := arec.f-1;
+   writeln('Subrange recfld 2:  ', arec.f:1, ' s/b 35');
+   arec.f := arec.f div 4; arec.f := arec.f mod 6;
+   writeln('Subrange recfld 3:  ', arec.f:1, ' s/b 2');
+   arec.f := succ(arec.f); arec.f := succ(arec.f); arec.f := pred(arec.f);
+   writeln('Subrange recfld 4:  ', arec.f:1, ' s/b 3');
+   writeln('Subrange recfld 5:  ', (arec.f = 3):5, ' ', (arec.f > 2):5, ' ', (arec.f < 3):5,
+           ' s/b  true  true false');
+
+   { nested: record's array field arec.a[i] }
+   arec.a[3] := 5;
+   writeln('Subrange recarr 1:  ', arec.a[3]:1, ' s/b 5');
+   arec.a[3] := arec.a[3]+7; arec.a[3] := arec.a[3]*3; arec.a[3] := arec.a[3]-1;
+   writeln('Subrange recarr 2:  ', arec.a[3]:1, ' s/b 35');
+   arec.a[3] := arec.a[3] div 4; arec.a[3] := arec.a[3] mod 6;
+   writeln('Subrange recarr 3:  ', arec.a[3]:1, ' s/b 2');
+   arec.a[3] := succ(arec.a[3]); arec.a[3] := succ(arec.a[3]); arec.a[3] := pred(arec.a[3]);
+   writeln('Subrange recarr 4:  ', arec.a[3]:1, ' s/b 3');
+   writeln('Subrange recarr 5:  ', (arec.a[3] = 3):5, ' ', (arec.a[3] > 2):5, ' ', (arec.a[3] < 3):5,
+           ' s/b  true  true false');
+
+   { pointer p^ }
+   new(p);
+   p^ := 5;
+   writeln('Subrange ptr 1:  ', p^:1, ' s/b 5');
+   p^ := p^+7; p^ := p^*3; p^ := p^-1;
+   writeln('Subrange ptr 2:  ', p^:1, ' s/b 35');
+   p^ := p^ div 4; p^ := p^ mod 6;
+   writeln('Subrange ptr 3:  ', p^:1, ' s/b 2');
+   p^ := succ(p^); p^ := succ(p^); p^ := pred(p^);
+   writeln('Subrange ptr 4:  ', p^:1, ' s/b 3');
+   writeln('Subrange ptr 5:  ', (p^ = 3):5, ' ', (p^ > 2):5, ' ', (p^ < 3):5,
+           ' s/b  true  true false');
+   dispose(p);
+
+   { file buffer fi^: swept as an ordinary variable, then the file round-trip
+     and buffer/eof status checks specific to its file nature }
+   rewrite(fi);
+   fi^ := 5;
+   writeln('Subrange buf 1:  ', fi^:1, ' s/b 5');
+   fi^ := fi^+7; fi^ := fi^*3; fi^ := fi^-1;
+   writeln('Subrange buf 2:  ', fi^:1, ' s/b 35');
+   fi^ := fi^ div 4; fi^ := fi^ mod 6;
+   writeln('Subrange buf 3:  ', fi^:1, ' s/b 2');
+   fi^ := succ(fi^); fi^ := succ(fi^); fi^ := pred(fi^);
+   writeln('Subrange buf 4:  ', fi^:1, ' s/b 3');
+   fi^ := 42; put(fi);
+   reset(fi);
+   writeln('Subrange buf eof1:  ', eof(fi):5, ' s/b false');
+   writeln('Subrange buf rt:  ', fi^:1, ' s/b 42');
+   get(fi);
+   writeln('Subrange buf eof2:  ', eof(fi):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected) }
+   lt := 99;
+   srvalpar(lt);
+   writeln('Subrange valpar rt:  ', lt:1, ' s/b 99');
+
+   { var parameter (battery mutates the caller's lt in place) }
+   srvarpar(lt);
+   writeln('Subrange varpar rt:  ', lt:1, ' s/b 3');
+
+   { surrounding-procedure local (inner routine works on this proc's lt) }
+   srsurround;
+   writeln('Subrange surround rt:  ', lt:1, ' s/b 3')
+
+end;
+
+procedure realcontexts;
+
+type rec  = record f: real; a: array [1..5] of real end;
+     rp   = ^real;
+     rfil = file of real;
+
+var lt:   real;
+    a:    array [1..5] of real;
+    arec: rec;
+    p:    rp;
+    f:    rfil;
+
+   procedure realvalpar(t: real); { value-parameter context }
+   begin
+      t := 16.0;
+      writeln('Real valpar 1:  ', t:15, ' s/b  1.600000e+01');
+      t := sqrt(t);
+      writeln('Real valpar 2:  ', t:15, ' s/b  4.000000e+00');
+      t := sqr(t);
+      writeln('Real valpar 3:  ', t:15, ' s/b  1.600000e+01');
+      t := t-12.0; t := t*2.0; t := t/4.0; t := t+1.0;
+      writeln('Real valpar 4:  ', t:15, ' s/b  3.000000e+00');
+      writeln('Real valpar 5:  ', abs(-t):15, ' s/b  3.000000e+00');
+      writeln('Real valpar 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+      writeln('Real valpar 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+      writeln('Real valpar 8:  ', (t = 3.0):5, ' ', (t < 4.0):5, ' ', (t > 4.0):5, ' ', (t <> 4.0):5, ' s/b  true  true false  true');
+      writeln('Real valpar 9:  ', trunc(3.7):1, ' ', round(3.5):1, ' s/b 3 4')
+   end;
+
+   procedure realvarpar(var t: real); { var-parameter context }
+   begin
+      t := 16.0;
+      writeln('Real varpar 1:  ', t:15, ' s/b  1.600000e+01');
+      t := sqrt(t);
+      writeln('Real varpar 2:  ', t:15, ' s/b  4.000000e+00');
+      t := sqr(t);
+      writeln('Real varpar 3:  ', t:15, ' s/b  1.600000e+01');
+      t := t-12.0; t := t*2.0; t := t/4.0; t := t+1.0;
+      writeln('Real varpar 4:  ', t:15, ' s/b  3.000000e+00');
+      writeln('Real varpar 5:  ', abs(-t):15, ' s/b  3.000000e+00');
+      writeln('Real varpar 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+      writeln('Real varpar 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+      writeln('Real varpar 8:  ', (t = 3.0):5, ' ', (t < 4.0):5, ' ', (t > 4.0):5, ' ', (t <> 4.0):5, ' s/b  true  true false  true');
+      writeln('Real varpar 9:  ', trunc(3.7):1, ' ', round(3.5):1, ' s/b 3 4')
+   end;
+
+   procedure realsurround; { surrounding-procedure-local context: works on lt }
+   begin
+      lt := 16.0;
+      writeln('Real surround 1:  ', lt:15, ' s/b  1.600000e+01');
+      lt := sqrt(lt);
+      writeln('Real surround 2:  ', lt:15, ' s/b  4.000000e+00');
+      lt := sqr(lt);
+      writeln('Real surround 3:  ', lt:15, ' s/b  1.600000e+01');
+      lt := lt-12.0; lt := lt*2.0; lt := lt/4.0; lt := lt+1.0;
+      writeln('Real surround 4:  ', lt:15, ' s/b  3.000000e+00');
+      writeln('Real surround 5:  ', abs(-lt):15, ' s/b  3.000000e+00');
+      writeln('Real surround 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+      writeln('Real surround 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+      writeln('Real surround 8:  ', (lt = 3.0):5, ' ', (lt < 4.0):5, ' ', (lt > 4.0):5, ' ', (lt <> 4.0):5, ' s/b  true  true false  true');
+      writeln('Real surround 9:  ', trunc(3.7):1, ' ', round(3.5):1, ' s/b 3 4')
+   end;
+
+begin
+
+   { local variable }
+   lt := 16.0;
+   writeln('Real local 1:  ', lt:15, ' s/b  1.600000e+01');
+   lt := sqrt(lt);
+   writeln('Real local 2:  ', lt:15, ' s/b  4.000000e+00');
+   lt := sqr(lt);
+   writeln('Real local 3:  ', lt:15, ' s/b  1.600000e+01');
+   lt := lt-12.0; lt := lt*2.0; lt := lt/4.0; lt := lt+1.0;
+   writeln('Real local 4:  ', lt:15, ' s/b  3.000000e+00');
+   writeln('Real local 5:  ', abs(-lt):15, ' s/b  3.000000e+00');
+   writeln('Real local 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+   writeln('Real local 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+   writeln('Real local 8:  ', (lt = 3.0):5, ' ', (lt < 4.0):5, ' ', (lt > 4.0):5, ' ', (lt <> 4.0):5, ' s/b  true  true false  true');
+   writeln('Real local 9:  ', trunc(3.7):1, ' ', round(3.5):1, ' s/b 3 4');
+
+   { array element a[i] }
+   a[3] := 16.0;
+   writeln('Real array 1:  ', a[3]:15, ' s/b  1.600000e+01');
+   a[3] := sqrt(a[3]);
+   writeln('Real array 2:  ', a[3]:15, ' s/b  4.000000e+00');
+   a[3] := sqr(a[3]);
+   writeln('Real array 3:  ', a[3]:15, ' s/b  1.600000e+01');
+   a[3] := a[3]-12.0; a[3] := a[3]*2.0; a[3] := a[3]/4.0; a[3] := a[3]+1.0;
+   writeln('Real array 4:  ', a[3]:15, ' s/b  3.000000e+00');
+   writeln('Real array 5:  ', abs(-a[3]):15, ' s/b  3.000000e+00');
+   writeln('Real array 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+   writeln('Real array 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+   writeln('Real array 8:  ', (a[3] = 3.0):5, ' ', (a[3] < 4.0):5, ' ', (a[3] > 4.0):5, ' ', (a[3] <> 4.0):5, ' s/b  true  true false  true');
+   writeln('Real array 9:  ', trunc(3.7):1, ' ', round(3.5):1, ' s/b 3 4');
+
+   { record field arec.f }
+   arec.f := 16.0;
+   writeln('Real recfld 1:  ', arec.f:15, ' s/b  1.600000e+01');
+   arec.f := sqrt(arec.f);
+   writeln('Real recfld 2:  ', arec.f:15, ' s/b  4.000000e+00');
+   arec.f := sqr(arec.f);
+   writeln('Real recfld 3:  ', arec.f:15, ' s/b  1.600000e+01');
+   arec.f := arec.f-12.0; arec.f := arec.f*2.0; arec.f := arec.f/4.0; arec.f := arec.f+1.0;
+   writeln('Real recfld 4:  ', arec.f:15, ' s/b  3.000000e+00');
+   writeln('Real recfld 5:  ', abs(-arec.f):15, ' s/b  3.000000e+00');
+   writeln('Real recfld 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+   writeln('Real recfld 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+   writeln('Real recfld 8:  ', (arec.f = 3.0):5, ' ', (arec.f < 4.0):5, ' ', (arec.f > 4.0):5, ' ', (arec.f <> 4.0):5, ' s/b  true  true false  true');
+   writeln('Real recfld 9:  ', trunc(3.7):1, ' ', round(3.5):1, ' s/b 3 4');
+
+   { nested: record's array field arec.a[i] }
+   arec.a[3] := 16.0;
+   writeln('Real recarr 1:  ', arec.a[3]:15, ' s/b  1.600000e+01');
+   arec.a[3] := sqrt(arec.a[3]);
+   writeln('Real recarr 2:  ', arec.a[3]:15, ' s/b  4.000000e+00');
+   arec.a[3] := sqr(arec.a[3]);
+   writeln('Real recarr 3:  ', arec.a[3]:15, ' s/b  1.600000e+01');
+   arec.a[3] := arec.a[3]-12.0; arec.a[3] := arec.a[3]*2.0; arec.a[3] := arec.a[3]/4.0; arec.a[3] := arec.a[3]+1.0;
+   writeln('Real recarr 4:  ', arec.a[3]:15, ' s/b  3.000000e+00');
+   writeln('Real recarr 5:  ', abs(-arec.a[3]):15, ' s/b  3.000000e+00');
+   writeln('Real recarr 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+   writeln('Real recarr 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+   writeln('Real recarr 8:  ', (arec.a[3] = 3.0):5, ' ', (arec.a[3] < 4.0):5, ' ', (arec.a[3] > 4.0):5, ' ', (arec.a[3] <> 4.0):5, ' s/b  true  true false  true');
+   writeln('Real recarr 9:  ', trunc(3.7):1, ' ', round(3.5):1, ' s/b 3 4');
+
+   { pointer p^ }
+   new(p);
+   p^ := 16.0;
+   writeln('Real ptr 1:  ', p^:15, ' s/b  1.600000e+01');
+   p^ := sqrt(p^);
+   writeln('Real ptr 2:  ', p^:15, ' s/b  4.000000e+00');
+   p^ := sqr(p^);
+   writeln('Real ptr 3:  ', p^:15, ' s/b  1.600000e+01');
+   p^ := p^-12.0; p^ := p^*2.0; p^ := p^/4.0; p^ := p^+1.0;
+   writeln('Real ptr 4:  ', p^:15, ' s/b  3.000000e+00');
+   writeln('Real ptr 5:  ', abs(-p^):15, ' s/b  3.000000e+00');
+   writeln('Real ptr 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+   writeln('Real ptr 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+   writeln('Real ptr 8:  ', (p^ = 3.0):5, ' ', (p^ < 4.0):5, ' ', (p^ > 4.0):5, ' ', (p^ <> 4.0):5, ' s/b  true  true false  true');
+   writeln('Real ptr 9:  ', trunc(3.7):1, ' ', round(3.5):1, ' s/b 3 4');
+   dispose(p);
+
+   { file buffer f^: swept as an ordinary variable, then the file round-trip }
+   rewrite(f);
+   f^ := 16.0;
+   writeln('Real buf 1:  ', f^:15, ' s/b  1.600000e+01');
+   f^ := sqrt(f^);
+   writeln('Real buf 2:  ', f^:15, ' s/b  4.000000e+00');
+   f^ := sqr(f^);
+   writeln('Real buf 3:  ', f^:15, ' s/b  1.600000e+01');
+   f^ := f^-12.0; f^ := f^*2.0; f^ := f^/4.0; f^ := f^+1.0;
+   writeln('Real buf 4:  ', f^:15, ' s/b  3.000000e+00');
+   writeln('Real buf 5:  ', abs(-f^):15, ' s/b  3.000000e+00');
+   writeln('Real buf 6:  ', exp(0.0):15, ' ', ln(1.0):15, ' s/b  1.000000e+00  0.000000e+00');
+   writeln('Real buf 7:  ', sin(0.0):15, ' ', cos(0.0):15, ' ', arctan(0.0):15, ' s/b  0.000000e+00  1.000000e+00  0.000000e+00');
+   f^ := 42.0; put(f);
+   reset(f);
+   writeln('Real buf eof1:  ', eof(f):5, ' s/b false');
+   writeln('Real buf rt:  ', f^:15, ' s/b  4.200000e+01');
+   get(f);
+   writeln('Real buf eof2:  ', eof(f):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected) }
+   lt := 99.0;
+   realvalpar(lt);
+   writeln('Real valpar rt:  ', lt:15, ' s/b  9.900000e+01');
+
+   { var parameter (battery mutates the caller's lt in place) }
+   realvarpar(lt);
+   writeln('Real varpar rt:  ', lt:15, ' s/b  3.000000e+00');
+
+   { surrounding-procedure local (inner routine works on this proc's lt) }
+   realsurround;
+   writeln('Real surround rt:  ', lt:15, ' s/b  3.000000e+00')
+
+end;
+
+procedure setcontexts;
+
+type cs = set of 'a'..'z';
+
+var lt: cs;
+    a: array[1..5] of cs;
+    arec: record
+             f: cs;
+             a: array[1..5] of cs
+          end;
+    sp: ^cs;
+    fi: file of cs;
+    b1, b2, b3: boolean;
+
+   procedure setvalpar(t: cs); { value-parameter context }
+   var b1, b2: boolean;
+   begin
+      t := ['a'..'e'];
+      b1 := 'c' in t; b2 := 'g' in t;
+      writeln('Set valpar 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+      b1 := 'g' in (t + ['f'..'h']); b2 := 'b' in (t + ['f'..'h']);
+      writeln('Set valpar 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+      b1 := 'a' in (t - ['a'..'b']); b2 := 'c' in (t - ['a'..'b']);
+      writeln('Set valpar 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+      b1 := 'c' in (t * ['d'..'z']); b2 := 'e' in (t * ['d'..'z']);
+      writeln('Set valpar 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+      b1 := ['a'..'c'] <= t; b2 := t >= ['a'..'c'];
+      writeln('Set valpar 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+      b1 := t = ['a'..'e']; b2 := t <> ['a'..'e'];
+      writeln('Set valpar 6:  ', b1:5, ' ', b2:5, ' s/b  true false')
+   end;
+
+   procedure setvarpar(var t: cs); { var-parameter context }
+   var b1, b2: boolean;
+   begin
+      t := ['a'..'e'];
+      b1 := 'c' in t; b2 := 'g' in t;
+      writeln('Set varpar 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+      b1 := 'g' in (t + ['f'..'h']); b2 := 'b' in (t + ['f'..'h']);
+      writeln('Set varpar 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+      b1 := 'a' in (t - ['a'..'b']); b2 := 'c' in (t - ['a'..'b']);
+      writeln('Set varpar 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+      b1 := 'c' in (t * ['d'..'z']); b2 := 'e' in (t * ['d'..'z']);
+      writeln('Set varpar 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+      b1 := ['a'..'c'] <= t; b2 := t >= ['a'..'c'];
+      writeln('Set varpar 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+      b1 := t = ['a'..'e']; b2 := t <> ['a'..'e'];
+      writeln('Set varpar 6:  ', b1:5, ' ', b2:5, ' s/b  true false');
+      { mutate caller's variable so var-propagation is observable }
+      t := ['x'..'z']
+   end;
+
+   procedure setsurround; { surrounding-procedure-local context: works on lt }
+   var b1, b2: boolean;
+   begin
+      lt := ['a'..'e'];
+      b1 := 'c' in lt; b2 := 'g' in lt;
+      writeln('Set surround 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+      b1 := 'g' in (lt + ['f'..'h']); b2 := 'b' in (lt + ['f'..'h']);
+      writeln('Set surround 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+      b1 := 'a' in (lt - ['a'..'b']); b2 := 'c' in (lt - ['a'..'b']);
+      writeln('Set surround 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+      b1 := 'c' in (lt * ['d'..'z']); b2 := 'e' in (lt * ['d'..'z']);
+      writeln('Set surround 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+      b1 := ['a'..'c'] <= lt; b2 := lt >= ['a'..'c'];
+      writeln('Set surround 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+      b1 := lt = ['a'..'e']; b2 := lt <> ['a'..'e'];
+      writeln('Set surround 6:  ', b1:5, ' ', b2:5, ' s/b  true false');
+      lt := ['x'..'z']
+   end;
+
+begin
+
+   { local variable }
+   lt := ['a'..'e'];
+   b1 := 'c' in lt; b2 := 'g' in lt;
+   writeln('Set local 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+   b1 := 'g' in (lt + ['f'..'h']); b2 := 'b' in (lt + ['f'..'h']);
+   writeln('Set local 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := 'a' in (lt - ['a'..'b']); b2 := 'c' in (lt - ['a'..'b']);
+   writeln('Set local 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := 'c' in (lt * ['d'..'z']); b2 := 'e' in (lt * ['d'..'z']);
+   writeln('Set local 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := ['a'..'c'] <= lt; b2 := lt >= ['a'..'c'];
+   writeln('Set local 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := lt = ['a'..'e']; b2 := lt <> ['a'..'e'];
+   writeln('Set local 6:  ', b1:5, ' ', b2:5, ' s/b  true false');
+
+   { array element a[i] }
+   a[3] := ['a'..'e'];
+   b1 := 'c' in a[3]; b2 := 'g' in a[3];
+   writeln('Set array 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+   b1 := 'g' in (a[3] + ['f'..'h']); b2 := 'b' in (a[3] + ['f'..'h']);
+   writeln('Set array 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := 'a' in (a[3] - ['a'..'b']); b2 := 'c' in (a[3] - ['a'..'b']);
+   writeln('Set array 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := 'c' in (a[3] * ['d'..'z']); b2 := 'e' in (a[3] * ['d'..'z']);
+   writeln('Set array 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := ['a'..'c'] <= a[3]; b2 := a[3] >= ['a'..'c'];
+   writeln('Set array 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := a[3] = ['a'..'e']; b2 := a[3] <> ['a'..'e'];
+   writeln('Set array 6:  ', b1:5, ' ', b2:5, ' s/b  true false');
+
+   { record field arec.f }
+   arec.f := ['a'..'e'];
+   b1 := 'c' in arec.f; b2 := 'g' in arec.f;
+   writeln('Set recfld 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+   b1 := 'g' in (arec.f + ['f'..'h']); b2 := 'b' in (arec.f + ['f'..'h']);
+   writeln('Set recfld 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := 'a' in (arec.f - ['a'..'b']); b2 := 'c' in (arec.f - ['a'..'b']);
+   writeln('Set recfld 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := 'c' in (arec.f * ['d'..'z']); b2 := 'e' in (arec.f * ['d'..'z']);
+   writeln('Set recfld 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := ['a'..'c'] <= arec.f; b2 := arec.f >= ['a'..'c'];
+   writeln('Set recfld 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := arec.f = ['a'..'e']; b2 := arec.f <> ['a'..'e'];
+   writeln('Set recfld 6:  ', b1:5, ' ', b2:5, ' s/b  true false');
+
+   { nested: record's array field arec.a[i] }
+   arec.a[3] := ['a'..'e'];
+   b1 := 'c' in arec.a[3]; b2 := 'g' in arec.a[3];
+   writeln('Set recarr 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+   b1 := 'g' in (arec.a[3] + ['f'..'h']); b2 := 'b' in (arec.a[3] + ['f'..'h']);
+   writeln('Set recarr 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := 'a' in (arec.a[3] - ['a'..'b']); b2 := 'c' in (arec.a[3] - ['a'..'b']);
+   writeln('Set recarr 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := 'c' in (arec.a[3] * ['d'..'z']); b2 := 'e' in (arec.a[3] * ['d'..'z']);
+   writeln('Set recarr 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := ['a'..'c'] <= arec.a[3]; b2 := arec.a[3] >= ['a'..'c'];
+   writeln('Set recarr 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := arec.a[3] = ['a'..'e']; b2 := arec.a[3] <> ['a'..'e'];
+   writeln('Set recarr 6:  ', b1:5, ' ', b2:5, ' s/b  true false');
+
+   { pointer sp^ }
+   new(sp);
+   sp^ := ['a'..'e'];
+   b1 := 'c' in sp^; b2 := 'g' in sp^;
+   writeln('Set ptr 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+   b1 := 'g' in (sp^ + ['f'..'h']); b2 := 'b' in (sp^ + ['f'..'h']);
+   writeln('Set ptr 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := 'a' in (sp^ - ['a'..'b']); b2 := 'c' in (sp^ - ['a'..'b']);
+   writeln('Set ptr 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := 'c' in (sp^ * ['d'..'z']); b2 := 'e' in (sp^ * ['d'..'z']);
+   writeln('Set ptr 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := ['a'..'c'] <= sp^; b2 := sp^ >= ['a'..'c'];
+   writeln('Set ptr 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := sp^ = ['a'..'e']; b2 := sp^ <> ['a'..'e'];
+   writeln('Set ptr 6:  ', b1:5, ' ', b2:5, ' s/b  true false');
+   dispose(sp);
+
+   { file buffer fi^: swept as an ordinary variable, then the file round-trip
+     and buffer/eof status checks specific to its file nature }
+   rewrite(fi);
+   fi^ := ['a'..'e'];
+   b1 := 'c' in fi^; b2 := 'g' in fi^;
+   writeln('Set buf 1:  ', b1:5, ' ', b2:5, ' s/b  true false');
+   b1 := 'g' in (fi^ + ['f'..'h']); b2 := 'b' in (fi^ + ['f'..'h']);
+   writeln('Set buf 2:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := 'a' in (fi^ - ['a'..'b']); b2 := 'c' in (fi^ - ['a'..'b']);
+   writeln('Set buf 3:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := 'c' in (fi^ * ['d'..'z']); b2 := 'e' in (fi^ * ['d'..'z']);
+   writeln('Set buf 4:  ', b1:5, ' ', b2:5, ' s/b false  true');
+   b1 := ['a'..'c'] <= fi^; b2 := fi^ >= ['a'..'c'];
+   writeln('Set buf 5:  ', b1:5, ' ', b2:5, ' s/b  true  true');
+   b1 := fi^ = ['a'..'e']; b2 := fi^ <> ['a'..'e'];
+   writeln('Set buf 6:  ', b1:5, ' ', b2:5, ' s/b  true false');
+   fi^ := ['p'..'t']; put(fi);
+   reset(fi);
+   writeln('Set buf eof1:  ', eof(fi):5, ' s/b false');
+   b1 := 'r' in fi^; b2 := 'a' in fi^; b3 := (fi^ = ['p'..'t']);
+   writeln('Set buf rt:  ', b1:5, ' ', b2:5, ' ', b3:5, ' s/b  true false  true');
+   get(fi);
+   writeln('Set buf eof2:  ', eof(fi):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected) }
+   lt := ['m'..'p'];
+   setvalpar(lt);
+   b1 := 'n' in lt; b2 := 'a' in lt; b3 := (lt = ['m'..'p']);
+   writeln('Set valpar rt:  ', b1:5, ' ', b2:5, ' ', b3:5, ' s/b  true false  true');
+
+   { var parameter (battery mutates the caller's lt in place -> ['x'..'z']) }
+   setvarpar(lt);
+   b1 := 'y' in lt; b2 := 'a' in lt; b3 := (lt = ['x'..'z']);
+   writeln('Set varpar rt:  ', b1:5, ' ', b2:5, ' ', b3:5, ' s/b  true false  true');
+
+   { surrounding-procedure local (inner routine works on this proc's lt -> ['x'..'z']) }
+   setsurround;
+   b1 := 'y' in lt; b2 := 'a' in lt; b3 := (lt = ['x'..'z']);
+   writeln('Set surround rt:  ', b1:5, ' ', b2:5, ' ', b3:5, ' s/b  true false  true')
+
+end;
+
+procedure stringcontexts;
+
+type s10 = packed array [1..10] of char;
+     sptr = ^s10;
+     srec = record
+               f: s10;
+               a: array [1..5] of s10
+            end;
+
+var lt:   s10;
+    a:    array [1..5] of s10;
+    arec: srec;
+    sp:   sptr;
+    fs:   file of s10;
+    i:    integer;
+
+   procedure strvalpar(t: s10); { value-parameter context }
+   begin
+      t := 'abcdefghij';
+      writeln('String valpar 1:  ', t, ' s/b abcdefghij');
+      writeln('String valpar 2:  ', (t = 'abcdefghij'):5, ' ',
+              (t <> 'abcdefghij'):5, ' s/b  true false');
+      writeln('String valpar 3:  ', (t < 'abcdefghix'):5, ' ',
+              (t <= 'abcdefghij'):5, ' s/b  true  true');
+      writeln('String valpar 4:  ', (t > 'abcdefghij'):5, ' ',
+              (t >= 'abcdefghij'):5, ' s/b false  true');
+      writeln('String valpar 5:  ', t[3], ' s/b c');
+      t[3] := 'C';
+      writeln('String valpar 6:  ', t, ' s/b abCdefghij')
+   end;
+
+   procedure strvarpar(var t: s10); { var-parameter context }
+   begin
+      t := 'abcdefghij';
+      writeln('String varpar 1:  ', t, ' s/b abcdefghij');
+      writeln('String varpar 2:  ', (t = 'abcdefghij'):5, ' ',
+              (t <> 'abcdefghij'):5, ' s/b  true false');
+      writeln('String varpar 3:  ', (t < 'abcdefghix'):5, ' ',
+              (t <= 'abcdefghij'):5, ' s/b  true  true');
+      writeln('String varpar 4:  ', (t > 'abcdefghij'):5, ' ',
+              (t >= 'abcdefghij'):5, ' s/b false  true');
+      writeln('String varpar 5:  ', t[3], ' s/b c');
+      t[3] := 'C';
+      writeln('String varpar 6:  ', t, ' s/b abCdefghij')
+   end;
+
+   procedure strsurround; { surrounding-procedure-local context: works on lt }
+   begin
+      lt := 'abcdefghij';
+      writeln('String surround 1:  ', lt, ' s/b abcdefghij');
+      writeln('String surround 2:  ', (lt = 'abcdefghij'):5, ' ',
+              (lt <> 'abcdefghij'):5, ' s/b  true false');
+      writeln('String surround 3:  ', (lt < 'abcdefghix'):5, ' ',
+              (lt <= 'abcdefghij'):5, ' s/b  true  true');
+      writeln('String surround 4:  ', (lt > 'abcdefghij'):5, ' ',
+              (lt >= 'abcdefghij'):5, ' s/b false  true');
+      writeln('String surround 5:  ', lt[3], ' s/b c');
+      lt[3] := 'C';
+      writeln('String surround 6:  ', lt, ' s/b abCdefghij')
+   end;
+
+begin
+
+   { local variable }
+   lt := 'abcdefghij';
+   writeln('String local 1:  ', lt, ' s/b abcdefghij');
+   writeln('String local 2:  ', (lt = 'abcdefghij'):5, ' ',
+           (lt <> 'abcdefghij'):5, ' s/b  true false');
+   writeln('String local 3:  ', (lt < 'abcdefghix'):5, ' ',
+           (lt <= 'abcdefghij'):5, ' s/b  true  true');
+   writeln('String local 4:  ', (lt > 'abcdefghij'):5, ' ',
+           (lt >= 'abcdefghij'):5, ' s/b false  true');
+   writeln('String local 5:  ', lt[3], ' s/b c');
+   lt[3] := 'C';
+   writeln('String local 6:  ', lt, ' s/b abCdefghij');
+
+   { array element a[i] }
+   a[3] := 'abcdefghij';
+   writeln('String array 1:  ', a[3], ' s/b abcdefghij');
+   writeln('String array 2:  ', (a[3] = 'abcdefghij'):5, ' ',
+           (a[3] <> 'abcdefghij'):5, ' s/b  true false');
+   writeln('String array 3:  ', (a[3] < 'abcdefghix'):5, ' ',
+           (a[3] <= 'abcdefghij'):5, ' s/b  true  true');
+   writeln('String array 4:  ', (a[3] > 'abcdefghij'):5, ' ',
+           (a[3] >= 'abcdefghij'):5, ' s/b false  true');
+   writeln('String array 5:  ', a[3][3], ' s/b c');
+   a[3][3] := 'C';
+   writeln('String array 6:  ', a[3], ' s/b abCdefghij');
+
+   { record field arec.f }
+   arec.f := 'abcdefghij';
+   writeln('String recfld 1:  ', arec.f, ' s/b abcdefghij');
+   writeln('String recfld 2:  ', (arec.f = 'abcdefghij'):5, ' ',
+           (arec.f <> 'abcdefghij'):5, ' s/b  true false');
+   writeln('String recfld 3:  ', (arec.f < 'abcdefghix'):5, ' ',
+           (arec.f <= 'abcdefghij'):5, ' s/b  true  true');
+   writeln('String recfld 4:  ', (arec.f > 'abcdefghij'):5, ' ',
+           (arec.f >= 'abcdefghij'):5, ' s/b false  true');
+   writeln('String recfld 5:  ', arec.f[3], ' s/b c');
+   arec.f[3] := 'C';
+   writeln('String recfld 6:  ', arec.f, ' s/b abCdefghij');
+
+   { nested: record's array field arec.a[i] }
+   arec.a[3] := 'abcdefghij';
+   writeln('String recarr 1:  ', arec.a[3], ' s/b abcdefghij');
+   writeln('String recarr 2:  ', (arec.a[3] = 'abcdefghij'):5, ' ',
+           (arec.a[3] <> 'abcdefghij'):5, ' s/b  true false');
+   writeln('String recarr 3:  ', (arec.a[3] < 'abcdefghix'):5, ' ',
+           (arec.a[3] <= 'abcdefghij'):5, ' s/b  true  true');
+   writeln('String recarr 4:  ', (arec.a[3] > 'abcdefghij'):5, ' ',
+           (arec.a[3] >= 'abcdefghij'):5, ' s/b false  true');
+   writeln('String recarr 5:  ', arec.a[3][3], ' s/b c');
+   arec.a[3][3] := 'C';
+   writeln('String recarr 6:  ', arec.a[3], ' s/b abCdefghij');
+
+   { pointer sp^ }
+   new(sp);
+   sp^ := 'abcdefghij';
+   writeln('String ptr 1:  ', sp^, ' s/b abcdefghij');
+   writeln('String ptr 2:  ', (sp^ = 'abcdefghij'):5, ' ',
+           (sp^ <> 'abcdefghij'):5, ' s/b  true false');
+   writeln('String ptr 3:  ', (sp^ < 'abcdefghix'):5, ' ',
+           (sp^ <= 'abcdefghij'):5, ' s/b  true  true');
+   writeln('String ptr 4:  ', (sp^ > 'abcdefghij'):5, ' ',
+           (sp^ >= 'abcdefghij'):5, ' s/b false  true');
+   writeln('String ptr 5:  ', sp^[3], ' s/b c');
+   sp^[3] := 'C';
+   writeln('String ptr 6:  ', sp^, ' s/b abCdefghij');
+   dispose(sp);
+
+   { file buffer fs^: swept as an ordinary variable, then the file round-trip
+     and buffer/eof status checks specific to its file nature }
+   rewrite(fs);
+   fs^ := 'abcdefghij';
+   writeln('String buf 1:  ', fs^, ' s/b abcdefghij');
+   writeln('String buf 2:  ', (fs^ = 'abcdefghij'):5, ' ',
+           (fs^ <> 'abcdefghij'):5, ' s/b  true false');
+   writeln('String buf 3:  ', (fs^ < 'abcdefghix'):5, ' ',
+           (fs^ <= 'abcdefghij'):5, ' s/b  true  true');
+   writeln('String buf 4:  ', (fs^ > 'abcdefghij'):5, ' ',
+           (fs^ >= 'abcdefghij'):5, ' s/b false  true');
+   writeln('String buf 5:  ', fs^[3], ' s/b c');
+   fs^[3] := 'C';
+   writeln('String buf 6:  ', fs^, ' s/b abCdefghij');
+   fs^ := 'klmnopqrst'; put(fs);
+   reset(fs);
+   writeln('String buf eof1:  ', eof(fs):5, ' s/b false');
+   writeln('String buf rt:  ', fs^, ' s/b klmnopqrst');
+   get(fs);
+   writeln('String buf eof2:  ', eof(fs):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected) }
+   lt := 'zzzzzzzzzz';
+   strvalpar(lt);
+   writeln('String valpar rt:  ', lt, ' s/b zzzzzzzzzz');
+
+   { var parameter (battery mutates the caller's lt in place) }
+   strvarpar(lt);
+   writeln('String varpar rt:  ', lt, ' s/b abCdefghij');
+
+   { surrounding-procedure local (inner routine works on this proc's lt) }
+   strsurround;
+   writeln('String surround rt:  ', lt, ' s/b abCdefghij');
+
+   i := 1; { reference i to avoid unused-variable concern }
+   if i = 0 then writeln(lt)
+
+end;
+
+procedure pointercontexts;
+
+type pint = ^integer;
+     parr = array [1..5] of pint;
+     prec = record
+               f: pint;
+               a: parr
+            end;
+     ppoint = ^pint;
+     pfile = file of pint;
+
+var lt: pint;             { local variable }
+    ar: parr;             { array element }
+    rec: prec;            { record field and nested array field }
+    pp: ppoint;           { pointer to the type }
+    fp: pfile;            { file of the type }
+    q: pint;              { alias / equality companion }
+
+   procedure ptrvalpar(t: pint); { value-parameter context }
+   var q: pint;
+   begin
+      new(t);
+      t^ := 5;
+      writeln('Pointer valpar 1:  ', t^:1, ' s/b 5');
+      t^ := t^+7; t^ := t^*3; t^ := t^-1;
+      writeln('Pointer valpar 2:  ', t^:1, ' s/b 35');
+      t^ := t^ div 4; t^ := t^ mod 6;
+      writeln('Pointer valpar 3:  ', t^:1, ' s/b 2');
+      q := t;
+      t^ := t^*5;
+      writeln('Pointer valpar 4:  ', q^:1, ' s/b 10');
+      writeln('Pointer valpar 5:  ', (q = t):5, ' ', (q <> t):5, ' s/b  true false');
+      q := nil;
+      writeln('Pointer valpar 6:  ', (q = nil):5, ' ', (t = nil):5, ' ', (t <> q):5,
+              ' s/b  true false  true');
+      dispose(t)
+   end;
+
+   procedure ptrvarpar(var t: pint); { var-parameter context }
+   var q: pint;
+   begin
+      new(t);
+      t^ := 5;
+      writeln('Pointer varpar 1:  ', t^:1, ' s/b 5');
+      t^ := t^+7; t^ := t^*3; t^ := t^-1;
+      writeln('Pointer varpar 2:  ', t^:1, ' s/b 35');
+      t^ := t^ div 4; t^ := t^ mod 6;
+      writeln('Pointer varpar 3:  ', t^:1, ' s/b 2');
+      q := t;
+      t^ := t^*5;
+      writeln('Pointer varpar 4:  ', q^:1, ' s/b 10');
+      writeln('Pointer varpar 5:  ', (q = t):5, ' ', (q <> t):5, ' s/b  true false');
+      q := nil;
+      writeln('Pointer varpar 6:  ', (q = nil):5, ' ', (t = nil):5, ' ', (t <> q):5,
+              ' s/b  true false  true')
+   end;
+
+   procedure ptrsurround; { surrounding-procedure-local context: works on lt }
+   var q: pint;
+   begin
+      new(lt);
+      lt^ := 5;
+      writeln('Pointer surround 1:  ', lt^:1, ' s/b 5');
+      lt^ := lt^+7; lt^ := lt^*3; lt^ := lt^-1;
+      writeln('Pointer surround 2:  ', lt^:1, ' s/b 35');
+      lt^ := lt^ div 4; lt^ := lt^ mod 6;
+      writeln('Pointer surround 3:  ', lt^:1, ' s/b 2');
+      q := lt;
+      lt^ := lt^*5;
+      writeln('Pointer surround 4:  ', q^:1, ' s/b 10');
+      writeln('Pointer surround 5:  ', (q = lt):5, ' ', (q <> lt):5, ' s/b  true false');
+      q := nil;
+      writeln('Pointer surround 6:  ', (q = nil):5, ' ', (lt = nil):5, ' ', (lt <> q):5,
+              ' s/b  true false  true')
+   end;
+
+begin
+
+   { local variable }
+   new(lt);
+   lt^ := 5;
+   writeln('Pointer local 1:  ', lt^:1, ' s/b 5');
+   lt^ := lt^+7; lt^ := lt^*3; lt^ := lt^-1;
+   writeln('Pointer local 2:  ', lt^:1, ' s/b 35');
+   lt^ := lt^ div 4; lt^ := lt^ mod 6;
+   writeln('Pointer local 3:  ', lt^:1, ' s/b 2');
+   q := lt;
+   lt^ := lt^*5;
+   writeln('Pointer local 4:  ', q^:1, ' s/b 10');
+   writeln('Pointer local 5:  ', (q = lt):5, ' ', (q <> lt):5, ' s/b  true false');
+   q := nil;
+   writeln('Pointer local 6:  ', (q = nil):5, ' ', (lt = nil):5, ' ', (lt <> q):5,
+           ' s/b  true false  true');
+   dispose(lt);
+
+   { array element ar[i] }
+   new(ar[3]);
+   ar[3]^ := 5;
+   writeln('Pointer array 1:  ', ar[3]^:1, ' s/b 5');
+   ar[3]^ := ar[3]^+7; ar[3]^ := ar[3]^*3; ar[3]^ := ar[3]^-1;
+   writeln('Pointer array 2:  ', ar[3]^:1, ' s/b 35');
+   ar[3]^ := ar[3]^ div 4; ar[3]^ := ar[3]^ mod 6;
+   writeln('Pointer array 3:  ', ar[3]^:1, ' s/b 2');
+   q := ar[3];
+   ar[3]^ := ar[3]^*5;
+   writeln('Pointer array 4:  ', q^:1, ' s/b 10');
+   writeln('Pointer array 5:  ', (q = ar[3]):5, ' ', (q <> ar[3]):5, ' s/b  true false');
+   q := nil;
+   writeln('Pointer array 6:  ', (q = nil):5, ' ', (ar[3] = nil):5, ' ', (ar[3] <> q):5,
+           ' s/b  true false  true');
+   dispose(ar[3]);
+
+   { record field rec.f }
+   new(rec.f);
+   rec.f^ := 5;
+   writeln('Pointer recfld 1:  ', rec.f^:1, ' s/b 5');
+   rec.f^ := rec.f^+7; rec.f^ := rec.f^*3; rec.f^ := rec.f^-1;
+   writeln('Pointer recfld 2:  ', rec.f^:1, ' s/b 35');
+   rec.f^ := rec.f^ div 4; rec.f^ := rec.f^ mod 6;
+   writeln('Pointer recfld 3:  ', rec.f^:1, ' s/b 2');
+   q := rec.f;
+   rec.f^ := rec.f^*5;
+   writeln('Pointer recfld 4:  ', q^:1, ' s/b 10');
+   writeln('Pointer recfld 5:  ', (q = rec.f):5, ' ', (q <> rec.f):5, ' s/b  true false');
+   q := nil;
+   writeln('Pointer recfld 6:  ', (q = nil):5, ' ', (rec.f = nil):5, ' ', (rec.f <> q):5,
+           ' s/b  true false  true');
+   dispose(rec.f);
+
+   { nested: record's array field rec.a[i] }
+   new(rec.a[3]);
+   rec.a[3]^ := 5;
+   writeln('Pointer recarr 1:  ', rec.a[3]^:1, ' s/b 5');
+   rec.a[3]^ := rec.a[3]^+7; rec.a[3]^ := rec.a[3]^*3; rec.a[3]^ := rec.a[3]^-1;
+   writeln('Pointer recarr 2:  ', rec.a[3]^:1, ' s/b 35');
+   rec.a[3]^ := rec.a[3]^ div 4; rec.a[3]^ := rec.a[3]^ mod 6;
+   writeln('Pointer recarr 3:  ', rec.a[3]^:1, ' s/b 2');
+   q := rec.a[3];
+   rec.a[3]^ := rec.a[3]^*5;
+   writeln('Pointer recarr 4:  ', q^:1, ' s/b 10');
+   writeln('Pointer recarr 5:  ', (q = rec.a[3]):5, ' ', (q <> rec.a[3]):5, ' s/b  true false');
+   q := nil;
+   writeln('Pointer recarr 6:  ', (q = nil):5, ' ', (rec.a[3] = nil):5, ' ', (rec.a[3] <> q):5,
+           ' s/b  true false  true');
+   dispose(rec.a[3]);
+
+   { pointer pp^ (a pointer-to-pointer; the type lives at pp^) }
+   new(pp);
+   new(pp^);
+   pp^^ := 5;
+   writeln('Pointer ptr 1:  ', pp^^:1, ' s/b 5');
+   pp^^ := pp^^+7; pp^^ := pp^^*3; pp^^ := pp^^-1;
+   writeln('Pointer ptr 2:  ', pp^^:1, ' s/b 35');
+   pp^^ := pp^^ div 4; pp^^ := pp^^ mod 6;
+   writeln('Pointer ptr 3:  ', pp^^:1, ' s/b 2');
+   q := pp^;
+   pp^^ := pp^^*5;
+   writeln('Pointer ptr 4:  ', q^:1, ' s/b 10');
+   writeln('Pointer ptr 5:  ', (q = pp^):5, ' ', (q <> pp^):5, ' s/b  true false');
+   q := nil;
+   writeln('Pointer ptr 6:  ', (q = nil):5, ' ', (pp^ = nil):5, ' ', (pp^ <> q):5,
+           ' s/b  true false  true');
+   dispose(pp^);
+   dispose(pp);
+
+   { file buffer fp^: swept as an ordinary variable, then a file round-trip.
+     fp^ is itself a pointer (pint); the integers live at fp^^. }
+   rewrite(fp);
+   new(fp^);
+   fp^^ := 5;
+   writeln('Pointer buf 1:  ', fp^^:1, ' s/b 5');
+   fp^^ := fp^^+7; fp^^ := fp^^*3; fp^^ := fp^^-1;
+   writeln('Pointer buf 2:  ', fp^^:1, ' s/b 35');
+   fp^^ := fp^^ div 4; fp^^ := fp^^ mod 6;
+   writeln('Pointer buf 3:  ', fp^^:1, ' s/b 2');
+   q := fp^;
+   fp^^ := fp^^*5;
+   writeln('Pointer buf 4:  ', q^:1, ' s/b 10');
+   writeln('Pointer buf 5:  ', (q = fp^):5, ' ', (q <> fp^):5, ' s/b  true false');
+   { file round-trip: write a pointer value out, read it back, follow it }
+   new(fp^);
+   fp^^ := 42; put(fp);
+   reset(fp);
+   writeln('Pointer buf eof1:  ', eof(fp):5, ' s/b false');
+   writeln('Pointer buf rt:  ', fp^^:1, ' s/b 42');
+   get(fp);
+   writeln('Pointer buf eof2:  ', eof(fp):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected).
+     pass a pointer with a known target; the callee reassigns its copy via new,
+     so the caller's pointer still addresses the original 77. }
+   new(lt); lt^ := 77;
+   ptrvalpar(lt);
+   writeln('Pointer valpar rt:  ', lt^:1, ' s/b 77');
+   dispose(lt);
+
+   { var parameter (battery mutates the caller's lt in place) }
+   ptrvarpar(lt);
+   writeln('Pointer varpar rt:  ', lt^:1, ' s/b 10');
+   dispose(lt);
+
+   { surrounding-procedure local (inner routine works on this proc's lt) }
+   ptrsurround;
+   writeln('Pointer surround rt:  ', lt^:1, ' s/b 10');
+   dispose(lt)
+
+end;
+
+procedure arraycontexts;
+
+type a5 = array[1..5] of integer;
+
+var lt:   a5;                          { local variable of the type }
+    la:   array[1..5] of a5;           { array of the type }
+    lr:   record f: a5; a: array[1..5] of a5 end; { record: field + array-of-type field }
+    lp:   ^a5;                         { pointer to the type }
+    lf:   file of a5;                  { file of the type }
+    b:    a5;                          { whole-array assignment target }
+    i:    integer;
+
+   procedure arrvalpar(t: a5); { value-parameter context }
+   var b: a5; i: integer;
+   begin
+      t[3] := 5;
+      writeln('Array valpar 1:  ', t[3]:1, ' s/b 5');
+      t[3] := t[3]+7; t[3] := t[3]*3; t[3] := t[3]-1;
+      writeln('Array valpar 2:  ', t[3]:1, ' s/b 35');
+      t[3] := t[3] div 4; t[3] := t[3] mod 6;
+      writeln('Array valpar 3:  ', t[3]:1, ' s/b 2');
+      t[3] := t[3]-10; t[3] := t[3] mod 3;
+      writeln('Array valpar 4:  ', t[3]:1, ' s/b 1');
+      t[3] := sqr(succ(abs(t[3])));
+      writeln('Array valpar 5:  ', t[3]:1, ' s/b 4');
+      writeln('Array valpar 6:  ', (t[3] = 4):5, ' ', odd(t[3]):5, ' s/b  true false');
+      for i := 1 to 5 do t[i] := i*10;
+      b := t;
+      writeln('Array valpar 7:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+              b[5]:1, ' s/b 10 20 30 40 50')
+   end;
+
+   procedure arrvarpar(var t: a5); { var-parameter context }
+   var b: a5; i: integer;
+   begin
+      t[3] := 5;
+      writeln('Array varpar 1:  ', t[3]:1, ' s/b 5');
+      t[3] := t[3]+7; t[3] := t[3]*3; t[3] := t[3]-1;
+      writeln('Array varpar 2:  ', t[3]:1, ' s/b 35');
+      t[3] := t[3] div 4; t[3] := t[3] mod 6;
+      writeln('Array varpar 3:  ', t[3]:1, ' s/b 2');
+      t[3] := t[3]-10; t[3] := t[3] mod 3;
+      writeln('Array varpar 4:  ', t[3]:1, ' s/b 1');
+      t[3] := sqr(succ(abs(t[3])));
+      writeln('Array varpar 5:  ', t[3]:1, ' s/b 4');
+      writeln('Array varpar 6:  ', (t[3] = 4):5, ' ', odd(t[3]):5, ' s/b  true false');
+      for i := 1 to 5 do t[i] := i*10;
+      b := t;
+      writeln('Array varpar 7:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+              b[5]:1, ' s/b 10 20 30 40 50')
+   end;
+
+   procedure arrsurround; { surrounding-procedure-local context: works on lt }
+   var b: a5; i: integer;
+   begin
+      lt[3] := 5;
+      writeln('Array surround 1:  ', lt[3]:1, ' s/b 5');
+      lt[3] := lt[3]+7; lt[3] := lt[3]*3; lt[3] := lt[3]-1;
+      writeln('Array surround 2:  ', lt[3]:1, ' s/b 35');
+      lt[3] := lt[3] div 4; lt[3] := lt[3] mod 6;
+      writeln('Array surround 3:  ', lt[3]:1, ' s/b 2');
+      lt[3] := lt[3]-10; lt[3] := lt[3] mod 3;
+      writeln('Array surround 4:  ', lt[3]:1, ' s/b 1');
+      lt[3] := sqr(succ(abs(lt[3])));
+      writeln('Array surround 5:  ', lt[3]:1, ' s/b 4');
+      writeln('Array surround 6:  ', (lt[3] = 4):5, ' ', odd(lt[3]):5, ' s/b  true false');
+      for i := 1 to 5 do lt[i] := i*10;
+      b := lt;
+      writeln('Array surround 7:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+              b[5]:1, ' s/b 10 20 30 40 50')
+   end;
+
+begin
+
+   { local variable: lt of type a5 }
+   lt[3] := 5;
+   writeln('Array local 1:  ', lt[3]:1, ' s/b 5');
+   lt[3] := lt[3]+7; lt[3] := lt[3]*3; lt[3] := lt[3]-1;
+   writeln('Array local 2:  ', lt[3]:1, ' s/b 35');
+   lt[3] := lt[3] div 4; lt[3] := lt[3] mod 6;
+   writeln('Array local 3:  ', lt[3]:1, ' s/b 2');
+   lt[3] := lt[3]-10; lt[3] := lt[3] mod 3;
+   writeln('Array local 4:  ', lt[3]:1, ' s/b 1');
+   lt[3] := sqr(succ(abs(lt[3])));
+   writeln('Array local 5:  ', lt[3]:1, ' s/b 4');
+   writeln('Array local 6:  ', (lt[3] = 4):5, ' ', odd(lt[3]):5, ' s/b  true false');
+   for i := 1 to 5 do lt[i] := i*10;
+   b := lt;
+   writeln('Array local 7:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+           b[5]:1, ' s/b 10 20 30 40 50');
+
+   { array element la[i] (array-of-array): la[2] is the a5 we operate on }
+   la[2][3] := 5;
+   writeln('Array arr 1:  ', la[2][3]:1, ' s/b 5');
+   la[2][3] := la[2][3]+7; la[2][3] := la[2][3]*3; la[2][3] := la[2][3]-1;
+   writeln('Array arr 2:  ', la[2][3]:1, ' s/b 35');
+   la[2][3] := la[2][3] div 4; la[2][3] := la[2][3] mod 6;
+   writeln('Array arr 3:  ', la[2][3]:1, ' s/b 2');
+   la[2][3] := la[2][3]-10; la[2][3] := la[2][3] mod 3;
+   writeln('Array arr 4:  ', la[2][3]:1, ' s/b 1');
+   la[2][3] := sqr(succ(abs(la[2][3])));
+   writeln('Array arr 5:  ', la[2][3]:1, ' s/b 4');
+   writeln('Array arr 6:  ', (la[2][3] = 4):5, ' ', odd(la[2][3]):5, ' s/b  true false');
+   for i := 1 to 5 do la[2][i] := i*10;
+   b := la[2];
+   writeln('Array arr 7:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+           b[5]:1, ' s/b 10 20 30 40 50');
+
+   { record field lr.f: the a5 we operate on }
+   lr.f[3] := 5;
+   writeln('Array recfld 1:  ', lr.f[3]:1, ' s/b 5');
+   lr.f[3] := lr.f[3]+7; lr.f[3] := lr.f[3]*3; lr.f[3] := lr.f[3]-1;
+   writeln('Array recfld 2:  ', lr.f[3]:1, ' s/b 35');
+   lr.f[3] := lr.f[3] div 4; lr.f[3] := lr.f[3] mod 6;
+   writeln('Array recfld 3:  ', lr.f[3]:1, ' s/b 2');
+   lr.f[3] := lr.f[3]-10; lr.f[3] := lr.f[3] mod 3;
+   writeln('Array recfld 4:  ', lr.f[3]:1, ' s/b 1');
+   lr.f[3] := sqr(succ(abs(lr.f[3])));
+   writeln('Array recfld 5:  ', lr.f[3]:1, ' s/b 4');
+   writeln('Array recfld 6:  ', (lr.f[3] = 4):5, ' ', odd(lr.f[3]):5, ' s/b  true false');
+   for i := 1 to 5 do lr.f[i] := i*10;
+   b := lr.f;
+   writeln('Array recfld 7:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+           b[5]:1, ' s/b 10 20 30 40 50');
+
+   { nested: record's array field lr.a[i] (array of a5): lr.a[2] is the a5 }
+   lr.a[2][3] := 5;
+   writeln('Array recarr 1:  ', lr.a[2][3]:1, ' s/b 5');
+   lr.a[2][3] := lr.a[2][3]+7; lr.a[2][3] := lr.a[2][3]*3; lr.a[2][3] := lr.a[2][3]-1;
+   writeln('Array recarr 2:  ', lr.a[2][3]:1, ' s/b 35');
+   lr.a[2][3] := lr.a[2][3] div 4; lr.a[2][3] := lr.a[2][3] mod 6;
+   writeln('Array recarr 3:  ', lr.a[2][3]:1, ' s/b 2');
+   lr.a[2][3] := lr.a[2][3]-10; lr.a[2][3] := lr.a[2][3] mod 3;
+   writeln('Array recarr 4:  ', lr.a[2][3]:1, ' s/b 1');
+   lr.a[2][3] := sqr(succ(abs(lr.a[2][3])));
+   writeln('Array recarr 5:  ', lr.a[2][3]:1, ' s/b 4');
+   writeln('Array recarr 6:  ', (lr.a[2][3] = 4):5, ' ', odd(lr.a[2][3]):5, ' s/b  true false');
+   for i := 1 to 5 do lr.a[2][i] := i*10;
+   b := lr.a[2];
+   writeln('Array recarr 7:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+           b[5]:1, ' s/b 10 20 30 40 50');
+
+   { pointer lp^: the a5 we operate on }
+   new(lp);
+   lp^[3] := 5;
+   writeln('Array ptr 1:  ', lp^[3]:1, ' s/b 5');
+   lp^[3] := lp^[3]+7; lp^[3] := lp^[3]*3; lp^[3] := lp^[3]-1;
+   writeln('Array ptr 2:  ', lp^[3]:1, ' s/b 35');
+   lp^[3] := lp^[3] div 4; lp^[3] := lp^[3] mod 6;
+   writeln('Array ptr 3:  ', lp^[3]:1, ' s/b 2');
+   lp^[3] := lp^[3]-10; lp^[3] := lp^[3] mod 3;
+   writeln('Array ptr 4:  ', lp^[3]:1, ' s/b 1');
+   lp^[3] := sqr(succ(abs(lp^[3])));
+   writeln('Array ptr 5:  ', lp^[3]:1, ' s/b 4');
+   writeln('Array ptr 6:  ', (lp^[3] = 4):5, ' ', odd(lp^[3]):5, ' s/b  true false');
+   for i := 1 to 5 do lp^[i] := i*10;
+   b := lp^;
+   writeln('Array ptr 7:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+           b[5]:1, ' s/b 10 20 30 40 50');
+   dispose(lp);
+
+   { file buffer lf^: swept as an ordinary variable, then a file round-trip }
+   rewrite(lf);
+   lf^[3] := 5;
+   writeln('Array buf 1:  ', lf^[3]:1, ' s/b 5');
+   lf^[3] := lf^[3]+7; lf^[3] := lf^[3]*3; lf^[3] := lf^[3]-1;
+   writeln('Array buf 2:  ', lf^[3]:1, ' s/b 35');
+   lf^[3] := lf^[3] div 4; lf^[3] := lf^[3] mod 6;
+   writeln('Array buf 3:  ', lf^[3]:1, ' s/b 2');
+   lf^[3] := lf^[3]-10; lf^[3] := lf^[3] mod 3;
+   writeln('Array buf 4:  ', lf^[3]:1, ' s/b 1');
+   lf^[3] := sqr(succ(abs(lf^[3])));
+   writeln('Array buf 5:  ', lf^[3]:1, ' s/b 4');
+   for i := 1 to 5 do lf^[i] := i*10;
+   put(lf);
+   reset(lf);
+   writeln('Array buf eof1:  ', eof(lf):5, ' s/b false');
+   b := lf^;
+   writeln('Array buf rt:  ', b[1]:1, ' ', b[2]:1, ' ', b[3]:1, ' ', b[4]:1, ' ',
+           b[5]:1, ' s/b 10 20 30 40 50');
+   get(lf);
+   writeln('Array buf eof2:  ', eof(lf):5, ' s/b  true');
+
+   { value parameter (battery runs on the copy; caller's lt is unaffected) }
+   for i := 1 to 5 do lt[i] := 99;
+   arrvalpar(lt);
+   writeln('Array valpar rt:  ', lt[1]:1, ' ', lt[2]:1, ' ', lt[3]:1, ' ', lt[4]:1, ' ',
+           lt[5]:1, ' s/b 99 99 99 99 99');
+
+   { var parameter (battery mutates the caller's lt in place) }
+   arrvarpar(lt);
+   writeln('Array varpar rt:  ', lt[1]:1, ' ', lt[2]:1, ' ', lt[3]:1, ' ', lt[4]:1, ' ',
+           lt[5]:1, ' s/b 10 20 30 40 50');
+
+   { surrounding-procedure local (inner routine works on this proc's lt) }
+   arrsurround;
+   writeln('Array surround rt:  ', lt[1]:1, ' ', lt[2]:1, ' ', lt[3]:1, ' ', lt[4]:1, ' ',
+           lt[5]:1, ' s/b 10 20 30 40 50')
+
+end;
+
+procedure recordcontexts;
+
+type rr = record i: integer; c: char end;
+     rarr = array[1..5] of rr;
+     rrec = record f: rr; a: rarr end;
+     rptr = ^rr;
+
+var lt2: rr;
+    lt: rr;
+    la: rarr;
+    lr: rrec;
+    lp: rptr;
+    lf: file of rr;
+
+   procedure recvalpar(t: rr);
+   var lt2: rr;
+   begin
+   t.i := 42; t.c := 'x';
+   writeln('Rec valpar 1:  ', t.i:1, ' ', t.c, ' s/b 42 x');
+   t.i := t.i + 8;
+   writeln('Rec valpar 2:  ', t.i:1, ' s/b 50');
+   lt2 := t;
+   writeln('Rec valpar 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; t := lt2;
+   writeln('Rec valpar 4:  ', t.i:1, ' ', t.c, ' s/b 7 y')
+   end;
+
+   procedure recvarpar(var t: rr);
+   var lt2: rr;
+   begin
+   t.i := 42; t.c := 'x';
+   writeln('Rec varpar 1:  ', t.i:1, ' ', t.c, ' s/b 42 x');
+   t.i := t.i + 8;
+   writeln('Rec varpar 2:  ', t.i:1, ' s/b 50');
+   lt2 := t;
+   writeln('Rec varpar 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; t := lt2;
+   writeln('Rec varpar 4:  ', t.i:1, ' ', t.c, ' s/b 7 y')
+   end;
+
+   procedure recsurround;
+   var lt2: rr;
+   begin
+   lr.f.i := 42; lr.f.c := 'x';
+   writeln('Rec surround 1:  ', lr.f.i:1, ' ', lr.f.c, ' s/b 42 x');
+   lr.f.i := lr.f.i + 8;
+   writeln('Rec surround 2:  ', lr.f.i:1, ' s/b 50');
+   lt2 := lr.f;
+   writeln('Rec surround 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; lr.f := lt2;
+   writeln('Rec surround 4:  ', lr.f.i:1, ' ', lr.f.c, ' s/b 7 y')
+   end;
+
+begin
+
+   lt.i := 42; lt.c := 'x';
+   writeln('Rec local 1:  ', lt.i:1, ' ', lt.c, ' s/b 42 x');
+   lt.i := lt.i + 8;
+   writeln('Rec local 2:  ', lt.i:1, ' s/b 50');
+   lt2 := lt;
+   writeln('Rec local 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; lt := lt2;
+   writeln('Rec local 4:  ', lt.i:1, ' ', lt.c, ' s/b 7 y');
+
+   la[3].i := 42; la[3].c := 'x';
+   writeln('Rec array 1:  ', la[3].i:1, ' ', la[3].c, ' s/b 42 x');
+   la[3].i := la[3].i + 8;
+   writeln('Rec array 2:  ', la[3].i:1, ' s/b 50');
+   lt2 := la[3];
+   writeln('Rec array 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; la[3] := lt2;
+   writeln('Rec array 4:  ', la[3].i:1, ' ', la[3].c, ' s/b 7 y');
+
+   lr.f.i := 42; lr.f.c := 'x';
+   writeln('Rec recfld 1:  ', lr.f.i:1, ' ', lr.f.c, ' s/b 42 x');
+   lr.f.i := lr.f.i + 8;
+   writeln('Rec recfld 2:  ', lr.f.i:1, ' s/b 50');
+   lt2 := lr.f;
+   writeln('Rec recfld 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; lr.f := lt2;
+   writeln('Rec recfld 4:  ', lr.f.i:1, ' ', lr.f.c, ' s/b 7 y');
+
+   lr.a[3].i := 42; lr.a[3].c := 'x';
+   writeln('Rec recarr 1:  ', lr.a[3].i:1, ' ', lr.a[3].c, ' s/b 42 x');
+   lr.a[3].i := lr.a[3].i + 8;
+   writeln('Rec recarr 2:  ', lr.a[3].i:1, ' s/b 50');
+   lt2 := lr.a[3];
+   writeln('Rec recarr 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; lr.a[3] := lt2;
+   writeln('Rec recarr 4:  ', lr.a[3].i:1, ' ', lr.a[3].c, ' s/b 7 y');
+
+   new(lp);
+   lp^.i := 42; lp^.c := 'x';
+   writeln('Rec ptr 1:  ', lp^.i:1, ' ', lp^.c, ' s/b 42 x');
+   lp^.i := lp^.i + 8;
+   writeln('Rec ptr 2:  ', lp^.i:1, ' s/b 50');
+   lt2 := lp^;
+   writeln('Rec ptr 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; lp^ := lt2;
+   writeln('Rec ptr 4:  ', lp^.i:1, ' ', lp^.c, ' s/b 7 y');
+   dispose(lp);
+
+   rewrite(lf);
+   lf^.i := 42; lf^.c := 'x';
+   writeln('Rec buf 1:  ', lf^.i:1, ' ', lf^.c, ' s/b 42 x');
+   lf^.i := lf^.i + 8;
+   writeln('Rec buf 2:  ', lf^.i:1, ' s/b 50');
+   lt2 := lf^;
+   writeln('Rec buf 3:  ', lt2.i:1, ' ', lt2.c, ' s/b 50 x');
+   lt2.i := 7; lt2.c := 'y'; lf^ := lt2;
+   writeln('Rec buf 4:  ', lf^.i:1, ' ', lf^.c, ' s/b 7 y');
+   lf^.i := 77; lf^.c := 'z'; put(lf);
+   reset(lf);
+   writeln('Rec buf eof1:  ', eof(lf):5, ' s/b false');
+   writeln('Rec buf rt:  ', lf^.i:1, ' ', lf^.c, ' s/b 77 z');
+   get(lf);
+   writeln('Rec buf eof2:  ', eof(lf):5, ' s/b  true');
+
+   lt.i := 1; lt.c := 'a';
+   recvalpar(lt);
+   writeln('Rec valpar rt:  ', lt.i:1, ' ', lt.c, ' s/b 1 a');
+
+   recvarpar(lt);
+   writeln('Rec varpar rt:  ', lt.i:1, ' ', lt.c, ' s/b 7 y');
+
+   recsurround;
+   writeln('Rec surround rt:  ', lr.f.i:1, ' ', lr.f.c, ' s/b 7 y')
+
+end;
+
+
+procedure filecontainers;
+
+{ Item 2: arrays, records and pointers CONTAINING files (ISO 6.4.3.5 permits
+  a structure to contain a file). The file is exercised through each container
+  access path. }
+type fir   = record fi: file of integer; tag: integer end;
+     fiarr = array[1..3] of file of integer;
+     frec  = record fa: fiarr end;
+     arf   = array[1..3] of fir;
+     firp  = ^fir;
+
+var lr: fir; la: fiarr; ln: frec; lar: arf; lp: firp; x: integer;
+
+begin
+
+   rewrite(lr.fi);
+   lr.fi^ := 10; put(lr.fi); lr.fi^ := 20; put(lr.fi); lr.fi^ := 30; put(lr.fi);
+   reset(lr.fi);
+   read(lr.fi, x);
+   writeln('File-inrec 1:  ', x:1, ' s/b 10');
+   read(lr.fi, x);
+   writeln('File-inrec 2:  ', x:1, ' s/b 20');
+   writeln('File-inrec 3:  ', eof(lr.fi):5, ' s/b false');
+   read(lr.fi, x);
+   writeln('File-inrec 4:  ', x:1, ' s/b 30');
+   writeln('File-inrec 5:  ', eof(lr.fi):5, ' s/b  true');
+
+   rewrite(la[2]);
+   la[2]^ := 10; put(la[2]); la[2]^ := 20; put(la[2]); la[2]^ := 30; put(la[2]);
+   reset(la[2]);
+   read(la[2], x);
+   writeln('File-inarr 1:  ', x:1, ' s/b 10');
+   read(la[2], x);
+   writeln('File-inarr 2:  ', x:1, ' s/b 20');
+   writeln('File-inarr 3:  ', eof(la[2]):5, ' s/b false');
+   read(la[2], x);
+   writeln('File-inarr 4:  ', x:1, ' s/b 30');
+   writeln('File-inarr 5:  ', eof(la[2]):5, ' s/b  true');
+
+   rewrite(ln.fa[2]);
+   ln.fa[2]^ := 10; put(ln.fa[2]); ln.fa[2]^ := 20; put(ln.fa[2]); ln.fa[2]^ := 30; put(ln.fa[2]);
+   reset(ln.fa[2]);
+   read(ln.fa[2], x);
+   writeln('File-recarr 1:  ', x:1, ' s/b 10');
+   read(ln.fa[2], x);
+   writeln('File-recarr 2:  ', x:1, ' s/b 20');
+   writeln('File-recarr 3:  ', eof(ln.fa[2]):5, ' s/b false');
+   read(ln.fa[2], x);
+   writeln('File-recarr 4:  ', x:1, ' s/b 30');
+   writeln('File-recarr 5:  ', eof(ln.fa[2]):5, ' s/b  true');
+
+   rewrite(lar[2].fi);
+   lar[2].fi^ := 10; put(lar[2].fi); lar[2].fi^ := 20; put(lar[2].fi); lar[2].fi^ := 30; put(lar[2].fi);
+   reset(lar[2].fi);
+   read(lar[2].fi, x);
+   writeln('File-arrrec 1:  ', x:1, ' s/b 10');
+   read(lar[2].fi, x);
+   writeln('File-arrrec 2:  ', x:1, ' s/b 20');
+   writeln('File-arrrec 3:  ', eof(lar[2].fi):5, ' s/b false');
+   read(lar[2].fi, x);
+   writeln('File-arrrec 4:  ', x:1, ' s/b 30');
+   writeln('File-arrrec 5:  ', eof(lar[2].fi):5, ' s/b  true');
+
+   new(lp);
+   rewrite(lp^.fi);
+   lp^.fi^ := 10; put(lp^.fi); lp^.fi^ := 20; put(lp^.fi); lp^.fi^ := 30; put(lp^.fi);
+   reset(lp^.fi);
+   read(lp^.fi, x);
+   writeln('File-inptr 1:  ', x:1, ' s/b 10');
+   read(lp^.fi, x);
+   writeln('File-inptr 2:  ', x:1, ' s/b 20');
+   writeln('File-inptr 3:  ', eof(lp^.fi):5, ' s/b false');
+   read(lp^.fi, x);
+   writeln('File-inptr 4:  ', x:1, ' s/b 30');
+   writeln('File-inptr 5:  ', eof(lp^.fi):5, ' s/b  true');
+   dispose(lp)
 
 end;
 
@@ -1184,6 +3178,9 @@ begin
    writeln('Integer152: ', (-15) mod 4:1, ' s/b 1');
    writeln('Integer153: ', 10 mod 3:1, ' s/b 1');
 
+   { integer operation battery through every access-path context }
+   integercontexts;
+
 {******************************************************************************
 
                             Subranges
@@ -1268,6 +3265,10 @@ begin
    writeln('Subrange63:  ', sras >= srds:5, ' s/b false');
    writeln('Subrange64:  ', srbs >= sras:5, ' s/b false');
    writeln('Subrange65:  ', abs(sras):1, ' s/b 14');
+
+
+   { Subranges types: operation battery through every access-path context }
+   subrangecontexts;
 
 {******************************************************************************
 
@@ -1503,6 +3504,10 @@ begin
    writeln(' true  true  true  true  true  true  true  true  true  true');
    writeln(' true  true  true  true  true');
 
+
+   { Characters types: operation battery through every access-path context }
+   charcontexts;
+
 {******************************************************************************
 
                             Booleans
@@ -1602,6 +3607,10 @@ begin
    writeln('Boolean52:  ', (not true):5, ' s/b false');
 
 
+
+   { Booleans types: operation battery through every access-path context }
+   booleancontexts;
+
 {******************************************************************************
 
                             Scalar variables
@@ -1660,6 +3669,10 @@ begin
    writeln('Scalar36:  ', fri >= tue:5, ' s/b true');
    writeln('Scalar37:  ', tue >= tue:5, ' s/b true');
    writeln('Scalar38:  ', tue >= sat:5, ' s/b false');
+
+
+   { Scalar variables types: operation battery through every access-path context }
+   enumcontexts;
 
 {******************************************************************************
 
@@ -1884,6 +3897,10 @@ begin
    writeln('Real158: ', cos(0.0):15, ' s/b  1.000000e+00');
    writeln('Real159: ', cos(1.0471975512):15, ' s/b  5.000000e-01');
    writeln('Real160: ', cos(-3.1415926536):15, ' s/b -1.000000e+00');
+
+
+   { Reals types: operation battery through every access-path context }
+   realcontexts;
 
 {******************************************************************************
 
@@ -2124,6 +4141,10 @@ begin
    sry := 10;
    for i := 1 to 10 do if i in [srx,sry] then write('1') else write('0');
    writeln(' s/b 1000000001');
+
+
+   { Sets types: operation battery through every access-path context }
+   setcontexts;
 
 {******************************************************************************
 
@@ -2432,6 +4453,10 @@ begin
    while lp <> nil do begin write(lp^.vl:1, ' '); lp := lp^.nxt end;
    writeln('s/b 1 2 3');
 
+
+   { Pointers types: operation battery through every access-path context }
+   pointercontexts;
+
 {******************************************************************************
 
                             Arrays
@@ -2709,6 +4734,11 @@ begin
    pack(cia, 'm', pavi);
    for i := 10 downto 1 do write(pavi[i]:1, ' ');
    writeln('s/b 22 21 20 19 18 17 16 15 14 13');
+
+
+   { Arrays types: operation battery through every access-path context }
+   stringcontexts;
+   arraycontexts;
 
 {******************************************************************************
 
@@ -3064,6 +5094,10 @@ begin
    rcs1.a := 42; rcs1.b := 'x'; rcs2 := rcs1;
    writeln(rcs2.a:1, ' ', rcs2.b, ' s/b 42 x');
 
+
+   { Records types: operation battery through every access-path context }
+   recordcontexts;
+
 {******************************************************************************
 
                             Files
@@ -3315,6 +5349,10 @@ if testfile then begin
    writeln(rcs2.a:1, ' ', rcs2.b, ' s/b 17 q');
 
 end;
+
+
+   { Item 2: files contained in arrays, records and pointers }
+   filecontainers;
 
 {******************************************************************************
 
