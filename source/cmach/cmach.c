@@ -3158,7 +3158,9 @@ void sinins()
     case pi_inn: popadr(ad); getset(ad, s1); popint(i1); pshint(sisin(i1, s1)); break;
     case pi_mod: popint(i2); popint(i1);
                   if (dochkovf) if (i2 <= 0) errore(INVALIDDIVISORTOMOD);
-                  pshint(i1 % i2); break;
+                  /* ISO 7185 6.7.2.2: i mod j yields 0 <= result < j (j > 0).
+                     C '%' truncates, so add the divisor back when negative. */
+                  i1 = i1 % i2; if (i1 < 0) i1 += i2; pshint(i1); break;
     case pi_odd: popint(i1); pshint(i1&1); break;
     case pi_mpi: popint(i2); popint(i1);
                   if (dochkovf) if (i1 != 0 && i2 != 0)

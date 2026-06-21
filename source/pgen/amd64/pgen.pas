@@ -1659,6 +1659,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' decq %rdx # set sign of upper dividend');
           wrtins('1:');
           wrtins(' idivq %1 # divide integer', ep^.r^.r1);
+          { ISO 7185 6.7.2.2: i mod j yields 0 <= result < j (j > 0 is ensured
+            by the divisor check above). idivq leaves the truncated remainder
+            in rdx, negative for a negative dividend, so add the divisor back. }
+          wrtins(' testq %rdx,%rdx # ISO mod: remainder sign');
+          wrtins(' jns 2f # remainder already non-negative');
+          wrtins(' addq %1,%rdx # remainder += divisor', ep^.r^.r1);
+          wrtins('2:');
           if ep^.r1 <> rgrdx then
             wrtins(' movq %rdx,%1 # place result', ep^.r1)
         end;

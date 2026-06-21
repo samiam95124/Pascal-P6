@@ -1558,7 +1558,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' bl psystem_errore // process error');
           wrtins('1:');
           wrtins(' sdiv x9, %1, %2 // divide', ep^.l^.r1, ep^.r^.r1);
-          wrtins(' msub %1, x9, %2, %1 // rem = dividend - quotient*divisor', ep^.r1, ep^.r^.r1)
+          wrtins(' msub %1, x9, %2, %1 // rem = dividend - quotient*divisor', ep^.r1, ep^.r^.r1);
+          { ISO 7185 6.7.2.2: i mod j yields 0 <= result < j (j > 0 ensured by
+            the divisor check above). msub leaves the truncated remainder,
+            negative for a negative dividend, so add the divisor back. }
+          wrtins(' add x9, %1, %2 // rem + divisor', ep^.r1, ep^.r^.r1);
+          wrtins(' cmp %1, #0 // ISO mod: remainder sign', ep^.r1);
+          wrtins(' csel %1, x9, %1, lt // if rem<0 use rem+divisor', ep^.r1, ep^.r1)
         end;
 
         {dvi}
