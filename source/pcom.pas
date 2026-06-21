@@ -8804,7 +8804,7 @@ end;
           end else strassvf(name, ids);
           idtype := nil; next := nil;
           pfdeckind := declared; pfkind := actual;
-          sysrot := false; extern := extnone; cconv := false;
+          forwdecl := false; sysrot := false; extern := extnone; cconv := false;
           pflev := level;
           genlabel(lbname);
           pfname := lbname; pflist := nil; asgn := false;
@@ -10211,8 +10211,8 @@ end;
     { have not previously parsed this module }
     new(fp);
     with fp^ do begin
-      next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
-      si := 1; sl := 0; 
+      next := incstk; incstk := fp; strassvf(mn, id); priv := false;
+      si := 1; sl := 0; linecount := 0; lineout := 0;
       lo := false; fio := true; use := isuse; uselist := nil;
       me := false;
       repeat
@@ -11694,9 +11694,10 @@ begin
   { init for lookahead }
   sy := ident; op := mul; lgth := 0; kk := 1;
   { open input file }
-  new(fp); with fp^ do begin 
+  new(fp); with fp^ do begin
       next := incstk; incstk := fp; priv := false; linecount := 0; lineout := 0;
-      si := 1; sl := 0; lo := false; fio := false; use := false; uselist := nil
+      si := 1; sl := 0; lo := false; fio := false; use := false; uselist := nil;
+      mn := nil { no module name on the level-0 frame; putinp/putstrs walk it }
   end;
   readline;
   insymbol;
