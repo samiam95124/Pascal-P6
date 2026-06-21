@@ -115,6 +115,9 @@ type
      { Note that the availability of the alternate '@' is implementation
        defined }
      iptr  = @integer;
+     { recursive pointer type for the linked-list test (ISO 6.4.4) }
+     lnp   = ^lnode;
+     lnode = record vl: integer; nxt: lnp end;
      recs  = record
 
                a: integer;
@@ -243,6 +246,8 @@ var
     parec: prec;
     vrec:  recv;
     ip:    iptr;
+    rcs1,  rcs2: recs; { for whole-record assignment + file-of-record tests }
+    lh,    lp:   lnp;  { linked-list head and cursor }
     avi:   arri;
     avi2:  arri;
     pavi:  packed array [1..10] of integer;
@@ -1172,6 +1177,12 @@ begin
       myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar:1, ' ',
       myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar:1,
       ' s/b 1 2 3 4 5 6 7 8 9 10 11 12 13');
+   { ISO 7185 6.7.2.2: i mod j yields a non-negative result, 0 <= r < j }
+   writeln('Integer149: ', (-10) mod 3:1, ' s/b 2');
+   writeln('Integer150: ', (-1) mod 3:1, ' s/b 2');
+   writeln('Integer151: ', (-6) mod 3:1, ' s/b 0');
+   writeln('Integer152: ', (-15) mod 4:1, ' s/b 1');
+   writeln('Integer153: ', 10 mod 3:1, ' s/b 1');
 
 {******************************************************************************
 
@@ -1582,6 +1593,13 @@ begin
    writeln('tru');
    writeln('tr');
    writeln('t');
+   { Boolean operators or/and/not (ISO 7185 6.7.2.3) }
+   writeln('Boolean47:  ', (true or false):5, ' s/b  true');
+   writeln('Boolean48:  ', (false or false):5, ' s/b false');
+   writeln('Boolean49:  ', (true and true):5, ' s/b  true');
+   writeln('Boolean50:  ', (true and false):5, ' s/b false');
+   writeln('Boolean51:  ', (not false):5, ' s/b  true');
+   writeln('Boolean52:  ', (not true):5, ' s/b false');
 
 
 {******************************************************************************
@@ -1863,6 +1881,9 @@ begin
    writeln('Real155: ', -rscst:15, ' s/b  8.422000e+01');
    writeln('Real156:  ', rscst2:15, ' s/b -4.333000e+01');
    writeln('Real157: ', rscst3:15, ' s/b  8.422000e+01');
+   writeln('Real158: ', cos(0.0):15, ' s/b  1.000000e+00');
+   writeln('Real159: ', cos(1.0471975512):15, ' s/b  5.000000e-01');
+   writeln('Real160: ', cos(-3.1415926536):15, ' s/b -1.000000e+00');
 
 {******************************************************************************
 
@@ -2402,6 +2423,14 @@ begin
       writeln(' 91  92  93  94  95  96  97  98  99  100');      
    
    end;
+
+   { recursive-pointer linked structure: build 1->2->3 and traverse (ISO 6.4.4) }
+   write('Pointer26:  ');
+   lh := nil;
+   for i := 3 downto 1 do begin new(lp); lp^.vl := i; lp^.nxt := lh; lh := lp end;
+   lp := lh;
+   while lp <> nil do begin write(lp^.vl:1, ' '); lp := lp^.nxt end;
+   writeln('s/b 1 2 3');
 
 {******************************************************************************
 
@@ -3030,6 +3059,11 @@ begin
    writeln(' s/b 185');
    dispose(rpc, 15);
 
+   { whole-record (aggregate) assignment (ISO 6.4.3.3) }
+   write('Record31:  ');
+   rcs1.a := 42; rcs1.b := 'x'; rcs2 := rcs1;
+   writeln(rcs2.a:1, ' ', rcs2.b, ' s/b 42 x');
+
 {******************************************************************************
 
                             Files
@@ -3274,6 +3308,11 @@ if testfile then begin
    write('File22:   ');
    rewrite(ft);
    writeln(eof(ft), ' s/b true');
+   { transfer a record value through a file of records (ISO 6.4.3.5/6.6.5.2) }
+   write('File23:   ');
+   rewrite(frc); rcs1.a := 17; rcs1.b := 'q'; write(frc, rcs1);
+   reset(frc); read(frc, rcs2);
+   writeln(rcs2.a:1, ' ', rcs2.b, ' s/b 17 q');
 
 end;
 

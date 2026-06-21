@@ -2529,8 +2529,12 @@ end;
               begin fmin := -pmmaxint; fmax := pmmaxint
               end
             else
-              if fconst <> nil then
-                fmax := fconst^.values.ival
+              { enumerated type: bounds come from the constant list. Guard on
+                form = scalar so fconst (a scalar-variant field) is never read
+                for a structured/real/pointer type passed here by a caller. }
+              if form = scalar then
+                if fconst <> nil then
+                  if fconst^.values.intval then fmax := fconst^.values.ival
   end (*getbounds*) ;
 
   { get span of type }
@@ -2556,8 +2560,15 @@ end;
     { check structure is byte }
   var fmin, fmax: integer;
   begin
-    getbounds(fsp, fmin, fmax);
-    isbyte := (fmin >= 0) and (fmax <= 255)
+    isbyte := false;
+    { only an ordinal type (scalar/subrange, but not real) can be a byte; a
+      structured file component (record/array/etc.) is never a byte }
+    if fsp <> nil then
+      if fsp <> realptr then
+        if fsp^.form <= subrange then begin
+          getbounds(fsp, fmin, fmax);
+          isbyte := (fmin >= 0) and (fmax <= 255)
+        end
   end;
 
   function basetype(fsp: stp): stp;
