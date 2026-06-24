@@ -824,6 +824,7 @@ opo32: 54 s/b 54
 opo33: 54 s/b 54
 opo34: 54 s/b 54
 opo35: 54 s/b 54
+opo36: 53 s/b 53
 ex1:
 before exception
 exception taken
