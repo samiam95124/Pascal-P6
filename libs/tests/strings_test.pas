@@ -168,4 +168,10 @@ begin
    r := realv('-123.4e-3');
    writeln('74: ', r, ' s/b -1.23400000000000e+001');
 
+   { #460: octal/binary/real file-output writers (writeo/writeb/writere) }
+   write('75: '); writeo(output, 511); writeln(' s/b 777');
+   write('76: '); writeb(output, 10); writeln(' s/b 1010');
+   write('77: '''); writere(output, 1.5, -25); writeln('''');
+   writeln('s/b a left-justified real, padded to width 25')
+
 end.
