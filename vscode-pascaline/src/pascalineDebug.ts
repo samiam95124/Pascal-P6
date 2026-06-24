@@ -47,6 +47,10 @@ export class PascalineDebugSession extends LoggingDebugSession {
     /** Pending configurationDone resolve. */
     private configDoneResolve: (() => void) | null = null;
 
+    /** When set, pint command traces are not echoed to the debug console
+     *  (used for REPL evaluations, whose output is shown as the result). */
+    private suppressTrace = false;
+
     constructor() {
         super();
         this.setDebuggerLinesStartAt1(true);
@@ -175,6 +179,7 @@ export class PascalineDebugSession extends LoggingDebugSession {
         });
 
         this.pintRunner.on('trace', (text: string) => {
+            if (this.suppressTrace) return;
             this.sendEvent(new OutputEvent(text, 'console'));
         });
 
@@ -240,8 +245,13 @@ export class PascalineDebugSession extends LoggingDebugSession {
 
     /**
      * DAP: SetBreakpoints - set breakpoints for a source file.
+     *
+     * NOTE: the base DebugSession dispatches the "setBreakpoints" command to
+     * `setBreakPointsRequest` (capital P in "Points"). The method name must
+     * match exactly or the override is silently ignored and breakpoints are
+     * never delivered to the debuggee.
      */
-    protected async setBreakpointsRequest(
+    protected async setBreakPointsRequest(
         response: DebugProtocol.SetBreakpointsResponse,
         args: DebugProtocol.SetBreakpointsArguments
     ): Promise<void> {
@@ -252,7 +262,7 @@ export class PascalineDebugSession extends LoggingDebugSession {
         this.breakpointsByFile.set(sourcePath, requestedBps);
 
         // If pint is running, sync breakpoints now
-        if (this.pintRunner && this.configDone) {
+        if (this.pintRunner) {
             await this.syncBreakpoints();
         }
 
@@ -271,6 +281,12 @@ export class PascalineDebugSession extends LoggingDebugSession {
 
     /**
      * Sync all breakpoints to pint: clear all, then set each one.
+     *
+     * VS Code sends breakpoints for every file in the workspace to whichever
+     * debug session is active, so breakpointsByFile may hold breakpoints for
+     * files that are not part of the program being debugged. Only the source
+     * file for this session is sent to pint; others would just produce
+     * "module not found" errors at the pint prompt.
      */
     private async syncBreakpoints(): Promise<void> {
         if (!this.pintRunner) return;
@@ -278,8 +294,10 @@ export class PascalineDebugSession extends LoggingDebugSession {
         // Clear all breakpoints in pint
         await this.pintRunner.sendCommand('c');
 
-        // Set breakpoints for each file
+        // Set breakpoints only for the source file being debugged.
         for (const [filePath, bps] of this.breakpointsByFile) {
+            if (path.resolve(filePath) !== this.sourceFile) continue;
+
             // Determine module name from file path
             const moduleName = path.basename(filePath, '.pas');
 
@@ -396,7 +414,12 @@ export class PascalineDebugSession extends LoggingDebugSession {
     }
 
     /**
-     * DAP: Evaluate - evaluate an expression using pint's "p" command.
+     * DAP: Evaluate.
+     *
+     * In the Debug Console (context 'repl') the input is passed to pint
+     * verbatim, so the user can type any debugger command directly
+     * (df, pl, b test 9, p gv1, ...). For hover/watch evaluations the input
+     * is an expression, so it is wrapped in pint's "p" (print) command.
      */
     protected async evaluateRequest(
         response: DebugProtocol.EvaluateResponse,
@@ -407,15 +430,43 @@ export class PascalineDebugSession extends LoggingDebugSession {
             return;
         }
 
-        const expr = args.expression;
-        const output = await this.pintRunner.sendCommand(`p ${expr}`);
-        const result = this.pintRunner.parseExpression(output);
+        const input = args.expression;
+        let result: string;
+        if (args.context === 'repl') {
+            // Raw debugger command. Suppress the duplicate command-echo trace
+            // (its output becomes the result instead) and strip pint's PTY echo
+            // of the command from the front of the output.
+            this.suppressTrace = true;
+            let output: string;
+            try {
+                output = await this.pintRunner.sendCommand(input);
+            } finally {
+                this.suppressTrace = false;
+            }
+            result = this.stripCommandEcho(output, input);
+        } else {
+            // Hover/watch: evaluate as an expression.
+            const output = await this.pintRunner.sendCommand(`p ${input}`);
+            result = this.pintRunner.parseExpression(output);
+        }
 
         response.body = {
             result: result || '(no value)',
             variablesReference: 0
         };
         this.sendResponse(response);
+    }
+
+    /**
+     * Strip pint's PTY echo of the typed command from the front of its output,
+     * along with surrounding blank lines, so a REPL command like "p gv1" shows
+     * just its result ("10") rather than "p gv1\n\n10".
+     */
+    private stripCommandEcho(output: string, cmd: string): string {
+        const lines = output.replace(/\r/g, '').split('\n');
+        while (lines.length && lines[0].trim() === '') lines.shift();
+        if (lines.length && lines[0].trim() === cmd.trim()) lines.shift();
+        return lines.join('\n').trim();
     }
 
     /**
@@ -459,6 +510,10 @@ export class PascalineDebugSession extends LoggingDebugSession {
      */
     private async continueExecution(): Promise<void> {
         if (!this.pintRunner) return;
+
+        // Arm the current breakpoint set before running, so breakpoints set
+        // before launch (which may not have been synced yet) take effect.
+        await this.syncBreakpoints();
 
         const output = await this.pintRunner.sendRun();
 

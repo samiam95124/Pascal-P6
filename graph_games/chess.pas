@@ -17,6 +17,7 @@ program chess(input, output);
 
 uses graphics,
      sound,
+     services,
      strings;
 
 label 99; { terminate }
@@ -244,7 +245,7 @@ begin
    for c := 0 to 7 do board[6, c] := bp;
 
    turn := white_side;
-   selected := false;
+   selected := false; selr := 0; selc := 0;
    gamestate := 0;
    aipending := false;
    wkcastle := true; wqcastle := true;
@@ -1039,9 +1040,17 @@ procedure load_pieces;
 
 var col, typ, sq:           integer;
     np, cp, sp:             pstring;
-    p1, p2, p3, p4, p5:     pstring;
+    p1, p2, p3, p5:         pstring;
+    picdir:                 pstring;
 
 begin
+
+   { Find the directory holding the piece bitmaps: the program path first
+     (data that accompanied the program), then the current directory. The
+     choice is made by testing for a known piece with exists. }
+   picdir := maknam(getpgm, 'chess_pieces', '');
+   p5 := maknam(picdir, 'wpawn_l', 'bmp');
+   if not exists(p5^) then picdir := copy('chess_pieces');
 
    for col := 0 to 1 do
       for sq := 0 to 1 do
@@ -1060,11 +1069,10 @@ begin
             end;
             if col = white_side then cp := copy('w') else cp := copy('b');
             if sq = 0 then sp := copy('l') else sp := copy('d');
-            p1 := cat('graph_games/chess_pieces/', cp);
-            p2 := cat(p1, np);
-            p3 := cat(p2, '_');
-            p4 := cat(p3, sp);
-            p5 := cat(p4, '.bmp');
+            p1 := cat(cp, np);
+            p2 := cat(p1, '_');
+            p3 := cat(p2, sp);
+            p5 := maknam(picdir, p3, 'bmp');
             loadpict(output, picid(col, typ, sq = 0), p5^);
             closestring
 

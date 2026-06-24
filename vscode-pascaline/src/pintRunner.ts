@@ -62,6 +62,19 @@ export class PintRunner extends EventEmitter {
     private disposed: boolean = false;
 
     /**
+     * Pending commands awaiting their turn. Pint has a single debug prompt,
+     * so commands MUST be sent one at a time: the previous response (ending
+     * in "debug> ") must arrive before the next command is written. VSCode
+     * issues the Locals/Parameters/Globals variable requests concurrently,
+     * so without this queue the later requests would overwrite commandResolve
+     * and their responses would be dropped or misrouted.
+     */
+    private commandQueue: Array<{ cmd: string; resolve: (output: string) => void }> = [];
+
+    /** True while a command has been sent and we are awaiting its response. */
+    private busy: boolean = false;
+
+    /**
      * Spawn pint with debug mode enabled.
      * @param pintPath Path to the pint executable.
      * @param programName Program name without extension.
@@ -118,13 +131,28 @@ export class PintRunner extends EventEmitter {
         }
 
         return new Promise((resolve) => {
-            this.commandResolve = (output: string) => {
-                this.emit('trace', `>> ${cmd}\n${output}`);
-                resolve(output);
-            };
-            this.emit('trace', `>> ${cmd}\n`);
-            this.process!.stdin!.write(cmd + '\n');
+            this.commandQueue.push({ cmd, resolve });
+            this.processQueue();
         });
+    }
+
+    /**
+     * Send the next queued command if pint is idle. Called whenever a command
+     * is queued and whenever a response completes.
+     */
+    private processQueue(): void {
+        if (this.busy) return;
+        if (this.commandQueue.length === 0) return;
+        if (!this.process || !this.process.stdin) return;
+
+        const next = this.commandQueue.shift()!;
+        this.busy = true;
+        this.commandResolve = (output: string) => {
+            this.emit('trace', `>> ${next.cmd}\n${output}`);
+            next.resolve(output);
+        };
+        this.emit('trace', `>> ${next.cmd}\n`);
+        this.process.stdin.write(next.cmd + '\n');
     }
 
     /**
@@ -215,11 +243,13 @@ export class PintRunner extends EventEmitter {
                 }
             }
 
-            // Resolve the pending command
+            // Resolve the pending command and send the next queued one.
             if (this.commandResolve) {
                 const resolve = this.commandResolve;
                 this.commandResolve = null;
+                this.busy = false;
                 resolve(response);
+                this.processQueue();
             }
         }
     }

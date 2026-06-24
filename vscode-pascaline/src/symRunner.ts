@@ -33,9 +33,11 @@ export interface SymResult {
  */
 export class SymRunner {
     private symPath: string;
+    private modulesPath?: string;
 
-    constructor(symPath: string) {
+    constructor(symPath: string, modulesPath?: string) {
         this.symPath = symPath;
+        this.modulesPath = modulesPath;
     }
 
     run(filePath: string): Promise<SymResult> {
@@ -43,7 +45,15 @@ export class SymRunner {
             const dir = path.dirname(filePath);
             const base = path.basename(filePath, '.pas');
 
-            execFile(this.symPath, [base], {
+            // Programs that `uses` modules (graphics, sound, services, ...)
+            // need a module search path, or passym blocks resolving them and
+            // is eventually killed at the timeout with no output.
+            const args = [base];
+            if (this.modulesPath) {
+                args.push(`--modules=${this.modulesPath}`);
+            }
+
+            execFile(this.symPath, args, {
                 cwd: dir,
                 timeout: 30000
             }, (error, stdout, _stderr) => {
@@ -104,5 +114,20 @@ export class SymRunner {
             }
         }
         return 'passym';
+    }
+
+    /**
+     * Find the module search path: the `libs` directory at the workspace
+     * root, where the standard modules (graphics, sound, services, strings)
+     * live. Returns undefined if there is no such directory.
+     */
+    static findModules(workspaceRoot?: string): string | undefined {
+        if (workspaceRoot) {
+            const rel = path.join(workspaceRoot, 'libs');
+            if (fs.existsSync(rel)) {
+                return rel;
+            }
+        }
+        return undefined;
     }
 }

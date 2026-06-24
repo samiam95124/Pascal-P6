@@ -2866,7 +2866,11 @@ begin { assemble }
       tmpspc := 0; { clear temps }
       stkadr := 0;
       { note ep is unused at this time }
-      botstk
+      botstk;
+      { the prologue is now complete (frame established, parameter registers
+        spilled to their frame slots); flag the next source line so the
+        debugger breaks past the prologue where parameters are valid. }
+      prologue_pending := true
     end;
 
     {mov}

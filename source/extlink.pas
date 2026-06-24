@@ -184,22 +184,32 @@ end;
 
 procedure getpstr(sa: address; var s: string);
 
-var a1:  integer;
+var p:   integer;
+    a1:  integer;
     l,i: integer;
 
 begin
 
     clears(s);
-    a1 := getadr(sa+intsize); { get base address of string }
-    l := getadr(sa); { get length of string }
-    if l > strmax then begin
+    { A pstring argument is a pointer to a heap string container laid out as
+      [length][chars] (see putpstr). The parameter slot holds that pointer (a
+      single word), not an inline descriptor, so dereference it. Reading the
+      slot as an inline [length][base] pair overran the slot into undefined
+      memory. }
+    p := getadr(sa); { get the pstring pointer }
+    if p <> nilval then begin
 
-       writeln('*** String too long for buffer');
-       halt
+       l := getint(p); { length is at the start of the container }
+       if l > strmax then begin
 
-    end;
-    { transfer string data }
-    for i := 1 to l do s[i] := getchr(a1+i-1)
+          writeln('*** String too long for buffer');
+          halt
+
+       end;
+       a1 := p+intsize; { characters follow the length }
+       for i := 1 to l do s[i] := getchr(a1+i-1)
+
+    end
 
 end;
 

@@ -6,7 +6,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Launch C",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "stopAtEntry": false,
+            "preLaunchTask": "Build C (gcc)",
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch Pascaline",
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
@@ -35,6 +60,22 @@
             "request": "launch",
             "name": "Debug with pint",
             "program": "${file}",
+            "stopOnEntry": true
+        },
+        {
+            "type": "pascaline",
+            "request": "launch",
+            "name": "Debug terminal program (pintt)",
+            "program": "${file}",
+            "pint": "${workspaceFolder}/bin/pintt",
+            "stopOnEntry": true
+        },
+        {
+            "type": "pascaline",
+            "request": "launch",
+            "name": "Debug graphical program (pintg)",
+            "program": "${file}",
+            "pint": "${workspaceFolder}/bin/pintg",
             "stopOnEntry": true
         }
     ]
