@@ -24,9 +24,11 @@ export interface ParserError {
  */
 export class ParserRunner {
     private parserPath: string;
+    private modulesPath?: string;
 
-    constructor(parserPath: string) {
+    constructor(parserPath: string, modulesPath?: string) {
         this.parserPath = parserPath;
+        this.modulesPath = modulesPath;
     }
 
     /**
@@ -37,7 +39,14 @@ export class ParserRunner {
             const dir = path.dirname(filePath);
             const base = path.basename(filePath, '.pas');
 
-            execFile(this.parserPath, [base], {
+            // Programs that `uses` modules need a module search path, or the
+            // parser blocks resolving them and is killed at the timeout.
+            const args = [base];
+            if (this.modulesPath) {
+                args.push(`--modules=${this.modulesPath}`);
+            }
+
+            execFile(this.parserPath, args, {
                 cwd: dir,
                 timeout: 30000
             }, (error, stdout, _stderr) => {

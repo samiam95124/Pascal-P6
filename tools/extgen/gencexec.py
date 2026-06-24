@@ -944,14 +944,17 @@ static void putabyte(address sa, byte* buf, long l)
 # pmach do. They use the ami_filrec/ami_envrec/ami_chrset native types from
 # services.h (always included before extern.inc in cmach).
 C_SVC_HELPERS = '''/* load a pstring parameter into a zero-terminated buffer. A pstring parameter
-   slot is the inline [length][base] descriptor extlink's getpstr reads (length
-   at +0, base address at +INTSIZE) -- distinct from a pstring field inside a
-   record, which points at a [length][chars] heap block. */
+   slot holds a pointer to a heap string container laid out as [length][chars]
+   (see mkpstr); dereference the pointer rather than reading an inline descriptor.
+   Reading the slot as an inline [length][base] pair overran the one-word slot
+   into undefined memory. */
 static void getpstr(address sa, char* s)
 {
-    address ad; long l, i;
-    l = getadr(sa);            /* length */
-    ad = getadr(sa+INTSIZE);   /* base address of chars */
+    address p, ad; long l, i;
+    p = getadr(sa);            /* the pstring pointer */
+    if (p == NILVAL) { s[0] = 0; return; }
+    l = getint(p);             /* length at the start of the container */
+    ad = p+INTSIZE;            /* chars follow the length */
     if (l > STRMAX-1) l = STRMAX-1;
     while (l > 0 && getchr(ad+l-1) == ' ') l--; /* trim trailing pad (cstrz), as
                                                    the wrappers do for pstring view

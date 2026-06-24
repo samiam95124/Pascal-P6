@@ -883,6 +883,7 @@ dochkvbk: boolean; { do check VAR blocks }
 dodbgchk: boolean; { do debug checks }
 doechlin: boolean; { echo input command line }
 domrklin: boolean; { mark source line translations in assembly }
+prologue_pending: boolean; { next source line marks a routine's prologue end }
 amd64_sysv: boolean; { use SYS V AMD64 ABI calling convention }
 
 { other flags }
@@ -1896,8 +1897,18 @@ begin
        ':': begin { source line }
                getint(x); { get source line number }
                sline := x;
-               if lindig then { gdb line diagnostic active }
-                 writeln(prr, '        .loc 1 ', x:1, ' 1') { write debug line }
+               if lindig then begin { gdb line diagnostic active }
+                 write(prr, '        .loc 1 ', x:1, ' 1'); { write debug line }
+                 if prologue_pending then begin
+                   { This is the first source line after a routine's prologue.
+                     Flag it so the debugger places routine breakpoints here,
+                     where parameters have already been stored to the frame,
+                     instead of at the routine entry where they read as garbage. }
+                   write(prr, ' prologue_end');
+                   prologue_pending := false
+                 end;
+                 writeln(prr)
+               end
             end;
        'o': begin { option }
               skpspc;
@@ -3428,8 +3439,15 @@ end;
 procedure dwemitblk(bp: pblock);
 var sp: psymbol; hassyms: boolean; abbcode, fbreg, opcode: integer;
 begin
-  { check if block has any symbols }
-  hassyms := bp^.symbols <> nil;
+  { check if block has any local/parameter symbols. Globals are emitted at
+    compile-unit scope (see gendwarf), not as subprogram children, so they
+    do not count here. }
+  hassyms := false;
+  sp := bp^.symbols;
+  while sp <> nil do begin
+    if sp^.styp <> stglobal then hassyms := true;
+    sp := sp^.next
+  end;
   if hassyms then abbcode := dwab_subprog
   else abbcode := dwab_subprogn;
   { emit subprogram DIE }
@@ -3457,7 +3475,7 @@ begin
   if hassyms then begin
     sp := bp^.symbols;
     while sp <> nil do begin
-      dwemitvar(sp);
+      if sp^.styp <> stglobal then dwemitvar(sp);
       sp := sp^.next
     end;
     writeln(prr, '        .byte   0  # end subprogram children')
@@ -3466,7 +3484,7 @@ end;
 
 { main DWARF generation procedure }
 procedure gendwarf;
-var bp: pblock; ns: pstring;
+var bp: pblock; sp: psymbol; ns: pstring;
     cs: packed array [1..1] of char;
     adrsz: integer;
 begin
@@ -3543,6 +3561,21 @@ begin
   dwstrref(ns);
   writeln(prr, '        .byte   ', dwate_float:1, ' # DW_ATE_float');
   writeln(prr, '        .byte   ', realsize:1, ' # byte_size');
+
+  { emit global variables as direct children of the compile unit so they
+    resolve from any scope. If emitted as children of the program/module
+    subprogram DIE (as before), the debugger treats them as that routine's
+    static locals and they become invisible -- and unhoverable -- from
+    inside any other routine. }
+  bp := blklst;
+  while bp <> nil do begin
+    sp := bp^.symbols;
+    while sp <> nil do begin
+      if sp^.styp = stglobal then dwemitvar(sp);
+      sp := sp^.next
+    end;
+    bp := bp^.next
+  end;
 
   { emit subprogram and variable DIEs for each block }
   bp := blklst;
@@ -3702,6 +3735,7 @@ begin
   dodbgchk := true;  { do debug checks }
   doechlin := false; { don't echo command lines }
   domrklin := true;  { mark assembly lines }
+  prologue_pending := false; { not inside a routine prologue yet }
   amd64_sysv := false; { SYS V AMD64 calling convention not yet seen }
 
   { supress warnings }

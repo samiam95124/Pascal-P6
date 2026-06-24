@@ -2817,6 +2817,11 @@ begin
       writeln('Final module path: ', modpth:*);
    services.brknam(prgnam, tarpath, n, e); { add Pascal extention }
    services.maknam(prgnam, tarpath, n, 'pas');
+   { Check the program source exists before fulnam expands the path. A missing
+     program (or a mistyped directory) then reports clearly here, instead of
+     faulting inside fulnam when it cannot resolve a non-existent directory. }
+   if not exists(prgnam) then
+      error('Program file "%" does not exist', prgnam);
    services.fulnam(prgnam); { expand relative }
    { see if there is an instruction file to go with it }
    services.maknam(tmpnam, tarpath, n, 'ins');
@@ -2826,9 +2831,6 @@ begin
    if fpgen and not samd64sysv then begin
       famd64sysv := true; samd64sysv := true
    end;
-   { now check the file itself exists }
-   if not exists(prgnam) then { file not found }
-      error('Target file "%" not found', prgnam);
    logfil(prgnam, hp); { form tree from file }
    stdlib; { place standard libary }
    fndpkg; { find any included packages }

@@ -6076,10 +6076,10 @@ end;
                         alignd(parmptr,lc);
                         with lcp^ do
                           begin klass:=proc; strcopy(name, id); idtype := nil;
-                            next := lcp1;
-                            pflev := level (*beware of parameter procedures*);
-                            pfdeckind:=declared; pflist := nil;
-                            pfkind:=formal; pfaddr := lc; pext := false;
+                              next := lcp1; pflist := nil;
+                              pfdeckind:=declared; pfkind:=formal;
+                              pflev := level (*beware of parameter procedures*);
+                              pfaddr := lc; pext := false;
                             pmod := nil; keep := true; pfattr := fpanone;
                             grpnxt := nil; grppar := lcp; pfvid := nil
                           end;
@@ -6108,10 +6108,10 @@ end;
                             alignd(parmptr,lc);
                             with lcp^ do
                               begin klass:=func; strcopy(name, id);
-                                idtype := nil; next := lcp1;
-                                pflev := level (*beware param funcs*);
-                                pfdeckind:=declared; pflist := nil;
-                                pfkind:=formal; pfaddr:=lc; pext := false;
+                                  idtype := nil; next := lcp1; pflist := nil;
+                                  pfdeckind:=declared; pfkind:=formal;
+                                  pflev := level (*beware param funcs*);
+                                  pfaddr:=lc; pext := false;
                                 pmod := nil; keep := true; pfattr := fpanone;
                                 grpnxt := nil; grppar := lcp; pfvid := nil
                               end;
@@ -6463,10 +6463,10 @@ end;
             end;
             strcopy(name, ops)
           end else strcopy(name, ids);
-          idtype := nil; next := nil;
-          sysrot := false; extern := false; pflev := level; 
-          genlabel(lbname); pfdeckind := declared; pfkind := actual; 
-          pfname := lbname; pflist := nil; asgn := false;
+            idtype := nil; next := nil; pflist := nil;
+            pfdeckind := declared; pfkind := actual;
+            sysrot := false; extern := false; pflev := level;
+            genlabel(lbname); pfname := lbname; asgn := false;
           pext := incact; pmod := incstk; refer := false;
           pfattr := fpat; grpnxt := nil; grppar := lcp; 
           if lcp1 <> nil then grppar := lcp1^.grppar;
@@ -7906,9 +7906,9 @@ end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
           begin klass := func; strcopy(name, na[i]); idtype := realptr;
-            pflist := cp; forwdecl := false; sysrot := true; extern := false; 
-            pflev := 0; pfname := i - 12; pfdeckind := declared; 
-            pfkind := actual; pfaddr := 0; pext := false; pmod := nil; 
+              pflist := cp; pfdeckind := declared; pfkind := actual;
+              forwdecl := false; sysrot := true; extern := false;
+              pflev := 0; pfname := i - 12; pfaddr := 0; pext := false; pmod := nil;
             pfattr := fpanone; grpnxt := nil; grppar := cp1; pfvid := nil
           end;
         enterid(cp1)
@@ -8071,17 +8071,17 @@ end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
       begin klass := proc; strcopy(name, '         '); idtype := nil;
-        forwdecl := false; next := nil; sysrot := false; extern := false; 
-        pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
-        pfkind := actual; pmod := nil; grpnxt := nil; grppar := uprcptr;
+            next := nil; pflist := nil; pfdeckind := declared; pfkind := actual;
+            forwdecl := false; sysrot := false; extern := false;
+            pflev := 0; genlabel(pfname); pmod := nil; grpnxt := nil; grppar := uprcptr;
         pfvid := nil
       end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
       begin klass := func; strcopy(name, '         '); idtype := nil;
-        next := nil; forwdecl := false; sysrot := false; extern := false; 
-        pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
-        pfkind := actual; pmod := nil; grpnxt := nil; grppar := ufctptr;
+            next := nil; pflist := nil; pfdeckind := declared; pfkind := actual;
+            forwdecl := false; sysrot := false; extern := false;
+            pflev := 0; genlabel(pfname); pmod := nil; grpnxt := nil; grppar := ufctptr;
         pfvid := nil
       end
   end (*enterundecl*) ;

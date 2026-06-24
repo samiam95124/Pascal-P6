@@ -63,13 +63,18 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
         ? decodeURIComponent(workspaceFolders[0].uri.replace('file://', ''))
         : undefined;
 
+    // Module search path (libs/) so programs that `uses` modules resolve
+    // instead of hanging the parser/passym until their timeout.
+    const modulesPath = SymRunner.findModules(workspaceRoot);
+    connection.console.log(`Pascaline: module path ${modulesPath ?? '(none)'}`);
+
     // Find executables: workspace-relative first, then PATH
     const parserPath = ParserRunner.findParser(workspaceRoot);
-    parserRunner = new ParserRunner(parserPath);
+    parserRunner = new ParserRunner(parserPath, modulesPath);
     connection.console.log(`Pascaline: using parser at ${parserPath}`);
 
     const symPath = SymRunner.findSym(workspaceRoot);
-    symRunner = new SymRunner(symPath);
+    symRunner = new SymRunner(symPath, modulesPath);
     connection.console.log(`Pascaline: using passym at ${symPath}`);
 
     return {
