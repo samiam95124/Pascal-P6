@@ -2026,7 +2026,7 @@ void readsp(filnum fn, address ad,  long l)
 
   while (l > 0 && !eolnfn(fn)) {
     if (eoffn(fn)) errore(ENDOFFILE);
-    c = fgetc(filtable[fn]); putchr(ad, c); ad = ad+1; l = l-1;
+    c = buffn(fn); getfn(fn); putchr(ad, c); ad = ad+1; l = l-1;
   }
   while (l > 0) { putchr(ad, ' '); ad = ad+1; l = l-1; }
 }
@@ -2037,7 +2037,7 @@ void readsc(filnum fn, address ad,  long l)
 
   while (l > 0 && !eolnfn(fn)) {
     if (eoffn(fn)) errore(ENDOFFILE);
-    c = fgetc(filtable[fn]); 
+    c = buffn(fn); getfn(fn);
     if (c != getchr(ad)) errore(READCHARACTERMISMATCH);
     ad = ad+1; l = l-1;
   }

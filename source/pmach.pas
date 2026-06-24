@@ -1942,7 +1942,7 @@ procedure callsp;
    begin
      while (l > 0) and not eolnfn(fn) do begin
        if eoffn(fn) then errore(EndOfFile);
-       read(filtable[fn], c); putchr(ad, c); ad := ad+1; l := l-1
+       c := buffn(fn); getfn(fn); putchr(ad, c); ad := ad+1; l := l-1
      end;
      while l > 0 do begin putchr(ad, ' '); ad := ad+1; l := l-1 end
    end;
@@ -1952,7 +1952,7 @@ procedure callsp;
    begin
      while (l > 0) and not eolnfn(fn) do begin
        if eoffn(fn) then errore(EndOfFile);
-       read(filtable[fn], c); 
+       c := buffn(fn); getfn(fn);
        if c <> getchr(ad) then errorv(ReadCharacterMismatch);
        ad := ad+1; l := l-1
      end
