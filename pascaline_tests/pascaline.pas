@@ -54,7 +54,7 @@
 *                                                                              *
 *******************************************************************************}
 
-program pascaline(output, error, list, file1, file2, number1, number2, command);
+program pascaline(input, output, error, list, file1, file2, number1, number2, command);
 
 joins pascaline2; { test joined module }
 uses pascaline1; { test used module }
@@ -1643,6 +1643,10 @@ begin
    s10 := '1234567890';
    readln(fl1, s10:*);
    writeln('er15: ', s10, '<', ' s/b hi!       <');
+   { issue 270: padded read of the predefined input file; cf er15 user file }
+   s10 := '1234567890';
+   readln(s10:*);
+   writeln('er16: ', s10, '<', ' s/b stdin     <');
 
 {*******************************************************************************
 

@@ -692,6 +692,7 @@ er12: 42 s/b 42
 er13: 66 34 66 s/b 66 34 66
 er14: 66 34 66 s/b 66 34 66
 er15: hi!       < s/b hi!       <
+er16: stdin     < s/b stdin     <
 tcr1: one two three  s/b one two three
 tcr2: 53 s/b 53 
 f1: 1 5 3 10 92  s/b 1 5 3 10 92
