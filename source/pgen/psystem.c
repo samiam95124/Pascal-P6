@@ -1802,7 +1802,7 @@ static void readsp(filnum fn, char* s,  long l)
     while (l > 0 && !eolnfn(fn)) {
 
         if (eoffn(fn)) errore(modnam, __LINE__, ENDOFFILE);
-        c = fgetc(filtable[fn]); *s++ =  c; l--;
+        c = buffn(fn); getfn(fn); *s++ =  c; l--;
 
     }
     while (l > 0) { *s++ = ' '; l--; }
@@ -1828,8 +1828,8 @@ static void readsc(filnum fn, char* s,  long l)
     while (l > 0 && !eolnfn(fn)) {
 
         if (eoffn(fn)) errore(modnam, __LINE__, ENDOFFILE);
-        c = fgetc(filtable[fn]); 
-        if (c != *s) errore(modnam, __LINE__, READCHARACTERMISMATCH); 
+        c = buffn(fn); getfn(fn);
+        if (c != *s) errore(modnam, __LINE__, READCHARACTERMISMATCH);
         s++; l--;
 
     }

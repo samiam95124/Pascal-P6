@@ -4289,15 +4289,15 @@ begin
    if fl > 0 then begin { right justify }
    
       reales(buff, r, fl); { convert to buffer }
-      write(f, buff:0) { output }
+      write(f, buff:*) { output }
 
    end else begin { left justified }
 
       reales(buff, r, 1); { place in buffer }
       fl := abs(fl); { find net field }
       if len(buff) > fl then fl := len(buff); { set minimum format }
-      write(f, buff:0); { output }
-      for i := 1 to fl-len(buff) do write(' ') { space right }
+      write(f, buff:*); { output }
+      for i := 1 to fl-len(buff) do write(f, ' ') { space right }
 
    end
 
@@ -4358,7 +4358,7 @@ begin
    hexs(os, i); { place output in buffer }
    l := len(os); { find length }
    if fl > 0 then for fi := 1 to fl-l do write(f, ' '); { fill left }
-   write(f, os:0); { output number }
+   write(f, os:*); { output number }
    if fl < 0 then for fi := 1 to abs(fl)-l do write(f, ' ') { fill right }
 
 end;
@@ -4380,7 +4380,7 @@ var os: packed array [1..maxhdg] of char; { output save }
 begin
 
    hexs(os, i); { place output in buffer }
-   write(f, os:0) { output }
+   write(f, os:*) { output }
 
 end;
 
@@ -4443,7 +4443,7 @@ begin
    octs(os, i); { place output in buffer }
    l := len(os); { find length }
    if fl > 0 then for fi := 1 to fl-l do write(f, ' '); { fill left }
-   write(f, os:0); { output number }
+   write(f, os:*); { output number }
    if fl < 0 then for fi := 1 to abs(fl)-l do write(f, ' ') { fill right }
 
 end;
@@ -4457,15 +4457,15 @@ begin
 
 end;
 
-overload procedure writeo(var f: text;     { result string }
+overload procedure writeo(var f: text;     { file to print }
                               i: integer); { integer to print }
 
 var os: packed array [1..maxlin] of char; { output save }
 
 begin
 
-   bins(os, i); { place output in buffer }
-   write(f, os:0) { output }
+   octs(os, i); { place output in buffer }
+   write(f, os:*) { output }
 
 end;
 
@@ -4528,7 +4528,7 @@ begin
    bins(os, i); { place output in buffer }
    l := len(os); { find length }
    if fl > 0 then for fi := 1 to fl-l do write(f, ' '); { fill left }
-   write(f, os:0); { output number }
+   write(f, os:*); { output number }
    if fl < 0 then for fi := 1 to abs(fl)-l do write(f, ' ') { fill right }
 
 end;
@@ -4550,7 +4550,7 @@ var os: packed array [1..maxlin] of char; { output save }
 begin
 
    bins(os, i); { place output in buffer }
-   write(f, os:0) { output }
+   write(f, os:*) { output }
 
 end;
 

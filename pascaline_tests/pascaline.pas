@@ -54,7 +54,7 @@
 *                                                                              *
 *******************************************************************************}
 
-program pascaline(output, error, list, file1, file2, number1, number2, command);
+program pascaline(input, output, error, list, file1, file2, number1, number2, command);
 
 joins pascaline2; { test joined module }
 uses pascaline1; { test used module }
@@ -795,6 +795,22 @@ begin
    new(p);
    p^ := a^+b^;   
    result p
+
+end;
+
+{ #225 / 6.26 overlays: inside an operator overload the operator resolves to the
+  previously entered definition (here the system built-in), not to the overload
+  being defined. The local + adds 1 and its body's a+b uses the built-in, so
+  42+10 evaluates to 52+1 = 53 with no self-recursion. }
+procedure opooverlay;
+
+operator +(a, b: integer): integer;
+
+begin result a+b+1 end;
+
+begin
+
+   writeln('opo36: ', 42+10:1, ' s/b 53')
 
 end;
 
@@ -1643,6 +1659,10 @@ begin
    s10 := '1234567890';
    readln(fl1, s10:*);
    writeln('er15: ', s10, '<', ' s/b hi!       <');
+   { issue 270: padded read of the predefined input file; cf er15 user file }
+   s10 := '1234567890';
+   readln(s10:*);
+   writeln('er16: ', s10, '<', ' s/b stdin     <');
 
 {*******************************************************************************
 
@@ -2022,6 +2042,8 @@ begin
    write('opo35: ');
    pi3 := pi1 in pi2;
    writeln(pi3^:1, ' s/b 54');
+
+   opooverlay; { opo36: operator body resolves to the prior (built-in) definition }
 
    { overload from used module }
 

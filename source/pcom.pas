@@ -4806,6 +4806,19 @@ end;
     ischrcst := (at.typtr = charptr) and (at.kind = cst)
   end;
 
+  { true if fcp is a routine whose body is currently being compiled. Used so an
+    overload does not resolve to itself within its own body -- the self
+    reference falls through to a prior definition or the built-in operator. }
+  function curblk(fcp: ctp): boolean;
+  var i: disprange; f: boolean;
+  begin f := false;
+    for i := top downto 2 do
+      if display[i].occur = blck then
+        if display[i].bname <> nil then
+          if display[i].bname = fcp then f := true;
+    curblk := f
+  end;
+
   { find matching uary operator overload }
   procedure fndopr1(opr: operatort; var fcp: ctp);
     var dt: disprange; fcp2: ctp;
@@ -4818,7 +4831,8 @@ end;
         fcp := nil; { set not found }
         while fcp2 <> nil do begin
           if parnum(fcp2) = 1 then
-            if cmptyp(partype(fcp2, 1), gattr.typtr) then fcp := fcp2;
+            if cmptyp(partype(fcp2, 1), gattr.typtr) then
+              if not curblk(fcp2) then fcp := fcp2;
           fcp2 := fcp2^.grpnxt
         end;
         if dt > 0 then dt := dt-1
@@ -4839,7 +4853,8 @@ end;
         while fcp2 <> nil do begin
           if parnum(fcp2) = 2 then
             if cmptyp(partype(fcp2, 1), lattr.typtr) then
-              if cmptyp(partype(fcp2, 2), gattr.typtr) then fcp := fcp2;
+              if cmptyp(partype(fcp2, 2), gattr.typtr) then
+                if not curblk(fcp2) then fcp := fcp2;
           fcp2 := fcp2^.grpnxt
         end;
         if dt > 0 then dt := dt-1
