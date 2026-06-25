@@ -455,264 +455,264 @@ fixed
 }
 instab: inspar = array
        { memonic       SW RReal }
-  record 'lodi      ', 1, false end,
-  record 'ldoi      ', 1, false end,
-  record 'stri      ', 0, false end,
-  record 'sroi      ', 0, false end,
-  record 'lda       ', 1, false end,
-  record 'lao       ', 1, false end,
-  record 'stoi      ', 0, false end,
-  record 'ldcs      ', 1, false end,
-  record 'cjp       ', 0, false end,
-  record 'indi      ', 1, false end,
-  record 'inci      ', 1, false end,
-  record 'mst       ', 0, false end,
-  record 'cup       ', 0, false end,
-  record 'rip       ', 0, false end,
-  record 'retp      ', 0, false end,
-  record 'csp       ', 0, false end,
-  record 'ixa       ', 1, false end,
-  record 'equa      ', 1, false end,
-  record 'neqa      ', 1, false end,
-  record 'brk*      ', 0, false end,
-  record 'lnp*      ', 0, false end,
-  record 'cal       ', 1, false end,
-  record 'ret       ', 0, false end,
-  record 'ujp       ', 0, false end,
-  record 'fjp       ', 0, false end,
-  record 'xjp       ', 0, false end,
-  record 'chki      ', 1, false end,
-  record 'cuv       ', 0, false end,
-  record 'adi       ', 1, false end,
-  record 'adr       ', 1, true  end, 
-  record 'sbi       ', 1, false end,
-  record 'sbr       ', 1, true  end, 
-  record 'sgs       ', 1, false end,
-  record 'flt       ', 1, true  end,
-  record 'flo       ', 2, true  end,
-  record 'trc       ', 1, false end,
-  record 'ngi       ', 1, false end,
-  record 'ngr       ', 1, true  end, 
-  record 'sqi       ', 1, false end,
-  record 'sqr       ', 1, true  end, 
-  record 'abi       ', 1, false end,
-  record 'abr       ', 1, true  end, 
-  record 'notb      ', 1, false end,
-  record 'and       ', 1, false end,
-  record 'ior       ', 1, false end,
-  record 'dif       ', 1, false end,
-  record 'int       ', 1, false end,
-  record 'uni       ', 1, false end,
-  record 'inn       ', 1, false end,
-  record 'mod       ', 1, false end,
-  record 'odd       ', 1, false end,
-  record 'mpi       ', 1, false end,
-  record 'mpr       ', 1, true  end, 
-  record 'dvi       ', 1, false end,
-  record 'dvr       ', 1, true  end, 
-  record 'mov       ', 0, false end,
-  record 'lca       ', 1, false end,
-  record 'deci      ', 1, false end,
-  record 'stp*      ', 0, false end,
-  record 'ordi      ', 1, false end,
-  record 'chr       ', 1, false end,
-  record 'ujc       ', 0, false end,
-  record 'rnd       ', 1, false end,
-  record 'pck       ', 0, false end,
-  record 'upk       ', 0, false end,
-  record 'ldoa      ', 1, false end,
-  record 'ldor      ', 1, true  end, 
-  record 'ldos      ', 1, false end,
-  record 'ldob      ', 1, false end,
-  record 'ldoc      ', 1, false end,
-  record 'stra      ', 0, false end,
-  record 'strr      ', 0, false end,
-  record 'strs      ', 0, false end,
-  record 'strb      ', 0, false end,
-  record 'strc      ', 0, false end,
-  record 'sroa      ', 0, false end,
-  record 'sror      ', 0, true  end, 
-  record 'sros      ', 0, false end,
-  record 'srob      ', 0, false end,
-  record 'sroc      ', 0, false end,
-  record 'stoa      ', 0, false end,
-  record 'stor      ', 0, false end,
-  record 'stos      ', 0, false end,
-  record 'stob      ', 0, false end,
-  record 'stoc      ', 0, false end,
-  record 'inda      ', 1, false end,
-  record 'indr      ', 1, true  end, 
-  record 'inds      ', 1, false end,
-  record 'indb      ', 1, false end,
-  record 'indc      ', 1, false end,
-  record 'inca      ', 1, false end,
-  record 'suv       ', 0, false end,
-  record 'vbs       ', 0, false end,
-  record 'incb      ', 1, false end,
-  record 'incc      ', 1, false end,
-  record 'chka      ', 1, false end,
-  record 'vbe       ', 0, false end,
-  record 'chks      ', 1, false end,
-  record 'chkb      ', 1, false end,
-  record 'chkc      ', 1, false end,
-  record 'cvbi      ', 2, false end,
-  record 'ivtx      ', 2, false end,
-  record 'ivtb      ', 2, false end,
-  record 'decb      ', 1, false end,
-  record 'decc      ', 1, false end,
-  record 'loda      ', 1, false end,
-  record 'lodr      ', 1, true  end, 
-  record 'lods      ', 1, false end,
-  record 'lodb      ', 1, false end,
-  record 'lodc      ', 1, false end,
-  record 'rgs       ', 1, false end,
-  record 'ivtc      ', 2, false end,
-  record 'ipj       ', 0, false end,
-  record 'cip       ', 0, false end,
-  record 'lpa       ', 2, false end,
-  record 'cvbx      ', 2, false end,
-  record 'cvbb      ', 2, false end,
-  record 'dmp       ', 0, false end,
-  record 'swp       ', 2, false end,
-  record 'tjp       ', 0, false end,
-  record 'lip       ', 2, false end,
-  record 'cvbc      ', 2, false end,
-  record 'vis       ', 1, false end,
-  record 'ldci      ', 1, false end,
-  record 'ldcr      ', 1, true  end, 
-  record 'ldcn      ', 1, false end,
-  record 'ldcb      ', 1, false end,
-  record 'ldcc      ', 1, false end,
-  record 'reti      ', 1, false end,
-  record 'retr      ', 1, false end,
-  record 'retc      ', 1, false end,
-  record 'retb      ', 1, false end,
-  record 'reta      ', 1, false end,
-  record 'vip       ', 0, false end,
-  record 'ordb      ', 1, false end,
-  record 'lcp       ', 2, false end,
-  record 'ordc      ', 1, false end,
-  record 'equi      ', 1, false end,
-  record 'equr      ', 1, false end,
-  record 'equb      ', 1, false end,
-  record 'equs      ', 1, false end,
-  record 'equc      ', 1, false end,
-  record 'equm      ', 1, false end,
-  record 'neqi      ', 1, false end,
-  record 'neqr      ', 1, false end,
-  record 'neqb      ', 1, false end,
-  record 'neqs      ', 1, false end,
-  record 'neqc      ', 1, false end,
-  record 'neqm      ', 1, false end,
-  record 'geqi      ', 1, false end,
-  record 'geqr      ', 1, false end,
-  record 'geqb      ', 1, false end,
-  record 'geqs      ', 1, false end,
-  record 'geqc      ', 1, false end,
-  record 'geqm      ', 1, false end,
-  record 'grti      ', 1, false end,
-  record 'grtr      ', 1, false end,
-  record 'grtb      ', 1, false end,
-  record 'grts      ', 1, false end,
-  record 'grtc      ', 1, false end,
-  record 'grtm      ', 1, false end,
-  record 'leqi      ', 1, false end,
-  record 'leqr      ', 1, false end,
-  record 'leqb      ', 1, false end,
-  record 'leqs      ', 1, false end,
-  record 'leqc      ', 1, false end,
-  record 'leqm      ', 1, false end,
-  record 'lesi      ', 1, false end,
-  record 'lesr      ', 1, false end,
-  record 'lesb      ', 1, false end,
-  record 'less      ', 1, false end,
-  record 'lesc      ', 1, false end,
-  record 'lesm      ', 1, false end,
-  record 's2c       ', 1, false end,
-  record 'mrkl*     ', 0, false end,
-  record 'ckvi      ', 2, false end,
-  record 'cps       ', 3, false end,
-  record 'cpc       ', 3, false end,
-  record 'aps       ', 0, false end,
-  record 'ckvb      ', 2, false end,
-  record 'ckvc      ', 2, false end,
-  record 'dupi      ', 1, false end,
-  record 'dupa      ', 2, false end,
-  record 'dupr      ', 1, true  end, 
-  record 'dups      ', 1, false end,
-  record 'dupb      ', 1, false end,
-  record 'dupc      ', 1, false end,
-  record 'cks       ', 2, false end,
-  record 'cke       ', 0, false end,
-  record 'inv       ', 0, false end,
-  record 'ckla      ', 1, false end,
-  record 'cta       ', 2, false end,
-  record 'ivti      ', 2, false end,
-  record 'lodx      ', 1, false end,
-  record 'ldox      ', 1, false end,
-  record 'strx      ', 0, false end,
-  record 'srox      ', 1, false end,
-  record 'stox      ', 0, false end,
-  record 'indx      ', 1, false end,
-  record 'chkx      ', 1, false end,
-  record 'ordx      ', 1, false end,
-  record 'incx      ', 1, false end,
-  record 'decx      ', 1, false end,
-  record 'ckvx      ', 2, false end,
-  record 'retx      ', 1, false end,
-  record 'noti      ', 1, false end,
-  record 'xor       ', 1, false end,
-  record 'bge       ', 4, false end,
-  record 'ede       ', 0, false end,
-  record 'mse       ', 0, false end,
-  record 'apc       ', 0, false end,
-  record 'cxs       ', 1, false end,
-  record 'cxc       ', 2, false end,
-  record 'lft       ', 2, false end,
-  record 'max       ', 1, false end,
-  record 'equv      ', 1, false end,
-  record 'neqv      ', 1, false end,
-  record 'lesv      ', 1, false end,
-  record 'grtv      ', 1, false end,
-  record 'leqv      ', 1, false end,
-  record 'geqv      ', 1, false end,
-  record 'vdp       ', 0, false end,
-  record 'spc       ', 2, false end,
-  record 'ccs       ', 2, false end,
-  record 'scp       ', 0, false end,
-  record 'ldp       ', 2, false end,
-  record 'vin       ', 0, false end,
-  record 'vdd       ', 0, false end,
+  record 'lodi      ', 1, false end, { 0 }
+  record 'ldoi      ', 1, false end, { 1 }
+  record 'stri      ', 0, false end, { 2 }
+  record 'sroi      ', 0, false end, { 3 }
+  record 'lda       ', 1, false end, { 4 }
+  record 'lao       ', 1, false end, { 5 }
+  record 'stoi      ', 0, false end, { 6 }
+  record 'ldcs      ', 1, false end, { 7 }
+  record 'cjp       ', 0, false end, { 8 }
+  record 'indi      ', 1, false end, { 9 }
+  record 'inci      ', 1, false end, { 10 }
+  record 'mst       ', 0, false end, { 11 }
+  record 'cup       ', 0, false end, { 12 }
+  record 'rip       ', 0, false end, { 13 }
+  record 'retp      ', 0, false end, { 14 }
+  record 'csp       ', 0, false end, { 15 }
+  record 'ixa       ', 1, false end, { 16 }
+  record 'equa      ', 1, false end, { 17 }
+  record 'neqa      ', 1, false end, { 18 }
+  record 'brk*      ', 0, false end, { 19 }
+  record 'lnp*      ', 0, false end, { 20 }
+  record 'cal       ', 1, false end, { 21 }
+  record 'ret       ', 0, false end, { 22 }
+  record 'ujp       ', 0, false end, { 23 }
+  record 'fjp       ', 0, false end, { 24 }
+  record 'xjp       ', 0, false end, { 25 }
+  record 'chki      ', 1, false end, { 26 }
+  record 'cuv       ', 0, false end, { 27 }
+  record 'adi       ', 1, false end, { 28 }
+  record 'adr       ', 1, true  end, { 29 }
+  record 'sbi       ', 1, false end, { 30 }
+  record 'sbr       ', 1, true  end, { 31 }
+  record 'sgs       ', 1, false end, { 32 }
+  record 'flt       ', 1, true  end, { 33 }
+  record 'flo       ', 2, true  end, { 34 }
+  record 'trc       ', 1, false end, { 35 }
+  record 'ngi       ', 1, false end, { 36 }
+  record 'ngr       ', 1, true  end, { 37 }
+  record 'sqi       ', 1, false end, { 38 }
+  record 'sqr       ', 1, true  end, { 39 }
+  record 'abi       ', 1, false end, { 40 }
+  record 'abr       ', 1, true  end, { 41 }
+  record 'notb      ', 1, false end, { 42 }
+  record 'and       ', 1, false end, { 43 }
+  record 'ior       ', 1, false end, { 44 }
+  record 'dif       ', 1, false end, { 45 }
+  record 'int       ', 1, false end, { 46 }
+  record 'uni       ', 1, false end, { 47 }
+  record 'inn       ', 1, false end, { 48 }
+  record 'mod       ', 1, false end, { 49 }
+  record 'odd       ', 1, false end, { 50 }
+  record 'mpi       ', 1, false end, { 51 }
+  record 'mpr       ', 1, true  end, { 52 }
+  record 'dvi       ', 1, false end, { 53 }
+  record 'dvr       ', 1, true  end, { 54 }
+  record 'mov       ', 0, false end, { 55 }
+  record 'lca       ', 1, false end, { 56 }
+  record 'deci      ', 1, false end, { 57 }
+  record 'stp*      ', 0, false end, { 58 }
+  record 'ordi      ', 1, false end, { 59 }
+  record 'chr       ', 1, false end, { 60 }
+  record 'ujc       ', 0, false end, { 61 }
+  record 'rnd       ', 1, false end, { 62 }
+  record 'pck       ', 0, false end, { 63 }
+  record 'upk       ', 0, false end, { 64 }
+  record 'ldoa      ', 1, false end, { 65 }
+  record 'ldor      ', 1, true  end, { 66 }
+  record 'ldos      ', 1, false end, { 67 }
+  record 'ldob      ', 1, false end, { 68 }
+  record 'ldoc      ', 1, false end, { 69 }
+  record 'stra      ', 0, false end, { 70 }
+  record 'strr      ', 0, false end, { 71 }
+  record 'strs      ', 0, false end, { 72 }
+  record 'strb      ', 0, false end, { 73 }
+  record 'strc      ', 0, false end, { 74 }
+  record 'sroa      ', 0, false end, { 75 }
+  record 'sror      ', 0, true  end, { 76 }
+  record 'sros      ', 0, false end, { 77 }
+  record 'srob      ', 0, false end, { 78 }
+  record 'sroc      ', 0, false end, { 79 }
+  record 'stoa      ', 0, false end, { 80 }
+  record 'stor      ', 0, false end, { 81 }
+  record 'stos      ', 0, false end, { 82 }
+  record 'stob      ', 0, false end, { 83 }
+  record 'stoc      ', 0, false end, { 84 }
+  record 'inda      ', 1, false end, { 85 }
+  record 'indr      ', 1, true  end, { 86 }
+  record 'inds      ', 1, false end, { 87 }
+  record 'indb      ', 1, false end, { 88 }
+  record 'indc      ', 1, false end, { 89 }
+  record 'inca      ', 1, false end, { 90 }
+  record 'suv       ', 0, false end, { 91 }
+  record 'vbs       ', 0, false end, { 92 }
+  record 'incb      ', 1, false end, { 93 }
+  record 'incc      ', 1, false end, { 94 }
+  record 'chka      ', 1, false end, { 95 }
+  record 'vbe       ', 0, false end, { 96 }
+  record 'chks      ', 1, false end, { 97 }
+  record 'chkb      ', 1, false end, { 98 }
+  record 'chkc      ', 1, false end, { 99 }
+  record 'cvbi      ', 2, false end, { 100 }
+  record 'ivtx      ', 2, false end, { 101 }
+  record 'ivtb      ', 2, false end, { 102 }
+  record 'decb      ', 1, false end, { 103 }
+  record 'decc      ', 1, false end, { 104 }
+  record 'loda      ', 1, false end, { 105 }
+  record 'lodr      ', 1, true  end, { 106 }
+  record 'lods      ', 1, false end, { 107 }
+  record 'lodb      ', 1, false end, { 108 }
+  record 'lodc      ', 1, false end, { 109 }
+  record 'rgs       ', 1, false end, { 110 }
+  record 'ivtc      ', 2, false end, { 111 }
+  record 'ipj       ', 0, false end, { 112 }
+  record 'cip       ', 0, false end, { 113 }
+  record 'lpa       ', 2, false end, { 114 }
+  record 'cvbx      ', 2, false end, { 115 }
+  record 'cvbb      ', 2, false end, { 116 }
+  record 'dmp       ', 0, false end, { 117 }
+  record 'swp       ', 2, false end, { 118 }
+  record 'tjp       ', 0, false end, { 119 }
+  record 'lip       ', 2, false end, { 120 }
+  record 'cvbc      ', 2, false end, { 121 }
+  record 'vis       ', 1, false end, { 122 }
+  record 'ldci      ', 1, false end, { 123 }
+  record 'ldcr      ', 1, true  end, { 124 }
+  record 'ldcn      ', 1, false end, { 125 }
+  record 'ldcb      ', 1, false end, { 126 }
+  record 'ldcc      ', 1, false end, { 127 }
+  record 'reti      ', 1, false end, { 128 }
+  record 'retr      ', 1, false end, { 129 }
+  record 'retc      ', 1, false end, { 130 }
+  record 'retb      ', 1, false end, { 131 }
+  record 'reta      ', 1, false end, { 132 }
+  record 'vip       ', 0, false end, { 133 }
+  record 'ordb      ', 1, false end, { 134 }
+  record 'lcp       ', 2, false end, { 135 }
+  record 'ordc      ', 1, false end, { 136 }
+  record 'equi      ', 1, false end, { 137 }
+  record 'equr      ', 1, false end, { 138 }
+  record 'equb      ', 1, false end, { 139 }
+  record 'equs      ', 1, false end, { 140 }
+  record 'equc      ', 1, false end, { 141 }
+  record 'equm      ', 1, false end, { 142 }
+  record 'neqi      ', 1, false end, { 143 }
+  record 'neqr      ', 1, false end, { 144 }
+  record 'neqb      ', 1, false end, { 145 }
+  record 'neqs      ', 1, false end, { 146 }
+  record 'neqc      ', 1, false end, { 147 }
+  record 'neqm      ', 1, false end, { 148 }
+  record 'geqi      ', 1, false end, { 149 }
+  record 'geqr      ', 1, false end, { 150 }
+  record 'geqb      ', 1, false end, { 151 }
+  record 'geqs      ', 1, false end, { 152 }
+  record 'geqc      ', 1, false end, { 153 }
+  record 'geqm      ', 1, false end, { 154 }
+  record 'grti      ', 1, false end, { 155 }
+  record 'grtr      ', 1, false end, { 156 }
+  record 'grtb      ', 1, false end, { 157 }
+  record 'grts      ', 1, false end, { 158 }
+  record 'grtc      ', 1, false end, { 159 }
+  record 'grtm      ', 1, false end, { 160 }
+  record 'leqi      ', 1, false end, { 161 }
+  record 'leqr      ', 1, false end, { 162 }
+  record 'leqb      ', 1, false end, { 163 }
+  record 'leqs      ', 1, false end, { 164 }
+  record 'leqc      ', 1, false end, { 165 }
+  record 'leqm      ', 1, false end, { 166 }
+  record 'lesi      ', 1, false end, { 167 }
+  record 'lesr      ', 1, false end, { 168 }
+  record 'lesb      ', 1, false end, { 169 }
+  record 'less      ', 1, false end, { 170 }
+  record 'lesc      ', 1, false end, { 171 }
+  record 'lesm      ', 1, false end, { 172 }
+  record 's2c       ', 1, false end, { 173 }
+  record 'mrkl*     ', 0, false end, { 174 }
+  record 'ckvi      ', 2, false end, { 175 }
+  record 'cps       ', 3, false end, { 176 }
+  record 'cpc       ', 3, false end, { 177 }
+  record 'aps       ', 0, false end, { 178 }
+  record 'ckvb      ', 2, false end, { 179 }
+  record 'ckvc      ', 2, false end, { 180 }
+  record '---       ', 0, false end, { 181 }
+  record '---       ', 0, false end, { 182 }
+  record '---       ', 0, false end, { 183 }
+  record '---       ', 0, false end, { 184 }
+  record '---       ', 0, false end, { 185 }
+  record '---       ', 0, false end, { 186 }
+  record 'cks       ', 2, false end, { 187 }
+  record 'cke       ', 0, false end, { 188 }
+  record 'inv       ', 0, false end, { 189 }
+  record 'ckla      ', 1, false end, { 190 }
+  record 'cta       ', 2, false end, { 191 }
+  record 'ivti      ', 2, false end, { 192 }
+  record 'lodx      ', 1, false end, { 193 }
+  record 'ldox      ', 1, false end, { 194 }
+  record 'strx      ', 0, false end, { 195 }
+  record 'srox      ', 1, false end, { 196 }
+  record 'stox      ', 0, false end, { 197 }
+  record 'indx      ', 1, false end, { 198 }
+  record 'chkx      ', 1, false end, { 199 }
+  record 'ordx      ', 1, false end, { 200 }
+  record 'incx      ', 1, false end, { 201 }
+  record 'decx      ', 1, false end, { 202 }
+  record 'ckvx      ', 2, false end, { 203 }
+  record 'retx      ', 1, false end, { 204 }
+  record 'noti      ', 1, false end, { 205 }
+  record 'xor       ', 1, false end, { 206 }
+  record 'bge       ', 4, false end, { 207 }
+  record 'ede       ', 0, false end, { 208 }
+  record 'mse       ', 0, false end, { 209 }
+  record 'apc       ', 0, false end, { 210 }
+  record 'cxs       ', 1, false end, { 211 }
+  record 'cxc       ', 2, false end, { 212 }
+  record 'lft       ', 2, false end, { 213 }
+  record 'max       ', 1, false end, { 214 }
+  record 'equv      ', 1, false end, { 215 }
+  record 'neqv      ', 1, false end, { 216 }
+  record 'lesv      ', 1, false end, { 217 }
+  record 'grtv      ', 1, false end, { 218 }
+  record 'leqv      ', 1, false end, { 219 }
+  record 'geqv      ', 1, false end, { 220 }
+  record 'vdp       ', 0, false end, { 221 }
+  record 'spc       ', 2, false end, { 222 }
+  record 'ccs       ', 2, false end, { 223 }
+  record 'scp       ', 0, false end, { 224 }
+  record 'ldp       ', 2, false end, { 225 }
+  record 'vin       ', 0, false end, { 226 }
+  record 'vdd       ', 0, false end, { 227 }
   { ltc and lto are aliases to ldo and lao instructions }
-  record 'ltci      ', 1, false end,
-  record 'ltcr      ', 1, true  end, 
-  record 'ltcs      ', 1, false end,
-  record 'ltcb      ', 1, false end,
-  record 'ltcc      ', 1, false end,
-  record 'ltcx      ', 1, false end,
-  record 'lto       ', 1, false end,
-  record 'stom      ', 0, false end,
-  record 'rets      ', 1, false end,
-  record 'retm      ', 1, false end,
-  record 'ctb       ', 0, false end,
-  record 'cpp       ', 1, false end,
-  record 'cpr       ', 1, false end,
-  record 'lsa       ', 1, false end,
-  record 'eext*     ', 0, false end,
-  record 'wbs       ', 1, false end,
-  record 'wbe       ', 0, false end,
-  record 'sfr       ', 0, false end,
-  record 'cuf       ', 0, false end,
-  record 'cif       ', 0, false end,
-  record 'mpc       ', 2, false end,
-  record 'cvf       ', 0, false end,
-  record 'lsp       ', 2, false end,
-  record 'cpl       ', 1, false end,
-  record 'sfs       ', 0, false end,
+  record 'ltci      ', 1, false end, { 228 }
+  record 'ltcr      ', 1, true  end, { 229 }
+  record 'ltcs      ', 1, false end, { 230 }
+  record 'ltcb      ', 1, false end, { 231 }
+  record 'ltcc      ', 1, false end, { 232 }
+  record 'ltcx      ', 1, false end, { 233 }
+  record 'lto       ', 1, false end, { 234 }
+  record 'stom      ', 0, false end, { 235 }
+  record 'rets      ', 1, false end, { 236 }
+  record 'retm      ', 1, false end, { 237 }
+  record 'ctb       ', 0, false end, { 238 }
+  record 'cpp       ', 1, false end, { 239 }
+  record 'cpr       ', 1, false end, { 240 }
+  record 'lsa       ', 1, false end, { 241 }
+  record 'eext*     ', 0, false end, { 242 }
+  record 'wbs       ', 1, false end, { 243 }
+  record 'wbe       ', 0, false end, { 244 }
+  record 'sfr       ', 0, false end, { 245 }
+  record 'cuf       ', 0, false end, { 246 }
+  record 'cif       ', 0, false end, { 247 }
+  record 'mpc       ', 2, false end, { 248 }
+  record 'cvf       ', 0, false end, { 249 }
+  record 'lsp       ', 2, false end, { 250 }
+  record 'cpl       ', 1, false end, { 251 }
+  record 'sfs       ', 0, false end, { 252 }
   { sev is an alias for stra in pint. It has meaning to pgen. }
-  record 'sev       ', 0, false end,
-  record 'mdc       ', 1, false end,
-  record '---       ', 0, false end
+  record 'sev       ', 0, false end, { 253 }
+  record 'mdc       ', 1, false end, { 254 }
+  record '---       ', 0, false end { 255 }
 end;
 
 { 
@@ -721,118 +721,118 @@ Standard functions and procedures table
 
 }
 sfptab: spfpar = array
-   record 'get       ', false, 1  end,
-   record 'put       ', false, 1  end,
-   record 'thw       ', false, 1  end,   
-   record 'rln       ', false, 1  end,
-   record 'new       ', false, 2  end,
-   record 'wln       ', false, 1  end,
-   record 'wrs       ', false, 4  end,
-   record 'eln       ', true,  1  end,
-   record 'wri       ', false, 3  end,
-   record 'wrr       ', false, 3  end,
-   record 'wrc       ', false, 3  end,
-   record 'rdi       ', false, 2  end,
-   record 'rdr       ', false, 2  end,
-   record 'rdc       ', false, 2  end,
-   record 'sin       ', true,  1  end,   
-   record 'cos       ', true,  1  end,
-   record 'exp       ', true,  1  end,
-   record 'log       ', true,  1  end,
-   record 'sqt       ', true,  1  end,   
-   record 'atn       ', true,  1  end,
-   record '---       ', false, 1  end,   
-   record 'pag       ', false, 1  end,
-   record 'rsf       ', false, 1  end,   
-   record 'rwf       ', false, 1  end,
-   record 'wrb       ', false, 3  end,
-   record 'wrf       ', false, 4  end,
-   record 'dsp       ', false, 2  end,
-   record 'wbf       ', false, 3  end,
-   record 'wbi       ', false, 2  end,
-   record 'wbr       ', false, 2  end,
-   record 'wbc       ', false, 2  end,
-   record 'wbb       ', false, 2  end,
-   record 'rbf       ', false, 3  end,   
-   record 'rsb       ', false, 1  end,
-   record 'rwb       ', false, 1  end,   
-   record 'gbf       ', false, 2  end,
-   record 'pbf       ', false, 2  end,   
-   record 'rib       ', false, 4  end,
-   record 'rcb       ', false, 4  end,   
-   record 'nwl       ', false, 3  end, { special }
-   record 'dsl       ', false, 3  end, { special }
-   record 'eof       ', true,  1  end,
-   record 'efb       ', true,  1  end,   
-   record 'fbv       ', false, 1  end,
-   record 'fvb       ', false, 2  end,
-   record 'wbx       ', false, 2  end,
-   record 'asst      ', false, 3  end,
-   record 'clst      ', false, 1  end,
-   record 'pos       ', false, 2  end,
-   record 'upd       ', false, 1  end,
-   record 'appt      ', false, 1  end,
-   record 'del       ', false, 2  end,
-   record 'chg       ', false, 4  end,
-   record 'len       ', true,  1  end,
-   record 'loc       ', true,  1  end,
-   record 'exs       ', true,  2  end,
-   record 'assb      ', false, 3  end,
-   record 'clsb      ', false, 1  end,
-   record 'appb      ', false, 1  end,
-   record 'hlt       ', false, 0  end,
-   record 'ast       ', false, 1  end,
-   record 'asts      ', false, 3  end,
-   record 'wrih      ', false, 3  end,
-   record 'wrio      ', false, 3  end,
-   record 'wrib      ', false, 3  end,
-   record 'wrsp      ', false, 3  end,
-   record 'wiz       ', false, 3  end,
-   record 'wizh      ', false, 3  end,
-   record 'wizo      ', false, 3  end,
-   record 'wizb      ', false, 3  end,
-   record 'rds       ', false, 3  end,
-   record 'ribf      ', false, 5  end,
-   record 'rdif      ', false, 3  end,
-   record 'rdrf      ', false, 3  end,
-   record 'rcbf      ', false, 5  end,
-   record 'rdcf      ', false, 3  end,
-   record 'rdsf      ', false, 4  end,
-   record 'rdsp      ', false, 3  end,
-   record 'aeft      ', false, 3  end,
-   record 'aefb      ', false, 3  end,
-   record 'rdie      ', false, 3  end,
-   record 'rdre      ', false, 3  end,
-   record 'rdx       ', false, 2  end,
-   record 'rdxf      ', false, 3  end,
-   record 'rxb       ', false, 4  end,
-   record 'rxbf      ', false, 5  end,
-   record 'rdsc      ', false, 3  end,
-   record 'rdih      ', false, 2  end,
-   record 'rdio      ', false, 2  end,    
-   record 'rdib      ', false, 2  end,
-   record 'rifh      ', false, 3  end,
-   record 'rifo      ', false, 3  end,
-   record 'rifb      ', false, 3  end,
-   record 'ribh      ', false, 4  end,
-   record 'ribo      ', false, 4  end,
-   record 'ribb      ', false, 4  end,
-   record 'rbfh      ', false, 5  end,
-   record 'rbfo      ', false, 5  end,
-   record 'rbfb      ', false, 5  end,
-   record 'rdxh      ', false, 2  end,
-   record 'rdxo      ', false, 2  end,
-   record 'rdxb      ', false, 2  end,
-   record 'rxfh      ', false, 3  end,
-   record 'rxfo      ', false, 3  end,
-   record 'rxfb      ', false, 3  end,
-   record 'rxbh      ', false, 4  end,
-   record 'rxbo      ', false, 4  end,
-   record 'rxbb      ', false, 4  end,
-   record 'rbxh      ', false, 5  end,
-   record 'rbxo      ', false, 5  end,
-   record 'rbxb      ', false, 5  end,
-   record 'sete      ', false, 1  end
+   record 'get       ', false, 1  end, { 0 }
+   record 'put       ', false, 1  end, { 1 }
+   record 'thw       ', false, 1  end, { 2 }
+   record 'rln       ', false, 1  end, { 3 }
+   record 'new       ', false, 2  end, { 4 }
+   record 'wln       ', false, 1  end, { 5 }
+   record 'wrs       ', false, 4  end, { 6 }
+   record 'eln       ', true,  1  end, { 7 }
+   record 'wri       ', false, 3  end, { 8 }
+   record 'wrr       ', false, 3  end, { 9 }
+   record 'wrc       ', false, 3  end, { 10 }
+   record 'rdi       ', false, 2  end, { 11 }
+   record 'rdr       ', false, 2  end, { 12 }
+   record 'rdc       ', false, 2  end, { 13 }
+   record 'sin       ', true,  1  end, { 14 }
+   record 'cos       ', true,  1  end, { 15 }
+   record 'exp       ', true,  1  end, { 16 }
+   record 'log       ', true,  1  end, { 17 }
+   record 'sqt       ', true,  1  end, { 18 }
+   record 'atn       ', true,  1  end, { 19 }
+   record '---       ', false, 1  end, { 20 }
+   record 'pag       ', false, 1  end, { 21 }
+   record 'rsf       ', false, 1  end, { 22 }
+   record 'rwf       ', false, 1  end, { 23 }
+   record 'wrb       ', false, 3  end, { 24 }
+   record 'wrf       ', false, 4  end, { 25 }
+   record 'dsp       ', false, 2  end, { 26 }
+   record 'wbf       ', false, 3  end, { 27 }
+   record 'wbi       ', false, 2  end, { 28 }
+   record 'wbr       ', false, 2  end, { 29 }
+   record 'wbc       ', false, 2  end, { 30 }
+   record 'wbb       ', false, 2  end, { 31 }
+   record 'rbf       ', false, 3  end, { 32 }
+   record 'rsb       ', false, 1  end, { 33 }
+   record 'rwb       ', false, 1  end, { 34 }
+   record 'gbf       ', false, 2  end, { 35 }
+   record 'pbf       ', false, 2  end, { 36 }
+   record 'rib       ', false, 4  end, { 37 }
+   record 'rcb       ', false, 4  end, { 38 }
+   record 'nwl       ', false, 3  end, { special } { 39 }
+   record 'dsl       ', false, 3  end, { special } { 40 }
+   record 'eof       ', true,  1  end, { 41 }
+   record 'efb       ', true,  1  end, { 42 }
+   record 'fbv       ', false, 1  end, { 43 }
+   record 'fvb       ', false, 2  end, { 44 }
+   record 'wbx       ', false, 2  end, { 45 }
+   record 'asst      ', false, 3  end, { 46 }
+   record 'clst      ', false, 1  end, { 47 }
+   record 'pos       ', false, 2  end, { 48 }
+   record 'upd       ', false, 1  end, { 49 }
+   record 'appt      ', false, 1  end, { 50 }
+   record 'del       ', false, 2  end, { 51 }
+   record 'chg       ', false, 4  end, { 52 }
+   record 'len       ', true,  1  end, { 53 }
+   record 'loc       ', true,  1  end, { 54 }
+   record 'exs       ', true,  2  end, { 55 }
+   record 'assb      ', false, 3  end, { 56 }
+   record 'clsb      ', false, 1  end, { 57 }
+   record 'appb      ', false, 1  end, { 58 }
+   record 'hlt       ', false, 0  end, { 59 }
+   record 'ast       ', false, 1  end, { 60 }
+   record 'asts      ', false, 3  end, { 61 }
+   record 'wrih      ', false, 3  end, { 62 }
+   record 'wrio      ', false, 3  end, { 63 }
+   record 'wrib      ', false, 3  end, { 64 }
+   record 'wrsp      ', false, 3  end, { 65 }
+   record 'wiz       ', false, 3  end, { 66 }
+   record 'wizh      ', false, 3  end, { 67 }
+   record 'wizo      ', false, 3  end, { 68 }
+   record 'wizb      ', false, 3  end, { 69 }
+   record 'rds       ', false, 3  end, { 70 }
+   record 'ribf      ', false, 5  end, { 71 }
+   record 'rdif      ', false, 3  end, { 72 }
+   record 'rdrf      ', false, 3  end, { 73 }
+   record 'rcbf      ', false, 5  end, { 74 }
+   record 'rdcf      ', false, 3  end, { 75 }
+   record 'rdsf      ', false, 4  end, { 76 }
+   record 'rdsp      ', false, 3  end, { 77 }
+   record 'aeft      ', false, 3  end, { 78 }
+   record 'aefb      ', false, 3  end, { 79 }
+   record 'rdie      ', false, 3  end, { 80 }
+   record 'rdre      ', false, 3  end, { 81 }
+   record 'rdx       ', false, 2  end, { 82 }
+   record 'rdxf      ', false, 3  end, { 83 }
+   record 'rxb       ', false, 4  end, { 84 }
+   record 'rxbf      ', false, 5  end, { 85 }
+   record 'rdsc      ', false, 3  end, { 86 }
+   record 'rdih      ', false, 2  end, { 87 }
+   record 'rdio      ', false, 2  end, { 88 }
+   record 'rdib      ', false, 2  end, { 89 }
+   record 'rifh      ', false, 3  end, { 90 }
+   record 'rifo      ', false, 3  end, { 91 }
+   record 'rifb      ', false, 3  end, { 92 }
+   record 'ribh      ', false, 4  end, { 93 }
+   record 'ribo      ', false, 4  end, { 94 }
+   record 'ribb      ', false, 4  end, { 95 }
+   record 'rbfh      ', false, 5  end, { 96 }
+   record 'rbfo      ', false, 5  end, { 97 }
+   record 'rbfb      ', false, 5  end, { 98 }
+   record 'rdxh      ', false, 2  end, { 99 }
+   record 'rdxo      ', false, 2  end, { 100 }
+   record 'rdxb      ', false, 2  end, { 101 }
+   record 'rxfh      ', false, 3  end, { 102 }
+   record 'rxfo      ', false, 3  end, { 103 }
+   record 'rxfb      ', false, 3  end, { 104 }
+   record 'rxbh      ', false, 4  end, { 105 }
+   record 'rxbo      ', false, 4  end, { 106 }
+   record 'rxbb      ', false, 4  end, { 107 }
+   record 'rbxh      ', false, 5  end, { 108 }
+   record 'rbxo      ', false, 5  end, { 109 }
+   record 'rbxb      ', false, 5  end, { 110 }
+   record 'sete      ', false, 1  end { 111 }
 end;
 
 var   

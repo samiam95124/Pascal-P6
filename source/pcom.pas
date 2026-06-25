@@ -11322,7 +11322,7 @@ end;
       mn[ 64] :='rgs'; mn[ 65] :='???'; mn[ 66] :='ipj'; mn[ 67] :='cip';
       mn[ 68] :='lpa'; mn[ 69] :='???'; mn[ 70] :='???'; mn[ 71] :='dmp';
       mn[ 72] :='swp'; mn[ 73] :='tjp'; mn[ 74] :='lip'; mn[ 75] :='ckv';
-      mn[ 76] :='dup'; mn[ 77] :='cke'; mn[ 78] :='cks'; mn[ 79] :='inv';
+      mn[ 76] :='???'; mn[ 77] :='cke'; mn[ 78] :='cks'; mn[ 79] :='inv';
       mn[ 80] :='ckl'; mn[ 81] :='cta'; mn[ 82] :='ivt'; mn[ 83] :='xor';
       mn[ 84] :='bge'; mn[ 85] :='ede'; mn[ 86] :='mse'; mn[ 87] :='cjp';
       mn[ 88] :='lnp'; mn[ 89] :='cal'; mn[ 90] :='ret'; mn[ 91] :='cuv';
@@ -11446,7 +11446,7 @@ end;
       cdx[ 70] :=  0;                    cdx[ 71] := +ptrsize;
       cdx[ 72] :=  0;                    cdx[ 73] := +intsize;
       cdx[ 74] := -adrsize*2;            cdx[ 75] :=  2{*};
-      cdx[ 76] :=  4{*};                 cdx[ 77] :=  +intsize*2;
+      cdx[ 76] :=  0;                    cdx[ 77] :=  +intsize*2;
       cdx[ 78] := -intsize;              cdx[ 79] :=  +adrsize;
       cdx[ 80] :=  2{*};                 cdx[ 81] :=  0;
       cdx[ 82] :=  0;                    cdx[ 83] := +intsize;
@@ -11503,12 +11503,12 @@ end;
       cdxs[3][7] := 0;
       cdxs[3][8] := 0;
 
-      cdxs[4][1] := -intsize;  { ldoi/ldc/lodi/dupi/ltc }
-      cdxs[4][2] := -realsize; { ldor/ldc/lodr/dupr/ltc }
-      cdxs[4][3] := -intsize;  { ldob/ldc/lodb/dupb/ltc }
-      cdxs[4][4] := -intsize;  { ldoc/ldc/lodc/dupc/ltc }
-      cdxs[4][5] := -adrsize;  { ldoa/ldc/loda/dupa/ltc }
-      cdxs[4][6] := -ptrsize;  { ldos/ldc/lods/dups/ltc }
+      cdxs[4][1] := -intsize;  { ldoi/ldc/lodi/ltc }
+      cdxs[4][2] := -realsize; { ldor/ldc/lodr/ltc }
+      cdxs[4][3] := -intsize;  { ldob/ldc/lodb/ltc }
+      cdxs[4][4] := -intsize;  { ldoc/ldc/lodc/ltc }
+      cdxs[4][5] := -adrsize;  { ldoa/ldc/loda/ltc }
+      cdxs[4][6] := -ptrsize;  { ldos/ldc/lods/ltc }
       cdxs[4][7] := 0;
       cdxs[4][8] := 0;
 

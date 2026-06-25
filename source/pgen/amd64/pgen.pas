@@ -617,7 +617,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
-      { dupi, dupa, dupr, dups, dupb, dupc }
+      { 181-186: reserved (dup retired) }
       181, 182, 183, 184, 185, 186: ;
 
       {cks}
@@ -1731,7 +1731,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' movq %1,%2 # move dest addr to result', ep^.x1^.r1, ep^.r1);
         end;
 
-        { dupi, dupa, dupr, dups, dupb, dupc }
+        { 181-186: reserved (dup retired) }
         181, 182, 183, 184, 185, 186: ;
 
         {cks}
@@ -2512,17 +2512,8 @@ begin { assemble }
       getexp(ep); popstk(ep^.x1); popstk(ep^.r); popstk(ep^.l); pshstk(ep)
     end;
 
-    { At this level we just duplicate the tree. At lower levels we can
-      optimize this. }
-
-    { dupi, dupa, dupr, dups, dupb, dupc }
-    181, 182, 183, 184, 185, 186: begin
-      ep2 := nil;
-      if estack <> nil then if estack^.op = 188{cke} then popstk(ep2);
-      if estack = nil then error('Expression underflow');
-      duptre(estack, ep); pshstk(ep);
-      if ep2 <> nil then pshstk(ep2)
-    end;
+    { 181-186: dup retired (reserved placeholders, see independent.pas) }
+    181, 182, 183, 184, 185, 186: ;
 
     {cks}
     187: begin
