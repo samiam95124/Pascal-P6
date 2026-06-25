@@ -583,8 +583,6 @@ begin
 
 end;
 
-{
-assign not working at present
 operator :=(out a: enum_b; b: enum_b);
 
 begin
@@ -592,7 +590,6 @@ begin
    a := succ(b)
 
 end;
-}
 
 operator +(a: pinteger): pinteger;
 
@@ -1981,12 +1978,6 @@ begin
    writeln('opo17: ', ord(green >= cyan):1, ' s/b 4');
    writeln('opo18: ', ord(cyan in blue):1, ' s/b 5');
 
-   {
-   ! assigns not implemented correctly
-   eb := blue;
-   writeln('opo19: ', ord(eb):1, ' s/b 3');
-   }
-
    new(pi1);
    new(pi2);
    pi1^ := 42;
@@ -2044,6 +2035,11 @@ begin
    writeln(pi3^:1, ' s/b 54');
 
    opooverlay; { opo36: operator body resolves to the prior (built-in) definition }
+
+   { #68: assignment operator overload -- eb := blue invokes operator :=, which
+     does a := succ(b), so eb becomes succ(blue) = cyan }
+   eb := blue;
+   writeln('opo37: ', ord(eb):1, ' s/b 3');
 
    { overload from used module }
 
