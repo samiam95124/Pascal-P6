@@ -4946,13 +4946,23 @@ end;
      schblk := f
   end;
   procedure checkvrnt(lcp: ctp);
-  var vp: stp; vl: ctp; gattrs: attr;
+  var vp: stp; vl: ctp; gattrs: attr; tmpoff: stkoff; spilled: boolean;
   begin
     if chkvar then begin
     if lcp^.klass = field then begin
       vp := lcp^.varnt; vl := lcp^.varlb;
       if (vp <> nil) and (vl <> nil) then
         if (vl^.name <> nil) or chkudtf then begin { is a variant }
+        { Spill an indirect base address to a temp once, so a function call in
+          that address is evaluated a single time. Each tag check and the
+          caller's field access reload the base from the temp instead of
+          duplicating the address tree (which re-executed the function). }
+        spilled := false;
+        if gattr.access = indrct then begin
+          gettmp(tmpoff, ptrsize, true);
+          gen2t(56(*str*),level,tmpoff,nilptr);
+          spilled := true
+        end;
         if chkudtf and (vl^.name = nil) and (vp <> nil) then begin
           { tagfield is unnamed and checking is on, force tagfield
             assignment }
@@ -4963,7 +4973,7 @@ end;
               drct:   dplmt := dplmt + fldaddr;
               indrct: begin
                         idplmt := idplmt + fldaddr;
-                        gen0t(76(*dup*),nilptr)
+                        gen2t(54(*lod*),level,tmpoff,nilptr)
                       end;
               inxd:   error(406)
             end;
@@ -4986,7 +4996,7 @@ end;
             drct:   dplmt := dplmt + fldaddr;
             indrct: begin
                       idplmt := idplmt + fldaddr;
-                      gen0t(76(*dup*),nilptr)
+                      gen2t(54(*lod*),level,tmpoff,nilptr)
                     end;
             inxd:   error(406)
           end;
@@ -4998,7 +5008,9 @@ end;
           end;
           gen0(77(*cke*));
         end;
-        gattr := gattrs
+        gattr := gattrs;
+        { reload the spilled base so the caller's field access has it }
+        if spilled then gen2t(54(*lod*),level,tmpoff,nilptr)
       end
     end
   end
