@@ -435,9 +435,9 @@ type
                      pi_lesc,    { 171 } pi_lesm,    { 172 } pi_ph1,     { 173 }
                      pi_mrkl,    { 174 } pi_ckvi,    { 175 } pi_cps,     { 176 }
                      pi_cpc,     { 177 } pi_aps,     { 178 } pi_ckvb,    { 179 }
-                     pi_ckvc,    { 180 } pi_dupi,    { 181 } pi_dupa,    { 182 }
-                     pi_dupr,    { 183 } pi_dups,    { 184 } pi_dupb,    { 185 }
-                     pi_dupc,    { 186 } pi_cks,     { 187 } pi_cke,     { 188 }
+                     pi_ckvc,    { 180 } pi_ph11,    { 181 } pi_ph12,    { 182 }
+                     pi_ph13,    { 183 } pi_ph14,    { 184 } pi_ph15,    { 185 }
+                     pi_ph16,    { 186 } pi_cks,     { 187 } pi_cke,     { 188 }
                      pi_inv,     { 189 } pi_ckla,    { 190 } pi_cta,     { 191 }
                      pi_ivti,    { 192 } pi_lodx,    { 193 } pi_ldox,    { 194 }
                      pi_strx,    { 195 } pi_srox,    { 196 } pi_stox,    { 197 }
@@ -2970,14 +2970,6 @@ begin
                     if i2 = 0 then errorv(VariantNotActive)
                   end;
 
-    { all the dups are defined, but not all used }
-    pi_dupb,
-    pi_dupc,
-    pi_dupi: begin popint(i1); pshint(i1); pshint(i1) end;
-    pi_dupa: begin popadr(a1); pshadr(a1); pshadr(a1) end;
-    pi_dupr: begin poprel(r1); pshrel(r1); pshrel(r1) end;
-    pi_dups: begin popadr(ad); pshadr(ad); pshadr(ad) end;
-
     pi_inv: begin popadr(ad); putdef(ad, false) end;
 
     pi_adi: begin popint(i2); popint(i1);
@@ -3354,6 +3346,7 @@ begin
     { illegal instructions }
     pi_ph1, pi_ph3, pi_ph4, pi_ph5, pi_ph6, pi_ph7, pi_ph8,
     pi_ph9, pi_mpc, pi_ph10,
+    pi_ph11, pi_ph12, pi_ph13, pi_ph14, pi_ph15, pi_ph16,
     pi_ph2: errorv(InvalidInstruction)
 
   end

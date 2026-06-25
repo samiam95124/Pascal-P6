@@ -445,9 +445,9 @@ type
                      pi_lesc,    { 171 } pi_lesm,    { 172 } pi_ph1,     { 173 }
                      pi_mrkl,    { 174 } pi_ckvi,    { 175 } pi_cps,     { 176 }
                      pi_cpc,     { 177 } pi_aps,     { 178 } pi_ckvb,    { 179 }
-                     pi_ckvc,    { 180 } pi_dupi,    { 181 } pi_dupa,    { 182 }
-                     pi_dupr,    { 183 } pi_dups,    { 184 } pi_dupb,    { 185 }
-                     pi_dupc,    { 186 } pi_cks,     { 187 } pi_cke,     { 188 }
+                     pi_ckvc,    { 180 } pi_ph11,    { 181 } pi_ph12,    { 182 }
+                     pi_ph13,    { 183 } pi_ph14,    { 184 } pi_ph15,    { 185 }
+                     pi_ph16,    { 186 } pi_cks,     { 187 } pi_cke,     { 188 }
                      pi_inv,     { 189 } pi_ckla,    { 190 } pi_cta,     { 191 }
                      pi_ivti,    { 192 } pi_lodx,    { 193 } pi_ldox,    { 194 }
                      pi_strx,    { 195 } pi_srox,    { 196 } pi_stox,    { 197 }
@@ -749,12 +749,12 @@ fixed
         record 'aps       ', false, intsize, pi_aps end,
         record 'ckvb      ', false, intsize, pi_ckvb end,
         record 'ckvc      ', false, intsize, pi_ckvc end,
-        record 'dupi      ', false, 0, pi_dupi end,
-        record 'dupa      ', false, 0, pi_dupa end,
-        record 'dupr      ', false, 0, pi_dupr end,
-        record 'dups      ', false, 0, pi_dups end,
-        record 'dupb      ', false, 0, pi_dupb end,
-        record 'dupc      ', false, 0, pi_dupc end,
+        record '---       ', false, 0, pi_ph11 end,
+        record '---       ', false, 0, pi_ph12 end,
+        record '---       ', false, 0, pi_ph13 end,
+        record '---       ', false, 0, pi_ph14 end,
+        record '---       ', false, 0, pi_ph15 end,
+        record '---       ', false, 0, pi_ph16 end,
         record 'cks       ', false, 0, pi_cks end,
         record 'cke       ', false, 0, pi_cke end,
         record 'inv       ', false, 0, pi_inv end,
@@ -3126,10 +3126,8 @@ procedure load;
           pi_scp, pi_ldp, pi_vdd,
           pi_wbs, pi_wbe,
 
-          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe, cip, 
-            cif, cpl }
-          pi_dupi, pi_dupa, pi_dupr, pi_dups,
-          pi_dupb, pi_dupc, pi_cks, pi_cke,
+          { cks, cke, inv, cal, vbe, cip, cif, cpl }
+          pi_cks, pi_cke,
           pi_inv, pi_ret, pi_vbe, pi_cip,
           pi_cif, pi_cpl: storeop;
          
@@ -5203,13 +5201,6 @@ begin
                     if i2 = 0 then errorv(VariantNotActive)
                   end;
 
-    pi_dupb,
-    pi_dupc,
-    pi_dupi: begin popint(i1); pshint(i1); pshint(i1) end;
-    pi_dupa: begin popadr(a1); pshadr(a1); pshadr(a1) end;
-    pi_dupr: begin poprel(r1); pshrel(r1); pshrel(r1) end;
-    pi_dups: begin popadr(ad); pshadr(ad); pshadr(ad) end;
-
     pi_inv: begin popadr(stoad);
                        if iswatch(stoad) and stopwatch then
                          begin pshadr(stoad); watchmatch := true end
@@ -5608,7 +5599,9 @@ begin
     { illegal instructions }
     pi_ph1, pi_ph2, pi_ph3, pi_ph4,
     pi_ph5, pi_ph6, pi_ph7, pi_ph8,
-    pi_ph9, pi_mpc, pi_ph10:
+    pi_ph9, pi_mpc, pi_ph10,
+    pi_ph11, pi_ph12, pi_ph13, pi_ph14,
+    pi_ph15, pi_ph16:
       errorv(InvalidInstruction)
 
   end
