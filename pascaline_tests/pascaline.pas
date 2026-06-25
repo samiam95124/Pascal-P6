@@ -1712,6 +1712,10 @@ begin
    writeln('fork 4567 z');
    writeln('zip  8731 n');
    writeln('lame 82   i');
+   { #259: with statement on a fixed-array element (same data as f7) }
+   writeln('f8: ');
+   for i := 1 to 5 do begin with f_arc[i] do write(s, ' ', i:4, ' ', c); writeln end;
+   writeln('s/b same as f7');
 
 {*******************************************************************************
 

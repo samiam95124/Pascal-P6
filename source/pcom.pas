@@ -9712,7 +9712,7 @@ end;
       begin lcnt1 := 0; wbscnt := 0;
         repeat
           if sy = ident then
-            begin searchid([vars,field],lcp); insymbol end
+            begin searchid([vars,field,fixedt],lcp); insymbol end
           else begin error(2); lcp := uvarptr end;
           selector(fsys + [comma,dosy],lcp,false);
           if gattr.kind = expr then error(287);

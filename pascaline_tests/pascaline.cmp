@@ -713,6 +713,13 @@ way  12,  q
 fork 4567 z
 zip  8731 n
 lame 82   i
+f8: 
+hi     42 a
+way    12 q
+fork 4567 z
+zip  8731 n
+lame   82 i
+s/b same as f7
 fh1: hi there, bob s/b hi there, bob
 fh2: hi there, bob s/b hi there, bob
 fh3: false s/b false
