@@ -4877,6 +4877,27 @@ end;
     isopr := display[dt].oprprc[opt] <> nil
   end;
 
+  { true if an assignment (:=) operator overload exists whose destination
+    (first) parameter matches the given type. Used to force the destination
+    address onto the stack so the overload's out parameter can be passed. }
+  function isasgnopr(typ: stp): boolean;
+    var dt: disprange; fcp2: ctp; f: boolean;
+  begin f := false;
+    if not iso7185 then begin
+      dt := top;
+      while dt > 0 do begin
+        fcp2 := display[dt].oprprc[bcmop];
+        while fcp2 <> nil do begin
+          if parnum(fcp2) = 2 then
+            if cmptyp(partype(fcp2, 1), typ) then f := true;
+          fcp2 := fcp2^.grpnxt
+        end;
+        dt := dt-1
+      end
+    end;
+    isasgnopr := f
+  end;
+
   function taggedrec(fsp: stp): boolean;
   var b: boolean;
   begin b := false;
@@ -6701,7 +6722,8 @@ end;
       begin gen0(10(*flt*)); gattr.typtr := realptr end;
     fixpar(sp,gattr.typtr);
     if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
-    gencupcuf(122(*cuf*),locpar,fcp^.pfname,fcp);
+    if fcp^.klass = func then gencupcuf(122(*cuf*),locpar,fcp^.pfname,fcp)
+    else gencupcuf(46(*cup*),locpar,fcp^.pfname,fcp); { := operator is a proc }
     gen2(117(*cpr*),lsize,locpars);
     gattr.typtr := fcp^.idtype
   end;
@@ -6759,7 +6781,8 @@ end;
       fixpar(rsp,gattr.typtr);
     end else gen2(116(*cpp*),lsize,locpar); { get both params }
     if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
-    gencupcuf(122(*cuf*),locpar,fcp^.pfname,fcp);
+    if fcp^.klass = func then gencupcuf(122(*cuf*),locpar,fcp^.pfname,fcp)
+    else gencupcuf(46(*cup*),locpar,fcp^.pfname,fcp); { := operator is a proc }
     gen2(117(*cpr*),lsize,locpars);
     gattr.typtr := fcp^.idtype
   end;
@@ -9188,7 +9211,7 @@ end;
             lattr2 := gattr; { save access before load }
             if gattr.typtr <> nil then
               if (gattr.access<>drct) or structt(gattr.typtr) or
-                 tagasc then { if tag checking, force address load }
+                 tagasc or isasgnopr(gattr.typtr) then { force addr for := overload }
                 if gattr.kind <> expr then loadaddress;
             lattr := gattr;
             insymbol; expression(fsys, false); schrcst := ischrcst(gattr);
