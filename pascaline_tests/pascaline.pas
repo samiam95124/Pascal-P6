@@ -126,7 +126,10 @@ fixed f_i: integer = 432;
          record 'zip ', 8731, 'n' end,
          record 'lame', 82,   'i' end
       end;
-         
+      { #200: fixed containers (manual 6.18) -- geometry from the initializer }
+      f_ci: array of integer = array 1, 2, 3 end;
+      f_cs: array of packed array of char = array 'one   ', 'two   ', 'three ' end;
+
 
 type enum_a   = (one, two, three);
      enum_b   = (red, green, blue, cyan, purple, black, white);
@@ -1716,6 +1719,16 @@ begin
    writeln('f8: ');
    for i := 1 to 5 do begin with f_arc[i] do write(s, ' ', i:4, ' ', c); writeln end;
    writeln('s/b same as f7');
+   { #200: fixed container -- length from initializer; max() on the result }
+   write('f9: ', max(f_ci):1, ':');
+   for i := 1 to max(f_ci) do write(' ', f_ci[i]:1);
+   writeln(' s/b 3: 1 2 3');
+   write('f10: ', max(f_cs):1, ',', max(f_cs[1]):1, ':');
+   for i := 1 to max(f_cs) do write(' ', f_cs[i]);
+   writeln(' s/b 3,6: one    two    three ');
+   { #200: max() over common (explicit) fixed arrays, including a matrix }
+   writeln('f11: ', max(f_arc):1, ' ', max(f_ai):1, ' ', max(f_ma,1):1, ' ',
+           max(f_ma,2):1, ' s/b 5 5 3 4');
 
 {*******************************************************************************
 
