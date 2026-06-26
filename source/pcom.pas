@@ -412,6 +412,11 @@ type
                   cslabs,cslabe: integer
                 end;
 
+     { fixed container initializer list: collected element values used to
+       determine the container geometry before emitting (see fixeddeclaration) }
+     fixlp = ^fixlst;
+     fixlst = record next: fixlp; fval: valu; ftyp: stp end;
+
      { tag tracking entries }
      ttp = ^tagtrk;
      tagtrk = record
@@ -1615,7 +1620,7 @@ end;
     270: write(f, 'Container array type specified without initializer(s)');
     271: write(f, 'Number of initializers does not match container array levels');
     272: write(f, 'Cannot declare container array in fixed context');
-    273: write(f, 'Must be container array');
+    273: write(f, 'Must be an array');
     274: write(f, 'Function result type must be scalar, subrange, pointer, set, ',
                'array or record');
     275: write(f, 'Number of parameters does not agree with declaration of any ',
@@ -6294,18 +6299,39 @@ end;
     end;
 
     procedure maxfunction;
-      var lattr: attr;
+      var lattr: attr; lvl, lmn, lmx: integer; lsp, lsp1: stp; lvalu: valu;
     begin chkstd;
       if sy = lparent then insymbol else error(9);
-      variable(fsys+[rparent,comma], false); loadaddress;
-      if gattr.typtr <> nil then
-        if gattr.typtr^.form <> arrayc then error(273);
+      variable(fsys+[rparent,comma], false);
       lattr := gattr;
-      if sy = comma then begin insymbol;
-        expression(fsys + [rparent], false); load;
-        if gattr.typtr <> nil then if gattr.typtr <> intptr then error(125)
-      end else gen2(51(*ldc*),1,1); { default level 1 }
-      gen1(106(*max*),containers(lattr.typtr));
+      if (lattr.typtr <> nil) and (lattr.typtr^.form = arrays) then begin
+        { fixed array: max is the static upper bound (last index) at the level.
+          The level, if given, must be a constant since the geometry is static. }
+        lvl := 1;
+        if sy = comma then begin insymbol;
+          constexpr(fsys + [rparent], lsp1, lvalu);
+          if lvalu.intval then lvl := lvalu.ival else error(125)
+        end;
+        lsp := lattr.typtr; lmx := 0;
+        while (lvl > 1) and (lsp <> nil) do
+          if lsp^.form = arrays then begin lsp := lsp^.aeltype; lvl := lvl-1 end
+          else lvl := 1;
+        if lsp <> nil then if lsp^.form = arrays then if lsp^.inxtype <> nil then
+          getbounds(lsp^.inxtype, lmn, lmx);
+        { drop any address the selector loaded for an indirect reference }
+        if lattr.access <> drct then gen1(71(*dmp*),ptrsize);
+        gen2(51(*ldc*),1,lmx)
+      end else begin
+        { container: runtime length at the level }
+        loadaddress;
+        if lattr.typtr <> nil then
+          if lattr.typtr^.form <> arrayc then error(273);
+        if sy = comma then begin insymbol;
+          expression(fsys + [rparent], false); load;
+          if gattr.typtr <> nil then if gattr.typtr <> intptr then error(125)
+        end else gen2(51(*ldc*),1,1); { default level 1 }
+        gen1(106(*max*),containers(lattr.typtr))
+      end;
       if sy = rparent then insymbol else error(4);
       gattr.typtr := intptr
     end;
@@ -8269,6 +8295,97 @@ end;
         end
       end
     end;
+    { Fixed container: the geometry (6.18) is set from the initializer. Collect
+      the element values into a list, then build the concrete array [1..n] of T
+      and emit. Handles array-of-simple and array-of-(packed array of char),
+      sizing both dimensions in the latter. }
+    procedure fixedcontainer(lcp: ctp);
+      var head, tail, p: fixlp; cnt, elemsize, innerlen: integer;
+          lsp1, elemtyp, inxsp, innersp: stp; lvalu: valu; test: boolean;
+      procedure emitval(typ: stp; fv: valu);
+      begin
+        if prcode then begin
+          if fv.intval then begin
+            if typ = charptr then write(prr, 'c c ', fv.ival:1)
+            else if typ = boolptr then write(prr, 'c b ', fv.ival:1)
+            else if (typ <> nil) and (typ^.size = 1) then
+              write(prr, 'c x ', fv.ival:1)
+            else write(prr, 'c i ', fv.ival:1)
+          end else if fv.valp <> nil then begin
+            if fv.valp^.cclass = reel then write(prr, 'c r ', fv.valp^.rval:23)
+            else if fv.valp^.cclass = strg then begin
+              write(prr, 'c s '''); writev(prr, fv.valp^.sval, fv.valp^.slgth);
+              write(prr, '''')
+            end
+          end;
+          writeln(prr)
+        end
+      end;
+    begin
+      head := nil; tail := nil; cnt := 0; innerlen := -1;
+      elemtyp := lcp^.idtype^.abstype;
+      if (sy = relop) and (op = eqop) then insymbol else error(16);
+      if sy = arraysy then insymbol else error(28);
+      { collect element values }
+      repeat
+        constexpr(fsys+[comma,endsy], lsp1, lvalu);
+        new(p); p^.next := nil; p^.fval := lvalu; p^.ftyp := lsp1;
+        if head = nil then head := p else tail^.next := p; tail := p;
+        cnt := cnt+1;
+        if not lvalu.intval then if lvalu.valp <> nil then
+          if lvalu.valp^.cclass = strg then
+            if innerlen < 0 then innerlen := lvalu.valp^.slgth
+            else if innerlen <> lvalu.valp^.slgth then error(245);
+        test := sy <> comma;
+        if not test then insymbol
+      until test;
+      if sy = endsy then insymbol else error(13);
+      { if the element is itself a container (packed array of char), resolve
+        its length from the strings }
+      if elemtyp <> nil then if elemtyp^.form = arrayc then begin
+        if innerlen < 0 then innerlen := 0;
+        new(innersp,arrays); pshstc(innersp);
+        with innersp^ do
+          begin form := arrays; aeltype := elemtyp^.abstype; tmpl := -1;
+            packing := elemtyp^.packing; size := innerlen end;
+        new(inxsp,subrange); pshstc(inxsp);
+        with inxsp^ do
+          begin form := subrange; rangetype := intptr; size := intsize;
+            packing := false; min.intval := true; min.ival := 1;
+            max.intval := true; max.ival := innerlen end;
+        innersp^.inxtype := inxsp; arrtmp(innersp);
+        elemtyp := innersp
+      end;
+      if elemtyp <> nil then elemsize := elemtyp^.size else elemsize := intsize;
+      { build the outer array [1..cnt] of elemtyp }
+      new(inxsp,subrange); pshstc(inxsp);
+      with inxsp^ do
+        begin form := subrange; rangetype := intptr; size := intsize;
+          packing := false; min.intval := true; min.ival := 1;
+          max.intval := true; max.ival := cnt end;
+      new(lsp1,arrays); pshstc(lsp1);
+      with lsp1^ do
+        begin form := arrays; aeltype := elemtyp; inxtype := inxsp; tmpl := -1;
+          packing := lcp^.idtype^.packing; size := cnt*elemsize end;
+      arrtmp(lsp1);
+      lcp^.idtype := lsp1;
+      { mark symbol with the resolved type, then emit the fixed data }
+      if prcode then
+        if level <= 1 then wrtsym(lcp, 'f') else wrtsym(lcp, 'c');
+      if prcode then write(prr, 'n ');
+      if level > 1 then genlabel(lcp^.floc);
+      prtfxlabel(lcp);
+      if prcode then writeln(prr, ' ', lsp1^.size:1);
+      p := head;
+      while p <> nil do
+        begin
+          if prcode then writeln(prr, 'r');
+          emitval(elemtyp, p^.fval);
+          p := p^.next
+        end;
+      if prcode then writeln(prr, 'x');
+      while head <> nil do begin p := head; head := head^.next; dispose(p) end
+    end;
     begin
       repeat { id:type group }
         lcp := nil;
@@ -8287,8 +8404,12 @@ end;
         if sy = colon then insymbol else error(5);
         typ(fsys + [semicolon,relop] + typedels,lsp,lsize);
         if lcp <> nil then lcp^.idtype := lsp;
+        if (lcp <> nil) and (lsp <> nil) and (lsp^.form = arrayc) then
+          { container: determine geometry from the initializer }
+          fixedcontainer(lcp)
+        else begin
         { mark symbol }
-        if prcode then 
+        if prcode then
           if level <= 1 then wrtsym(lcp, 'f') else wrtsym(lcp, 'c');
         if (sy = relop) and (op = eqop) then begin
           insymbol;
@@ -8299,7 +8420,8 @@ end;
           if prcode then writeln(prr, ' ', lsize:1);
           fixeditem(fsys+[semicolon], lsp, lsp^.size, v, d);
           if prcode then writeln(prr, 'x')
-        end else error(16);
+        end else error(16)
+        end;
         if sy = semicolon then
           begin insymbol;
             if not (sy in fsys + [ident]) then
