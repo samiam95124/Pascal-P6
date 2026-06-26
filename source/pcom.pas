@@ -1659,6 +1659,7 @@ end;
     305: write(f, 'Cannot use non-decimal with real format');
     306: write(f, 'Integer overflow');
 
+    396: write(f, 'Identifier is the wrong kind for this context');
     397: write(f, 'Feature not valid in ISO 7185 Pascal');
     398: write(f, 'Implementation restriction');
     { as of the implementation of full ISO 7185, this error is no longer used }
@@ -2473,7 +2474,7 @@ end;
   end (*searchidne*) ;
 
   procedure searchid(fidcls: setofids; var fcp: ctp);
-    var lcp, lcp1: ctp; pn, fpn: disprange; pdf: boolean;
+    var lcp, lcp1: ctp; pn, fpn: disprange; pdf, dum: boolean;
   begin
     pdf := false;
     searchidne(fidcls, lcp); { perform no error search }
@@ -2498,7 +2499,11 @@ end;
       end
     end else begin (*search not successful
       --> procedure simpletype*)
-      error(104);
+      { #256: if the identifier does exist but in a class not valid here, the
+        real problem is that it is the wrong kind for this context, not that it
+        is undeclared. Re-search ignoring the class filter for a better error. }
+      searchidnenm([types,konst,fixedt,vars,field,proc,func,alias], lcp1, dum);
+      if lcp1 <> nil then error(396) else error(104);
       (*to avoid returning nil, reference an entry
        for an undeclared id of appropriate class
        --> procedure enterundecl*)
@@ -6869,25 +6874,30 @@ end;
                         if lcp^.klass = types then begin
                           { type convert/restrict }
                           chkstd;
-                          if lcp^.idtype <> nil then
-                            if (lcp^.idtype^.form <> scalar) and
-                               (lcp^.idtype^.form <> subrange) then
-                            error(223);
-                          { if simple underfined error and no () trailer,
+                          { if simple undefined error and no () trailer,
                             then assume it is just an undefined id }
-                          if (lcp <> utypptr) or (sy = lparent) then begin
-                            if sy <> lparent then error(9);
-                            insymbol; expression(fsys + [rparent], false);
-                            load;
-                            if sy = rparent then insymbol else error(4);
-                            if gattr.typtr <> nil then
-                              if (gattr.typtr^.form <> scalar) and
-                                 (gattr.typtr^.form <> subrange) then
-                                 error(224);
-                            { bounds check to target type }
-                            checkbnds(lcp^.idtype);
-                            gattr.typtr := lcp^.idtype { retype }
-                          end
+                          if (lcp <> utypptr) or (sy = lparent) then
+                            if sy <> lparent then begin
+                              { #256: a type identifier used where a value is
+                                expected, with no '(' cast trailer }
+                              error(396);
+                              gattr.typtr := lcp^.idtype; gattr.kind := expr
+                            end else begin
+                              if lcp^.idtype <> nil then
+                                if (lcp^.idtype^.form <> scalar) and
+                                   (lcp^.idtype^.form <> subrange) then
+                                error(223);
+                              insymbol; expression(fsys + [rparent], false);
+                              load;
+                              if sy = rparent then insymbol else error(4);
+                              if gattr.typtr <> nil then
+                                if (gattr.typtr^.form <> scalar) and
+                                   (gattr.typtr^.form <> subrange) then
+                                   error(224);
+                              { bounds check to target type }
+                              checkbnds(lcp^.idtype);
+                              gattr.typtr := lcp^.idtype { retype }
+                            end
                         end else
                           begin selector(fsys,lcp,false);
                             if threaten and (lcp^.klass = vars) then with lcp^ do begin
