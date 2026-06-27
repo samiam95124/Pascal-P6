@@ -6977,8 +6977,8 @@ PRT test 519: Missing 'record' on field list
 program iso7185prt0519;
 
 var a: a, b: integer end;
-     9   ****          ^104^6
-     9   ****  104 Identifier not declared
+     9   ****          ^396^6
+     9   ****  396 Identifier is the wrong kind for this context
      9   ****    6 Illegal symbol
 
 begin
@@ -6992,7 +6992,7 @@ Errors in program: 2
 Error numbers in listing:
 -------------------------
   6   1 9 Illegal symbol
-104   1 9 Identifier not declared
+396   1 9 Identifier is the wrong kind for this context
 
 
 
