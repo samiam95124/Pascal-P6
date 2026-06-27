@@ -1,175 +1,99 @@
 #!/bin/bash
 #
-# Compile and run with P6 using GPC
+# Compile and run with P6.
 #
 # Execute with:
 #
 # p6 [flags] [<sourcefile>]...
 #
-# Where <sourcefile> is the name of the source file without
-# extention. The Pascal input file(s) are compiled and run
-# as a group. Any compiler errors are output to the screen.
-# Input and output to and from the running program are from
-# and to the console.
+# Where <sourcefile> is the name of the source file without extension. The
+# program is the last source file named; any modules it uses or joins are built
+# automatically. Compiler errors are output to the screen. Input and output to
+# and from the running program are from and to the console.
 #
 # The flags are one of:
 #
-# --pmach	  Generate mach code and run the result through pmach.
-# --cmach	  Generate mach code and run the result through cmach.
-# --package   Generate a packaged application and run.
-# --pgen      Generate a native application and run.
+# --pint     Run via pint, the interpreter (default).
+# --pmach    Run the machine deck via pmach.
+# --cmach    Run the machine deck via cmach.
+# --package  Run the packaged application.
+# --pgen     Run the native executable.
 #
-# The intermediate code is placed in <file>.p6, where the <file> is the last
-# filename on the command line, which is considered the name of the program.
-# If a binary intermediate is selected (pmach, cmach or package mode), then the
-# intel hex format binary form of the P-machine code will be placed in
-# <file>.p6o, where <file> is the program name. For package mode, the final
-# executable will be placed under the program name.
+# All other options (listing, debug, -mp module path, etc.) are passed through
+# to the pc build driver, which performs the actual compilation. The
+# intermediate is placed in <prog>.p6, where <prog> is the program name. For
+# pmach/cmach the machine deck is placed in <prog>.p6o; for pgen/package the
+# final executable is placed under <prog>.
 #
 
-pint=0
-pmach=0
-cmach=0
-package=0
-pgen=0
-progfile=""
-options=""
-objects=""
+mode=pint
+prog=""
+pcflags=""
 
-for param in "$@" 
+for param in "$@"
 do
 
-    if [ "$param" = "--pint" ]; then
-	
-        pint=1
+    case "$param" in
 
-    elif [ "$param" = "--pmach" ]; then
-	
-        pmach=1
-        
-    elif [ "$param" = "--cmach" ]; then
-    
-        cmach=1
-        
-    elif [ "$param" = "--package" ]; then
-    
-        package=1
+        --pint|-pint)       mode=pint ;;
+        --pmach|-pmach)     mode=pmach ;;
+        --cmach|-cmach)     mode=cmach ;;
+        --package|-package) mode=package ;;
+        --pgen|-pgen)       mode=pgen ;;
 
-    elif [ "$param" = "--pgen" ]; then
-    
-        pgen=1
-      
-    elif [ "$param" = "--help" ]; then
-    
-		echo
-		echo "Compile with P6 using GPC"
-		echo
-		echo "Execute with:"
-		echo
-		echo "p6 [--pmach|--cmach] [<sourcefile>]..."
-		echo
-		echo "where <sourcefile> is the name of the source file without"
-		echo "extention. The Pascal input file\(s\) are compiled and run"
-		echo "as a group. Any compiler errors are output to the screen."
-		echo "Input and output to and from the running program are from"
-		echo "and to the console."
-		echo
-		echo "The flags are one of:"
-		echo
-		echo "--pmach	Generate mach code and run the result through pmach."
-		echo "--cmach	Generate mach code and run the result through cmach."
-		echo "--pint    Generate mach code and run the result through pint (default)."
-        echo "--package Generate a packaged application and run."
-        echo "--pgen    Generate assembly code with pgen for the current machine."
-		echo
-		echo "The intermediate code is placed in <file>.p6."
-		echo
-		exit 0
-		
-    elif [ "${param:0:1}" = "-" ]; then
+        -h|-help|--help)
+            echo
+            echo "Compile and run with P6 (wrapper over the pc build driver)."
+            echo
+            echo "Execute with:"
+            echo
+            echo "p6 [--pint|--pmach|--cmach|--package|--pgen] [options] [<sourcefile>]..."
+            echo
+            echo "The program is the last source file named; the modules it uses or"
+            echo "joins are built automatically. Listing, debug and -mp module-path"
+            echo "options are passed through to pc. Input and output to and from the"
+            echo "running program are from and to the console."
+            echo
+            echo "The flags are one of:"
+            echo
+            echo "--pint    Run via pint, the interpreter (default)."
+            echo "--pmach   Run the machine deck via pmach."
+            echo "--cmach   Run the machine deck via cmach."
+            echo "--package Run the packaged application."
+            echo "--pgen    Run the native executable."
+            echo
+            exit 0 ;;
 
-        # concatentate unrecognized options in option string
-        options="$options $param"
+        -*) # any other option: pass through to pc
+            pcflags="$pcflags $param" ;;
 
-	elif [ ! -z "$param.pas" ]; then
-	
-		if [ ! -f "$param.pas" ]; then
-		
-			echo "$param.pas does not exist"
-			exit 1
-			
-		fi
-		echo Compiling $param...
-	    pcom $param.pas $param.p6 $options
-        if [ "$pgen" = "1" ]; then
+        *)  # source file: the program is the last one named
+            prog="$param" ;;
 
-            # generate .s assembly files
-            pgen $param.p6 $param.s
-            # form list of objects
-            objects="$objects $param.s"
+    esac
 
-        else
-
-            # generate concatenated intermediates
-	        cat $param.p6 >> temp.p6
-
-        fi
-		progfile="$param"
-		
-    fi
-    
 done
 
-if [ -z "$progfile" ]; then
+if [ -z "$prog" ]; then
 
-	echo "*** Error: No compile file specified"
-	exit 1
-	
-fi
-
-#
-# Put intermediate under the program filename (if not pgen)
-#
-if [ "$pgen" = "0" ]; then
-
-    mv temp.p6 $progfile.p6
+    echo "*** Error: No compile file specified"
+    exit 1
 
 fi
 
 #
-# Run combined file
+# Build the program and its modules with pc.
 #
-if [ "$pmach" = "1" ]; then
+pc -$mode $pcflags "$prog" || exit 1
 
-	echo Running with pmach
-	pint $progfile.p6 $progfile.p6o --machdeck $options
-	pmach $progfile.p6o $progfile.out $options
-	
-elif [ "$cmach" = "1" ]; then
+#
+# Run the product through the selected backend.
+#
+case "$mode" in
 
-	echo Running with cmach
-	pint $progfile.p6 $progfile.p6o --machdeck $options
-	cmach $progfile.p6o $progfile.out $options
-	
-elif [ "$package" = "1" ]; then
+    pmach)        pmach "$prog.p6o" "$prog.out" ;;
+    cmach)        cmach "$prog.p6o" "$prog.out" ;;
+    pgen|package) "./$prog" ;;
+    *)            pint  "$prog.p6"  "$prog.out" ;;
 
-    echo Running in packaged mode
-	pint $progfile.p6 $progfile.p6o --machdeck
-	genobj $progfile.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
-	./$progfile $options
-	
-elif [ "$pgen" = "1" ]; then
-
-	echo Running with pgen
-    gcc -g3 -DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER \
-        $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm -x none \
-        $objects -o $progfile -lm
-    ./$progfile
-
-else
-
-	pint $progfile.p6 $progfile.out $options
-
-fi
+esac
