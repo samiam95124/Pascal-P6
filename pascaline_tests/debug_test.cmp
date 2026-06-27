@@ -1,4 +1,3 @@
-Compiling debug_test1...
 P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
@@ -18,7 +17,6 @@ and the following annexes: A,B,C,E.
     13       20 end.
 
 Errors in program: 0
-Compiling debug_test...
 P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.

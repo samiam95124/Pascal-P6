@@ -2636,7 +2636,7 @@ begin
    package := nil; { clear package list }
 
    { set flags }
-   fverb := true; { verbose flag }
+   fverb := false; { verbose flag }
    ftree := false; { list dependency tree }
    fact := false; { list actions }
    fdry := false; { do not perform actions }
