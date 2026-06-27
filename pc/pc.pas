@@ -2092,8 +2092,11 @@ begin { dolink }
       end;
       if fpack then begin
 
-         copy(fnc, 'cmach.c'); { set name of cmach }
-         fndfilmod(fnc); { find on path }
+         { cmach.c lives in the source tree alongside the compiler binary;
+           locate it with the same pgmpath-relative convention pc.ins uses for
+           the module path (../libs), rather than on the module path proper. }
+         services.maknam(fnc, pgmpath, '../source/cmach/cmach', 'c');
+         services.fulnam(fnc); { rationalize the relative path to absolute }
          if not exists(fnc) then error('cmach.c not found');
          services.brknam(fnc, fpc, n, e); { extract path of cmach }
          clears(cmdbuf); { clear command buffer }
