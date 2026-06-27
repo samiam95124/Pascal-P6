@@ -2905,16 +2905,17 @@ end;
     if not eol then write(' ':chcnt+16)
   end (*printtables*);
 
-  procedure chkrefs(h, p: ctp; var w: boolean);
+  procedure chkrefs(h, p: ctp; ln: integer; var w: boolean);
   begin
     if chkref then begin
       if p <> nil then begin
-        chkrefs(h, p^.llink, w); { check left }
-        chkrefs(h, p^.rlink, w); { check right }
+        chkrefs(h, p^.llink, ln, w); { check left }
+        chkrefs(h, p^.rlink, ln, w); { check right }
         if not p^.refer and (p^.klass <> alias) and not incact then begin
           if not w then writeln; writev(output, p^.name, lenpv(p^.name));
-          write(' unreferenced at block ending on line: ', 
-                  incstk^.linecount:1);
+          { #273: ln is the block's "end" line, captured before insymbol
+            advanced the line counter to the following token }
+          write(' unreferenced at block ending on line: ', ln:1);
           if h <> nil then 
             begin write(' in function/procedure: '); 
                   writev(output, h^.name, lenpv(h^.name)) end;
@@ -9272,6 +9273,7 @@ end;
         test: boolean;
         printed: boolean;
         stalvl: integer; { statement nesting level }
+        blkendln: integer; { #273: block "end" line for unreferenced warnings }
         ilp: ctp;
         rp: ripptr; { for rip label resolution }
         ipc, fpc, n: integer;
@@ -10287,6 +10289,8 @@ end;
         ilp := ilp^.ininxt end
     end;
     sublvl;
+    { #273: capture the block's "end" line before insymbol advances past it }
+    blkendln := incstk^.linecount;
     if sy = endsy then insymbol else error(13);
     llp := display[top].flabel; (*test for undefined and unreferenced labels*)
     while llp <> nil do
@@ -10302,8 +10306,8 @@ end;
           llp := nextlab
         end;
     printed := false;
-    if (fprocp <> nil) or iso7185 then 
-      chkrefs(fprocp, display[top].fname, printed);
+    if (fprocp <> nil) or iso7185 then
+      chkrefs(fprocp, display[top].fname, blkendln, printed);
     if toterr = 0 then
       if (topnew <> 0) and prcode then
         error(504); { stack should have wound to zero }

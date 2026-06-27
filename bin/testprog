@@ -60,6 +60,13 @@ ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else
 
 #echo "testprog: command line: $@"
 
+# Start the collected intermediate fresh. The .p6 is built by appending each
+# unit's section to temp.p6 (see below) and is only removed by the final mv. If
+# a prior run exited between the append and that mv (e.g. a multi-unit deviance
+# test whose program unit fails to compile), a stale temp.p6 would otherwise be
+# prepended to this program's .p6 and run in its place.
+rm -f "${tmpd}temp.p6"
+
 for param in "$@"
 do
 
