@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Fri 26 Jun 2026 11:55:46 AM PDT
+Sat 27 Jun 2026 02:38:23 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/test_results/pint/hello.dif
@@ -19,7 +19,7 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/test_results/pint/standardp.dif
 PRT run
-14 standard_tests/test_results/pint/iso7185prt.dif
+0 standard_tests/test_results/pint/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/test_results/pint/pascaline.dif
 strings_test run
@@ -46,7 +46,7 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/test_results/pmach/standardp.dif
 PRT run
-14 standard_tests/test_results/pmach/iso7185prt.dif
+0 standard_tests/test_results/pmach/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/test_results/pmach/pascaline.dif
 strings_test run
@@ -71,7 +71,7 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/test_results/cmach/standardp.dif
 PRT run
-14 standard_tests/test_results/cmach/iso7185prt.dif
+0 standard_tests/test_results/cmach/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/test_results/cmach/pascaline.dif
 strings_test run
@@ -96,7 +96,7 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/test_results/package/standardp.dif
 PRT run
-14 standard_tests/test_results/package/iso7185prt.dif
+0 standard_tests/test_results/package/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/test_results/package/pascaline.dif
 pgen run ***************************************
@@ -125,15 +125,14 @@ strings_test run
 network_test run
 0 libs/tests/test_results/pgen/network_test.dif
 
-Total differences: 56
+Total differences: 0
 Fails: 0
-*** Regression fails
-Fri 26 Jun 2026 12:01:07 PM PDT
+Sat 27 Jun 2026 02:43:45 PM PDT
 Files sha256sum ***************************************
 Source files
 df0f195e22be3e970e6c36503d6c31fe78beda92c6499155cb1957c46cf80a7f  -
 batch files
-dc07ea201bbf2776b747a9cbc40ad391c0cdc79783e8240b4f62ad87b647dfdd  -
+f351a9abb27cd0ba8240d0f0c7b4765e8d2a48c68155ecc23fdba874cafa9635  -
 P2 files
 abb5a8a00d377dbcf7c793f9f399fb51e017f2e27ecab9607e4cace253472cfb  -
 p4 files
