@@ -91,6 +91,7 @@ else
     errflag="-ef=$err"
 fi
 
+rm -f "$err" # clear any prior .err so a build that emits nothing is detectable
 pc -$mode $buildpath "$errflag" $pcflags "$prog"
 status=$?
 
@@ -111,6 +112,17 @@ if [ ! -f "$err" ]; then
     fi
     pcom "$prog.pas" "$p6out" "$errflag" $pcflags
     status=$?
+
+fi
+
+#
+# pc and pcom can exit zero on a compile error when output is directed to a
+# list/error file, so treat a non-zero error count in the .err as failure. This
+# stops callers (testprog) from trying to run a program that did not compile.
+#
+if [ -f "$err" ] && grep -q "Errors in program: [1-9]" "$err"; then
+
+    status=1
 
 fi
 
