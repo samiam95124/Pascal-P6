@@ -1947,7 +1947,11 @@ begin
                   end
                 end else error('No valid option found');
                 skpspc
-              until not (ch in ['a'..'z'])
+              until not (ch in ['a'..'z']);
+              { the amd64 code generator only emits SYS V ABI code; reject a
+                non-SYS V intermediate up front, before any code is generated,
+                rather than emitting a mismatched object that crashes at run }
+              if not amd64_sysv then error('Calling convention mismatch')
             end;
        'g': begin getint(i); gblsiz := i end; { set globals space }
        'b': begin { block start }

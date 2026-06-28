@@ -3505,7 +3505,8 @@ begin (* main *)
   99 : { abort run }
 
   writeln;
-  writeln('Program generation complete');
+  if errret then writeln('Program generation aborted')
+  else writeln('Program generation complete');
 
   { return 0 on no error, 1 on error }
   seterr(ord(errret));
