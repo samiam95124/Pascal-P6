@@ -11,10 +11,13 @@ else tmpd=""; incd="."; fi
 ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
 
 #
-# Compile pascals
+# Compile pascals. The single intermediate is reused for every backend; the
+# native (pgen) path needs it compiled with the SysV ABI flag.
 #
+amdopt=""
+if [ "$1" = "--pgen" ]; then amdopt="--amd64_sysv"; fi
 echo "Compiling pascals to intermediate code"
-compile --list- $1 sample_programs/pascals
+compile --list- $1 $amdopt sample_programs/pascals
 cat $(ob sample_programs/pascals).err
 #
 # Create null input file

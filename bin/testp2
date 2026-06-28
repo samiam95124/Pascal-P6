@@ -12,10 +12,13 @@ else tmpd=""; incd="."; fi
 ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
 
 #
-# Compile P2
+# Compile P2. The single intermediate is reused for every backend; the native
+# (pgen) path needs it compiled with the SysV ABI flag.
 #
+amdopt=""
+if [ "$1" = "--pgen" ]; then amdopt="--amd64_sysv"; fi
 echo "Compiling pcomp to intermediate code"
-compile --list- $1 p2/pcomp
+compile --list- $1 $amdopt p2/pcomp
 cat $(ob p2/pcomp).err
 #
 # Run the p2 compiler to get p2 intermediate
@@ -32,7 +35,7 @@ fi
 # Compile pasint to intermediate code
 #
 echo Compiling pasint to intermediate
-compile --list- --reference- $1 p2/pasint
+compile --list- --reference- $1 $amdopt p2/pasint
 cat $(ob p2/pasint).err
 #
 # Create null input file
