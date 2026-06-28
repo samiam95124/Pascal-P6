@@ -17,7 +17,7 @@ ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else
 amdopt=""
 if [ "$1" = "--pgen" ]; then amdopt="--amd64_sysv"; fi
 echo "Compiling pascals to intermediate code"
-compile --list- $1 $amdopt sample_programs/pascals
+compile --out="$REGRESS_OUT" --list- $1 $amdopt sample_programs/pascals
 cat $(ob sample_programs/pascals).err
 #
 # Create null input file

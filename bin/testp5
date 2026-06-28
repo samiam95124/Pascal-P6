@@ -22,7 +22,7 @@ ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else
 #
 echo "Compiling pcom to intermediate code"
 cpp -DWRDSIZ64 -P -nostdinc -traditional-cpp p5/source/pcom.pas $(ob p5/source/pcom.mpp).pas
-compile --list- $1 $(ob p5/source/pcom.mpp)
+compile --out="$REGRESS_OUT" --list- $1 $(ob p5/source/pcom.mpp)
 cat $(ob p5/source/pcom.mpp).err
 #
 # Run P5/pcom on P6/pint to compile iso7185pat to P5/intermediate
@@ -33,7 +33,7 @@ pint $(ob p5/source/pcom.mpp).p6 ${tmpd}temp standard_tests/iso7185pat.pas $(ob 
 #
 echo "Compiling pint to intermediate code"
 cpp -DSMALL_MODEL -DWRDSIZ64 -P -nostdinc -traditional-cpp p5/source/pint.pas $(ob p5/source/pint.mpp).pas
-compile --list- $1 $(ob p5/source/pint.mpp)
+compile --out="$REGRESS_OUT" --list- $1 $(ob p5/source/pint.mpp)
 cat $(ob p5/source/pint.mpp).err
 #
 # Create null input file

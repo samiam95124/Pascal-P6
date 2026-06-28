@@ -203,7 +203,7 @@ do
     		#echo "Compiling $param..."
             # clean any previous products
             rm -f $(ob $param).lst $(ob $param).dif $(ob $param).ecd
-    		compile $listoption --noerrmsg $options $pintoption $pmachoption \
+    		compile --out="$REGRESS_OUT" $listoption --noerrmsg $options $pintoption $pmachoption \
                 $cmachoption $packageoption $pgenoption $param
     		if [ $? -ne 0 ]; then
     		
