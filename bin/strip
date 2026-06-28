@@ -42,6 +42,9 @@ grep -v -e 'P. Pascal .*code generator vs. .\..' | \
 grep -v -e 'P. Pascal .*code generator vs. .\..\.x' | \
 grep -v -e 'P. Pascal .*compiler vs. .\..' | \
 grep -v -e 'P. Pascal .*compiler vs. .\..\.x' | \
+grep -v -e 'Pascal-P6 complies with the requirements' | \
+grep -v -e 'and the following annexes' | \
+grep -v -e '\*\*\* eof encountered' | \
 grep -v -e 'Assembling/loading program' | \
 grep -v -e 'loading program' | \
 grep -v -e 'Running program' | \

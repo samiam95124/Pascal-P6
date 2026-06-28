@@ -1,251 +1,140 @@
 #!/bin/bash
 #
-# Compile file in batch mode using GPC Pascal.
-#
-# Runs a compile with the input and output coming from/going to files.
+# Compile a file in batch mode, as a thin wrapper over the pc build driver.
 #
 # Execution:
 #
-# Compile [<options>] <file>
+# compile [<options>] <file>
 #
-# <file> is the filename without extention.
+# <file> is the filename without extension. Compiles <file>.pas, producing the
+# intermediate <file>.p6 and the error/listing output <file>.err, plus the
+# per-mode products (the machine deck <file>.p6o, assembly/object files, and the
+# executable). This does not run the program.
 #
-# The files are:
-#
-# <file>.pas - The Pascal source file
-# <file>.p6  - The intermediate file produced
-# <file>.err - The errors output from the compiler
-#
-# Note that the l+ option must be specified to get a full
-# listing in the .err file (or just a lack of l-).
+# When REGRESS_OUT is set, all generated products and the .err are placed in
+# that directory (via pc -buildpath / -errfile) so models can build in parallel;
+# the source is still read from its own path.
 #
 # The flags are one of:
 #
-# --pmach	Generate mach code and run the result through pmach.
-# --cmach	Generate mach code and run the result through cmach.
-# --pint    Generate mach code and run the result through pint.
-# --package Generate a unified executable with mach code and interpreter.
-# --pgen    Generate assembly code via pgen for the current machine (default).
-# --noerrmsg Do not output failure message on compile, the .err file is sufficient.
+# --pint     Generate the intermediate only (to be run via pint).
+# --pmach    Generate the machine deck (to be run via pmach).
+# --cmach    Generate the machine deck (to be run via cmach).
+# --package  Generate a unified executable (mach code plus interpreter).
+# --pgen     Generate a native executable for the current machine (default).
+# --noerrmsg Do not echo the .err file on completion (the file is still written).
+# --iso7185  Compile in ISO 7185 standard mode.
 #
-pint=0
-pmach=0
-cmach=0
-package=0
-pgen=1
-progfile=""
-options=""
-objects=""
-noerrmsg="0"
-noerrmsgoption=""
-fails="0"
-thisfail="0"
-iso7185="0"
-iso7185option=""
-amd64_sysvoption=""
-
-#echo "compile: command line: $@"
-
-catints=""
-caterrs=""
-
+# All other options are passed through to the compiler.
 #
-# When REGRESS_OUT is set, all generated files -- per-module intermediates and
-# objects, the combined deck, the executable, and the shared temp/error files
-# (temp, prd, caterrs.err, catints.p6, program_code.c) -- go to that per-model
-# directory so models can build in parallel. Inputs are read from the source
-# path. ob() maps a source path to its output base in that directory.
-#
-if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; incd="$REGRESS_OUT"
-else tmpd=""; incd="."; fi
-ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
+
+mode=pgen
+noerrmsg=0
+listing=0
+prog=""
+pcflags=""
 
 for param in "$@"
 do
 
-    if [ "$param" = "--pint" ]; then
-	
-        pint=1
-        pmach=0
-        cmach=0
-        package=0
-        pgen=0
-        
-    elif [ "$param" = "--pmach" ]; then
-	
-        pmach=1
-        pint=0
-        cmach=0
-        package=0
-        pgen=0
-        
-    elif [ "$param" = "--cmach" ]; then
-    
-        cmach=1
-        pint=0
-        pmach=0
-        package=0
-        pgen=0
-        
-    elif [ "$param" = "--package" ]; then
-    
-        package=1
-        pint=0
-        pmach=0
-        cmach=0
-        pgen=0
+    case "$param" in
 
-    elif [ "$param" = "--pgen" ]; then
-    
-        pgen=1
-        pint=0
-        pmach=0
-        cmach=0
-        package=0
-        amd64_sysvoption="-amd64_sysv"
+        --pint)     mode=pint ;;
+        --pmach)    mode=pmach ;;
+        --cmach)    mode=cmach ;;
+        --package)  mode=package ;;
+        --pgen)     mode=pgen ;;
+        --noerrmsg) noerrmsg=1 ;;
+        --iso7185)  pcflags="$pcflags -iso7185" ;;
+        --list+|--list) listing=1 ;;  # listing on; redirected via --list= below
+        --list-)    listing=0 ;;       # listing off; errors-only via -ef= below
+        -*)         pcflags="$pcflags $param" ;;  # pass other options through
+        *)          prog="$param" ;;
 
-    elif [ "$param" = "--noerrmsg" ]; then
-    
-    	noerrmsg=1
-        noerrmsgoption="--noerrmsg"
+    esac
 
-    elif [ "$param" = "--iso7185" ]; then
-    
-    	iso7185=1
-        iso7185option="-DISO7185=1"
-      
-    elif [ "$param" = "--help" ]; then
-    
-		echo
-		echo "Compile with P6 using GPC"
-		echo
-		echo "Execute with:"
-		echo
-		echo "p6 [--pmach|--cmach|--package|--pgen] [<sourcefile>]..."
-		echo
-		echo "where <sourcefile> is the name of the source file without"
-		echo "extention. The Pascal input file\(s\) are compiled and run"
-		echo "as a group. Any compiler errors are output to the screen."
-		echo "Input and output to and from the running program are from"
-		echo "and to the console."
-		echo
-		echo "The flags are one of:"
-		echo
-		echo "--pmach	 Generate mach code and run the result through pmach."
-		echo "--cmach	 Generate mach code and run the result through cmach."
-		echo "--pint     Generate mach code and run the result through pint."
-        echo "--package  Generate a packaged application and run."
-        echo "--pgen     Generate assembly code with pgen for the current machine (default)."
-		echo "--noerrmsg Do not output failure message on compile, the .err file is"
-		echo "           sufficient."
-		echo
-		echo "The intermediate code, if used, is placed in <file>.p6. Otherwise"
-        echo "the executable is in <file>, the binary deck if used is in <file>.p6o."
-		echo
-		exit 0
-		
-    elif [ "${param:0:1}" = "-" ]; then
-
-        # concatentate unrecognized options in option string
-        options="$options $param"
-
-	elif [ ! -z "$param.pas" ]; then
-
-		if [ ! -f "$param.pas" ]; then
-		
-			echo "$param.pas does not exist"
-			exit 1
-			
-		fi
-		echo Compiling $param...
-        thisfail=0
-        #echo "Will execute: pcom $param.pas $param.p6 $options $amd64_sysvoption"
-        pcom $param.pas $(ob $param).p6 $options $amd64_sysvoption > ${tmpd}temp
-        if [ "$?" != "0" ]; then
-
-            fails=1
-            thisfail=1
-
-        fi
-        cat ${tmpd}temp >> ${tmpd}caterrs.err
-        rm ${tmpd}temp
-        if [ "$pgen" = "1" ] && [ "$thisfail" = "0" ]; then
-
-            # generate .s assembly files
-            cp $(ob $param).p6 ${tmpd}prd
-            pgen $(ob $param).p6 $(ob $param).s >> ${tmpd}caterrs.err
-            # form list of objects
-            objects="$objects $(ob $param).s"
-
-        fi
-        # generate concatenated intermediates
-        if [ "$thisfail" = "0" ]; then
-
-	        cat $(ob $param).p6 >> ${tmpd}catints.p6
-
-        fi
-		progfile="$param"
-		
-    fi
-    
 done
 
-if [ -z "$progfile" ]; then
+if [ -z "$prog" ]; then
 
-	echo "*** Error: No compile file specified"
-	exit 1
-	
-fi
-
-#
-# Put intermediate and error under the program filename
-#
-if [ -f "${tmpd}catints.p6" ]; then
-
-    mv ${tmpd}catints.p6 $(ob $progfile).p6
-
-fi
-mv ${tmpd}caterrs.err $(ob $progfile).err
-
-#
-# Print errors unless supressed
-#
-if [ "$noerrmsg" = "0" ]; then
-
-    cat $(ob $progfile).err
-
-fi
-
-#
-# Exit with bad status if any fail
-#
-if [ "$fails" != "0" ]; then
-
+    echo "*** Error: No compile file specified"
     exit 1
-        
+
 fi
 
 #
-# Construct combined intermediate under the program filename
+# Output location: a REGRESS_OUT directory (for parallel per-model builds) or,
+# by default, alongside the source. pc reads the source in place and writes the
+# generated products and the .err to the build path.
 #
-if [ "$pmach" = "1" ]; then
+if [ -n "$REGRESS_OUT" ]; then
 
-	pint -machdeck $(ob $progfile).p6 $(ob $progfile).p6o
+    buildpath="-bp=$REGRESS_OUT"
+    err="$REGRESS_OUT/$(basename "$prog").err"
 
-elif [ "$cmach" = "1" ]; then
+else
 
-	pint -machdeck $(ob $progfile).p6 $(ob $progfile).p6o
-
-elif [ "$package" = "1" ]; then
-
-	pint -machdeck $(ob $progfile).p6 $(ob $progfile).p6o
-	genobj $(ob $progfile).p6o ${tmpd}program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I$incd -o $(ob $progfile) $PASCALP6/source/cmach/cmach.c -lm
-
-elif [ "$pgen" = "1" ]; then
-
-    gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
-        $PASCALP6/source/pgen/amd64/main.asm $objects -o $(ob $progfile) -lm >> $(ob $progfile).err 2>&1
+    buildpath=""
+    err="$prog.err"
 
 fi
+
+#
+# Direct the compiler output to the .err file. When a listing was requested,
+# --list=<file> captures the full source listing (with inline error markers and
+# the error summary); otherwise -ef=<file> captures errors only. In both cases
+# there is no signon banner; strip removes the banner from the goldens.
+#
+if [ "$listing" = "1" ]; then
+    errflag="--list=$err"
+else
+    errflag="-ef=$err"
+fi
+
+rm -f "$err" # clear any prior .err so a build that emits nothing is detectable
+# pc's driver chatter (signon, "Build has errors") goes to the terminal; the
+# real compiler output is in the .err, so silence it for a clean batch run.
+pc -$mode $buildpath "$errflag" $pcflags "$prog" >/dev/null 2>&1
+status=$?
+
+#
+# Fallback for deviance tests: pc pre-scans the source to identify the program
+# and its modules before building. A program whose deliberate syntax error
+# defeats that scan (e.g. a missing "program" word-symbol, or a malformed token)
+# leaves pc with nothing to build and no .err. Such a file is a single
+# self-contained unit, so compile it directly with pcom -- as the classic
+# compile did -- writing the same products to the build path.
+#
+if [ ! -f "$err" ]; then
+
+    if [ -n "$REGRESS_OUT" ]; then
+        p6out="$REGRESS_OUT/$(basename "$prog").p6"
+    else
+        p6out="$prog.p6"
+    fi
+    pcom "$prog.pas" "$p6out" "$errflag" $pcflags >/dev/null 2>&1
+    status=$?
+
+fi
+
+#
+# pc and pcom can exit zero on a compile error when output is directed to a
+# list/error file, so treat a non-zero error count in the .err as failure. This
+# stops callers (testprog) from trying to run a program that did not compile.
+#
+if [ -f "$err" ] && grep -q "Errors in program: [1-9]" "$err"; then
+
+    status=1
+
+fi
+
+#
+# Echo the compiler error/listing output unless suppressed.
+#
+if [ "$noerrmsg" = "0" ] && [ -f "$err" ]; then
+
+    cat "$err"
+
+fi
+
+exit $status

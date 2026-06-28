@@ -195,6 +195,9 @@ famd64sysv,  samd64sysv:  boolean;
 { error file passthrough }
 errfil:      filnam;
 serrfil:     boolean;
+{ listing file passthrough (--list=<file>) }
+listfil:     filnam;
+slistfil:    boolean;
 
 { head entry pointer }                     hp:      filept;
 { link order list }                        lnklst:  filnam;
@@ -292,6 +295,8 @@ procedure paropt;
 var w:      filnam; { word holder }
     err:    boolean; { error flag holding }
     optfnd: boolean; { option found }
+    setpos: boolean; { option had a '+' suffix }
+    setneg: boolean; { option had a '-' suffix }
 
 { set true/false flag }
 
@@ -305,7 +310,9 @@ begin
 
       f := true; { perform true }
       s := true; { set this option found }
-      optfnd := true { set option found }
+      optfnd := true; { set option found }
+      if setpos then f := true; { honor a +/- suffix }
+      if setneg then f := false
 
    end else begin { try false cases }
 
@@ -372,9 +379,13 @@ begin
       if parse.chkchr(cmdhan) = services.optchr then parse.getchr(cmdhan);
       parse.parlab(cmdhan, w, err); { parse option label }
       if err then error('Invalid option "%"', w);
-      { allow +/- suffix on option for compatibility }
+      { allow +/- suffix on option, honoring its polarity }
+      setpos := false; setneg := false;
       if (parse.chkchr(cmdhan) = '+') or
-         (parse.chkchr(cmdhan) = '-') then parse.getchr(cmdhan);
+         (parse.chkchr(cmdhan) = '-') then begin
+         if parse.chkchr(cmdhan) = '-' then setneg := true else setpos := true;
+         parse.getchr(cmdhan)
+      end;
       setflg('v',  'verbose',  fverb); { verbose mode }
       setflg('t',  'tree',     ftree); { list dependency tree }
       setflg('a',  'action',   fact); { list actions }
@@ -479,6 +490,22 @@ begin
             parse.parfil(cmdhan, errfil, false, err);
          if err then error('Invalid error filename "%"', errfil);
          serrfil := true
+
+      end;
+      { listing to file: --list=<file> (or -l=<file>) is passed through to pcom,
+        which writes the full source listing there instead of standard output.
+        The = form supersedes the plain -list+ flag. }
+      if (compp(w, 'list') or compp(w, 'l')) and (parse.chkchr(cmdhan) = '=') then
+      begin
+
+         optfnd := true;
+         parse.getchr(cmdhan); { skip '=' }
+         if parse.chkchr(cmdhan) = '"' then
+            parse.parstr(cmdhan, listfil, err)
+         else
+            parse.parfil(cmdhan, listfil, false, err);
+         if err then error('Invalid list filename "%"', listfil);
+         slistfil := true; slist := false
 
       end;
       if not optfnd then error('No option found'); { no option found }
@@ -1777,6 +1804,11 @@ begin
          putstr(errfil);
          putchr(' ')
       end;
+      if prefix and slistfil then begin
+         putstr(' --list=');
+         putstr(listfil);
+         putchr(' ')
+      end;
 
 end;
 
@@ -2743,6 +2775,7 @@ begin
    famd64sysv := false;
    samd64sysv := false;
    serrfil := false;
+   slistfil := false;
 
    fngwin := false; { do not override graphical windows switch }
    fsymcof := false; { do not generate coff symbols }
