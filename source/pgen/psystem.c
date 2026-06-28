@@ -2011,6 +2011,35 @@ static void putfile(FILE* f, pasfil* pf, filnum fn)
 
 /** ****************************************************************************
 
+Create and open a temporary file for an anonymous (unnamed) file
+
+Used when an unnamed file is opened before assign() gives it a name. mkstemp()
+creates and opens the file atomically, which tmpnam() did not (the name it
+returned could be taken before fopen() reopened it). The generated name is
+recorded in filnamtab[fn] so the temp is removed on close or program exit;
+filanamtab[fn] stays false to flag it as a temp. Returns the open stream, or
+NULL on failure.
+
+*******************************************************************************/
+
+static FILE* opentemp(filnum fn, const char* mode)
+
+{
+
+    int fd;
+    const char* td;
+
+    td = getenv("TMPDIR"); if (!td || !*td) td = "/tmp";
+    snprintf(filnamtab[fn], FILLEN+1, "%s/p6tmpXXXXXX", td);
+    fd = mkstemp(filnamtab[fn]); /* securely create the temp file and its name */
+    if (fd < 0) return NULL;
+    close(fd); /* reopen by name through the active (possibly bypass) libc */
+    return fopen(filnamtab[fn], mode);
+
+}
+
+/** ****************************************************************************
+
 Reset file by logical file number
 
 Resets the given file. If the binary flag is true, the file will be opened as
@@ -2022,12 +2051,15 @@ static void resetfn(filnum fn, boolean bin)
 
 {
 
-    /* file was closed, no assigned name, give it a temp name */
-    if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed && filstate[fn] != fsnone)
-        if (fclose(filtable[fn])) 
+        if (fclose(filtable[fn]))
             errore(modnam, __LINE__, FILECLOSEFAIL);
-    if (!(filtable[fn] = fopen(filnamtab[fn], bin?"rb":"r")))
+    /* file was closed, no assigned name: create+open a temp securely */
+    if (filstate[fn] == fsclosed && !filanamtab[fn])
+        filtable[fn] = opentemp(fn, bin?"rb":"r");
+    else
+        filtable[fn] = fopen(filnamtab[fn], bin?"rb":"r");
+    if (!filtable[fn])
         errore(modnam, __LINE__, FILEOPENFAIL);
     filstate[fn] = fsread;
     filbuff[fn] = FALSE;
@@ -2049,12 +2081,15 @@ static void rewritefn(filnum fn, boolean bin)
 
 {
 
-    /* file was closed, no assigned name, give it a temp name */
-    if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed && filstate[fn] != fsnone)
-        if (fclose(filtable[fn])) 
+        if (fclose(filtable[fn]))
             errore(modnam, __LINE__, FILECLOSEFAIL);
-    if (!(filtable[fn] = fopen(filnamtab[fn], bin?"wb":"w")))
+    /* file was closed, no assigned name: create+open a temp securely */
+    if (filstate[fn] == fsclosed && !filanamtab[fn])
+        filtable[fn] = opentemp(fn, bin?"wb":"w");
+    else
+        filtable[fn] = fopen(filnamtab[fn], bin?"wb":"w");
+    if (!filtable[fn])
         errore(modnam, __LINE__, FILEOPENFAIL);
     filstate[fn] = fswrite;
     filbuff[fn] = FALSE;
