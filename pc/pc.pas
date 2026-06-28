@@ -142,6 +142,7 @@ var
 { target program name }                    prgnam:  filnam;
 { path components }                        p, n, e: filnam;
 { path of module files }                   modpth:  filnam;
+{ path to place generated components }      bldpth:  filnam;
 { these are pc internal flags }
 { verbose flag (also gets passed through) }
                                            fverb:   boolean;
@@ -449,6 +450,19 @@ begin
          parse.getchr(cmdhan); { skip '=' }
          parse.parwrd(cmdhan, modpth, err); { get path }
          if err then error('Invalid module path "%"', modpth)
+
+      end;
+      { build path: where generated components are placed }
+      if compp(w, 'buildpath') or
+         compp(w, 'bp') then begin
+
+         optfnd := true;
+         parse.skpspc(cmdhan); { skip spaces }
+         if parse.chkchr(cmdhan) <> '=' then { should have '=' }
+            error('missing "="');
+         parse.getchr(cmdhan); { skip '=' }
+         parse.parwrd(cmdhan, bldpth, err); { get path }
+         if err then error('Invalid build path "%"', bldpth)
 
       end;
       { error file: passthrough to pcom only }
@@ -876,6 +890,7 @@ procedure logfil(view fn: string;  { filename to process }
                  var  hp: filept); { head entry found }
 
 var p, n, e: filnam; { path components }
+    op:      filnam; { output path for generated components }
     fp:      filept; { file entry pointer }
     fns:     filnam; { holder for filename }
 
@@ -893,30 +908,31 @@ begin
       if hp = nil then{ missing source }
          error('missing source file %', fns);
       hp^.excl := chkexcl(fn); { check exists in exclude }
-      services.brknam(fns, p, n, e); { add intermediate extention }
-      services.maknam(fns, p, n, 'p6');
+      { #169 item 4: generated components go to the build path when set and the
+        file is not an excluded prebuilt library; source and prebuilt libraries
+        stay in place }
+      if (bldpth[1] <> ' ') and not hp^.excl then copy(op, bldpth)
+      else copy(op, p);
+      services.maknam(fns, op, n, 'p6'); { add intermediate extention }
       dolist(fns, fp);
       hp^.inte := fp; { place link }
-      services.brknam(fns, p, n, e); { add assembly extention }
-      services.maknam(fns, p, n, 'asm');
+      services.maknam(fns, op, n, 'asm'); { add assembly extention }
       dolist(fns, fp);
       hp^.asme := fp; { place link }
-      services.brknam(fns, p, n, e); { add object extention }
-      services.maknam(fns, p, n, 'o');
+      services.maknam(fns, op, n, 'o'); { add object extention }
       dolist(fns, fp);
       hp^.obje := fp; { place link }
-      services.brknam(fns, p, n, e); { add archive extention }
-      services.maknam(fns, p, n, 'a');
+      services.maknam(fns, op, n, 'a'); { add archive extention }
       dolist(fns, fp);
       hp^.arce := fp; { place link }
-      services.brknam(fns, p, n, e); { add exec extention (none) }
-      services.maknam(fns, p, n, '');
+      services.maknam(fns, op, n, ''); { add exec extention (none) }
       dolist(fns, fp);
       hp^.arce := fp; { place link }
       { place head on stack }
       hp^.stack := filstk;
       filstk := hp;
-      services.brknam(fns, p, n, e); { add Pascal extention }
+      { p is still the source path (op held the build path); rebuild the source
+        name for the uses/joins scan }
       services.maknam(fns, p, n, 'pas');
       filcnt := filcnt+1; { count head files }
       douses(fns, hp) { process any uses files under }
@@ -1440,12 +1456,20 @@ end;
 
 procedure plcety(fp: filept); { file entry to place }
 
-var p: fllptr; 
+var p:           fllptr;
+    sp, dp, n, e: filnam; { for build-path redirection of the placed name }
 
 begin
 
-   if fp^.code and (fp^.pkg = nil) then { contains code, not in a package }
-      plcfil(fp^.name); { place name in list }
+   if fp^.code and (fp^.pkg = nil) then begin { contains code, not in a package }
+      copy(sp, fp^.name);
+      { #169 item 4: generated code is placed at the build path }
+      if (bldpth[1] <> ' ') and not fp^.excl then begin
+         services.brknam(fp^.name, dp, n, e);
+         services.maknam(sp, bldpth, n, e)
+      end;
+      plcfil(sp) { place name in list }
+   end;
    fp^.list := true; { set listed }
    new(p); { get list entry }
    p^.ref := fp; { index head file }
@@ -1780,6 +1804,7 @@ begin
       putstr(fns);
       putchr(' ');
       services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+      if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4: .p6 to build path }
       services.maknam(fns, p, n, 'p6');
       services.fulnam(fns); { normalize it }
       putstr(fns);
@@ -1827,11 +1852,13 @@ begin
          putstr('pgen');
          putchr(' ');
          services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+         if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
          services.maknam(fns, p, n, 'p6');
          services.fulnam(fns); { normalize it }
          putstr(fns);
          putchr(' ');
          services.brknam(fns, p, n, e); { remove the extention and place .s }
+         if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
          services.maknam(fns, p, n, 's');
          services.fulnam(fns); { normalize it }
          putstr(fns);
@@ -1845,6 +1872,7 @@ begin
          putstr('-c');
          putchr(' ');
          services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+         if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
          services.maknam(fns, p, n, 's');
          services.fulnam(fns); { normalize it }
          putstr(fns);
@@ -1852,6 +1880,7 @@ begin
          putstr('-o');
          putchr(' ');
          services.brknam(fns, p, n, e); { remove the extention and place .s }
+         if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
          services.maknam(fns, p, n, 'o');
          services.fulnam(fns); { normalize it }
          putstr(fns);
@@ -2628,6 +2657,7 @@ begin
    filstk := nil; { clear the files stack }
    services.filchr(valfch); { get the filename valid characters }
    clears(modpth); { clear module path }
+   clears(bldpth); { clear build path }
    filcnt := 0; { clear files counter }
    filact := nil; { clear actions list }
    actcnt := 0; { set no actions performed }
@@ -2754,6 +2784,7 @@ begin
       writeln('  -dt  -defaultterminal     Default to terminal mode');
       writeln('  -dg  -defaultgraphical    Default to graphical mode');
       writeln('  -mp  -modulepath=<path>   Set module search path');
+      writeln('  -bp  -buildpath=<path>    Place generated components here');
       writeln('  -ef  -errfile=<file>      Set error output file');
       writeln;
       writeln('Passthrough options (passed to compiler):');
@@ -2841,6 +2872,11 @@ begin
    if ftree then prtree; { print out the dependency tree }
    fndlnk; { find linking order }
    doacts; { perform per file actions }
+   { #169 item 4: redirect the program's generated products to the build path }
+   if bldpth[1] <> ' ' then begin
+      services.brknam(prgnam, tmpnam, n, e);
+      services.maknam(prgnam, bldpth, n, e)
+   end;
    chkexc; { check executable needs rebuild }
    if (actcnt = 0) and not excrbl then
       writeln('No action required, files up to date')
