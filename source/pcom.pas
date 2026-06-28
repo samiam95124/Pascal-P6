@@ -654,6 +654,7 @@ var
     errf: text;             { error output file }
     errfopn: boolean;       { error file is open }
     errfval: boolean;       { error file was specified }
+    lstfull: boolean;       { full source listing redirected to the error file }
 
     fp: filptr;
     ii: lininx;
@@ -1337,12 +1338,21 @@ end;
   procedure wrtsrclin;
   begin
     if not incstk^.lo then begin
-      if dolineinfo then begin
-        write(incstk^.linecount:6,'  ':2);
-        if dp then write(lc:7) else write(ic:7);
-        write(' ')
+      if lstfull then begin { full listing redirected to the error/list file }
+        if dolineinfo then begin
+          write(errf, incstk^.linecount:6,'  ':2);
+          if dp then write(errf, lc:7) else write(errf, ic:7);
+          write(errf, ' ')
+        end;
+        writeln(errf, incstk^.sb:incstk^.sl)
+      end else begin
+        if dolineinfo then begin
+          write(incstk^.linecount:6,'  ':2);
+          if dp then write(lc:7) else write(ic:7);
+          write(' ')
+        end;
+        writeln(incstk^.sb:incstk^.sl)
       end;
-      writeln(incstk^.sb:incstk^.sl);
       incstk^.lo := true
     end
   end;
@@ -1678,7 +1688,7 @@ end;
     if errinx > 0 then   (*output error messages*)
       begin
         if not list then wrtsrclin;
-        if errfval then begin { write source line to error file }
+        if errfval and not lstfull then begin { write source line to error file }
           if dolineinfo then begin
             write(errf, incstk^.linecount:6,'  ':2);
             if dp then write(errf, lc:7) else write(errf, ic:7);
@@ -2912,14 +2922,24 @@ end;
         chkrefs(h, p^.llink, ln, w); { check left }
         chkrefs(h, p^.rlink, ln, w); { check right }
         if not p^.refer and (p^.klass <> alias) and not incact then begin
-          if not w then writeln; writev(output, p^.name, lenpv(p^.name));
           { #273: ln is the block's "end" line, captured before insymbol
-            advanced the line counter to the following token }
-          write(' unreferenced at block ending on line: ', ln:1);
-          if h <> nil then 
-            begin write(' in function/procedure: '); 
-                  writev(output, h^.name, lenpv(h^.name)) end;
-          writeln;
+            advanced the line counter to the following token. The warning goes
+            to the error/list file when one is active, else to standard out. }
+          if errfval then begin
+            if not w then writeln(errf); writev(errf, p^.name, lenpv(p^.name));
+            write(errf, ' unreferenced at block ending on line: ', ln:1);
+            if h <> nil then
+              begin write(errf, ' in function/procedure: ');
+                    writev(errf, h^.name, lenpv(h^.name)) end;
+            writeln(errf)
+          end else begin
+            if not w then writeln; writev(output, p^.name, lenpv(p^.name));
+            write(' unreferenced at block ending on line: ', ln:1);
+            if h <> nil then
+              begin write(' in function/procedure: ');
+                    writev(output, h^.name, lenpv(h^.name)) end;
+            writeln
+          end;
           w := true
         end
       end
@@ -10298,10 +10318,17 @@ end;
         begin
           if not defined or not refer then
             begin if not defined then error(168);
-              writeln(output); write('label ',labval:11);
-              if not refer and not incact then write(' unreferenced');
-              writeln;
-              write(' ':chcnt+16)
+              if errfval then begin
+                writeln(errf); write(errf, 'label ',labval:11);
+                if not refer and not incact then write(errf, ' unreferenced');
+                writeln(errf);
+                write(errf, ' ':chcnt+16)
+              end else begin
+                writeln(output); write('label ',labval:11);
+                if not refer and not incact then write(' unreferenced');
+                writeln;
+                write(' ':chcnt+16)
+              end
             end;
           llp := nextlab
         end;
@@ -11215,6 +11242,23 @@ end;
         end;
         errfval := true
       end;
+      { listing to file: --list=<file> (or -l=<file>) redirects the full source
+        listing (with inline error markers and the error summary) to a file. The
+        list flag itself is already set true by setflg above. }
+      if (compp(w, 'list') or compp(w, 'l')) and (parse.chkchr(cmdhan) = '=') then
+      begin
+        optfnd := true;
+        parse.getchr(cmdhan); { skip '=' }
+        if parse.chkchr(cmdhan) = '"' then
+          parse.parstr(cmdhan, errfil, err)
+        else
+          parse.parfil(cmdhan, errfil, false, err);
+        err := not err;
+        if not err then begin
+          writeln('*** Error: list filename not found'); goto 99
+        end;
+        errfval := true; lstfull := true
+      end;
       setflg('mal', 'mrkasslin', option[28], options[28]);
       setflg('amd64_sysv', 'amd64_sysv', option[29], options[29]);
       if not optfnd then begin
@@ -11801,7 +11845,7 @@ begin
     begin inidsp(display[1]); define := true; occur := blck; bname := nil end;
 
   for ii := 1 to maxlin do incbuf[ii] := ' '; { clear include line }
-  errfopn := false; errfval := false;
+  errfopn := false; errfval := false; lstfull := false;
 
   { parse command line }
   parse.openpar(cmdhan);
