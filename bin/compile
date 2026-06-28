@@ -92,7 +92,9 @@ else
 fi
 
 rm -f "$err" # clear any prior .err so a build that emits nothing is detectable
-pc -$mode $buildpath "$errflag" $pcflags "$prog"
+# pc's driver chatter (signon, "Build has errors") goes to the terminal; the
+# real compiler output is in the .err, so silence it for a clean batch run.
+pc -$mode $buildpath "$errflag" $pcflags "$prog" >/dev/null 2>&1
 status=$?
 
 #
@@ -110,7 +112,7 @@ if [ ! -f "$err" ]; then
     else
         p6out="$prog.p6"
     fi
-    pcom "$prog.pas" "$p6out" "$errflag" $pcflags
+    pcom "$prog.pas" "$p6out" "$errflag" $pcflags >/dev/null 2>&1
     status=$?
 
 fi
