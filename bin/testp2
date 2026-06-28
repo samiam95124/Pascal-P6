@@ -18,7 +18,7 @@ ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else
 amdopt=""
 if [ "$1" = "--pgen" ]; then amdopt="--amd64_sysv"; fi
 echo "Compiling pcomp to intermediate code"
-compile --list- $1 $amdopt p2/pcomp
+compile --out="$REGRESS_OUT" --list- $1 $amdopt p2/pcomp
 cat $(ob p2/pcomp).err
 #
 # Run the p2 compiler to get p2 intermediate
@@ -35,7 +35,7 @@ fi
 # Compile pasint to intermediate code
 #
 echo Compiling pasint to intermediate
-compile --list- --reference- $1 $amdopt p2/pasint
+compile --out="$REGRESS_OUT" --list- --reference- $1 $amdopt p2/pasint
 cat $(ob p2/pasint).err
 #
 # Create null input file

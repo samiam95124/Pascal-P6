@@ -22,7 +22,7 @@ cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas $(ob
 # canonically; compile redirects its products into REGRESS_OUT.
 #
 echo Compiling the ISO 7185 PAT
-compile $1 standard_tests/iso7185pat
+compile --out="$REGRESS_OUT" $1 standard_tests/iso7185pat
 if [ $? -ne 0 ]
 then
 
@@ -35,7 +35,7 @@ fi
 # Compile pint itself
 #
 echo Compiling pint to intermediate code
-compile $1 $(ob source/pint.mpp)
+compile --out="$REGRESS_OUT" $1 $(ob source/pint.mpp)
 if [ $? -ne 0 ]
 then
 

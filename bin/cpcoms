@@ -20,7 +20,7 @@ cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pcom.pas $(ob
 # Compile pcom to intermediate code using its binary version.
 #
 echo Compiling pcom to intermediate code
-compile $1 $(ob source/pcom.mpp)
+compile --out="$REGRESS_OUT" $1 $(ob source/pcom.mpp)
 if [ $? -ne 0 ]
 then
 

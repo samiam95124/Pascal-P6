@@ -11,9 +11,9 @@
 # per-mode products (the machine deck <file>.p6o, assembly/object files, and the
 # executable). This does not run the program.
 #
-# When REGRESS_OUT is set, all generated products and the .err are placed in
-# that directory (via pc -buildpath / -errfile) so models can build in parallel;
-# the source is still read from its own path.
+# When --out=<dir> is given, all generated products and the .err are placed in
+# that directory (via pc -buildpath) so models can build in parallel; the source
+# is still read from its own path. Without --out they go alongside the source.
 #
 # The flags are one of:
 #
@@ -24,6 +24,8 @@
 # --pgen     Generate a native executable for the current machine (default).
 # --noerrmsg Do not echo the .err file on completion (the file is still written).
 # --iso7185  Compile in ISO 7185 standard mode.
+# --out=<dir> Place generated products and the .err in <dir> (default: alongside
+#            the source). Used by the regression to give each model its own dir.
 #
 # All other options are passed through to the compiler.
 #
@@ -31,6 +33,7 @@
 mode=pgen
 noerrmsg=0
 listing=0
+outdir=""
 prog=""
 pcflags=""
 
@@ -48,6 +51,7 @@ do
         --iso7185)  pcflags="$pcflags -iso7185" ;;
         --list+|--list) listing=1 ;;  # listing on; redirected via --list= below
         --list-)    listing=0 ;;       # listing off; errors-only via -ef= below
+        --out=*)    outdir="${param#--out=}" ;;  # output/build directory
         -*)         pcflags="$pcflags $param" ;;  # pass other options through
         *)          prog="$param" ;;
 
@@ -63,14 +67,14 @@ if [ -z "$prog" ]; then
 fi
 
 #
-# Output location: a REGRESS_OUT directory (for parallel per-model builds) or,
+# Output location: the --out=<dir> directory (for parallel per-model builds) or,
 # by default, alongside the source. pc reads the source in place and writes the
 # generated products and the .err to the build path.
 #
-if [ -n "$REGRESS_OUT" ]; then
+if [ -n "$outdir" ]; then
 
-    buildpath="-bp=$REGRESS_OUT"
-    err="$REGRESS_OUT/$(basename "$prog").err"
+    buildpath="-bp=$outdir"
+    err="$outdir/$(basename "$prog").err"
 
 else
 
@@ -107,8 +111,8 @@ status=$?
 #
 if [ ! -f "$err" ]; then
 
-    if [ -n "$REGRESS_OUT" ]; then
-        p6out="$REGRESS_OUT/$(basename "$prog").p6"
+    if [ -n "$outdir" ]; then
+        p6out="$outdir/$(basename "$prog").p6"
     else
         p6out="$prog.p6"
     fi
