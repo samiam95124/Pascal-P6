@@ -182,7 +182,7 @@ const
 
    { command line parsing }
    maxlin     = 20000; { size of source line buffer }
-   maxopt     = 29;    { number of options }
+   maxopt     = 30;    { number of options }
    optlen     = 10;    { maximum length of option words }
 
    { standard exceptions. Used for extension routines, this is a subset. }
@@ -517,6 +517,9 @@ var
                                          descriptions }
     amd64_sysv: boolean;            { -- amd64_sysv: use SYS V AMD64 ABI
                                          calling convention }
+    amdpar: boolean;                { -- amdpar: warn on gaps in AMD64
+                                         register parameter assignment (for
+                                         code that interfaces directly with C) }
 
     { switches passed through to pint }
 
@@ -1945,6 +1948,7 @@ end;
           27: switch(dummy);
           28: switch(dummy);
           29: switch(amd64_sysv);
+          30: switch(amdpar);
         end else begin
           { skip all likely option chars }
           while ch in ['a'..'z','A'..'Z','+','-','0'..'9','_'] do
@@ -8901,7 +8905,7 @@ end;
             end else if (p^.klass = proc) or (p^.klass = func) then
               p^.pfaddr := -(lev*ptrsize + (6 - ipc)*ptrsize)
           end else if (n > 1) and (ipc < 6) then
-            writeln(output,
+            if amdpar then writeln(output,
               '*** Warning: gap in AMD64 registered parameters');
           ipc := ipc + n { always advance to match pgen asspar }
         end;
@@ -11261,6 +11265,7 @@ end;
       end;
       setflg('mal', 'mrkasslin', option[28], options[28]);
       setflg('amd64_sysv', 'amd64_sysv', option[29], options[29]);
+      setflg('amdpar', 'amdpar', option[30], options[30]);
       if not optfnd then begin
         writeln('*** Unknown option ', w:*); goto 99
       end;
@@ -11290,6 +11295,7 @@ end;
         25: dodmpdsp := option[oi];
         26: dolineinfo := option[oi];
         29: amd64_sysv := option[oi];
+        30: amdpar := option[oi];
         { these are backend options }
         1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:;
         17:; 23:; 27:; 28:;
@@ -11317,6 +11323,7 @@ end;
     opts[25] := 'y         '; opts[26] := 'z         ';
     opts[27] := 'md        '; opts[28] := 'mal       ';
     opts[29] := 'amd64_sysv';
+    opts[30] := 'amdpar    ';
     optsl[1]  := 'debugflt  '; optsl[2]  := 'prtlab    ';
     optsl[3]  := 'lstcod    '; optsl[4]  := 'chk       ';
     optsl[5]  := 'machdeck  '; optsl[6]  := 'debugsrc  ';
@@ -11332,6 +11339,7 @@ end;
     optsl[25] := 'prtdisplay'; optsl[26] := 'lineinfo  ';
     optsl[27] := 'modules   '; optsl[28] := 'mrkasslin ';
     optsl[29] := 'amd64_sysv';
+    optsl[30] := 'amdpar    ';
     prtables := false; option[20] := false; list := false; option[12] := false;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
@@ -11339,6 +11347,7 @@ end;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     chkvbk := false; option[9] := false; experr := true; option[10] := true;
     amd64_sysv := false; option[29] := false;
+    amdpar := false; option[30] := false;
     dolineinfo := true; option[26] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
@@ -11921,7 +11930,7 @@ begin
     write(prr, 'o ');
     for oi := 1 to maxopt do
       { exclude pint options and unused }
-      if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26,27,28]) or 
+      if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26,27,28,30]) or
          options[oi] then begin 
         for oni :=  1 to optlen do 
           if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
