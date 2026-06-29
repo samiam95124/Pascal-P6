@@ -163,6 +163,10 @@ if [ ! -f "$progfile.inp" ]; then
 
 fi
 
+# The run result is the exit status of the selected backend, captured before the
+# trailing cleanup and listing can clobber $? -- otherwise a stray rm/cat failure
+# is misreported as a compile/run failure (issue #252).
+rc=0
 if [ "$pmach" = "1" ]; then
 
 	echo Running with pmach
@@ -171,6 +175,7 @@ if [ "$pmach" = "1" ]; then
     pint ${tmpd}temp2.p6 $obase.p6o > ${tmpd}temp
     cat $obase.p6o $progfile.dat > ${tmpd}temp.p6o
     pmach ${tmpd}temp.p6o $obase.out $options < $progfile.inp &> $obase.lst
+    rc=$? # capture the run result before cleanup clobbers it
     rm ${tmpd}temp ${tmpd}temp2.p6
 
 elif [ "$cmach" = "1" ]; then
@@ -178,23 +183,27 @@ elif [ "$cmach" = "1" ]; then
 	echo Running with cmach
     pint $obase.p6 $obase.p6o --machdeck > ${tmpd}temp
     cmach $obase.p6o $options $progfile.dat $obase.out < $progfile.inp &> $obase.lst
+    rc=$? # capture the run result before cleanup clobbers it
     rm ${tmpd}temp
 
 elif [ "$package" = "1" ]; then
 
     echo Running with package
     ./$obase $options $progfile.dat $obase.out < $progfile.inp &> $obase.lst
+    rc=$?
 
 elif [ "$pgen" = "1" ]; then
 
     echo Running with pgen
     ./$obase $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
+    rc=$?
 
 else
 
 	echo Running with pint
     cat $obase.p6 $progfile.dat > ${tmpd}temp.p6
     pint ${tmpd}temp.p6 $obase.out $options < $progfile.inp &> $obase.lst
+    rc=$? # capture the run result before cleanup clobbers it
     rm ${tmpd}temp.p6
 
 fi
@@ -207,3 +216,5 @@ if [ "$nolist" = "0" ]; then
     cat $obase.lst
 
 fi
+
+exit $rc
