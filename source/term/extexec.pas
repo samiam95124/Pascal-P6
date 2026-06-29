@@ -390,11 +390,9 @@ end;
 procedure execterminal(routine: integer; var params: integer);
 
 var a1, a2, a3, rv: integer;
-    r1: real;
     s: str;
     ad, ad2:  address;
     fn:       fileno;
-    st:       settype;
     er:       terminal.evtrec;
 
 begin
