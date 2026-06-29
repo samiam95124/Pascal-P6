@@ -2117,8 +2117,10 @@ FILE* opentemp(filnum fn, const char* mode)
     snprintf(filnamtab[fn], FILLEN+1, "%s/p6tmpXXXXXX", td);
     fd = mkstemp(filnamtab[fn]); /* securely create the temp file and its name */
     if (fd < 0) return NULL;
-    close(fd); /* reopen by name through the active (possibly bypass) libc */
-    return fopen(filnamtab[fn], mode);
+    /* mkstemp opens the descriptor O_RDWR; wrap it as a read/write ("+") stream
+       so the bypass libc's fdopen mode-compatibility check matches O_RDWR.
+       fclose() later closes the descriptor -- no below-libc close() needed. */
+    return fdopen(fd, strchr(mode, 'b') ? "w+b" : "w+");
 }
 
 void resetfn(filnum fn, boolean bin)
