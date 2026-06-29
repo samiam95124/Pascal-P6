@@ -145,11 +145,7 @@ end;
 procedure execsound(routine: integer; var params: integer);
 
 var a1, a2, a3, a4, a5, rv: integer;
-    r1: real;
     s, s2: str;
-    ad, ad2:  address;
-    fn:       fileno;
-    st:       settype;
     bp:       bytconp;
 
 begin
@@ -986,11 +982,9 @@ end;
 procedure execnetwork(routine: integer; var params: integer);
 
 var a1, a2, a3, a4, a5, a6, rv: integer;
-    r1: real;
     s: str;
     ad, ad2:  address;
     fn:       fileno;
-    st:       settype;
     bp:       bytconp;
     cp:       network.certptr;
     lcardinal1, lcardinal2: lcardinal;
