@@ -276,12 +276,15 @@ fi
 echo "Running $progfile..."
 # echo "run $pmachoption $cmachoption $options $progfile"
 run --nolist $pintoption $pmachoption $cmachoption $packageoption $pgenoption $options $progfile
-if [ $? -eq 0 ]; then
 
-    #
-    # Check output matches the compare file
-    #
-    strip $(ob $progfile).lst ${tmpd}tmp1
+#
+# The verdict is the output comparison below, not run's exit status: a program
+# under test may legitimately exit non-zero (e.g. a runtime-error test whose
+# expected message is part of the golden), and a stray cleanup hiccup in run
+# must not count as a failure (issue #252). A genuine run failure shows up as a
+# mismatch against the golden.
+#
+strip $(ob $progfile).lst ${tmpd}tmp1
     strip $cmpfile.cmp ${tmpd}tmp2
     dif -w ${tmpd}tmp1 ${tmpd}tmp2 > $(ob $progfile).dif
     rm -f ${tmpd}tmp1
@@ -301,9 +304,3 @@ if [ $? -eq 0 ]; then
     else
         echo "PASS"
     fi
-
-else
-
-    exit 1
-
-fi
