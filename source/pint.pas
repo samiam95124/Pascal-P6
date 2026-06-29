@@ -2526,7 +2526,7 @@ procedure load;
                               errorl('Call convention mismatch ')
                           end;
                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
-                      24:; 25:; 26:; 10:; 18:; 27:; 28:;
+                      24:; 25:; 26:; 10:; 18:; 27:; 28:; 30:;
                     end
                   end else errorl('No valid option found    ');
                   while not eoln(prd) and (ch = ' ') do getnxt
@@ -7771,7 +7771,7 @@ begin
             end
           end;
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
-      24:; 25:; 26:; 10:; 18:; 27:; 28:;
+      24:; 25:; 26:; 10:; 18:; 27:; 28:; 30:;
     end
 end;
 

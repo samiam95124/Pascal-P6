@@ -50,7 +50,7 @@ procedure parhdrfilnam(var f: text; var wasproc: boolean; out name: string;
 const
   maxlin = 20000; { size of source line buffer }
   maxcmd = 2000; { size of command line buffer }
-  maxopt = 29;  { number of options }
+  maxopt = 30;  { number of options }
   optlen = 10;  { maximum length of option words }
 
 type
@@ -244,6 +244,7 @@ begin
   opts[27] := 'md        ';
   opts[28] := 'mal       ';
   opts[29] := 'amd64_sysv';
+  opts[30] := 'amdpar    ';
 
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
@@ -274,5 +275,6 @@ begin
   optsl[27] := 'modules   ';
   optsl[28] := 'mrkasslin ';
   optsl[29] := 'amd64_sysv';
+  optsl[30] := 'amdpar    ';
 end.
 

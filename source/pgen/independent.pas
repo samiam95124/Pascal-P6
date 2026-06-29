@@ -1943,7 +1943,7 @@ begin
                     28: domrklin   := option[oi];
                     29: amd64_sysv := option[oi];
                     2:; 3:; 4:; 12:; 20:; 21:; 22:;
-                    24:; 25:; 26:; 10:; 18:; 27:;
+                    24:; 25:; 26:; 10:; 18:; 27:; 30:;
                   end
                 end else error('No valid option found');
                 skpspc
@@ -3691,7 +3691,7 @@ begin
       28: domrklin   := option[oi];
       29: amd64_sysv := option[oi];
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
-      24:; 25:; 26:; 10:; 18:; 27:;
+      24:; 25:; 26:; 10:; 18:; 27:; 30:;
     end
 end;
 
