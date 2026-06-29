@@ -740,6 +740,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
@@ -771,6 +772,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
@@ -835,6 +837,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
@@ -907,6 +910,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
@@ -946,6 +950,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
@@ -984,6 +989,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
@@ -1016,6 +1022,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
@@ -1053,6 +1060,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
@@ -1086,6 +1094,7 @@ var
 
 begin
 
+   refer(w); { unused by filled shapes; required by the benchtest fp signature }
    auto(output, false);
    curvis(output, false);
    page;
