@@ -74,6 +74,7 @@ const
                                    windowlibs  = 'graphics';
 { name of sound library }          soundlib = 'sound';
 { name of network library }        networklib = 'network';
+{ name of services library }       serviceslib = 'services';
 { maximum length of command line } cmdmax = 250;
 { maximum length of filename }     filmax = 1000;
 { maximum size of input line }     maxlin = 2000;
@@ -216,6 +217,7 @@ slistfil:    boolean;
 { the terminal library is the I/O library } terminaled: boolean;
 { the sound library is used }              sounded:   boolean;
 { the network library is used }            networked: boolean;
+{ the services library is used }           serviced:  boolean;
 { an alternate standard I/O library exists }
                                            siolib:  boolean;
 { exit has error }                         errexit: boolean;
@@ -1205,6 +1207,7 @@ begin
      external system libraries to the link) }
    sounded := schfil(soundlib) <> nil;
    networked := schfil(networklib) <> nil;
+   serviced := schfil(serviceslib) <> nil;
    terminaled := false; { set terminal is not the I/O library }
    if not siolib then begin { no standard library specified }
 
@@ -2175,7 +2178,7 @@ begin { dolink }
          excact(cmdbuf); { execute command buffer action }
          clears(cmdbuf); { clear command buffer }
          i := 1; { set 1st char }
-         if sounded or networked then begin
+         if sounded or networked or serviced then begin
 
             { The program uses the Ami externals, so the embedded cmach must
               host them: build it like the standalone cmach (Makefile CMACHEXT/

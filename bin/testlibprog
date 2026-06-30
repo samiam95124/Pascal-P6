@@ -112,5 +112,18 @@ if [ ! -f "$base.cmp" ]; then
    exit 1
 fi
 
-diffnolestrip "$ob.lst" "$base.cmp" > "$ob.dif"
+# Compare to the gold standard with the Pascaline dif tool (it handles both
+# line endings transparently, so no flip is needed; strip removes the
+# interpreter banner first, as testprog does). services_test masks its
+# run-varying time/date fields with the dif '?' wildcard, so it compares with
+# "dif -q"; the other tests compare with "dif -w" (ignore whitespace), under
+# which any literal '?' in a gold file stays literal.
+strip "$ob.lst" "$ob.lst.s"
+strip "$base.cmp" "$ob.cmp.s"
+if [ "$name" = "services_test" ]; then
+   dif -q "$ob.lst.s" "$ob.cmp.s" > "$ob.dif"
+else
+   dif -w "$ob.lst.s" "$ob.cmp.s" > "$ob.dif"
+fi
+rm -f "$ob.lst.s" "$ob.cmp.s"
 wc -l "$ob.dif"

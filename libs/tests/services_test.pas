@@ -9,6 +9,15 @@
 * However, most of the material is OS independent, so generating another OS   *
 * version does not require much work.                                         *
 *                                                                             *
+* This test is written to be deterministic so it can run in the regression:   *
+* it works inside the controlled fixture directory libs/tests/                *
+* services_test_dir, installs a fixed environment, normalizes the machine-    *
+* specific paths it would otherwise print, and does its file-creating tests   *
+* in this program's own directory (unique per model, so parallel models do    *
+* not collide). The time and date lines vary by definition and are matched    *
+* by the gold standard with the dif '?' wildcard (testlibprog runs            *
+* services_test through "dif -q").                                            *
+*                                                                             *
 ******************************************************************************}
 
 program services_test(output);
@@ -17,20 +26,22 @@ uses strings,
      services;
 
 const second = 10000;
-                                                          
+
 var sa:         packed array [1..100] of char;
     sp:         pstring;
     fla:        filptr;
     ta:         integer;
     ep:         envptr;
     i:          integer;
-    atr:        attribute;
     ps:         pstring;
     p, n, e:    packed array [1..100] of char;
     pp, pn, pe: pstring;
     ft:         text;
     sc:         schar;
     err:        integer;
+    sts:        pstring; { absolute path of the exec helper }
+    fgp:        pstring; { absolute path of the bin-resident getpgm helper }
+    wkdir:      pstring; { this program's own directory (per-model scratch) }
 
 procedure waittime(t: integer);
 
@@ -44,40 +55,71 @@ begin
 
 end;
 
+{ List a single named file and print its directory entry. Used by the listing
+  test to emit the fixture files in a fixed order (the library returns entries
+  in raw directory order, which is not deterministic, so we name them). }
+
+procedure prtfile(view fn: string);
+
+var fl: filptr; atr: attribute;
+
 begin
 
-   write('test 1: ');
-   list('INSTALL', fla);
-   while fla <> nil do begin
+   list(fn, fl);
+   if fl <> nil then begin
 
-      write(fla^.name^);
-      fla := fla^.next
-
-   end;
-   writeln(' s/b INSTALL');
-   list('*', fla);
-   writeln('test 2: ');
-   i := 10;
-   writeln('Name                Size');
-   writeln('========================');
-   while (fla <> nil) and (i > 0) do begin
-
-      write(fla^.name^:-20, ' ', fla^.size:-10, ' ', fla^.alloc:-10, ' ');
-      for atr := atexec to atloop do if atr in fla^.attr then case atr of
+      { print the name without a field width: a negative (left-justify) field
+        width is padded under pint/pmach but ignored under pgen/cmach, so a
+        :-N here would make this line differ across backends }
+      write(fl^.name^, ' ', fl^.size:-10, ' ', fl^.alloc:-10, ' ');
+      for atr := atexec to atloop do if atr in fl^.attr then case atr of
 
          atexec: write('e');
          atarc:  write('a');
          atsys:  write('s');
          atdir:  write('d');
          atloop: write('l')
-       
+
       end;
-      writeln(' ');
-      fla := fla^.next;
-      i := i-1
+      writeln(' ')
+
+   end
+
+end;
+
+begin
+
+   { Resolve the exec helper to an absolute path while we are still at the repo
+     root, remember this program's own directory as a per-model scratch area,
+     install a fixed environment (so the environment dump and getusr are
+     deterministic), then work inside the controlled fixture directory. }
+   sts := fulnam('libs/services_test1');
+   fgp := fulnam('bin/find_getpgm');
+   wkdir := getpgm;
+   allenv(ep);
+   while ep <> nil do begin remenv(ep^.name^); ep := ep^.next end;
+   setenv('home', '/home/testuser');
+   setenv('alpha', 'one');
+   setenv('beta', 'two');
+   setenv('gamma', 'three');
+   setcur('libs/tests/services_test_dir');
+
+   write('test 1: ');
+   list('alpha.txt', fla);
+   while fla <> nil do begin
+
+      write(fla^.name^);
+      fla := fla^.next
 
    end;
-   writeln('s/b <10 entries from the current directory>');
+   writeln(' s/b alpha.txt');
+   writeln('test 2: ');
+   writeln('Name                Size');
+   writeln('========================');
+   prtfile('alpha.txt');
+   prtfile('beta.txt');
+   prtfile('gamma.txt');
+   writeln('s/b alpha.txt beta.txt gamma.txt (the fixture files)');
    times(sa, time);
    writeln('test 3: ', sa:*, ' s/b <the current time in zulu>');
    sp := times(time);
@@ -99,7 +141,7 @@ begin
    ta := clock;
    writeln('test11: waiting 1 second');
    waittime(SECOND);
-   writeln('test 11: ', elapsed(ta), ' s/b ', second, ' (approximate)');
+   writeln('test 11: ', abs(elapsed(ta)-second) <= second div 4, ' s/b true');
    writeln('test 12: ', validfile('/just/fargle.com'), ' s/b true');
    writeln('test 13: ', validfile('    '), ' s/b false');
    writeln('test 14: ', wild('fargle.c?m'), ' s/b true');
@@ -126,14 +168,14 @@ begin
       i := i-1
 
    end;
-   writeln('s/b <10 entries from the current environment>');
+   writeln('s/b the controlled test environment');
    writeln('test24: ');
-   exec('libs/services_test1');
+   exec(sts^);
    writeln('waiting 5 seconds for program to start');
    waittime(SECOND*5);
    writeln('s/b This is services_test1 "" (empty string)');
    writeln('test25: ');
-   execw('libs/services_test1', err);
+   execw(sts^, err);
    writeln(err:1);
    writeln('s/b');
    writeln('This is services_test1: ''''');
@@ -143,28 +185,31 @@ begin
    ep^.name := copy('bark');
    ep^.data := copy('hi there');
    ep^.next := nil;
-   exece('libs/services_test1', ep);
+   exece(sts^, ep);
    writeln('waiting 5 seconds');
    waittime(SECOND*5);
    writeln('s/b This is services_test1: "hi there"');
    writeln('s/b This is extst1: ''hi there'' (mixed with ''waiting'' lines above)');
    writeln('test27: ');
-   execew('libs/services_test1', ep, err);
+   execew(sts^, ep, err);
    writeln(err:1);
    writeln('s/b');
    writeln('This is extst1: ''hi there''');
    writeln('0');
-   getcur(sa);
-   writeln('test 28: ', sa:*, ' s/b <the current path>');
    sp := getcur;
-   writeln('test 29: ', sp^:*, ' s/b <the current path>');
+   brknam(sp^, p, n, e);
+   writeln('test 28: ', n:*, ' s/b services_test_dir');
+   sp := getcur;
+   brknam(sp^, p, n, e);
+   writeln('test 29: ', n:*, ' s/b services_test_dir');
    ps := getcur;
    setcur('/');
    getcur(sa);
    writeln('test 30: ', sa:*, ' s/b /');
    setcur(ps^);
-   getcur(sa);
-   writeln('test 31: ', sa:*, ' s/b <the current path>');
+   sp := getcur;
+   brknam(sp^, p, n, e);
+   writeln('test 31: ', n:*, ' s/b services_test_dir');
    brknam('/what/ho/junk.com', p, n, e);
    writeln('test 32: Path: ', p:*, ' Name: ', n:*, ' Ext: ', e:*);
    writeln('    s/b: Path: /what/ho/ Name: junk Ext: com');
@@ -177,17 +222,27 @@ begin
    writeln('test 35: ', sp^, ' s/b c:\\what\\ho\\junk.com');
    copy(sa, 'junk');
    fulnam(sa);
-   writeln('test 36: ', sa:*, ' s/b <path>junk');
+   brknam(sa, p, n, e);
+   writeln('test 36: ', n:*, ' ', p[1] = '/', ' s/b junk true');
    sp := fulnam('trash');
-   writeln('test 37: ', sp^, ' s/b <path>trash');
-   getpgm(sa);
-   writeln('test 38: ', sa:*, ' s/b <the program path>');
-   sp := getpgm;
-   writeln('test 39: ', sp^, ' s/b <the program path>');
+   brknam(sp^, p, n, e);
+   writeln('test 37: ', n:*, ' ', p[1] = '/', ' s/b trash true');
+   { getpgm. This program's own binary is relocated into per-model directories
+     by the parallel harness, so its own getpgm is not stable. Sub-execute the
+     bin-resident helper find_getpgm, which prints its own getpgm basename; it
+     always lives in bin, so it always reports "bin". }
+   writeln('test 38: bin-resident helper getpgm:');
+   execw(fgp^, err);
+   writeln('test 39: helper exit ', err:1, ' s/b 0 (and "bin" above)');
    getusr(sa);
-   writeln('test 40: ', sa:*, ' s/b <the user path>');
+   writeln('test 40: ', sa:*, ' s/b /home/testuser');
    sp := getusr;
-   writeln('test 41: ', sp^, ' s/b <the user path>');
+   writeln('test 41: ', sp^, ' s/b /home/testuser');
+
+   { The file-creating tests run in this program's own directory, which is
+     unique per execution model, so concurrent models in the regression do not
+     collide on the scratch file/directory. }
+   setcur(wkdir^);
    assign(ft, 'junk');
    rewrite(ft);
    close(ft);

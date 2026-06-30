@@ -184,6 +184,12 @@ function do_regress {
     testlibprog $option network_test
     dotestresult libs/tests libs/tests network_test
 
+    echo "Testing services_test..."
+    echo "services_test run" >> "$report"
+    setout libs/tests
+    testlibprog $option services_test
+    dotestresult libs/tests libs/tests services_test
+
     #
     # Run debug test
     #
