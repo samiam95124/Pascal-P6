@@ -1,0 +1,79 @@
+test 1: alpha.txt s/b alpha.txt
+test 2: 
+Name                Size
+========================
+alpha.txt 5          5           
+beta.txt 4          4           
+gamma.txt 5          5           
+s/b alpha.txt beta.txt gamma.txt (the fixture files)
+test 3: ??:??:?? s/b <the current time in zulu>
+test 4: ??:??:?? s/b <the current time in zulu>
+test 5: ??:??:?? s/b <the current time in local>
+test 6: ??:??:?? s/b <the current time in local>
+test 7: ????/??/?? s/b <the current date>
+test 8: ????/??/?? s/b <the current date>
+test 9: ??:??:?? s/b <the time>
+test 10: ????/??/?? s/b <the date>
+test11: waiting 1 second
+test 11:  true s/b true
+test 12:  true s/b true
+test 13: false s/b false
+test 14:  true s/b true
+test 15:  true s/b true
+test 16: false s/b false
+test 17:  true s/b true
+test 18:  true s/b true
+test 19: false s/b false
+test20: what is this s/b what is this
+test21: what is this s/b what is this
+test22: '' s/b ''
+test23: 
+Name: 'gamma' Data: 'three'
+Name: 'beta' Data: 'two'
+Name: 'alpha' Data: 'one'
+Name: 'home' Data: '/home/testuser'
+s/b the controlled test environment
+test24: 
+waiting 5 seconds for program to start
+This is services_test1: ''
+s/b This is services_test1 "" (empty string)
+test25: 
+This is services_test1: ''
+0
+s/b
+This is services_test1: ''
+0
+test26: 
+waiting 5 seconds
+This is services_test1: 'hi there'
+s/b This is services_test1: "hi there"
+s/b This is extst1: 'hi there' (mixed with 'waiting' lines above)
+test27: 
+This is services_test1: 'hi there'
+0
+s/b
+This is extst1: 'hi there'
+0
+test 28: services_test_dir s/b services_test_dir
+test 29: services_test_dir s/b services_test_dir
+test 30: / s/b /
+test 31: services_test_dir s/b services_test_dir
+test 32: Path: /what/ho/ Name: junk Ext: com
+    s/b: Path: /what/ho/ Name: junk Ext: com
+test 33: /what/ho/junk.com s/b /what/ho/junk.com
+test 34: Path: /what/ho/ Name: junk Ext: com
+    s/b: Path: /what/ho/ Name: junk Ext: com
+test 35: /what/ho/junk.com s/b c:\what\ho\junk.com
+test 36: junk  true s/b junk true
+test 37: trash  true s/b trash true
+test 38: bin-resident helper getpgm:
+bin
+test 39: helper exit 0 s/b 0 (and "bin" above)
+test 40: /home/testuser s/b /home/testuser
+test 41: /home/testuser s/b /home/testuser
+test 46: junk  true s/b junk true
+test 47: junk false s/b junk false
+test 48: junk  true s/b junk true
+test 49:  true s/b true
+test 50: !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ s/b <the set of valid characters>
+test 51: '-' s/b the option character

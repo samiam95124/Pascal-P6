@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Tue 30 Jun 2026 12:02:51 PM PDT
+Tue 30 Jun 2026 01:42:22 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/test_results/pint/hello.dif
@@ -26,6 +26,8 @@ strings_test run
 0 libs/tests/test_results/pint/strings_test.dif
 network_test run
 0 libs/tests/test_results/pint/network_test.dif
+services_test run
+0 libs/tests/test_results/pint/services_test.dif
 Debug test run
 0 pascaline_tests/test_results/pint/debug_test.dif
 pmach run ***************************************
@@ -53,6 +55,8 @@ strings_test run
 0 libs/tests/test_results/pmach/strings_test.dif
 network_test run
 0 libs/tests/test_results/pmach/network_test.dif
+services_test run
+0 libs/tests/test_results/pmach/services_test.dif
 cmach run ***************************************
 0 sample_programs/test_results/cmach/hello.dif
 0 sample_programs/test_results/cmach/roman.dif
@@ -78,6 +82,8 @@ strings_test run
 0 libs/tests/test_results/cmach/strings_test.dif
 network_test run
 0 libs/tests/test_results/cmach/network_test.dif
+services_test run
+0 libs/tests/test_results/cmach/services_test.dif
 package run ***************************************
 0 sample_programs/test_results/package/hello.dif
 0 sample_programs/test_results/package/roman.dif
@@ -103,6 +109,8 @@ strings_test run
 0 libs/tests/test_results/package/strings_test.dif
 network_test run
 0 libs/tests/test_results/package/network_test.dif
+services_test run
+0 libs/tests/test_results/package/services_test.dif
 pgen run ***************************************
 0 sample_programs/test_results/pgen/hello.dif
 0 sample_programs/test_results/pgen/roman.dif
@@ -128,15 +136,17 @@ strings_test run
 0 libs/tests/test_results/pgen/strings_test.dif
 network_test run
 0 libs/tests/test_results/pgen/network_test.dif
+services_test run
+0 libs/tests/test_results/pgen/services_test.dif
 
 Total differences: 0
 Fails: 0
-Tue 30 Jun 2026 12:08:40 PM PDT
+Tue 30 Jun 2026 01:48:29 PM PDT
 Files sha256sum ***************************************
 Source files
 59543a7deba3c32061694aa1a27db3dcca353092523b503310fccb7108783276  -
 batch files
-7a7dd13a0c04a49c75d10955b3db953e069a6763e57808b8d2f8dc03fde3baa5  -
+56ea5d85b1a2b796ccf9f8f11509eb92007584bf40e47159a40a758290d36c71  -
 P2 files
 abb5a8a00d377dbcf7c793f9f399fb51e017f2e27ecab9607e4cace253472cfb  -
 p4 files
