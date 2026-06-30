@@ -17,11 +17,13 @@
 #
 # The flags select the execution model:
 #
-# --pgen   Native code via pgen (the default).
-# --pint   Interpret the P-code deck with pint.
-# --pmach  Assemble a machine deck and run it with pmach.
-# --cmach  Not supported: the Ami externals are not hosted under cmach, so this
-#          exits success without testing (the caller skips cmach for these).
+# --pgen    Native code via pgen (the default).
+# --pint    Interpret the P-code deck with pint.
+# --pmach   Assemble a machine deck and run it with pmach.
+# --cmach   Assemble a machine deck and run it with cmach (which hosts the Ami
+#           externals, built through the Ami bypass stdio, like pmach).
+# --package Build a self-contained package executable (machine deck embedded in
+#           cmach) and run it; the package hosts the externals like cmach.
 #
 
 param1=$1
@@ -88,6 +90,15 @@ elif [ "$param1" = "--cmach" ]; then
    if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
    pint "$ob.p6" "$ob.p6o" --machdeck > /dev/null 2>&1
    cmach "$ob.p6o" > "$ob.lst" 2>/dev/null
+
+elif [ "$param1" = "--package" ]; then
+
+   # package: a self-contained executable with the machine deck embedded in
+   # cmach, so it hosts the Ami externals like cmach. Build and run it like the
+   # pgen native case.
+   pc "$ob" -package -r > "$ob.err" 2>&1
+   if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
+   "$exe" > "$ob.lst" 2>/dev/null
 
 else
 

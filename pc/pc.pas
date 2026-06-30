@@ -2023,6 +2023,12 @@ var p, n, e: filnam;  { path components }
     main:    filnam;  { name for main module }
     psystem: filnam;  { name for psystem module }
     widgets: filnam;  { name for the widgets module }
+    amilibc: filnam;  { path of the Ami libc includes }
+    amiinc:  filnam;  { path of the Ami includes }
+    servarch: filnam; { services archive (package externals) }
+    sndarch: filnam;  { sound archive (package externals) }
+    netarch: filnam;  { network archive (package externals) }
+    psstdio: filnam;  { psystem bypass stdio object (package externals) }
 
 { place output character }
 
@@ -2169,17 +2175,62 @@ begin { dolink }
          excact(cmdbuf); { execute command buffer action }
          clears(cmdbuf); { clear command buffer }
          i := 1; { set 1st char }
-         putstr('gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -I');
-         putstr(fpc);
-         putchr(' ');
-         putstr('-o');
-         putchr(' ');
-         putstr(fns);
-         putchr(' ');
-         putstr(fnc);
-         putchr(' ');
-         putstr('-lm');
-         excact(cmdbuf) { execute command buffer action }
+         if sounded or networked then begin
+
+            { The program uses the Ami externals, so the embedded cmach must
+              host them: build it like the standalone cmach (Makefile CMACHEXT/
+              CMACHEXTLIBS) -- -DEXTERNALS, the bypass stdio, and the external
+              archives with their deps. -DEXTERNALS pulls in all three external
+              models (services, sound, network), so all three archives are
+              linked unconditionally, exactly as the standalone cmach does. pc
+              bridges its build config to the C define flags here. }
+            services.maknam(amilibc, pgmpath, '../amitk/libc', '');
+            services.fulnam(amilibc);
+            services.maknam(amiinc, pgmpath, '../amitk/include', '');
+            services.fulnam(amiinc);
+            services.maknam(servarch, pgmpath, '../libs/services', 'a');
+            services.fulnam(servarch);
+            services.maknam(sndarch, pgmpath, '../libs/sound', 'a');
+            services.fulnam(sndarch);
+            services.maknam(netarch, pgmpath, '../libs/network', 'a');
+            services.fulnam(netarch);
+            services.maknam(psstdio, pgmpath, '../build/pgen/psystem_stdio', 'o');
+            services.fulnam(psstdio);
+            putstr('gcc -static -g3 -DPACKAGE -DWRDSIZ64 -DLENDIAN -DPASCALINE');
+            putstr(' -DNOPRDPRR -DNOHEADER -DEXTERNALS -DSTDIO_BYPASS -DGPC=0');
+            putstr(' -DSEEK_SET=0 -DSEEK_CUR=1 -DSEEK_END=2 -I. -I');
+            putstr(fpc); putchr(' ');
+            putstr('-I'); putstr(amilibc); putchr(' ');
+            putstr('-I'); putstr(amiinc); putchr(' ');
+            putstr('-o'); putchr(' '); putstr(fns); putchr(' ');
+            putstr(fnc); putchr(' ');
+            putstr('-Wl,-u,getparamfluid -Wl,-u,getparamdump'); putchr(' ');
+            putstr(servarch); putchr(' ');
+            putstr(sndarch); putchr(' ');
+            putstr(netarch); putchr(' ');
+            putstr(psstdio); putchr(' ');
+            putstr('-lssl -lcrypto -Wl,--whole-archive -lasound');
+            putstr(' -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth');
+            putstr(' -lglib-2.0 -lpcre -lpthread -ldl -lm');
+            excact(cmdbuf) { execute command buffer action }
+
+         end else begin
+
+            { No Ami externals: a minimal package (cmach plus the embedded
+              deck) that builds without the external dependency stack. }
+            putstr('gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -I');
+            putstr(fpc);
+            putchr(' ');
+            putstr('-o');
+            putchr(' ');
+            putstr(fns);
+            putchr(' ');
+            putstr(fnc);
+            putchr(' ');
+            putstr('-lm');
+            excact(cmdbuf) { execute command buffer action }
+
+         end
 
       end
 
