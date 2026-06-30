@@ -2153,6 +2153,26 @@ void rewritefn(filnum fn, boolean bin)
     filbuff[fn] = FALSE;
 }
 
+/* Write a character / string in a field width. A negative width is the
+   Pascaline left-justify extension and must pad with TRAILING spaces. The Ami
+   libc printf does not honor a negative '*' width (the '-' / left-justify
+   flag), so the negative case is padded by hand here. Positive widths keep the
+   existing printf right-justify path. */
+
+static void wrcfld(FILE* f, char c, long w)
+{
+    if (w >= 0) fprintf(f, "%*c", (int)w, c);
+    else { fputc(c, f);
+           if (labs(w) > 1) fprintf(f, "%*c", (int)(labs(w)-1), ' '); }
+}
+
+static void wrsfld(FILE* f, char s[], long l, long w)
+{
+    if (w >= 0) fprintf(f, "%*.*s", (int)w, (int)l, s);
+    else { fprintf(f, "%.*s", (int)l, s);
+           if (labs(w) > l) fprintf(f, "%*c", (int)(labs(w)-l), ' '); }
+}
+
 void callsp(void)
 
 {
@@ -2247,22 +2267,19 @@ void callsp(void)
                     if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                     if (l > labs(w)) l = labs(w); /* limit string to field */
                     if (fn <= COMMANDFN) switch (fn) {
-                       case OUTPUTFN: fprintf(stdout, "%*.*s", (int)w, (int)l,
-                                              (char*)(store+ad1)); break;
-                       case PRRFN: fprintf(filtable[PRRFN], "%*.*s", (int)w, (int)l,
-                                           (char*)(store+ad1)); break;
-                       case ERRORFN: fprintf( stdout, "%*.*s", (int)w, (int)l,
-                                             (char*)(store+ad1));
+                       case OUTPUTFN: wrsfld(stdout, (char*)(store+ad1), l, w);
+                                      break;
+                       case PRRFN: wrsfld(filtable[PRRFN], (char*)(store+ad1), l, w);
+                                   break;
+                       case ERRORFN: wrsfld(stdout, (char*)(store+ad1), l, w);
                                      break;
-                       case LISTFN: fprintf(stdout, "%*.*s", (int)w, (int)l,
-                                            (char*)(store+ad1));
+                       case LISTFN: wrsfld(stdout, (char*)(store+ad1), l, w);
                                     break;
                        case PRDFN: case INPUTFN:
                        case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                     } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*.*s", (int)w, (int)l,
-                                 (char*)(store+ad1));
+                         wrsfld(filtable[fn], (char*)(store+ad1), l, w);
                     }
                     break;
     case 65 /*wrsp*/: popadr(ad1); popint(l); popadr(ad);
@@ -2339,15 +2356,15 @@ void callsp(void)
                      valfil(ad); fn = store[ad];
                      if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
-                          case PRRFN: fprintf(filtable[PRRFN], "%*c", (int)w, c); break;
-                          case ERRORFN: fprintf( stdout, "%*c", (int)w, c); break;
-                          case LISTFN: fprintf(stdout, "%*c", (int)w, c); break;
+                          case OUTPUTFN: wrcfld(stdout, c, w); break;
+                          case PRRFN: wrcfld(filtable[PRRFN], c, w); break;
+                          case ERRORFN: wrcfld(stdout, c, w); break;
+                          case LISTFN: wrcfld(stdout, c, w); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                      } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*c", (int)w, c);
+                         wrcfld(filtable[fn], c, w);
                      }
                      break;
     case 11/*rdi*/:
