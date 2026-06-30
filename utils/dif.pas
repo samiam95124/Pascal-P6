@@ -54,6 +54,7 @@ var
     { number of lines in file 1 } nlines1: linenum;
     { number of lines in file 2 } nlines2: linenum;
     { ignore whitespace flag } ignorewhite: boolean;
+    { treat '?' as a wildcard flag } ignorewild: boolean;
     { command line position } cmdpos: integer;
     { command line buffer } cmdline: linebuf;
     { command line length } cmdlen: integer;
@@ -192,6 +193,7 @@ procedure parsecmd(
 begin
 
     ignorewhite := false;
+    ignorewild := false;
     file1 := nil;
     file2 := nil;
     skipspace;
@@ -207,11 +209,23 @@ begin
                 cmdnext
 
             end
+            else if cmdchar = 'q' then begin
+
+                ignorewild := false;
+                cmdnext
+
+            end
 
         end
         else if cmdchar = 'w' then begin
 
             ignorewhite := true;
+            cmdnext
+
+        end
+        else if cmdchar = 'q' then begin
+
+            ignorewild := true;
             cmdnext
 
         end;
@@ -301,9 +315,43 @@ end;
 
 {******************************************************************************
 
+Wild match
+
+Compares two lines treating a '?' in either line as a wildcard that matches any
+single character. The lines must be the same length. Used (via -q) for output
+with run-to-run variation, e.g. timestamps, where the gold .cmp masks the
+varying columns with '?'.
+
+******************************************************************************}
+
+function wildmatch(
+    { first line } a: pstring;
+    { second line } b: pstring):
+    { true if lines match with ? wildcards } boolean;
+
+var { index } i: integer;
+    { match flag } m: boolean;
+
+begin
+
+    if len(a) <> len(b) then wildmatch := false
+    else begin
+
+        m := true;
+        for i := 1 to len(a) do
+            if (a^[i] <> b^[i]) and (a^[i] <> '?') and (b^[i] <> '?') then
+                m := false;
+        wildmatch := m
+
+    end
+
+end;
+
+{******************************************************************************
+
 Lines match
 
-Compares two lines, optionally ignoring whitespace.
+Compares two lines, optionally ignoring whitespace or honoring '?' wildcards.
 
 ******************************************************************************}
 
@@ -319,6 +367,7 @@ begin
 
     if (a = nil) and (b = nil) then linesmatch := true
     else if (a = nil) or (b = nil) then linesmatch := false
+    else if ignorewild then linesmatch := wildmatch(a, b)
     else if ignorewhite then begin
 
         sa := stripwhite(a);
