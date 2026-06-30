@@ -169,24 +169,20 @@ function do_regress {
     #
     # Run the library/Ami text tests against their gold standards. These use
     # library modules hosted by the interpreter externals. pint, pmach and cmach
-    # all host them (cmach is built through the Ami bypass stdio, like pmach); the
-    # package model does not provide them yet, so it is skipped there.
+    # host them, and the package model now hosts them too: its embedded cmach is
+    # built with the Ami externals (-DEXTERNALS) when the program uses them.
     #
-    if [ "$option" != "--package" ]; then
+    echo "Testing strings_test..."
+    echo "strings_test run" >> "$report"
+    setout libs/tests
+    testlibprog $option strings_test
+    dotestresult libs/tests libs/tests strings_test
 
-        echo "Testing strings_test..."
-        echo "strings_test run" >> "$report"
-        setout libs/tests
-        testlibprog $option strings_test
-        dotestresult libs/tests libs/tests strings_test
-
-        echo "Testing network_test..."
-        echo "network_test run" >> "$report"
-        setout libs/tests
-        testlibprog $option network_test
-        dotestresult libs/tests libs/tests network_test
-
-    fi
+    echo "Testing network_test..."
+    echo "network_test run" >> "$report"
+    setout libs/tests
+    testlibprog $option network_test
+    dotestresult libs/tests libs/tests network_test
 
     #
     # Run debug test
