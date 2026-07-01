@@ -1,0 +1,11 @@
+Network test vs. 0.1
+
+addrnet localhost                        pass
+TCP exchange in the clear                pass
+message exchange in the clear            pass
+message exchange secured (DTLS)          pass
+maxmsg sane                              pass
+relymsg sane                             pass
+certnet raw certificate                  pass
+
+Network test complete: 7 passes, 0 fails
