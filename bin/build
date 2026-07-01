@@ -95,12 +95,22 @@ compprog source/genobj
 # Test programs in libs/tests: build each as a native executable and place it
 # in bin. pc detects each program's modules (graphics, sound, network,
 # terminal, services) and links the matching libraries, so windowed, sound and
-# network tests build the same way. Adding a new test to libs/tests is picked
-# up here automatically.
+# network tests build the same way. Listed explicitly; add a new libs/tests
+# program here to have it built and installed in bin.
 #
-for testprog in libs/tests/*.pas; do
-   compprog "${testprog%.pas}"
-done
+compprog libs/tests/find_getpgm
+compprog libs/tests/graphics_test
+compprog libs/tests/management_test
+compprog libs/tests/netprobe
+compprog libs/tests/network_test
+compprog libs/tests/plaintst
+compprog libs/tests/services_test1
+compprog libs/tests/services_test
+compprog libs/tests/sndprobe
+compprog libs/tests/sound_test
+compprog libs/tests/strings_test
+compprog libs/tests/terminal_test
+compprog libs/tests/widget_test
 #
 # pgen and pcom must be a matched set
 #
