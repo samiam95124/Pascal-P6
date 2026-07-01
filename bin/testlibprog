@@ -47,7 +47,7 @@ fi
 # source there so pc's products (.p6, .s, .o, exe) land in the per-model
 # directory rather than the shared libs/tests. The program is still executed
 # from the repo root, so its relative input paths (libs/source/<x>.dat,
-# libs/services_test1, libs/tests/test_files/...) resolve. The gold .cmp is read
+# bin/services_test1, bin/find_getpgm) resolve. The gold .cmp is read
 # from the source location. When unset, everything stays in libs/tests.
 #
 if [ -n "$REGRESS_OUT" ]; then

@@ -93,7 +93,7 @@ begin
      root, remember this program's own directory as a per-model scratch area,
      install a fixed environment (so the environment dump and getusr are
      deterministic), then work inside the controlled fixture directory. }
-   sts := fulnam('libs/services_test1');
+   sts := fulnam('bin/services_test1');
    fgp := fulnam('bin/find_getpgm');
    wkdir := getpgm;
    allenv(ep);
