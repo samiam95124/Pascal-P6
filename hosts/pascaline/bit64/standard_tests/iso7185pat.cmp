@@ -1,8 +1,3 @@
-P6 Pascal cmach interpreter vs. 0.2.x
-
-loading program
-Running program
-
 *******************************************************************************
 
                  TEST SUITE FOR ISO 7185 PASCAL
@@ -210,6 +205,70 @@ Integer145: 52 s/b 52
 Integer146: 0 s/b 0
 Integer147: 42 s/b 42
 Integer148: 1 2 3 4 5 6 7 8 9 10 11 12 13 s/b 1 2 3 4 5 6 7 8 9 10 11 12 13
+Integer149: 2 s/b 2
+Integer150: 2 s/b 2
+Integer151: 0 s/b 0
+Integer152: 1 s/b 1
+Integer153: 1 s/b 1
+Int local 1:  5 s/b 5
+Int local 2:  35 s/b 35
+Int local 3:  2 s/b 2
+Int local 4:  1 s/b 1
+Int local 5:  4 s/b 4
+Int local 6:   true false s/b  true false
+Int array 1:  5 s/b 5
+Int array 2:  35 s/b 35
+Int array 3:  2 s/b 2
+Int array 4:  1 s/b 1
+Int array 5:  4 s/b 4
+Int array 6:   true false s/b  true false
+Int recfld 1:  5 s/b 5
+Int recfld 2:  35 s/b 35
+Int recfld 3:  2 s/b 2
+Int recfld 4:  1 s/b 1
+Int recfld 5:  4 s/b 4
+Int recfld 6:   true false s/b  true false
+Int recarr 1:  5 s/b 5
+Int recarr 2:  35 s/b 35
+Int recarr 3:  2 s/b 2
+Int recarr 4:  1 s/b 1
+Int recarr 5:  4 s/b 4
+Int recarr 6:   true false s/b  true false
+Int ptr 1:  5 s/b 5
+Int ptr 2:  35 s/b 35
+Int ptr 3:  2 s/b 2
+Int ptr 4:  1 s/b 1
+Int ptr 5:  4 s/b 4
+Int ptr 6:   true false s/b  true false
+Int buf 1:  5 s/b 5
+Int buf 2:  35 s/b 35
+Int buf 3:  2 s/b 2
+Int buf 4:  1 s/b 1
+Int buf 5:  4 s/b 4
+Int buf eof1:  false s/b false
+Int buf rt:  42 s/b 42
+Int buf eof2:   true s/b  true
+Int valpar 1:  5 s/b 5
+Int valpar 2:  35 s/b 35
+Int valpar 3:  2 s/b 2
+Int valpar 4:  1 s/b 1
+Int valpar 5:  4 s/b 4
+Int valpar 6:   true false s/b  true false
+Int valpar rt:  99 s/b 99
+Int varpar 1:  5 s/b 5
+Int varpar 2:  35 s/b 35
+Int varpar 3:  2 s/b 2
+Int varpar 4:  1 s/b 1
+Int varpar 5:  4 s/b 4
+Int varpar 6:   true false s/b  true false
+Int varpar rt:  4 s/b 4
+Int surround 1:  5 s/b 5
+Int surround 2:  35 s/b 35
+Int surround 3:  2 s/b 2
+Int surround 4:  1 s/b 1
+Int surround 5:  4 s/b 4
+Int surround 6:   true false s/b  true false
+Int surround rt:  4 s/b 4
 
 ******************* Subranges *******************
 
@@ -278,6 +337,56 @@ Subrange62:   true s/b true
 Subrange63:  false s/b false
 Subrange64:  false s/b false
 Subrange65:  14 s/b 14
+Subrange local 1:  5 s/b 5
+Subrange local 2:  35 s/b 35
+Subrange local 3:  2 s/b 2
+Subrange local 4:  3 s/b 3
+Subrange local 5:   true  true false s/b  true  true false
+Subrange array 1:  5 s/b 5
+Subrange array 2:  35 s/b 35
+Subrange array 3:  2 s/b 2
+Subrange array 4:  3 s/b 3
+Subrange array 5:   true  true false s/b  true  true false
+Subrange recfld 1:  5 s/b 5
+Subrange recfld 2:  35 s/b 35
+Subrange recfld 3:  2 s/b 2
+Subrange recfld 4:  3 s/b 3
+Subrange recfld 5:   true  true false s/b  true  true false
+Subrange recarr 1:  5 s/b 5
+Subrange recarr 2:  35 s/b 35
+Subrange recarr 3:  2 s/b 2
+Subrange recarr 4:  3 s/b 3
+Subrange recarr 5:   true  true false s/b  true  true false
+Subrange ptr 1:  5 s/b 5
+Subrange ptr 2:  35 s/b 35
+Subrange ptr 3:  2 s/b 2
+Subrange ptr 4:  3 s/b 3
+Subrange ptr 5:   true  true false s/b  true  true false
+Subrange buf 1:  5 s/b 5
+Subrange buf 2:  35 s/b 35
+Subrange buf 3:  2 s/b 2
+Subrange buf 4:  3 s/b 3
+Subrange buf eof1:  false s/b false
+Subrange buf rt:  42 s/b 42
+Subrange buf eof2:   true s/b  true
+Subrange valpar 1:  5 s/b 5
+Subrange valpar 2:  35 s/b 35
+Subrange valpar 3:  2 s/b 2
+Subrange valpar 4:  3 s/b 3
+Subrange valpar 5:   true  true false s/b  true  true false
+Subrange valpar rt:  99 s/b 99
+Subrange varpar 1:  5 s/b 5
+Subrange varpar 2:  35 s/b 35
+Subrange varpar 3:  2 s/b 2
+Subrange varpar 4:  3 s/b 3
+Subrange varpar 5:   true  true false s/b  true  true false
+Subrange varpar rt:  3 s/b 3
+Subrange surround 1:  5 s/b 5
+Subrange surround 2:  35 s/b 35
+Subrange surround 3:  2 s/b 2
+Subrange surround 4:  3 s/b 3
+Subrange surround 5:   true  true false s/b  true  true false
+Subrange surround rt:  3 s/b 3
 
 ******************* Characters*******************
 
@@ -433,6 +542,84 @@ s/b
  true  true  true  true  true  true  true  true  true  true
  true  true  true  true  true  true  true  true  true  true
  true  true  true  true  true
+Char local 1:  m s/b m
+Char local 2:  n s/b n
+Char local 3:  l s/b l
+Char local 4:  108 s/b 108
+Char local 5:  l  true s/b l  true
+Char local 6:   true  true s/b  true  true
+Char local 7:   true  true s/b  true  true
+Char local 8:   true  true s/b  true  true
+Char array 1:  m s/b m
+Char array 2:  n s/b n
+Char array 3:  l s/b l
+Char array 4:  108 s/b 108
+Char array 5:  l  true s/b l  true
+Char array 6:   true  true s/b  true  true
+Char array 7:   true  true s/b  true  true
+Char array 8:   true  true s/b  true  true
+Char recfld 1:  m s/b m
+Char recfld 2:  n s/b n
+Char recfld 3:  l s/b l
+Char recfld 4:  108 s/b 108
+Char recfld 5:  l  true s/b l  true
+Char recfld 6:   true  true s/b  true  true
+Char recfld 7:   true  true s/b  true  true
+Char recfld 8:   true  true s/b  true  true
+Char recarr 1:  m s/b m
+Char recarr 2:  n s/b n
+Char recarr 3:  l s/b l
+Char recarr 4:  108 s/b 108
+Char recarr 5:  l  true s/b l  true
+Char recarr 6:   true  true s/b  true  true
+Char recarr 7:   true  true s/b  true  true
+Char recarr 8:   true  true s/b  true  true
+Char ptr 1:  m s/b m
+Char ptr 2:  n s/b n
+Char ptr 3:  l s/b l
+Char ptr 4:  108 s/b 108
+Char ptr 5:  l  true s/b l  true
+Char ptr 6:   true  true s/b  true  true
+Char ptr 7:   true  true s/b  true  true
+Char ptr 8:   true  true s/b  true  true
+Char buf 1:  m s/b m
+Char buf 2:  n s/b n
+Char buf 3:  l s/b l
+Char buf 4:  108 s/b 108
+Char buf 5:  l  true s/b l  true
+Char buf 6:   true  true s/b  true  true
+Char buf 7:   true  true s/b  true  true
+Char buf 8:   true  true s/b  true  true
+Char buf eof1:  false s/b false
+Char buf rt:  z s/b z
+Char buf eof2:   true s/b  true
+Char valpar 1:  m s/b m
+Char valpar 2:  n s/b n
+Char valpar 3:  l s/b l
+Char valpar 4:  108 s/b 108
+Char valpar 5:  l  true s/b l  true
+Char valpar 6:   true  true s/b  true  true
+Char valpar 7:   true  true s/b  true  true
+Char valpar 8:   true  true s/b  true  true
+Char valpar rt:  q s/b q
+Char varpar 1:  m s/b m
+Char varpar 2:  n s/b n
+Char varpar 3:  l s/b l
+Char varpar 4:  108 s/b 108
+Char varpar 5:  l  true s/b l  true
+Char varpar 6:   true  true s/b  true  true
+Char varpar 7:   true  true s/b  true  true
+Char varpar 8:   true  true s/b  true  true
+Char varpar rt:  l s/b l
+Char surround 1:  m s/b m
+Char surround 2:  n s/b n
+Char surround 3:  l s/b l
+Char surround 4:  108 s/b 108
+Char surround 5:  l  true s/b l  true
+Char surround 6:   true  true s/b  true  true
+Char surround 7:   true  true s/b  true  true
+Char surround 8:   true  true s/b  true  true
+Char surround rt:  l s/b l
 
 ******************* Booleans *******************
 
@@ -524,6 +711,86 @@ true
 tru
 tr
 t
+Boolean47:   true s/b  true
+Boolean48:  false s/b false
+Boolean49:   true s/b  true
+Boolean50:  false s/b false
+Boolean51:   true s/b  true
+Boolean52:  false s/b false
+Boolean local 1:   true s/b  true
+Boolean local 2:  false s/b false
+Boolean local 3:   true s/b  true
+Boolean local 4:  false s/b false
+Boolean local 5:   true  true  true  true s/b  true  true  true  true
+Boolean local 6:   true  true s/b  true  true
+Boolean local 7:   true false s/b  true false
+Boolean local 8:  0 1 s/b 0 1
+Boolean array 1:   true s/b  true
+Boolean array 2:  false s/b false
+Boolean array 3:   true s/b  true
+Boolean array 4:  false s/b false
+Boolean array 5:   true  true  true  true s/b  true  true  true  true
+Boolean array 6:   true  true s/b  true  true
+Boolean array 7:   true false s/b  true false
+Boolean array 8:  0 1 s/b 0 1
+Boolean recfld 1:   true s/b  true
+Boolean recfld 2:  false s/b false
+Boolean recfld 3:   true s/b  true
+Boolean recfld 4:  false s/b false
+Boolean recfld 5:   true  true  true  true s/b  true  true  true  true
+Boolean recfld 6:   true  true s/b  true  true
+Boolean recfld 7:   true false s/b  true false
+Boolean recfld 8:  0 1 s/b 0 1
+Boolean recarr 1:   true s/b  true
+Boolean recarr 2:  false s/b false
+Boolean recarr 3:   true s/b  true
+Boolean recarr 4:  false s/b false
+Boolean recarr 5:   true  true  true  true s/b  true  true  true  true
+Boolean recarr 6:   true  true s/b  true  true
+Boolean recarr 7:   true false s/b  true false
+Boolean recarr 8:  0 1 s/b 0 1
+Boolean ptr 1:   true s/b  true
+Boolean ptr 2:  false s/b false
+Boolean ptr 3:   true s/b  true
+Boolean ptr 4:  false s/b false
+Boolean ptr 5:   true  true  true  true s/b  true  true  true  true
+Boolean ptr 6:   true  true s/b  true  true
+Boolean ptr 7:   true false s/b  true false
+Boolean ptr 8:  0 1 s/b 0 1
+Boolean buf 1:   true s/b  true
+Boolean buf 2:  false s/b false
+Boolean buf 3:   true s/b  true
+Boolean buf 4:  false s/b false
+Boolean buf eof1:  false s/b false
+Boolean buf rt:   true s/b  true
+Boolean buf eof2:   true s/b  true
+Boolean valpar 1:   true s/b  true
+Boolean valpar 2:  false s/b false
+Boolean valpar 3:   true s/b  true
+Boolean valpar 4:  false s/b false
+Boolean valpar 5:   true  true  true  true s/b  true  true  true  true
+Boolean valpar 6:   true  true s/b  true  true
+Boolean valpar 7:   true false s/b  true false
+Boolean valpar 8:  0 1 s/b 0 1
+Boolean valpar rt:  false s/b false
+Boolean varpar 1:   true s/b  true
+Boolean varpar 2:  false s/b false
+Boolean varpar 3:   true s/b  true
+Boolean varpar 4:  false s/b false
+Boolean varpar 5:   true  true  true  true s/b  true  true  true  true
+Boolean varpar 6:   true  true s/b  true  true
+Boolean varpar 7:   true false s/b  true false
+Boolean varpar 8:  0 1 s/b 0 1
+Boolean varpar rt:  false s/b false
+Boolean surround 1:   true s/b  true
+Boolean surround 2:  false s/b false
+Boolean surround 3:   true s/b  true
+Boolean surround 4:  false s/b false
+Boolean surround 5:   true  true  true  true s/b  true  true  true  true
+Boolean surround 6:   true  true s/b  true  true
+Boolean surround 7:   true false s/b  true false
+Boolean surround 8:  0 1 s/b 0 1
+Boolean surround rt:  false s/b false
 
 ******************* Scalar *******************
 
@@ -567,6 +834,66 @@ Scalar35:  false s/b false
 Scalar36:   true s/b true
 Scalar37:   true s/b true
 Scalar38:  false s/b false
+Enum local 1:  2 s/b 2
+Enum local 2:  3 s/b 3
+Enum local 3:  1 s/b 1
+Enum local 4:   true  true s/b  true  true
+Enum local 5:   true  true s/b  true  true
+Enum local 6:   true  true s/b  true  true
+Enum array 1:  2 s/b 2
+Enum array 2:  3 s/b 3
+Enum array 3:  1 s/b 1
+Enum array 4:   true  true s/b  true  true
+Enum array 5:   true  true s/b  true  true
+Enum array 6:   true  true s/b  true  true
+Enum recfld 1:  2 s/b 2
+Enum recfld 2:  3 s/b 3
+Enum recfld 3:  1 s/b 1
+Enum recfld 4:   true  true s/b  true  true
+Enum recfld 5:   true  true s/b  true  true
+Enum recfld 6:   true  true s/b  true  true
+Enum recarr 1:  2 s/b 2
+Enum recarr 2:  3 s/b 3
+Enum recarr 3:  1 s/b 1
+Enum recarr 4:   true  true s/b  true  true
+Enum recarr 5:   true  true s/b  true  true
+Enum recarr 6:   true  true s/b  true  true
+Enum ptr 1:  2 s/b 2
+Enum ptr 2:  3 s/b 3
+Enum ptr 3:  1 s/b 1
+Enum ptr 4:   true  true s/b  true  true
+Enum ptr 5:   true  true s/b  true  true
+Enum ptr 6:   true  true s/b  true  true
+Enum buf 1:  2 s/b 2
+Enum buf 2:  3 s/b 3
+Enum buf 3:  1 s/b 1
+Enum buf 4:   true  true s/b  true  true
+Enum buf 5:   true  true s/b  true  true
+Enum buf 6:   true  true s/b  true  true
+Enum buf eof1:  false s/b false
+Enum buf rt:  4  true s/b 4  true
+Enum buf eof2:   true s/b  true
+Enum valpar 1:  2 s/b 2
+Enum valpar 2:  3 s/b 3
+Enum valpar 3:  1 s/b 1
+Enum valpar 4:   true  true s/b  true  true
+Enum valpar 5:   true  true s/b  true  true
+Enum valpar 6:   true  true s/b  true  true
+Enum valpar rt:  0 s/b 0
+Enum varpar 1:  2 s/b 2
+Enum varpar 2:  3 s/b 3
+Enum varpar 3:  1 s/b 1
+Enum varpar 4:   true  true s/b  true  true
+Enum varpar 5:   true  true s/b  true  true
+Enum varpar 6:   true  true s/b  true  true
+Enum varpar rt:  1 s/b 1
+Enum surround 1:  2 s/b 2
+Enum surround 2:  3 s/b 3
+Enum surround 3:  1 s/b 1
+Enum surround 4:   true  true s/b  true  true
+Enum surround 5:   true  true s/b  true  true
+Enum surround 6:   true  true s/b  true  true
+Enum surround rt:  1 s/b 1
 
 ******************* Reals ******************************
 
@@ -788,6 +1115,94 @@ Real154: -8.42200000e+01 s/b -8.422000e+01
 Real155:  8.42200000e+01 s/b  8.422000e+01
 Real156:  -4.33300000e+01 s/b -4.333000e+01
 Real157:  8.42200000e+01 s/b  8.422000e+01
+Real158:  1.00000000e+00 s/b  1.000000e+00
+Real159:  5.00000000e-01 s/b  5.000000e-01
+Real160: -1.00000000e+00 s/b -1.000000e+00
+Real local 1:   1.60000000e+01 s/b  1.600000e+01
+Real local 2:   4.00000000e+00 s/b  4.000000e+00
+Real local 3:   1.60000000e+01 s/b  1.600000e+01
+Real local 4:   3.00000000e+00 s/b  3.000000e+00
+Real local 5:   3.00000000e+00 s/b  3.000000e+00
+Real local 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real local 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real local 8:   true  true false  true s/b  true  true false  true
+Real local 9:  3 4 s/b 3 4
+Real array 1:   1.60000000e+01 s/b  1.600000e+01
+Real array 2:   4.00000000e+00 s/b  4.000000e+00
+Real array 3:   1.60000000e+01 s/b  1.600000e+01
+Real array 4:   3.00000000e+00 s/b  3.000000e+00
+Real array 5:   3.00000000e+00 s/b  3.000000e+00
+Real array 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real array 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real array 8:   true  true false  true s/b  true  true false  true
+Real array 9:  3 4 s/b 3 4
+Real recfld 1:   1.60000000e+01 s/b  1.600000e+01
+Real recfld 2:   4.00000000e+00 s/b  4.000000e+00
+Real recfld 3:   1.60000000e+01 s/b  1.600000e+01
+Real recfld 4:   3.00000000e+00 s/b  3.000000e+00
+Real recfld 5:   3.00000000e+00 s/b  3.000000e+00
+Real recfld 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real recfld 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real recfld 8:   true  true false  true s/b  true  true false  true
+Real recfld 9:  3 4 s/b 3 4
+Real recarr 1:   1.60000000e+01 s/b  1.600000e+01
+Real recarr 2:   4.00000000e+00 s/b  4.000000e+00
+Real recarr 3:   1.60000000e+01 s/b  1.600000e+01
+Real recarr 4:   3.00000000e+00 s/b  3.000000e+00
+Real recarr 5:   3.00000000e+00 s/b  3.000000e+00
+Real recarr 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real recarr 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real recarr 8:   true  true false  true s/b  true  true false  true
+Real recarr 9:  3 4 s/b 3 4
+Real ptr 1:   1.60000000e+01 s/b  1.600000e+01
+Real ptr 2:   4.00000000e+00 s/b  4.000000e+00
+Real ptr 3:   1.60000000e+01 s/b  1.600000e+01
+Real ptr 4:   3.00000000e+00 s/b  3.000000e+00
+Real ptr 5:   3.00000000e+00 s/b  3.000000e+00
+Real ptr 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real ptr 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real ptr 8:   true  true false  true s/b  true  true false  true
+Real ptr 9:  3 4 s/b 3 4
+Real buf 1:   1.60000000e+01 s/b  1.600000e+01
+Real buf 2:   4.00000000e+00 s/b  4.000000e+00
+Real buf 3:   1.60000000e+01 s/b  1.600000e+01
+Real buf 4:   3.00000000e+00 s/b  3.000000e+00
+Real buf 5:   3.00000000e+00 s/b  3.000000e+00
+Real buf 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real buf 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real buf eof1:  false s/b false
+Real buf rt:   4.20000000e+01 s/b  4.200000e+01
+Real buf eof2:   true s/b  true
+Real valpar 1:   1.60000000e+01 s/b  1.600000e+01
+Real valpar 2:   4.00000000e+00 s/b  4.000000e+00
+Real valpar 3:   1.60000000e+01 s/b  1.600000e+01
+Real valpar 4:   3.00000000e+00 s/b  3.000000e+00
+Real valpar 5:   3.00000000e+00 s/b  3.000000e+00
+Real valpar 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real valpar 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real valpar 8:   true  true false  true s/b  true  true false  true
+Real valpar 9:  3 4 s/b 3 4
+Real valpar rt:   9.90000000e+01 s/b  9.900000e+01
+Real varpar 1:   1.60000000e+01 s/b  1.600000e+01
+Real varpar 2:   4.00000000e+00 s/b  4.000000e+00
+Real varpar 3:   1.60000000e+01 s/b  1.600000e+01
+Real varpar 4:   3.00000000e+00 s/b  3.000000e+00
+Real varpar 5:   3.00000000e+00 s/b  3.000000e+00
+Real varpar 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real varpar 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real varpar 8:   true  true false  true s/b  true  true false  true
+Real varpar 9:  3 4 s/b 3 4
+Real varpar rt:   3.00000000e+00 s/b  3.000000e+00
+Real surround 1:   1.60000000e+01 s/b  1.600000e+01
+Real surround 2:   4.00000000e+00 s/b  4.000000e+00
+Real surround 3:   1.60000000e+01 s/b  1.600000e+01
+Real surround 4:   3.00000000e+00 s/b  3.000000e+00
+Real surround 5:   3.00000000e+00 s/b  3.000000e+00
+Real surround 6:   1.00000000e+00  0.00000000e+00 s/b  1.000000e+00  0.000000e+00
+Real surround 7:   0.00000000e+00  1.00000000e+00  0.00000000e+00 s/b  0.000000e+00  1.000000e+00  0.000000e+00
+Real surround 8:   true  true false  true s/b  true  true false  true
+Real surround 9:  3 4 s/b 3 4
+Real surround rt:   3.00000000e+00 s/b  3.000000e+00
 
 ******************* sets ******************************
 
@@ -854,6 +1269,66 @@ Set60: false s/b false
 Set61: 11 s/b 11
 set62:  true s/b true
 set63: 1000000001 s/b 1000000001
+Set local 1:   true false s/b  true false
+Set local 2:   true  true s/b  true  true
+Set local 3:  false  true s/b false  true
+Set local 4:  false  true s/b false  true
+Set local 5:   true  true s/b  true  true
+Set local 6:   true false s/b  true false
+Set array 1:   true false s/b  true false
+Set array 2:   true  true s/b  true  true
+Set array 3:  false  true s/b false  true
+Set array 4:  false  true s/b false  true
+Set array 5:   true  true s/b  true  true
+Set array 6:   true false s/b  true false
+Set recfld 1:   true false s/b  true false
+Set recfld 2:   true  true s/b  true  true
+Set recfld 3:  false  true s/b false  true
+Set recfld 4:  false  true s/b false  true
+Set recfld 5:   true  true s/b  true  true
+Set recfld 6:   true false s/b  true false
+Set recarr 1:   true false s/b  true false
+Set recarr 2:   true  true s/b  true  true
+Set recarr 3:  false  true s/b false  true
+Set recarr 4:  false  true s/b false  true
+Set recarr 5:   true  true s/b  true  true
+Set recarr 6:   true false s/b  true false
+Set ptr 1:   true false s/b  true false
+Set ptr 2:   true  true s/b  true  true
+Set ptr 3:  false  true s/b false  true
+Set ptr 4:  false  true s/b false  true
+Set ptr 5:   true  true s/b  true  true
+Set ptr 6:   true false s/b  true false
+Set buf 1:   true false s/b  true false
+Set buf 2:   true  true s/b  true  true
+Set buf 3:  false  true s/b false  true
+Set buf 4:  false  true s/b false  true
+Set buf 5:   true  true s/b  true  true
+Set buf 6:   true false s/b  true false
+Set buf eof1:  false s/b false
+Set buf rt:   true false  true s/b  true false  true
+Set buf eof2:   true s/b  true
+Set valpar 1:   true false s/b  true false
+Set valpar 2:   true  true s/b  true  true
+Set valpar 3:  false  true s/b false  true
+Set valpar 4:  false  true s/b false  true
+Set valpar 5:   true  true s/b  true  true
+Set valpar 6:   true false s/b  true false
+Set valpar rt:   true false  true s/b  true false  true
+Set varpar 1:   true false s/b  true false
+Set varpar 2:   true  true s/b  true  true
+Set varpar 3:  false  true s/b false  true
+Set varpar 4:  false  true s/b false  true
+Set varpar 5:   true  true s/b  true  true
+Set varpar 6:   true false s/b  true false
+Set varpar rt:   true false  true s/b  true false  true
+Set surround 1:   true false s/b  true false
+Set surround 2:   true  true s/b  true  true
+Set surround 3:  false  true s/b false  true
+Set surround 4:  false  true s/b false  true
+Set surround 5:   true  true s/b  true  true
+Set surround 6:   true false s/b  true false
+Set surround rt:   true false  true s/b  true false  true
 
 ******************* Pointers ******************************
 
@@ -927,6 +1402,66 @@ s/b
  71  72  73  74  75  76  77  78  79  80
  81  82  83  84  85  86  87  88  89  90
  91  92  93  94  95  96  97  98  99  100
+Pointer26:  1 2 3 s/b 1 2 3
+Pointer local 1:  5 s/b 5
+Pointer local 2:  35 s/b 35
+Pointer local 3:  2 s/b 2
+Pointer local 4:  10 s/b 10
+Pointer local 5:   true false s/b  true false
+Pointer local 6:   true false  true s/b  true false  true
+Pointer array 1:  5 s/b 5
+Pointer array 2:  35 s/b 35
+Pointer array 3:  2 s/b 2
+Pointer array 4:  10 s/b 10
+Pointer array 5:   true false s/b  true false
+Pointer array 6:   true false  true s/b  true false  true
+Pointer recfld 1:  5 s/b 5
+Pointer recfld 2:  35 s/b 35
+Pointer recfld 3:  2 s/b 2
+Pointer recfld 4:  10 s/b 10
+Pointer recfld 5:   true false s/b  true false
+Pointer recfld 6:   true false  true s/b  true false  true
+Pointer recarr 1:  5 s/b 5
+Pointer recarr 2:  35 s/b 35
+Pointer recarr 3:  2 s/b 2
+Pointer recarr 4:  10 s/b 10
+Pointer recarr 5:   true false s/b  true false
+Pointer recarr 6:   true false  true s/b  true false  true
+Pointer ptr 1:  5 s/b 5
+Pointer ptr 2:  35 s/b 35
+Pointer ptr 3:  2 s/b 2
+Pointer ptr 4:  10 s/b 10
+Pointer ptr 5:   true false s/b  true false
+Pointer ptr 6:   true false  true s/b  true false  true
+Pointer buf 1:  5 s/b 5
+Pointer buf 2:  35 s/b 35
+Pointer buf 3:  2 s/b 2
+Pointer buf 4:  10 s/b 10
+Pointer buf 5:   true false s/b  true false
+Pointer buf eof1:  false s/b false
+Pointer buf rt:  42 s/b 42
+Pointer buf eof2:   true s/b  true
+Pointer valpar 1:  5 s/b 5
+Pointer valpar 2:  35 s/b 35
+Pointer valpar 3:  2 s/b 2
+Pointer valpar 4:  10 s/b 10
+Pointer valpar 5:   true false s/b  true false
+Pointer valpar 6:   true false  true s/b  true false  true
+Pointer valpar rt:  77 s/b 77
+Pointer varpar 1:  5 s/b 5
+Pointer varpar 2:  35 s/b 35
+Pointer varpar 3:  2 s/b 2
+Pointer varpar 4:  10 s/b 10
+Pointer varpar 5:   true false s/b  true false
+Pointer varpar 6:   true false  true s/b  true false  true
+Pointer varpar rt:  10 s/b 10
+Pointer surround 1:  5 s/b 5
+Pointer surround 2:  35 s/b 35
+Pointer surround 3:  2 s/b 2
+Pointer surround 4:  10 s/b 10
+Pointer surround 5:   true false s/b  true false
+Pointer surround 6:   true false  true s/b  true false  true
+Pointer surround rt:  10 s/b 10
 
 ******************* arrays ******************************
 
@@ -1040,6 +1575,133 @@ Array42:
 40 39 38 37 36 35 34 33 32 31 s/b 40 39 38 37 36 35 34 33 32 31
 Array43: 
 22 21 20 19 18 17 16 15 14 13 s/b 22 21 20 19 18 17 16 15 14 13
+String local 1:  abcdefghij s/b abcdefghij
+String local 2:   true false s/b  true false
+String local 3:   true  true s/b  true  true
+String local 4:  false  true s/b false  true
+String local 5:  c s/b c
+String local 6:  abCdefghij s/b abCdefghij
+String array 1:  abcdefghij s/b abcdefghij
+String array 2:   true false s/b  true false
+String array 3:   true  true s/b  true  true
+String array 4:  false  true s/b false  true
+String array 5:  c s/b c
+String array 6:  abCdefghij s/b abCdefghij
+String recfld 1:  abcdefghij s/b abcdefghij
+String recfld 2:   true false s/b  true false
+String recfld 3:   true  true s/b  true  true
+String recfld 4:  false  true s/b false  true
+String recfld 5:  c s/b c
+String recfld 6:  abCdefghij s/b abCdefghij
+String recarr 1:  abcdefghij s/b abcdefghij
+String recarr 2:   true false s/b  true false
+String recarr 3:   true  true s/b  true  true
+String recarr 4:  false  true s/b false  true
+String recarr 5:  c s/b c
+String recarr 6:  abCdefghij s/b abCdefghij
+String ptr 1:  abcdefghij s/b abcdefghij
+String ptr 2:   true false s/b  true false
+String ptr 3:   true  true s/b  true  true
+String ptr 4:  false  true s/b false  true
+String ptr 5:  c s/b c
+String ptr 6:  abCdefghij s/b abCdefghij
+String buf 1:  abcdefghij s/b abcdefghij
+String buf 2:   true false s/b  true false
+String buf 3:   true  true s/b  true  true
+String buf 4:  false  true s/b false  true
+String buf 5:  c s/b c
+String buf 6:  abCdefghij s/b abCdefghij
+String buf eof1:  false s/b false
+String buf rt:  klmnopqrst s/b klmnopqrst
+String buf eof2:   true s/b  true
+String valpar 1:  abcdefghij s/b abcdefghij
+String valpar 2:   true false s/b  true false
+String valpar 3:   true  true s/b  true  true
+String valpar 4:  false  true s/b false  true
+String valpar 5:  c s/b c
+String valpar 6:  abCdefghij s/b abCdefghij
+String valpar rt:  zzzzzzzzzz s/b zzzzzzzzzz
+String varpar 1:  abcdefghij s/b abcdefghij
+String varpar 2:   true false s/b  true false
+String varpar 3:   true  true s/b  true  true
+String varpar 4:  false  true s/b false  true
+String varpar 5:  c s/b c
+String varpar 6:  abCdefghij s/b abCdefghij
+String varpar rt:  abCdefghij s/b abCdefghij
+String surround 1:  abcdefghij s/b abcdefghij
+String surround 2:   true false s/b  true false
+String surround 3:   true  true s/b  true  true
+String surround 4:  false  true s/b false  true
+String surround 5:  c s/b c
+String surround 6:  abCdefghij s/b abCdefghij
+String surround rt:  abCdefghij s/b abCdefghij
+Array local 1:  5 s/b 5
+Array local 2:  35 s/b 35
+Array local 3:  2 s/b 2
+Array local 4:  1 s/b 1
+Array local 5:  4 s/b 4
+Array local 6:   true false s/b  true false
+Array local 7:  10 20 30 40 50 s/b 10 20 30 40 50
+Array arr 1:  5 s/b 5
+Array arr 2:  35 s/b 35
+Array arr 3:  2 s/b 2
+Array arr 4:  1 s/b 1
+Array arr 5:  4 s/b 4
+Array arr 6:   true false s/b  true false
+Array arr 7:  10 20 30 40 50 s/b 10 20 30 40 50
+Array recfld 1:  5 s/b 5
+Array recfld 2:  35 s/b 35
+Array recfld 3:  2 s/b 2
+Array recfld 4:  1 s/b 1
+Array recfld 5:  4 s/b 4
+Array recfld 6:   true false s/b  true false
+Array recfld 7:  10 20 30 40 50 s/b 10 20 30 40 50
+Array recarr 1:  5 s/b 5
+Array recarr 2:  35 s/b 35
+Array recarr 3:  2 s/b 2
+Array recarr 4:  1 s/b 1
+Array recarr 5:  4 s/b 4
+Array recarr 6:   true false s/b  true false
+Array recarr 7:  10 20 30 40 50 s/b 10 20 30 40 50
+Array ptr 1:  5 s/b 5
+Array ptr 2:  35 s/b 35
+Array ptr 3:  2 s/b 2
+Array ptr 4:  1 s/b 1
+Array ptr 5:  4 s/b 4
+Array ptr 6:   true false s/b  true false
+Array ptr 7:  10 20 30 40 50 s/b 10 20 30 40 50
+Array buf 1:  5 s/b 5
+Array buf 2:  35 s/b 35
+Array buf 3:  2 s/b 2
+Array buf 4:  1 s/b 1
+Array buf 5:  4 s/b 4
+Array buf eof1:  false s/b false
+Array buf rt:  10 20 30 40 50 s/b 10 20 30 40 50
+Array buf eof2:   true s/b  true
+Array valpar 1:  5 s/b 5
+Array valpar 2:  35 s/b 35
+Array valpar 3:  2 s/b 2
+Array valpar 4:  1 s/b 1
+Array valpar 5:  4 s/b 4
+Array valpar 6:   true false s/b  true false
+Array valpar 7:  10 20 30 40 50 s/b 10 20 30 40 50
+Array valpar rt:  99 99 99 99 99 s/b 99 99 99 99 99
+Array varpar 1:  5 s/b 5
+Array varpar 2:  35 s/b 35
+Array varpar 3:  2 s/b 2
+Array varpar 4:  1 s/b 1
+Array varpar 5:  4 s/b 4
+Array varpar 6:   true false s/b  true false
+Array varpar 7:  10 20 30 40 50 s/b 10 20 30 40 50
+Array varpar rt:  10 20 30 40 50 s/b 10 20 30 40 50
+Array surround 1:  5 s/b 5
+Array surround 2:  35 s/b 35
+Array surround 3:  2 s/b 2
+Array surround 4:  1 s/b 1
+Array surround 5:  4 s/b 4
+Array surround 6:   true false s/b  true false
+Array surround 7:  10 20 30 40 50 s/b 10 20 30 40 50
+Array surround rt:  10 20 30 40 50 s/b 10 20 30 40 50
 
 ******************* records ******************************
 
@@ -1097,6 +1759,49 @@ Record27:  1 g s/b 1 g
 Record28:  20 19 18 17 16 15 14 13 12 11 s/b 20 19 18 17 16 15 14 13 12 11
 Record29: 42 false  true  1.234000000000000e+01 s/b 42 False True 1.234000000000000e+01
 Record30: 185 s/b 185
+Record31:  42 x s/b 42 x
+Rec local 1:  42 x s/b 42 x
+Rec local 2:  50 s/b 50
+Rec local 3:  50 x s/b 50 x
+Rec local 4:  7 y s/b 7 y
+Rec array 1:  42 x s/b 42 x
+Rec array 2:  50 s/b 50
+Rec array 3:  50 x s/b 50 x
+Rec array 4:  7 y s/b 7 y
+Rec recfld 1:  42 x s/b 42 x
+Rec recfld 2:  50 s/b 50
+Rec recfld 3:  50 x s/b 50 x
+Rec recfld 4:  7 y s/b 7 y
+Rec recarr 1:  42 x s/b 42 x
+Rec recarr 2:  50 s/b 50
+Rec recarr 3:  50 x s/b 50 x
+Rec recarr 4:  7 y s/b 7 y
+Rec ptr 1:  42 x s/b 42 x
+Rec ptr 2:  50 s/b 50
+Rec ptr 3:  50 x s/b 50 x
+Rec ptr 4:  7 y s/b 7 y
+Rec buf 1:  42 x s/b 42 x
+Rec buf 2:  50 s/b 50
+Rec buf 3:  50 x s/b 50 x
+Rec buf 4:  7 y s/b 7 y
+Rec buf eof1:  false s/b false
+Rec buf rt:  77 z s/b 77 z
+Rec buf eof2:   true s/b  true
+Rec valpar 1:  42 x s/b 42 x
+Rec valpar 2:  50 s/b 50
+Rec valpar 3:  50 x s/b 50 x
+Rec valpar 4:  7 y s/b 7 y
+Rec valpar rt:  1 a s/b 1 a
+Rec varpar 1:  42 x s/b 42 x
+Rec varpar 2:  50 s/b 50
+Rec varpar 3:  50 x s/b 50 x
+Rec varpar 4:  7 y s/b 7 y
+Rec varpar rt:  7 y s/b 7 y
+Rec surround 1:  42 x s/b 42 x
+Rec surround 2:  50 s/b 50
+Rec surround 3:  50 x s/b 50 x
+Rec surround 4:  7 y s/b 7 y
+Rec surround rt:  7 y s/b 7 y
 
 ******************* files ******************************
 
@@ -1172,6 +1877,32 @@ File19:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
 File20:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
 File21:   50 s/b 50
 File22:    true s/b true
+File23:   17 q s/b 17 q
+File-inrec 1:  10 s/b 10
+File-inrec 2:  20 s/b 20
+File-inrec 3:  false s/b false
+File-inrec 4:  30 s/b 30
+File-inrec 5:   true s/b  true
+File-inarr 1:  10 s/b 10
+File-inarr 2:  20 s/b 20
+File-inarr 3:  false s/b false
+File-inarr 4:  30 s/b 30
+File-inarr 5:   true s/b  true
+File-recarr 1:  10 s/b 10
+File-recarr 2:  20 s/b 20
+File-recarr 3:  false s/b false
+File-recarr 4:  30 s/b 30
+File-recarr 5:   true s/b  true
+File-arrrec 1:  10 s/b 10
+File-arrrec 2:  20 s/b 20
+File-arrrec 3:  false s/b false
+File-arrrec 4:  30 s/b 30
+File-arrrec 5:   true s/b  true
+File-inptr 1:  10 s/b 10
+File-inptr 2:  20 s/b 20
+File-inptr 3:  false s/b false
+File-inptr 4:  30 s/b 30
+File-inptr 5:   true s/b  true
 
 ************ Procedures and functions ******************
 
@@ -1214,5 +1945,3 @@ ProcedureFunction11:   52 s/b 52
 ProcedureFunction12:   a s/b a
 ProcedureFunction13:   37 s/b 37
 ProcedureFunction14:   35 s/b 35
-
-program complete

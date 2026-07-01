@@ -5,7 +5,7 @@ cp bin/pgen hosts/pascaline/linux_X86/bin
 cp bin/pint hosts/pascaline/linux_X86/bin
 cp bin/pmach hosts/pascaline/linux_X86/bin
 cp bin/spew hosts/pascaline/linux_X86/bin
-cp bin/p6 hosts/pascaline
+cp bin/p6 hosts/pascaline/bit64
 cp bin/compile hosts/pascaline
 cp bin/run hosts/pascaline
 cp bin/testp2 hosts/pascaline
@@ -14,6 +14,11 @@ cp bin/testp5 hosts/pascaline
 cp bin/testp6 hosts/pascaline
 cp bin/pc hosts/pascaline
 cp Makefile hosts/pascaline/bit64
+cp standard_tests/iso7185pat.cmp hosts/pascaline/bit64/standard_tests
+cp standard_tests/iso7185patc.cmp hosts/pascaline/bit64/standard_tests
+cp standard_tests/iso7185pats.cmp hosts/pascaline/bit64/standard_tests
+cp p4/standardp.cmp hosts/pascaline/bit64/p4
+cp p4/standardpc.cmp hosts/pascaline/bit64/p4
 cp libs/main.o hosts/pascaline/linux_X86/libs
 cp libs/parse.o hosts/pascaline/linux_X86/libs
 cp libs/parse.pas hosts/pascaline/linux_X86/libs
