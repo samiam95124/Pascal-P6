@@ -122,7 +122,7 @@ cp hosts/$compiler/bit$bits/standard_tests/iso7185pats.cmp standard_tests
 cp hosts/$compiler/bit$bits/p4/standardp.cmp p4
 cp hosts/$compiler/bit$bits/p4/standardpc.cmp p4
 
-cp hosts/$compiler/linux_X86/* bin
+cp -r hosts/$compiler/linux_X86/* bin
 
 echo "Bit length $bits"
 
