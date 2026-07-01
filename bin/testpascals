@@ -40,7 +40,7 @@ elif [ "$1" = "--package" ]; then
 
     pint $(ob sample_programs/pascals).p6 $(ob sample_programs/pascals).p6o --machdeck
     genobj $(ob sample_programs/pascals).p6o ${tmpd}program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I$incd -o $(ob sample_programs/pascals) $PASCALP6/source/cmach/cmach.c -lm
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -o $(ob sample_programs/pascals) $PASCALP6/source/cmach/cmach.c ${tmpd}program_code.c -lm
 	$(ob sample_programs/pascals) sample_programs/roman.pas ${tmpd}temp $options < ${tmpd}pascals.inp > $(ob sample_programs/pascals).lst
 
 elif [ "$1" = "--pgen" ]; then
