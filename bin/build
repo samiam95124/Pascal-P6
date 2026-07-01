@@ -103,7 +103,6 @@ compprog libs/tests/graphics_test
 compprog libs/tests/management_test
 compprog libs/tests/netprobe
 compprog libs/tests/network_test
-compprog libs/tests/plaintst
 compprog libs/tests/services_test1
 compprog libs/tests/services_test
 compprog libs/tests/sndprobe
