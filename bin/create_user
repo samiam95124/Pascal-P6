@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# create_user - build the runtime-only "user" distribution (user.tgz)
+#
+# Produces a minimal Pascal-P6 tree that can COMPILE and RUN user programs, but:
+#   - carries NO Pascal-P6 sources (only the library headers that resolve `uses`)
+#   - has NO test facilities (no regression/test scripts, goldens, or test progs)
+#   - CANNOT rebuild itself (no build scripts, no compiler sources, no host tree)
+#
+# Native (pgen), interpreted (pint/pmach/cmach) and package (-package)
+# compilation against the standard libraries are all supported. Package mode
+# links the prebuilt cmach objects under build/ (no cmach or amitk source is
+# shipped); like native compilation it needs a C compiler present.
+#
+# Run from the Pascal-P6 project root.
+#
+set -e
+
+[ -f setpath ] && [ -d bin ] && [ -d libs ] || {
+    echo "*** create_user: run this from the Pascal-P6 project root"; exit 1
+}
+
+stage=$(mktemp -d)
+root="$stage/pascal-p6"
+mkdir -p "$root/bin" "$root/libs"
+
+# Compiler + runtime tools: front end, code generator, the interpreters and
+# their terminal/graphics flavors, and the pc/compile/run drivers. No build,
+# regression, or self-rebuild tooling.
+for t in pcom pgen genobj \
+         pint pintt pintg pmach pmacht pmachg cmach cmacht cmachg \
+         pc pc.ins compile run p6 strip; do
+    cp "bin/$t" "$root/bin/"
+done
+
+# Library link products (.a/.o/.p6) and the headers that resolve `uses` (the
+# .pas module interfaces), plus the psystem runtime and its C support header.
+# libs/source (compiler-side wrappers) and libs/tests are excluded.
+cp libs/*.a libs/*.o libs/*.p6 libs/*.pas libs/pas2csup.h "$root/libs/"
+
+# Prebuilt package-mode objects: pc -package links these (plus the per-program
+# deck program_code.c that genobj emits) instead of compiling cmach source, so
+# package mode ships no cmach/amitk source. cmach_package.o hosts the Ami
+# externals (linked with the libs archives + psystem_stdio.o + system deps);
+# cmach_package_min.o is the minimal glibc build for programs using no externals.
+mkdir -p "$root/build/cmach" "$root/build/pgen"
+cp build/cmach/cmach_package.o build/cmach/cmach_package_min.o "$root/build/cmach/"
+cp build/pgen/psystem_stdio.o "$root/build/pgen/"
+
+# Environment setup and user-facing docs.
+cp setpath "$root/"
+for d in LICENSE README INSTALL; do [ -f "$d" ] && cp "$d" "$root/"; done
+
+tar czf user.tgz -C "$stage" pascal-p6
+rm -rf "$stage"
+echo "created user.tgz ($(du -h user.tgz | cut -f1))"
