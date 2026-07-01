@@ -128,7 +128,7 @@ elif [ "$param1" = "--package" ]; then
 	echo Running with package mode
     pint pascaline.p6 pascaline.p6o --machdeck
     genobj pascaline.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o pascaline $PASCALP6/source/cmach/cmach.c -lm > pascaline.err 2>&1
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -o pascaline $PASCALP6/source/cmach/cmach.c program_code.c -lm > pascaline.err 2>&1
     if [ "$?" == "0" ]; then
 
         ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst

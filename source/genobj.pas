@@ -128,7 +128,7 @@ procedure xlate;
    end;
        
 begin (*xlate*)
-  writeln(prr, '= {');
+  writeln(prr, 'unsigned char program_code[] = {');
   ad := 0; l := 1;
   while not eof(prd) and (l > 0) do begin
     read(prd, c); if c <> ':' then errorl;
@@ -145,7 +145,8 @@ begin (*xlate*)
     readln(prd)
   end;
   writeln(prr, '};');
-  write(prr, '#define PCTOP 0x'); wrtnum(prr, ad, 16, 8, true); writeln(prr);
+  write(prr, 'long program_code_len = 0x'); wrtnum(prr, ad, 16, 8, true);
+  writeln(prr, ';');
 end;
 
 begin { main }

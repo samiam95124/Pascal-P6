@@ -657,13 +657,13 @@ filnum vmstdin  = 0;
 filnum vmstdout = 0;
 instyp op; lvltyp p; address q;  /*instruction register*/
 address q1,q2; /* extra parameters */
-byte store[MAXSTR] /* complete program storage */
-/* package mode fills the program store, sets pctop and executes the prepackaged
-   program. */
+byte store[MAXSTR]; /* complete program storage */
+/* package mode: the prepackaged deck is a separately compiled object
+   (program_code.o), copied into store and pctop set at startup below. */
 #ifdef PACKAGE
-#include "program_code.c"
+extern unsigned char program_code[];
+extern long program_code_len;
 #endif
-;
 byte storedef[MAXDEF]; /* defined bits */
 long sdi; /* index for that */
 /* mp  points to {ning of a data segment
@@ -3621,9 +3621,10 @@ int main (int argc, char *argv[])
     printf("loading program\n");
 #endif
 
-#ifdef PCTOP
-    pctop = PCTOP;
-    for (i = 0; i < PCTOP; i++) putdef(i, TRUE);
+#ifdef PACKAGE
+    /* copy the separately linked deck (program_code.o) into store and set pctop */
+    pctop = program_code_len;
+    for (i = 0; i < pctop; i++) { store[i] = program_code[i]; putdef(i, TRUE); }
 #endif
     if (store[0] == 0) /* there is already a program in store */
         load(fp); /* assembles and stores code */

@@ -56,7 +56,7 @@ elif [ "$1" = "--package" ]; then
     echo "Executing with package..."
     pint $(ob p4/pint).p6 $(ob p4/pint).p6o --machdeck
     genobj $(ob p4/pint).p6o ${tmpd}program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I$incd -o $(ob p4/pint) $PASCALP6/source/cmach/cmach.c -lm
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -o $(ob p4/pint) $PASCALP6/source/cmach/cmach.c ${tmpd}program_code.c -lm
 	$(ob p4/pint) $(ob p4/standardp).p4 ${tmpd}temp $options < ${tmpd}pint.inp > $(ob p4/standardp).lst
 
 elif [ "$1" = "--pgen" ]; then

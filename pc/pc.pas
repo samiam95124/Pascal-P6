@@ -2162,13 +2162,11 @@ begin { dolink }
       end;
       if fpack then begin
 
-         { cmach.c lives in the source tree alongside the compiler binary;
-           locate it with the same pgmpath-relative convention pc.ins uses for
-           the module path (../libs), rather than on the module path proper. }
-         services.maknam(fnc, pgmpath, '../source/cmach/cmach', 'c');
-         services.fulnam(fnc); { rationalize the relative path to absolute }
-         if not exists(fnc) then error('cmach.c not found');
-         services.brknam(fnc, fpc, n, e); { extract path of cmach }
+         { Package mode links a PREBUILT cmach object (compiled -DPACKAGE) against
+           the per-program deck program_code.c -- no cmach source is shipped or
+           needed. The deck is generated first; then the appropriate prebuilt
+           object is linked: the externals-hosting build (cmach_package.o) or the
+           minimal glibc build (cmach_package_min.o), both under build/cmach. }
          clears(cmdbuf); { clear command buffer }
          i := 1; { set 1st char }
          putstr('genobj');
@@ -2187,10 +2185,9 @@ begin { dolink }
               models (services, sound, network), so all three archives are
               linked unconditionally, exactly as the standalone cmach does. pc
               bridges its build config to the C define flags here. }
-            services.maknam(amilibc, pgmpath, '../amitk/libc', '');
-            services.fulnam(amilibc);
-            services.maknam(amiinc, pgmpath, '../amitk/include', '');
-            services.fulnam(amiinc);
+            services.maknam(fnc, pgmpath, '../build/cmach/cmach_package', 'o');
+            services.fulnam(fnc);
+            if not exists(fnc) then error('cmach_package.o not found');
             services.maknam(servarch, pgmpath, '../libs/services', 'a');
             services.fulnam(servarch);
             services.maknam(sndarch, pgmpath, '../libs/sound', 'a');
@@ -2199,14 +2196,12 @@ begin { dolink }
             services.fulnam(netarch);
             services.maknam(psstdio, pgmpath, '../build/pgen/psystem_stdio', 'o');
             services.fulnam(psstdio);
-            putstr('gcc -static -g3 -DPACKAGE -DWRDSIZ64 -DLENDIAN -DPASCALINE');
-            putstr(' -DNOPRDPRR -DNOHEADER -DEXTERNALS -DSTDIO_BYPASS -DGPC=0');
-            putstr(' -DSEEK_SET=0 -DSEEK_CUR=1 -DSEEK_END=2 -I. -I');
-            putstr(fpc); putchr(' ');
-            putstr('-I'); putstr(amilibc); putchr(' ');
-            putstr('-I'); putstr(amiinc); putchr(' ');
-            putstr('-o'); putchr(' '); putstr(fns); putchr(' ');
+            { link the prebuilt externals cmach object with the per-program deck
+              (program_code.c, a plain byte array compiled here) and the external
+              archives plus their dependency stack. }
+            putstr('gcc -static -g3 -o '); putstr(fns); putchr(' ');
             putstr(fnc); putchr(' ');
+            putstr('program_code.c'); putchr(' ');
             putstr('-Wl,-u,getparamfluid -Wl,-u,getparamdump'); putchr(' ');
             putstr(servarch); putchr(' ');
             putstr(sndarch); putchr(' ');
@@ -2221,15 +2216,12 @@ begin { dolink }
 
             { No Ami externals: a minimal package (cmach plus the embedded
               deck) that builds without the external dependency stack. }
-            putstr('gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -I');
-            putstr(fpc);
-            putchr(' ');
-            putstr('-o');
-            putchr(' ');
-            putstr(fns);
-            putchr(' ');
-            putstr(fnc);
-            putchr(' ');
+            services.maknam(fnc, pgmpath, '../build/cmach/cmach_package_min', 'o');
+            services.fulnam(fnc);
+            if not exists(fnc) then error('cmach_package_min.o not found');
+            putstr('gcc -o '); putstr(fns); putchr(' ');
+            putstr(fnc); putchr(' ');
+            putstr('program_code.c'); putchr(' ');
             putstr('-lm');
             excact(cmdbuf) { execute command buffer action }
 

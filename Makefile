@@ -86,7 +86,8 @@ all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a \
 	$(LIBS)/terminal.a $(LIBS)/graphics.a source/graph/graphics.a \
 	$(LIBS)/gnome_widgets.o \
-	$(LIBS)/sound.a $(LIBS)/network.a
+	$(LIBS)/sound.a $(LIBS)/network.a \
+	$(BUILD)/cmach/cmach_package.o $(BUILD)/cmach/cmach_package_min.o
 
 ################################################################################
 #
@@ -420,6 +421,22 @@ bin/cmach: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc \
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -o $(BUILD)/cmach64le \
 		$(SOURCE)/cmach/cmach.c $(CMACHEXTLIBS)
 	cp $(BUILD)/cmach64le $(PASCALP6)/bin/cmach
+
+# Package-mode cmach objects: cmach.c compiled -DPACKAGE. The per-program deck is
+# now a separate program_code.o that pc links against (rather than #included into
+# cmach's store[]), so these are prebuilt once and shipped -- package mode needs
+# no cmach source. Two builds mirror pc's two package paths: cmach_package.o hosts
+# the Ami externals like the standalone cmach; cmach_package_min.o is the minimal
+# glibc build for programs that use no externals.
+$(BUILD)/cmach/cmach_package.o: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc
+	mkdir -p $(BUILD)/cmach
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -DPACKAGE -DGPC=0 \
+		-o $(BUILD)/cmach/cmach_package.o -c $(SOURCE)/cmach/cmach.c
+
+$(BUILD)/cmach/cmach_package_min.o: $(SOURCE)/cmach/cmach.c
+	mkdir -p $(BUILD)/cmach
+	$(CC) $(CFLAGS) -DPACKAGE -DGPC=0 \
+		-o $(BUILD)/cmach/cmach_package_min.o -c $(SOURCE)/cmach/cmach.c
 
 # cmacht and cmachg are the terminal and graphics flavors of cmach, mirroring
 # pmacht/pmachg: the same cmach.c built with -DTERMINAL / -DGRAPHICS so it hosts
