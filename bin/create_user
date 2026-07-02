@@ -33,6 +33,12 @@ for t in pcom pgen genobj \
     cp "bin/$t" "$root/bin/"
 done
 
+# Prebuilt game binaries (bin/build installs them into bin/). Shipped so the
+# games can be run without compiling; tolerant if a build did not produce them.
+for g in backgammon breakout checkers chess conquest defenders pong; do
+    [ -f "bin/$g" ] && cp "bin/$g" "$root/bin/"
+done
+
 # Library link products (.a/.o/.p6) and the headers that resolve `uses` (the
 # .pas module interfaces), plus the psystem runtime and its C support header.
 # libs/source (compiler-side wrappers) and libs/tests are excluded.
@@ -49,7 +55,7 @@ cp build/pgen/psystem_stdio.o "$root/build/pgen/"
 
 # Environment setup and user-facing docs.
 cp setpath "$root/"
-for d in LICENSE README INSTALL; do [ -f "$d" ] && cp "$d" "$root/"; done
+for d in LICENSE README INSTALL NEWS; do [ -f "$d" ] && cp "$d" "$root/"; done
 
 # Example game sources (Pascaline graphics/sound demos) and their assets. The
 # asset-loading games (chess, conquest, backgammon) resolve their data dir from
