@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.4
+P6 Pascal compiler vs. 0.5.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -17,7 +17,7 @@ and the following annexes: A,B,C,E.
     13       20 end.
 
 Errors in program: 0
-P6 Pascal compiler vs. 0.4
+P6 Pascal compiler vs. 0.5.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -285,7 +285,7 @@ pi unreferenced at block ending on line: 164 in function/procedure: proc1
    250      987 end.
 
 Errors in program: 0
-P6 Pascal interpreter vs. 0.4
+P6 Pascal interpreter vs. 0.5.x
 
 Assembling/loading program
 Running program

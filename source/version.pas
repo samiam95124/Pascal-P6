@@ -22,8 +22,8 @@ module version;
 const
 
 majorver   = 0; { major version number }
-minorver   = 4; { minor version number }
-experiment = false; { is version experimental? }
+minorver   = 5; { minor version number }
+experiment = true; { is version experimental? }
 
 begin
 end.
