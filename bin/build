@@ -123,6 +123,12 @@ compprog graph_games/conquest
 compprog graph_games/defenders
 compprog graph_games/pong
 #
+# Install the chess piece bitmaps next to the chess binary in bin. chess locates
+# its assets in its own program directory (getpgm), so the data must travel with
+# the installed binary.
+#
+cp -r graph_games/chess_pieces bin/
+#
 # pgen and pcom must be a matched set
 #
 cp bin/pgen pgen.old
