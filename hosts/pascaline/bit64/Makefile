@@ -48,6 +48,13 @@ LIBS=$(PASCALP6)/libs
 AMI=$(PASCALP6)/amitk/linux
 AMIINC=$(PASCALP6)/amitk/include
 AMILIBC=$(PASCALP6)/amitk/libc
+# The amitk (Petit-Ami) submodule carries the C sources for the I/O model
+# bindings. Release source archives do not include submodules, so the standard
+# build must work without it: the built products (the libs archives, the
+# widget object and the bypass stdio object) are committed to this repo, and
+# when the amitk sources are absent the rules that compile them are disabled
+# and the committed products are used as they are.
+AMITK=$(wildcard $(AMI)/services.c)
 CPPFLAGS=-P -nostdinc -traditional-cpp
 CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
@@ -102,6 +109,7 @@ all: bin/cmach bin/spew \
 #
 # Build psystem for AMD64, the Pascaline support library in C.
 #
+ifneq ($(AMITK),)
 $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	$(SOURCE)/pgen/amd64/psystem.asm \
 	$(AMILIBC)/stdio.c
@@ -120,6 +128,7 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	fi
 	ar rc $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
 		$(BUILD)/pgen/amd64/psystem_asm.o $(PSYSTEM_STDIO)
+endif
 
 #
 # Build main for AMD64, the program stack startup shim.
@@ -165,6 +174,7 @@ $(BUILD)/libs/support.o: $(LIBS)/source/support.c \
 # FILE as a system FILE and crash.
 #
 SERVCPP=$(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source
+ifneq ($(AMITK),)
 $(LIBS)/services.a: $(AMI)/services.c \
 	$(LIBS)/source/services_wrapper.asm \
 	$(LIBS)/source/services_wrapper.c \
@@ -188,6 +198,7 @@ $(LIBS)/services.a: $(AMI)/services.c \
 	ar rc $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
 		$(BUILD)/libs/services_wrapper.o $(BUILD)/libs/services.o \
 		$(BUILD)/libs/services_support.o $(BUILD)/libs/support.o
+endif
 
 #
 # Terminal
@@ -204,6 +215,7 @@ $(LIBS)/services.a: $(AMI)/services.c \
 # the console-model dependencies pulled in by terminal.c.
 #
 TERMCPP=$(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source
+ifneq ($(AMITK),)
 $(LIBS)/terminal.a: $(AMI)/terminal.c \
 	$(LIBS)/source/terminal_wrapper.asm \
 	$(LIBS)/source/terminal_wrapper.c \
@@ -234,6 +246,7 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 		$(BUILD)/libs/terminal.o $(BUILD)/libs/term_services.o \
 		$(BUILD)/libs/system_event.o $(BUILD)/libs/config.o \
 		$(BUILD)/libs/support.o
+endif
 
 #
 # Graphics
@@ -248,6 +261,7 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 GRAPHCFG=$(shell pkg-config --cflags freetype2 fontconfig)
 GRAPHCPP=$(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source \
 	$(GRAPHCFG)
+ifneq ($(AMITK),)
 $(LIBS)/graphics.a: $(AMI)/graphics.c \
 	$(LIBS)/source/graphics_wrapper.asm \
 	$(LIBS)/source/graphics_wrapper.c \
@@ -309,6 +323,7 @@ source/graph/graphics.a: $(LIBS)/graphics.a
 $(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(LIBS)/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+endif
 
 #
 # Sound and network bindings. Unlike the I/O models, these live in the plain
@@ -324,6 +339,7 @@ $(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
 #
 SNDNETCPP=$(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source
 
+ifneq ($(AMITK),)
 $(LIBS)/sound.a: $(AMI)/sound.c $(AMI)/dumpsynthplug.c $(AMI)/fluidsynthplug.c \
 	$(LIBS)/source/sound_wrapper.asm \
 	$(LIBS)/source/sound_wrapper.c \
@@ -369,6 +385,22 @@ $(LIBS)/network.a: $(AMI)/network.c \
 	ar rc $(LIBS)/network.a $(BUILD)/libs/network_wrapper_asm.o \
 		$(BUILD)/libs/network_wrapper.o $(BUILD)/libs/network_support.o \
 		$(BUILD)/libs/network.o $(BUILD)/libs/support.o
+endif
+
+#
+# Without the amitk sources (release/source archives), the archives and
+# objects above are used as committed. A missing one means the tree is
+# incomplete (a git checkout without the products, or a truncated archive).
+#
+ifeq ($(AMITK),)
+$(LIBS)/psystem.a $(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/graphics.a \
+source/graph/graphics.a $(LIBS)/gnome_widgets.o $(LIBS)/sound.a $(LIBS)/network.a:
+	@test -f "$@" || { \
+	  echo "*** Error: $@ is missing and the amitk (Petit-Ami) sources are not"; \
+	  echo "*** present to build it. Releases ship these prebuilt; a git checkout"; \
+	  echo "*** needs the amitk submodule (git submodule update --init)."; \
+	  exit 1; }
+endif
 
 ################################################################################
 #
