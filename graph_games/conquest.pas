@@ -1748,9 +1748,14 @@ end;
 
 procedure loadmap;
 
+var f: pstring;
+
 begin
 
-   loadpict(output, picmap, 'graph_games/conquest_map.bmp')
+   { the map bitmap accompanies the program (getpgm), else the current dir }
+   f := maknam(getpgm, 'conquest_map', 'bmp');
+   if not exists(f^) then f := copy('conquest_map.bmp');
+   loadpict(output, picmap, f^)
 
 end;
 
