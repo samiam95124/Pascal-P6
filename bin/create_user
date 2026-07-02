@@ -51,11 +51,14 @@ cp build/pgen/psystem_stdio.o "$root/build/pgen/"
 cp setpath "$root/"
 for d in LICENSE README INSTALL; do [ -f "$d" ] && cp "$d" "$root/"; done
 
-# Example game sources (Pascaline graphics/sound demos). Sources only; the games
-# that load assets (chess, conquest, backgammon) also need their data files
-# (graph_games/chess_pieces, conquest_map.bmp, dice.wav, slide.wav), not shipped.
+# Example game sources (Pascaline graphics/sound demos) and their assets. The
+# asset-loading games (chess, conquest, backgammon) resolve their data dir from
+# the program path (getpgm), so the piece bitmaps, map and sound files sit
+# alongside the sources under graph_games/.
 mkdir -p "$root/graph_games"
 cp graph_games/*.pas "$root/graph_games/"
+cp graph_games/*.bmp graph_games/*.wav "$root/graph_games/"
+cp -r graph_games/chess_pieces "$root/graph_games/"
 
 tar czf user.tgz -C "$stage" pascal-p6
 rm -rf "$stage"
