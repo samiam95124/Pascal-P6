@@ -111,6 +111,18 @@ compprog libs/tests/strings_test
 compprog libs/tests/terminal_test
 compprog libs/tests/widget_test
 #
+# Graphical games in graph_games: build each as a native executable and place it
+# in bin, same as the library tests. They use the graphics (and sound) modules;
+# pc links the matching libraries.
+#
+compprog graph_games/backgammon
+compprog graph_games/breakout
+compprog graph_games/checkers
+compprog graph_games/chess
+compprog graph_games/conquest
+compprog graph_games/defenders
+compprog graph_games/pong
+#
 # pgen and pcom must be a matched set
 #
 cp bin/pgen pgen.old
