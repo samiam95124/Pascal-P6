@@ -16,6 +16,7 @@ program widget_test(input, output);
 
 uses graphics,
      services,
+     version,
      strings;
 
 label 99; { terminate }
@@ -128,7 +129,9 @@ begin
    framenum := 0;
 
    curvis(output, false);
-   writeln('Widget test vs. 0.1');
+   write('Widget test vs. ', majorver:1, '.', minorver:1);
+   if experiment then write('.x');
+   writeln;
    writeln;
    writeln('Hit return in any window to continue for each test');
    waitnext;

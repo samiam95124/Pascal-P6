@@ -57,6 +57,7 @@ joins
 
 uses
 
+{ version numbers } version,
 { string library }  strings;
 
 
@@ -2839,7 +2840,9 @@ begin
    paropt; { parse command options }
    if fhelp then begin
 
-      writeln('PC compiler shell vs. 1.14 Copyright (C) 2025 S. A. Franco');
+      write('PC compiler shell vs. ', majorver:1, '.', minorver:1);
+      if experiment then write('.x');
+      writeln(' Copyright (C) 2025 S. A. Franco');
       writeln;
       writeln('Usage: pc [options] <filename> [options]');
       writeln;
@@ -2892,7 +2895,9 @@ begin
    if fverb then begin
 
       writeln;
-      writeln('PC compiler shell vs. 1.14 Copyright (C) 2025 S. A. Franco');
+      write('PC compiler shell vs. ', majorver:1, '.', minorver:1);
+      if experiment then write('.x');
+      writeln(' Copyright (C) 2025 S. A. Franco');
       writeln
 
    end;

@@ -624,7 +624,7 @@ void main(/* Input argument count */ int argc,
     int fnd;
 
     printf("\n");
-    printf("Spew test vs. 1.0\n");
+    printf("Spew test vs. 0.4\n");
     printf("\n");
 
     single = 0; /* set multiple faults */

@@ -2,19 +2,93 @@
 
 Welcome to the v0.4 release!
 
-This is the forth beta release of Pascal-P6.
+This is the fourth beta release of Pascal-P6.
 
 What has been done since the v0.3 release:
 
-* pgen brought up.
+Native code generation (pgen):
 
-* Pascal-P6 was recompiled with pgen, now self-hosted.
+* AMD64 SysV ABI parameter passing: register and overflow parameters with
+caller cleanup, making Pascal and C calls fully interoperable at the ABI
+level.
 
-* User manual extensively updated.
+* DWARF debug information: types, subranges, file types, and CFI backtraces.
+Compiled Pascaline programs are now debuggable in GDB.
 
-* Improvements to debug mode.
+* Correctly rounded real to decimal conversion, using an exact big-integer
+converter in place of the power-of-ten approximation.
 
-Pascaline features not implemented in Pascal-P6 v0.3:
+The Petit-Ami I/O stack bound to Pascaline:
+
+* Full library bindings for services, terminal, graphics, widgets, sound and
+network, statically linked.
+
+* Seven graphical games (chess, backgammon, conquest, checkers, breakout,
+defenders and pong) written as end to end validation of the graphics, sound
+and widget bindings, installed as ready to run binaries.
+
+Interpreter family expansion:
+
+* Terminal and graphics hosted flavors of every interpreter: pint/pintt/pintg,
+pmach/pmacht/pmachg and cmach/cmacht/cmachg.
+
+* Sound and network are standard in all interpreter flavors, and cmach hosts
+the complete external set with zero stubs.
+
+New tools:
+
+* pc, the Pascaline compile driver: module auto-detection, library linking,
+and package mode, which produces stand-alone executables with an embedded
+interpreter from prebuilt objects.
+
+* p2c, a Pascal to C translator, capable of compiling the ISO 7185 PAT
+including nested procedures, variant records, with statements, goto/setjmp
+and typed file I/O.
+
+* pasdoc, an HTML documentation generator with source views, cross links and
+sidebar navigation.
+
+* pasfmt, a Pascaline source formatter.
+
+* passym, a symbol server powering the editor tooling.
+
+IDE support:
+
+* VSCode extension: syntax highlighting, language server (completion, hover,
+go to definition, find references), and a debug adapter driving pint with
+breakpoints and a debug REPL.
+
+Conformance and testing:
+
+* ISO 7185 conformance fixes (negative mod, file-of-record writes) plus
+expanded PAT context test batteries and the iso7185prt rejectance suite.
+
+* Parallel regression: all five backend models run concurrently.
+
+* The spew fuzzer hardens pcom against crash classes; the outbound test
+verifies a fresh repository clone runs the full regression with no build
+step.
+
+Distribution:
+
+* create_user builds a runtime-only user distribution (binaries, libraries
+and games; no sources, no self-rebuild), including source-free package mode.
+
+* configure/update host tree system for per-configuration restore and
+refresh.
+
+BASIC:
+
+* The BASIC interpreter gained new statements, command line parsing, nested
+procedures, a test suite, and a playable chess demo.
+
+Compiler front end (pcom):
+
+* Steady fixes: string ABI for filename arguments, variant record safety,
+error handling refactor and option handling, plus internal "theops"
+documentation chapters for the tools.
+
+Pascaline features not implemented in Pascal-P6 v0.4:
 
 * 64 bit Linux is the only supported version. At this time, only 64 bit Linux is
 tested and supported.
@@ -34,8 +108,6 @@ Outstanding bugs with this release *********************************************
 
 Functions with side effects can be reexecuted #161
 
-The operator overload for assignment is not implemented correctly #68
-
 Outstanding issues at this release *********************************************
 
 (does not include feature/improvement requests)
@@ -46,18 +118,32 @@ Exception handling on module destructor is not implemented #70
 
 Inherited operator overloads are not implemented #172
 
-Radix specifiers in read statements #67
-
-Radix convertion on input #66
-
-Constant strings on read is not implemented #65
-
 Clean up overload and override tests in pascaline.pas #64
+
+Support for cardinal types #40
+
+Support for linteger and lcardinal #41
+
+N length sets #42
+
+Implement UTF-16 mode #43
+
+Implement threads in the P-Machine #44
 
 Matrix mathematics #45
 
+Implement properties #46
+
+Channels #47
+
+Classes #48 #74
+
 Implement saturated math operators #72
 
-Implement properties #73
+Critical packing #90
 
-Classes #74
+Packed files #91
+
+Connect up all Petit-Ami APIs #92
+
+Implement container function results #93
