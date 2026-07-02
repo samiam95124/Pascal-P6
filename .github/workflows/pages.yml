@@ -46,3 +46,11 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Status reporting on this site can lag far behind the actual
+          # propagation. Do NOT let the action time out: on timeout it cancels
+          # the deployment server-side, which both breaks the deploy and
+          # poisons that content hash (identical re-deploys are deduplicated
+          # against the cancelled one).
+          timeout: 1800000
+          error_count: 30
