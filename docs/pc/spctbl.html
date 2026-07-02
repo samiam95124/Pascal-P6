@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="pasdoc">
+<title>spctbl</title>
+<style>
+body { font-family: "Lucida Grande", Geneva, Helvetica, Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; background: #fff; color: #333; line-height: 1.5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.page-header { padding: 10px 20px; border-bottom: 1px solid #C4CFE5; }
+.page-title { font-size: 300%; color: #333; font-weight: bold; }
+.page-desc { font-size: 13px; color: #555; }
+.nav-bar { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-bottom: 1px solid #A3B4D7; padding: 0; display: flex; align-items: center; line-height: 36px; }
+.nav-tab { padding: 0 20px; cursor: pointer; background: transparent; border: none; color: #283A5D; font-size: 13px; font-weight: bold; text-shadow: 0px 1px 1px rgba(255,255,255,0.9); text-decoration: none; line-height: 36px; }
+.nav-tab.active { background: linear-gradient(to bottom, #1C2941 0%, #415D96 50%, #4968A7 100%); color: #fff; text-shadow: 0px 1px 1px rgba(0,0,0,1.0); }
+.nav-tab:hover { background: linear-gradient(to bottom, #A9B9D9 0%, #9FB1D5 50%, #7D96C6 100%); color: #fff; text-shadow: 0px 1px 1px rgba(0,0,0,1.0); }
+.nav-search { margin-left: auto; margin-right: 10px; padding: 3px 6px; border: 1px solid #A3B4D7; border-radius: 3px; font-size: 11px; background: #fff; width: 150px; }
+.middle { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.tree-panel { width: 280px; min-width: 280px; background: #FAFAFA; border-right: 1px solid #C4CFE5; padding: 5px 10px; overflow-y: auto; font-size: 13px; }
+.content-area { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.container { flex: 1; padding: 20px; overflow-y: auto; }
+.page-footer { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-top: 1px solid #A3B4D7; color: #364D7C; padding: 6px 20px; font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }
+.sidebar-content { display: none; }
+.sidebar-content.active { display: block; }
+.tree-item { padding: 1px 0; white-space: nowrap; }
+.tree-toggle { cursor: pointer; user-select: none; display: inline-block; width: 14px; font-size: 9px; color: #555; }
+.tree-children { padding-left: 16px; }
+.tree-children.collapsed { display: none; }
+.tree-link { text-decoration: none; color: #333; font-size: 12px; }
+.tree-link:hover { color: #4070a0; text-decoration: underline; }
+.tree-proc { color: #1a1a6e; }
+.tree-func { color: #6e1a1a; }
+.content-tabs { display: flex; flex-direction: column; padding-top: 60px; }
+.content-tab { writing-mode: vertical-rl; text-orientation: mixed; padding: 12px 6px; font-size: 12px; color: #3D578C; text-decoration: none; background: #E2E8F2; border: 1px solid #A8B8D9; border-left: none; border-radius: 0 4px 4px 0; margin-bottom: 2px; white-space: nowrap; }
+.content-tab:hover { background: #D8DFEE; }
+.view-tabs { display: flex; gap: 0; border-bottom: 1px solid #A8B8D9; }
+.view-tab { padding: 4px 12px; font-size: 12px; color: #3D578C; cursor: pointer; background: #E2E8F2; border: 1px solid #A8B8D9; border-bottom: none; border-radius: 4px 4px 0 0; margin-right: 2px; }
+.view-tab.active { background: #fff; font-weight: bold; }
+.view-tab:hover { background: #D8DFEE; }
+.view-panel { display: none; flex: 1; min-height: 0; }
+.view-panel.active { display: flex; }
+.theops-content { flex: 1; padding: 20px; overflow-y: auto; }
+.theops-content pre { font-family: "Lucida Console", Monaco, monospace; font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin: 0; }
+h1 { color: #333; font-size: 150%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 0; }
+h2 { color: #333; font-size: 120%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 30px; }
+h3 { color: #333; font-size: 100%; margin-top: 20px; }
+a { color: #3D578C; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.header-comment { background: #FBFCFD; padding: 10px; border: 1px solid #C4CFE5; margin: 15px 0; }
+.section { margin: 15px 0; }
+.item { padding: 4px 0; }
+.item-name { font-weight: bold; color: #3D578C; }
+.item-type { color: #4665A2; }
+.keyword { color: #008000; font-weight: normal; }
+.none { color: #666; font-style: italic; }
+.memitem { background: #F9FAFC; border: 1px solid #C4CFE5; margin: 20px 0; border-radius: 4px; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+.memproto { background: linear-gradient(to bottom, #E2E8F2 0%, #D8DFEE 100%); padding: 6px; border-bottom: 1px solid #A8B8D9; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; }
+.memname { color: #253555; font-weight: bold; }
+.paramtype { color: #4665A2; }
+.paramname { color: #803010; }
+.memdoc { padding: 10px 15px; }
+.memsection { margin: 12px 0; }
+.memsection-title { font-weight: bold; color: #4665A2; margin-bottom: 4px; }
+.brief { margin-bottom: 10px; }
+.detail { margin: 10px 0; color: #333; }
+.paramtable { border-collapse: collapse; margin: 8px 0; }
+.paramtable td { padding: 4px 12px 4px 0; vertical-align: top; }
+.paramtable .paramdir { color: #008000; font-style: italic; width: 40px; }
+.paramtable .paramname { color: #803010; font-weight: bold; }
+.paramtable .paramtype { color: #4665A2; }
+.returntype { color: #4665A2; }
+.definition { color: #666; font-size: 11px; margin-top: 10px; }
+.definition .filename { color: #3D578C; }
+.callgraph { margin: 8px 0; }
+.callgraph-item { display: inline-block; background: #F0F0F0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-family: monospace; font-size: 12px; }
+.callgraph-item a { color: #3D578C; }
+.xref { font-family: monospace; font-size: 12px; }
+.xref-line { color: #3D578C; }
+.xref-proc { color: #666; }
+.module-section { background: #F9FAFC; padding: 15px; margin: 15px 0; border: 1px solid #C4CFE5; border-radius: 4px; }
+.module-section h3 { color: #253555; margin-top: 0; }
+code { background: #F7F8FB; padding: 1px 4px; border-radius: 2px; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page-header">
+<div class="page-title">spctbl</div>
+<div class="page-desc">Symbol hash table</div>
+</div>
+<div class="nav-bar">
+<button class="nav-tab active" onclick="switchTab('files')">Files</button>
+<button class="nav-tab" onclick="switchTab('procs')">Procedures</button>
+<input type="text" id="sidebar-filter" class="nav-search" placeholder="Search..." onkeyup="filterTree()">
+</div>
+<div class="middle">
+<div class="tree-panel">
+<div class="sidebar-content active" id="tab-files">
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link" href="#sec-modules">tolkens</a></div>
+</div>
+<div class="sidebar-content" id="tab-procs">
+</div>
+</div>
+<div class="content-area">
+<div class="view-tabs">
+<button class="view-tab active" onclick="switchView('doc')">Documentation</button>
+</div>
+<div id="view-doc" class="view-panel active">
+<div class="container">
+<div class="header-comment">
+<div class="comment">Symbol hash table<br><br>
+!!! DO NOT EDIT !!!<br><br>
+This file is autoamatically generated by hashtabs.</div>
+</div>
+<h2 id="sec-modules">Modules</h2>
+<div class="section">
+<div class="item"><span class="keyword">uses</span> tolkens</div>
+</div>
+<h2 id="sec-constants">Constants</h2>
+<div class="section">
+<div class="item">chrmax</div>
+<div class="item">chroff</div>
+<div class="item">spcmax</div>
+</div>
+<h2 id="sec-types">Types</h2>
+<div class="section">
+<div class="item">chrinx</div>
+<div class="item">chrstr</div>
+<div class="item">chrequ</div>
+</div>
+<h2 id="sec-fixed">Fixed</h2>
+<div class="section">
+</div>
+<h2 id="sec-variables">Variables</h2>
+<div class="section">
+<div class="item">spctbl: <span class="item-type">array</span></div>
+</div>
+<h2 id="sec-procedures">Procedures and Functions</h2>
+<div class="section">
+</div>
+<h2 id="sec-detail">Detail</h2>
+<div class="memitem" id="detail-17">
+<div class="memproto"><span class="memname">chrmax</span> <span class="kind">(constant)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">integer</span></p>
+<div class="comment"> scanner tolkens</div>
+</div>
+</div>
+<div class="memitem" id="detail-18">
+<div class="memproto"><span class="memname">chroff</span> <span class="kind">(constant)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">integer</span></p>
+<div class="comment"> number of special character sequences</div>
+</div>
+</div>
+<div class="memitem" id="detail-19">
+<div class="memproto"><span class="memname">spcmax</span> <span class="kind">(constant)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">integer</span></p>
+<div class="comment"> special character hash offset</div>
+</div>
+</div>
+<div class="memitem" id="detail-23">
+<div class="memproto"><span class="memname">chrinx</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">subrange</span></p>
+<div class="comment"> special character string length</div>
+</div>
+</div>
+<div class="memitem" id="detail-24">
+<div class="memproto"><span class="memname">chrstr</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">array</span></p>
+<div class="comment"> special character index</div>
+</div>
+</div>
+<div class="memitem" id="detail-31">
+<div class="memproto"><span class="memname">chrequ</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">record</span></p>
+<div class="comment"> next entry chain</div>
+</div>
+</div>
+<div class="memitem" id="detail-35">
+<div class="memproto"><span class="memname">spctbl</span> <span class="kind">(variable)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">array</span></p>
+</div>
+</div>
+<h2 id="sec-xref">Cross-Reference</h2>
+<div class="section xref">
+<div class="item"><strong>chrmax</strong>: <span class="xref-line">29</span> <span class="xref-line">23</span></div>
+<div class="item"><strong>chroff</strong>:</div>
+<div class="item"><strong>spcmax</strong>: <span class="xref-line">24</span></div>
+<div class="item"><strong>chrinx</strong>: <span class="xref-line">35</span></div>
+<div class="item"><strong>chrstr</strong>: <span class="xref-line">27</span></div>
+<div class="item"><strong>chrequ</strong>: <span class="xref-line">35</span></div>
+<div class="item"><strong>spctbl</strong>: <span class="xref-line">122</span> <span class="xref-line">121</span> <span class="xref-line">120</span> <span class="xref-line">119</span> <span class="xref-line">118</span> <span class="xref-line">117</span> <span class="xref-line">116</span> <span class="xref-line">115</span> <span class="xref-line">114</span> <span class="xref-line">113</span> <span class="xref-line">112</span> <span class="xref-line">111</span> <span class="xref-line">110</span> <span class="xref-line">109</span> <span class="xref-line">108</span> <span class="xref-line">107</span> <span class="xref-line">106</span> <span class="xref-line">105</span> <span class="xref-line">104</span> <span class="xref-line">103</span> <span class="xref-line">102</span> <span class="xref-line">101</span> <span class="xref-line">100</span> <span class="xref-line">99</span> <span class="xref-line">98</span> <span class="xref-line">97</span> <span class="xref-line">96</span> <span class="xref-line">95</span> <span class="xref-line">94</span> <span class="xref-line">93</span> <span class="xref-line">93</span> <span class="xref-line">92</span> <span class="xref-line">91</span> <span class="xref-line">90</span> <span class="xref-line">89</span> <span class="xref-line">88</span> <span class="xref-line">87</span> <span class="xref-line">86</span> <span class="xref-line">85</span> <span class="xref-line">84</span> <span class="xref-line">83</span> <span class="xref-line">83</span> <span class="xref-line">82</span> <span class="xref-line">81</span> <span class="xref-line">80</span> <span class="xref-line">79</span> <span class="xref-line">78</span> <span class="xref-line">77</span> <span class="xref-line">76</span> <span class="xref-line">75</span> <span class="xref-line">74</span> <span class="xref-line">73</span> <span class="xref-line">72</span> <span class="xref-line">71</span> <span class="xref-line">70</span> <span class="xref-line">69</span> <span class="xref-line">68</span> <span class="xref-line">67</span> <span class="xref-line">66</span> <span class="xref-line">65</span> <span class="xref-line">64</span> <span class="xref-line">63</span> <span class="xref-line">62</span> <span class="xref-line">61</span> <span class="xref-line">61</span> <span class="xref-line">60</span> <span class="xref-line">59</span> <span class="xref-line">59</span> <span class="xref-line">58</span> <span class="xref-line">57</span> <span class="xref-line">57</span> <span class="xref-line">56</span> <span class="xref-line">55</span> <span class="xref-line">54</span> <span class="xref-line">53</span> <span class="xref-line">52</span> <span class="xref-line">51</span> <span class="xref-line">50</span> <span class="xref-line">49</span> <span class="xref-line">48</span> <span class="xref-line">47</span> <span class="xref-line">46</span> <span class="xref-line">45</span> <span class="xref-line">44</span> <span class="xref-line">43</span> <span class="xref-line">42</span> <span class="xref-line">41</span> <span class="xref-line">40</span> <span class="xref-line">39</span></div>
+</div>
+<h2 id="sec-extmodules">External Modules</h2>
+<div class="module-section">
+<h3>tolkens</h3>
+<p>Scanner tolkens</p>
+<h4>Types</h4><div class="section">
+<div class="item">tolken</div>
+</div>
+</div>
+</div>
+<div class="content-tabs">
+<a class="content-tab" href="#sec-modules">Modules</a>
+<a class="content-tab" href="#sec-constants">Constants</a>
+<a class="content-tab" href="#sec-types">Types</a>
+<a class="content-tab" href="#sec-variables">Variables</a>
+<a class="content-tab" href="#sec-procedures">Procedures</a>
+</div>
+</div>
+</div>
+</div>
+<div class="page-footer">
+<span>spctbl.pas</span>
+<span>Generated on 2026/02/25 by pasdoc vs. 0.4.x</span>
+</div>
+<script>
+function switchTab(name) {
+  var tabs = document.querySelectorAll('.nav-tab');
+  var contents = document.querySelectorAll('.sidebar-content');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
+  event.target.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+function switchView(name) {
+  var tabs = document.querySelectorAll('.view-tab');
+  var views = document.querySelectorAll('.view-panel');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  for (var i = 0; i < views.length; i++) views[i].classList.remove('active');
+  event.target.classList.add('active');
+  document.getElementById('view-'+name).classList.add('active');
+}
+function toggleTree(el) {
+  var children = el.parentElement.querySelector('.tree-children');
+  if (children) {
+    children.classList.toggle('collapsed');
+    el.innerHTML = children.classList.contains('collapsed') ? '&#9654;' : '&#9660;';
+  }
+}
+function filterTree() {
+  var f = document.getElementById('sidebar-filter').value.toLowerCase();
+  var panels = document.querySelectorAll('.sidebar-content');
+  for (var p = 0; p < panels.length; p++) {
+    var items = panels[p].querySelectorAll('.tree-item');
+    for (var i = 0; i < items.length; i++) {
+      var link = items[i].querySelector('.tree-link');
+      if (!link) continue;
+      var txt = link.textContent.toLowerCase();
+      if (f === '' || txt.indexOf(f) >= 0) {
+        items[i].style.display = '';
+        var par = items[i].parentElement;
+        while (par && par.classList) {
+          if (par.classList.contains('tree-children'))
+            par.classList.remove('collapsed');
+          par = par.parentElement;
+        }
+      } else {
+        items[i].style.display = 'none';
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>
