@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# webupdate - refresh the published website copies under docs/
+#
+# The GitHub Pages site is served from the docs/ folder (the whole repo is far
+# past the size legacy Pages can publish reliably). docs/index.html is the
+# site's source page; every other file under docs/ is a published COPY of a
+# repo file at the same relative path (manual HTML exports, sample sources,
+# images). Run this after regenerating any of those originals (pasdoc output,
+# manual exports, screenshots) to re-sync the copies, then commit docs/.
+#
+# Run from the Pascal-P6 project root.
+#
+set -e
+[ -f docs/index.html ] || { echo "*** webupdate: run from the project root"; exit 1; }
+
+python3 - <<'EOF'
+import re, os, shutil
+
+seen, queue, missing, copied = set(), ['index.html'], [], 0
+while queue:
+    f = queue.pop()
+    if f in seen:
+        continue
+    seen.add(f)
+    # index.html lives only in docs/; everything else originates in the repo
+    src = os.path.join('docs', f) if f == 'index.html' else f
+    if not os.path.isfile(src):
+        missing.append(f)
+        continue
+    if f != 'index.html':
+        dst = os.path.join('docs', f)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy2(src, dst)
+        copied += 1
+    if f.endswith('.html'):
+        base = os.path.dirname(f)
+        for m in re.finditer(r'(?:href|src)="([^"#][^"]*)"',
+                             open(src, encoding='utf-8', errors='replace').read()):
+            u = m.group(1)
+            if re.match(r'https?://|mailto:', u):
+                continue
+            u = u.split('#')[0].split('?')[0]
+            if u:
+                queue.append(os.path.normpath(os.path.join(base, u)))
+
+print(f"webupdate: {copied} files synced into docs/")
+for f in sorted(missing):
+    print(f"*** missing original: {f}")
+if missing:
+    raise SystemExit(1)
+EOF

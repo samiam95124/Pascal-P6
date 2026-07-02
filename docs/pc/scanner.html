@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="pasdoc">
+<title>scanner</title>
+<style>
+body { font-family: "Lucida Grande", Geneva, Helvetica, Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; background: #fff; color: #333; line-height: 1.5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.page-header { padding: 10px 20px; border-bottom: 1px solid #C4CFE5; }
+.page-title { font-size: 300%; color: #333; font-weight: bold; }
+.page-desc { font-size: 13px; color: #555; }
+.nav-bar { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-bottom: 1px solid #A3B4D7; padding: 0; display: flex; align-items: center; line-height: 36px; }
+.nav-tab { padding: 0 20px; cursor: pointer; background: transparent; border: none; color: #283A5D; font-size: 13px; font-weight: bold; text-shadow: 0px 1px 1px rgba(255,255,255,0.9); text-decoration: none; line-height: 36px; }
+.nav-tab.active { background: linear-gradient(to bottom, #1C2941 0%, #415D96 50%, #4968A7 100%); color: #fff; text-shadow: 0px 1px 1px rgba(0,0,0,1.0); }
+.nav-tab:hover { background: linear-gradient(to bottom, #A9B9D9 0%, #9FB1D5 50%, #7D96C6 100%); color: #fff; text-shadow: 0px 1px 1px rgba(0,0,0,1.0); }
+.nav-search { margin-left: auto; margin-right: 10px; padding: 3px 6px; border: 1px solid #A3B4D7; border-radius: 3px; font-size: 11px; background: #fff; width: 150px; }
+.middle { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.tree-panel { width: 280px; min-width: 280px; background: #FAFAFA; border-right: 1px solid #C4CFE5; padding: 5px 10px; overflow-y: auto; font-size: 13px; }
+.content-area { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.container { flex: 1; padding: 20px; overflow-y: auto; }
+.page-footer { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-top: 1px solid #A3B4D7; color: #364D7C; padding: 6px 20px; font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }
+.sidebar-content { display: none; }
+.sidebar-content.active { display: block; }
+.tree-item { padding: 1px 0; white-space: nowrap; }
+.tree-toggle { cursor: pointer; user-select: none; display: inline-block; width: 14px; font-size: 9px; color: #555; }
+.tree-children { padding-left: 16px; }
+.tree-children.collapsed { display: none; }
+.tree-link { text-decoration: none; color: #333; font-size: 12px; }
+.tree-link:hover { color: #4070a0; text-decoration: underline; }
+.tree-proc { color: #1a1a6e; }
+.tree-func { color: #6e1a1a; }
+.content-tabs { display: flex; flex-direction: column; padding-top: 60px; }
+.content-tab { writing-mode: vertical-rl; text-orientation: mixed; padding: 12px 6px; font-size: 12px; color: #3D578C; text-decoration: none; background: #E2E8F2; border: 1px solid #A8B8D9; border-left: none; border-radius: 0 4px 4px 0; margin-bottom: 2px; white-space: nowrap; }
+.content-tab:hover { background: #D8DFEE; }
+.view-tabs { display: flex; gap: 0; border-bottom: 1px solid #A8B8D9; }
+.view-tab { padding: 4px 12px; font-size: 12px; color: #3D578C; cursor: pointer; background: #E2E8F2; border: 1px solid #A8B8D9; border-bottom: none; border-radius: 4px 4px 0 0; margin-right: 2px; }
+.view-tab.active { background: #fff; font-weight: bold; }
+.view-tab:hover { background: #D8DFEE; }
+.view-panel { display: none; flex: 1; min-height: 0; }
+.view-panel.active { display: flex; }
+.theops-content { flex: 1; padding: 20px; overflow-y: auto; }
+.theops-content pre { font-family: "Lucida Console", Monaco, monospace; font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin: 0; }
+h1 { color: #333; font-size: 150%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 0; }
+h2 { color: #333; font-size: 120%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 30px; }
+h3 { color: #333; font-size: 100%; margin-top: 20px; }
+a { color: #3D578C; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.header-comment { background: #FBFCFD; padding: 10px; border: 1px solid #C4CFE5; margin: 15px 0; }
+.section { margin: 15px 0; }
+.item { padding: 4px 0; }
+.item-name { font-weight: bold; color: #3D578C; }
+.item-type { color: #4665A2; }
+.keyword { color: #008000; font-weight: normal; }
+.none { color: #666; font-style: italic; }
+.memitem { background: #F9FAFC; border: 1px solid #C4CFE5; margin: 20px 0; border-radius: 4px; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+.memproto { background: linear-gradient(to bottom, #E2E8F2 0%, #D8DFEE 100%); padding: 6px; border-bottom: 1px solid #A8B8D9; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; }
+.memname { color: #253555; font-weight: bold; }
+.paramtype { color: #4665A2; }
+.paramname { color: #803010; }
+.memdoc { padding: 10px 15px; }
+.memsection { margin: 12px 0; }
+.memsection-title { font-weight: bold; color: #4665A2; margin-bottom: 4px; }
+.brief { margin-bottom: 10px; }
+.detail { margin: 10px 0; color: #333; }
+.paramtable { border-collapse: collapse; margin: 8px 0; }
+.paramtable td { padding: 4px 12px 4px 0; vertical-align: top; }
+.paramtable .paramdir { color: #008000; font-style: italic; width: 40px; }
+.paramtable .paramname { color: #803010; font-weight: bold; }
+.paramtable .paramtype { color: #4665A2; }
+.returntype { color: #4665A2; }
+.definition { color: #666; font-size: 11px; margin-top: 10px; }
+.definition .filename { color: #3D578C; }
+.callgraph { margin: 8px 0; }
+.callgraph-item { display: inline-block; background: #F0F0F0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-family: monospace; font-size: 12px; }
+.callgraph-item a { color: #3D578C; }
+.xref { font-family: monospace; font-size: 12px; }
+.xref-line { color: #3D578C; }
+.xref-proc { color: #666; }
+.module-section { background: #F9FAFC; padding: 15px; margin: 15px 0; border: 1px solid #C4CFE5; border-radius: 4px; }
+.module-section h3 { color: #253555; margin-top: 0; }
+code { background: #F7F8FB; padding: 1px 4px; border-radius: 2px; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page-header">
+<div class="page-title">scanner</div>
+<div class="page-desc">SCANNER MODULE                                                              </div>
+</div>
+<div class="nav-bar">
+<button class="nav-tab active" onclick="switchTab('files')">Files</button>
+<button class="nav-tab" onclick="switchTab('procs')">Procedures</button>
+<input type="text" id="sidebar-filter" class="nav-search" placeholder="Search..." onkeyup="filterTree()">
+</div>
+<div class="middle">
+<div class="tree-panel">
+<div class="sidebar-content active" id="tab-files">
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link" href="#sec-modules">spctbl</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link" href="#sec-modules">restbl</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link" href="#sec-modules">tolkens</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link" href="#sec-modules">strings</a></div>
+</div>
+<div class="sidebar-content" id="tab-procs">
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-134">error</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-func" href="#detail-179">hash</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-204">getlin</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-func" href="#detail-236">endlin</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-func" href="#detail-253">seof</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-func" href="#detail-273">chkchr</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-296">getchr</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-316">skpspc</a></div>
+<div class="tree-item"><span class="tree-toggle" onclick="toggleTree(this)">&#9660;</span>
+<a class="tree-link tree-proc" href="#detail-341">conchr</a><div class="tree-children">
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-349">lookup</a></div>
+</div>
+</div>
+<div class="tree-item"><span class="tree-toggle" onclick="toggleTree(this)">&#9660;</span>
+<a class="tree-link tree-proc" href="#detail-466">parnum</a><div class="tree-children">
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-func" href="#detail-482">pwrten</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-504">getchrb</a></div>
+</div>
+</div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-639">parstr</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-710">parlabr</a></div>
+<div class="tree-item"><span class="tree-toggle" onclick="toggleTree(this)">&#9660;</span>
+<a class="tree-link tree-proc" href="#detail-777">parchr</a><div class="tree-children">
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-func" href="#detail-784">hash</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-803">search</a></div>
+</div>
+</div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-868">partlk</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-921">gettlk</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-997">opnscn</a></div>
+<div class="tree-item"><span class="tree-toggle">&#8226;</span><a class="tree-link tree-proc" href="#detail-1019">clsscn</a></div>
+</div>
+</div>
+<div class="content-area">
+<div class="view-tabs">
+<button class="view-tab active" onclick="switchView('doc')">Documentation</button>
+</div>
+<div id="view-doc" class="view-panel active">
+<div class="container">
+<div class="header-comment">
+<div class="comment">
+                                                                             
+ SCANNER MODULE                                                              
+                                                                             
+ Scans IP Pascal tolkens from a file and returns them. Does nothing with     
+ &quot;uses&quot; files, and has no error recovery.                                    
+ The scanner module is a general purpose version of the scanner built in to  
+ the general compiler. It is usefull for program analisis tasks, such as     
+ symbols/crossreference generators, and convertion tasks, such as a          
+ prettyprinter.                                                              
+ The scanner buffers up its input in terms of lines. This is required        
+ because some of the tolkens require backtracking to recognise.              
+ No ANSI status is recognized. The scanner allways works in full IP mode.    
+                                                                             
+ There are two calls for the scanner module:                                 
+                                                                             
+ iniscn(var f: text);                                                        
+                                                                             
+ Initalizes the scanner and reads the first line from the input file. The    
+ caller may check if the file is null (eof) before the call.                 
+                                                                             
+ gettlk(var f: text);                                                        
+                                                                             
+ Gets the next tolken from the input, and places that in the next tolken     
+ buffers, as follows:                                                        
+                                                                             
+ nxttlk                                                                      
+                                                                             
+ Returns the next tolken code. This is one of the tolkens from the &quot;tolken&quot;  
+ type.                                                                       
+                                                                             
+ nxtlab                                                                      
+                                                                             
+ Returns the next label, if the tolken is a symbol, or the next string,      
+ if the next tolken is a string. Strings have their enclosing quotes         
+ removed.                                                                    
+ Other tolkens will also have their equivalent forms placed in the nxtlab    
+ buffer, including integers and reals.                                       
+                                                                             
+ nxtlen                                                                      
+                                                                             
+ Returns the length of a string for a string tolken.                         
+                                                                             
+ nxtint                                                                      
+                                                                             
+ Returns an integer if the next tolken is an integer.                        
+                                                                             
+ nxtflt                                                                      
+                                                                             
+ Returns a floating point if the next tolken is a real.                      
+                                                                             </div>
+</div>
+<h2 id="sec-modules">Modules</h2>
+<div class="section">
+<div class="item"><span class="keyword">uses</span> spctbl</div>
+<div class="item"><span class="keyword">uses</span> restbl</div>
+<div class="item"><span class="keyword">uses</span> tolkens</div>
+<div class="item"><span class="keyword">uses</span> strings</div>
+</div>
+<h2 id="sec-constants">Constants</h2>
+<div class="section">
+<div class="item">maxstr</div>
+<div class="item">maxlin</div>
+<div class="item">maxexp</div>
+</div>
+<h2 id="sec-types">Types</h2>
+<div class="section">
+<div class="item">lininx</div>
+<div class="item">linbuf</div>
+<div class="item">fcbptr</div>
+<div class="item">fcbrec</div>
+<div class="item">labinx</div>
+<div class="item">errcod</div>
+</div>
+<h2 id="sec-fixed">Fixed</h2>
+<div class="section">
+</div>
+<h2 id="sec-variables">Variables</h2>
+<div class="section">
+<div class="item">fansi: <span class="item-type">boolean</span></div>
+<div class="item">deftbl: <span class="item-type">array</span></div>
+<div class="item">ci: <span class="item-type">subrange</span></div>
+<div class="item">ri: <span class="item-type">subrange</span></div>
+<div class="item">li: <span class="item-type">subrange</span></div>
+</div>
+<h2 id="sec-procedures">Procedures and Functions</h2>
+<div class="section">
+<div class="item"><code><span class="keyword">procedure</span> error</code></div>
+<div class="item"><code><span class="keyword">function</span> hash: (unknown)</code></div>
+<div class="item"><code><span class="keyword">procedure</span> getlin</code></div>
+<div class="item"><code><span class="keyword">function</span> endlin: (unknown)</code></div>
+<div class="item"><code><span class="keyword">function</span> seof: (unknown)</code></div>
+<div class="item"><code><span class="keyword">function</span> chkchr: (unknown)</code></div>
+<div class="item"><code><span class="keyword">procedure</span> getchr</code></div>
+<div class="item"><code><span class="keyword">procedure</span> skpspc</code></div>
+<div class="item"><code><span class="keyword">procedure</span> conchr</code></div>
+<div class="item"><code><span class="keyword">procedure</span> lookup</code></div>
+<div class="item"><code><span class="keyword">procedure</span> parnum</code></div>
+<div class="item"><code><span class="keyword">function</span> pwrten: (unknown)</code></div>
+<div class="item"><code><span class="keyword">procedure</span> getchrb</code></div>
+<div class="item"><code><span class="keyword">procedure</span> parstr</code></div>
+<div class="item"><code><span class="keyword">procedure</span> parlabr</code></div>
+<div class="item"><code><span class="keyword">procedure</span> parchr</code></div>
+<div class="item"><code><span class="keyword">function</span> hash: (unknown)</code></div>
+<div class="item"><code><span class="keyword">procedure</span> search</code></div>
+<div class="item"><code><span class="keyword">procedure</span> partlk</code></div>
+<div class="item"><code><span class="keyword">procedure</span> gettlk</code></div>
+<div class="item"><code><span class="keyword">procedure</span> opnscn</code></div>
+<div class="item"><code><span class="keyword">procedure</span> clsscn</code></div>
+</div>
+<h2 id="sec-detail">Detail</h2>
+<div class="memitem" id="detail-63">
+<div class="memproto"><span class="memname">maxstr</span> <span class="kind">(constant)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">integer</span></p>
+<div class="comment"> symbols hash table</div>
+</div>
+</div>
+<div class="memitem" id="detail-64">
+<div class="memproto"><span class="memname">maxlin</span> <span class="kind">(constant)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">integer</span></p>
+<div class="comment"> maximum length of string/symbol</div>
+</div>
+</div>
+<div class="memitem" id="detail-68">
+<div class="memproto"><span class="memname">lininx</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">subrange</span></p>
+<div class="comment"> maximum size of input line</div>
+</div>
+</div>
+<div class="memitem" id="detail-69">
+<div class="memproto"><span class="memname">linbuf</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">array</span></p>
+<div class="comment"> index for text line</div>
+</div>
+</div>
+<div class="memitem" id="detail-70">
+<div class="memproto"><span class="memname">fcbptr</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">pointer</span></p>
+<div class="comment"> a text line</div>
+</div>
+</div>
+<div class="memitem" id="detail-85">
+<div class="memproto"><span class="memname">fcbrec</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">record</span></p>
+<div class="comment"> next real</div>
+</div>
+</div>
+<div class="memitem" id="detail-89">
+<div class="memproto"><span class="memname">fansi</span> <span class="kind">(variable)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">boolean</span></p>
+</div>
+</div>
+<div class="memitem" id="detail-99">
+<div class="memproto"><span class="memname">maxexp</span> <span class="kind">(constant)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">integer</span></p>
+<div class="comment"> standard Pascal mode</div>
+</div>
+</div>
+<div class="memitem" id="detail-103">
+<div class="memproto"><span class="memname">labinx</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">subrange</span></p>
+<div class="comment"> maximum exponent of real</div>
+</div>
+</div>
+<div class="memitem" id="detail-115">
+<div class="memproto"><span class="memname">errcod</span> <span class="kind">(type)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">scalar</span></p>
+<div class="comment"> Invalid symbol/character</div>
+</div>
+</div>
+<div class="memitem" id="detail-119">
+<div class="memproto"><span class="memname">deftbl</span> <span class="kind">(variable)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">array</span></p>
+<div class="comment"> Unterminated comment</div>
+</div>
+</div>
+<div class="memitem" id="detail-120">
+<div class="memproto"><span class="memname">ci</span> <span class="kind">(variable)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">subrange</span></p>
+<div class="comment"> tolken definition strings</div>
+</div>
+</div>
+<div class="memitem" id="detail-121">
+<div class="memproto"><span class="memname">ri</span> <span class="kind">(variable)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">subrange</span></p>
+</div>
+</div>
+<div class="memitem" id="detail-122">
+<div class="memproto"><span class="memname">li</span> <span class="kind">(variable)</span></div>
+<div class="memdoc">
+<p>Type: <span class="item-type">subrange</span></p>
+</div>
+</div>
+<div class="memitem" id="detail-134">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">error</span></div>
+<div class="memdoc">
+<div class="brief">Process scanner error</div>
+<div class="detail">Prints an error by code, then halts the program.
+</div>
+<div class="definition">
+Definition at line <span class="filename">134</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">gettlk</span><span class="callgraph-item">parstr</span><span class="callgraph-item">getlin</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-179">
+<div class="memproto"><span class="keyword">function</span> <span class="memname">hash</span>: (unknown)</div>
+<div class="memdoc">
+<div class="brief">return hash</div>
+<div class="memsection">
+<div class="memsection-title">Returns</div>
+<span class="returntype">(unknown)</span>
+</div>
+<div class="definition">
+Definition at line <span class="filename">179</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">hash</span><span class="callgraph-item">lcase</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">parchr</span><span class="callgraph-item">parlabr</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-204">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">getlin</span></div>
+<div class="memdoc">
+<div class="brief">file control block</div>
+<div class="definition">
+Definition at line <span class="filename">204</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">len</span><span class="callgraph-item">error</span><span class="callgraph-item">reads</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">opnscn</span><span class="callgraph-item">skpspc</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-236">
+<div class="memproto"><span class="keyword">function</span> <span class="memname">endlin</span>: (unknown)</div>
+<div class="memdoc">
+<div class="brief">end of line status</div>
+<div class="memsection">
+<div class="memsection-title">Returns</div>
+<span class="returntype">(unknown)</span>
+</div>
+<div class="definition">
+Definition at line <span class="filename">236</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">endlin</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">gettlk</span><span class="callgraph-item">parstr</span><span class="callgraph-item">skpspc</span><span class="callgraph-item">chkchr</span><span class="callgraph-item">seof</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-253">
+<div class="memproto"><span class="keyword">function</span> <span class="memname">seof</span>: (unknown)</div>
+<div class="memdoc">
+<div class="brief">file control block</div>
+<div class="memsection">
+<div class="memsection-title">Returns</div>
+<span class="returntype">(unknown)</span>
+</div>
+<div class="definition">
+Definition at line <span class="filename">253</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">endlin</span><span class="callgraph-item">seof</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">gettlk</span><span class="callgraph-item">partlk</span><span class="callgraph-item">skpspc</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-273">
+<div class="memproto"><span class="keyword">function</span> <span class="memname">chkchr</span>: (unknown)</div>
+<div class="memdoc">
+<div class="brief">current input character</div>
+<div class="memsection">
+<div class="memsection-title">Returns</div>
+<span class="returntype">(unknown)</span>
+</div>
+<div class="definition">
+Definition at line <span class="filename">273</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">chkchr</span><span class="callgraph-item">endlin</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">gettlk</span><span class="callgraph-item">partlk</span><span class="callgraph-item">parlabr</span><span class="callgraph-item">parstr</span><span class="callgraph-item">skpspc</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-296">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">getchr</span></div>
+<div class="memdoc">
+<div class="brief">file control block</div>
+<div class="definition">
+Definition at line <span class="filename">296</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">gettlk</span><span class="callgraph-item">partlk</span><span class="callgraph-item">parlabr</span><span class="callgraph-item">parstr</span><span class="callgraph-item">skpspc</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-316">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">skpspc</span></div>
+<div class="memdoc">
+<div class="brief">file control block</div>
+<div class="definition">
+Definition at line <span class="filename">316</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">chkchr</span><span class="callgraph-item">seof</span><span class="callgraph-item">getlin</span><span class="callgraph-item">endlin</span><span class="callgraph-item">getchr</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">gettlk</span><span class="callgraph-item">partlk</span><span class="callgraph-item">parstr</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-341">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">conchr</span></div>
+<div class="memdoc">
+<div class="brief">control character</div>
+<div class="definition">
+Definition at line <span class="filename">341</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">parstr</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-349">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">lookup</span></div>
+<div class="memdoc">
+<div class="brief">attempt lookup of memnonic</div>
+<div class="definition">
+Definition at line <span class="filename">349</span> of file <span class="filename">scanner.pas</span></div>
+</div>
+</div>
+<div class="memitem" id="detail-466">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">parnum</span></div>
+<div class="memdoc">
+<div class="brief">real number search flag</div>
+<div class="definition">
+Definition at line <span class="filename">466</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">pwrten</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">partlk</span><span class="callgraph-item">parstr</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-482">
+<div class="memproto"><span class="keyword">function</span> <span class="memname">pwrten</span>: (unknown)</div>
+<div class="memdoc">
+<div class="brief">find power of ten effciently</div>
+<div class="memsection">
+<div class="memsection-title">Returns</div>
+<span class="returntype">(unknown)</span>
+</div>
+<div class="definition">
+Definition at line <span class="filename">482</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">parnum</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-504">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">getchrb</span></div>
+<div class="memdoc">
+<div class="brief">move character to output buffer</div>
+<div class="definition">
+Definition at line <span class="filename">504</span> of file <span class="filename">scanner.pas</span></div>
+</div>
+</div>
+<div class="memitem" id="detail-639">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">parstr</span></div>
+<div class="memdoc">
+<div class="brief">file to read from</div>
+<div class="definition">
+Definition at line <span class="filename">639</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">error</span><span class="callgraph-item">getchr</span><span class="callgraph-item">chkchr</span><span class="callgraph-item">conchr</span><span class="callgraph-item">parnum</span><span class="callgraph-item">endlin</span><span class="callgraph-item">skpspc</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">partlk</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-710">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">parlabr</span></div>
+<div class="memdoc">
+<div class="brief">Parse label/reserved word</div>
+<div class="detail">Parses a label, which is:
+<br><br>
+'_'/'a'..'z' ['_', '0'..'9', 'a'..'z']...
+<br><br>
+After parsing, the label is checked against the reserved list, and returned as
+a reserved tolken if so.
+</div>
+<div class="definition">
+Definition at line <span class="filename">710</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">compp</span><span class="callgraph-item">hash</span><span class="callgraph-item">getchr</span><span class="callgraph-item">chkchr</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">partlk</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-777">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">parchr</span></div>
+<div class="memdoc">
+<div class="brief">Parse special character sequence</div>
+<div class="detail">Parses a 1 or 2 character special sequence. These are arbitrary characters,
+with any kind of termination.
+</div>
+<div class="definition">
+Definition at line <span class="filename">777</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">hash</span><span class="callgraph-item">lcase</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">partlk</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-784">
+<div class="memproto"><span class="keyword">function</span> <span class="memname">hash</span>: (unknown)</div>
+<div class="memdoc">
+<div class="brief">Find hash function</div>
+<div class="memsection">
+<div class="memsection-title">Returns</div>
+<span class="returntype">(unknown)</span>
+</div>
+<div class="definition">
+Definition at line <span class="filename">784</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">hash</span><span class="callgraph-item">lcase</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">parchr</span><span class="callgraph-item">parlabr</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-803">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">search</span></div>
+<div class="memdoc">
+<div class="brief">search label</div>
+<div class="definition">
+Definition at line <span class="filename">803</span> of file <span class="filename">scanner.pas</span></div>
+</div>
+</div>
+<div class="memitem" id="detail-868">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">partlk</span></div>
+<div class="memdoc">
+<div class="brief">file to read from</div>
+<div class="definition">
+Definition at line <span class="filename">868</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">parchr</span><span class="callgraph-item">parnum</span><span class="callgraph-item">chkchr</span><span class="callgraph-item">getchr</span><span class="callgraph-item">parlabr</span><span class="callgraph-item">parstr</span><span class="callgraph-item">seof</span><span class="callgraph-item">skpspc</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">gettlk</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-921">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">gettlk</span></div>
+<div class="memdoc">
+<div class="brief">file to read from</div>
+<div class="definition">
+Definition at line <span class="filename">921</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">partlk</span><span class="callgraph-item">getchr</span><span class="callgraph-item">endlin</span><span class="callgraph-item">error</span><span class="callgraph-item">seof</span><span class="callgraph-item">chkchr</span><span class="callgraph-item">skpspc</span></div></div>
+<div class="memsection">
+<div class="memsection-title">Called By</div>
+<div class="callgraph"><span class="callgraph-item">opnscn</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-997">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">opnscn</span></div>
+<div class="memdoc">
+<div class="brief">Open scanner file</div>
+<div class="detail">Allocates the file control block, opens the file, then loads the first tolken.
+</div>
+<div class="definition">
+Definition at line <span class="filename">997</span> of file <span class="filename">scanner.pas</span></div>
+<div class="memsection">
+<div class="memsection-title">Calls</div>
+<div class="callgraph"><span class="callgraph-item">gettlk</span><span class="callgraph-item">getlin</span><span class="callgraph-item">copy</span></div></div>
+</div>
+</div>
+<div class="memitem" id="detail-1019">
+<div class="memproto"><span class="keyword">procedure</span> <span class="memname">clsscn</span></div>
+<div class="memdoc">
+<div class="brief">Close scanner file</div>
+<div class="detail">Closes the file, and frees the fcb.
+</div>
+<div class="definition">
+Definition at line <span class="filename">1019</span> of file <span class="filename">scanner.pas</span></div>
+</div>
+</div>
+<h2 id="sec-xref">Cross-Reference</h2>
+<div class="section xref">
+<div class="item"><strong>maxstr</strong>: <span class="xref-line">828</span> <span class="xref-line">731</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">720</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">715</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">710</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">475</span><span class="xref-proc">(parnum)</span> <span class="xref-line">103</span> <span class="xref-line">80</span></div>
+<div class="item"><strong>maxlin</strong>: <span class="xref-line">68</span></div>
+<div class="item"><strong>lininx</strong>: <span class="xref-line">69</span></div>
+<div class="item"><strong>linbuf</strong>: <span class="xref-line">75</span></div>
+<div class="item"><strong>fcbptr</strong>: <span class="xref-line">1017</span><span class="xref-proc">(clsscn)</span> <span class="xref-line">995</span><span class="xref-proc">(opnscn)</span> <span class="xref-line">919</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">866</span><span class="xref-proc">(partlk)</span> <span class="xref-line">775</span><span class="xref-proc">(parchr)</span> <span class="xref-line">708</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">637</span><span class="xref-proc">(parstr)</span> <span class="xref-line">463</span><span class="xref-proc">(parnum)</span> <span class="xref-line">338</span><span class="xref-proc">(conchr)</span> <span class="xref-line">314</span><span class="xref-proc">(skpspc)</span> <span class="xref-line">294</span><span class="xref-proc">(getchr)</span> <span class="xref-line">270</span><span class="xref-proc">(chkchr)</span> <span class="xref-line">250</span><span class="xref-proc">(seof)</span> <span class="xref-line">233</span><span class="xref-proc">(endlin)</span> <span class="xref-line">202</span><span class="xref-proc">(getlin)</span> <span class="xref-line">132</span><span class="xref-proc">(error)</span> <span class="xref-line">93</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">92</span><span class="xref-proc">(clsscn)</span> <span class="xref-line">91</span><span class="xref-proc">(opnscn)</span></div>
+<div class="item"><strong>fcbrec</strong>:</div>
+<div class="item"><strong>fansi</strong>: <span class="xref-line">1150</span> <span class="xref-line">755</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">717</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">691</span><span class="xref-proc">(parstr)</span> <span class="xref-line">653</span><span class="xref-proc">(parstr)</span></div>
+<div class="item"><strong>maxexp</strong>: <span class="xref-line">598</span> <span class="xref-line">598</span></div>
+<div class="item"><strong>labinx</strong>: <span class="xref-line">778</span><span class="xref-proc">(parchr)</span> <span class="xref-line">122</span></div>
+<div class="item"><strong>errcod</strong>: <span class="xref-line">132</span><span class="xref-proc">(error)</span></div>
+<div class="item"><strong>deftbl</strong>: <span class="xref-line">1146</span> <span class="xref-line">1145</span> <span class="xref-line">1144</span> <span class="xref-line">1143</span> <span class="xref-line">1142</span> <span class="xref-line">1141</span> <span class="xref-line">1140</span> <span class="xref-line">1139</span> <span class="xref-line">1138</span> <span class="xref-line">1137</span> <span class="xref-line">1136</span> <span class="xref-line">1135</span> <span class="xref-line">1134</span> <span class="xref-line">1133</span> <span class="xref-line">1132</span> <span class="xref-line">1131</span> <span class="xref-line">1130</span> <span class="xref-line">1129</span> <span class="xref-line">1128</span> <span class="xref-line">1127</span> <span class="xref-line">1126</span> <span class="xref-line">1125</span> <span class="xref-line">1124</span> <span class="xref-line">1123</span> <span class="xref-line">1122</span> <span class="xref-line">1121</span> <span class="xref-line">1120</span> <span class="xref-line">1119</span> <span class="xref-line">1118</span> <span class="xref-line">1117</span> <span class="xref-line">1116</span> <span class="xref-line">1115</span> <span class="xref-line">1114</span> <span class="xref-line">1113</span> <span class="xref-line">1112</span> <span class="xref-line">1111</span> <span class="xref-line">1110</span> <span class="xref-line">1109</span> <span class="xref-line">1108</span> <span class="xref-line">1107</span> <span class="xref-line">1106</span> <span class="xref-line">1105</span> <span class="xref-line">1104</span> <span class="xref-line">1103</span> <span class="xref-line">1102</span> <span class="xref-line">1101</span> <span class="xref-line">1100</span> <span class="xref-line">1099</span> <span class="xref-line">1098</span> <span class="xref-line">1097</span> <span class="xref-line">1096</span> <span class="xref-line">1095</span> <span class="xref-line">1094</span> <span class="xref-line">1093</span> <span class="xref-line">1092</span> <span class="xref-line">1091</span> <span class="xref-line">1090</span> <span class="xref-line">1089</span> <span class="xref-line">1088</span> <span class="xref-line">1087</span> <span class="xref-line">1086</span> <span class="xref-line">1085</span> <span class="xref-line">1084</span> <span class="xref-line">1083</span> <span class="xref-line">1082</span> <span class="xref-line">1081</span> <span class="xref-line">1080</span> <span class="xref-line">1079</span> <span class="xref-line">1078</span> <span class="xref-line">1077</span> <span class="xref-line">1076</span> <span class="xref-line">1075</span> <span class="xref-line">1074</span> <span class="xref-line">1073</span> <span class="xref-line">1072</span> <span class="xref-line">1071</span> <span class="xref-line">1070</span> <span class="xref-line">1069</span> <span class="xref-line">1068</span> <span class="xref-line">1067</span> <span class="xref-line">1066</span> <span class="xref-line">1065</span> <span class="xref-line">1064</span> <span class="xref-line">1063</span> <span class="xref-line">1062</span> <span class="xref-line">1061</span> <span class="xref-line">1060</span> <span class="xref-line">1059</span> <span class="xref-line">1058</span> <span class="xref-line">1057</span> <span class="xref-line">1056</span> <span class="xref-line">1055</span> <span class="xref-line">1054</span> <span class="xref-line">1053</span> <span class="xref-line">1052</span> <span class="xref-line">1051</span> <span class="xref-line">1050</span> <span class="xref-line">1049</span> <span class="xref-line">1048</span> <span class="xref-line">1047</span> <span class="xref-line">1046</span> <span class="xref-line">1045</span> <span class="xref-line">1044</span> <span class="xref-line">1043</span> <span class="xref-line">1042</span> <span class="xref-line">1041</span> <span class="xref-line">980</span><span class="xref-proc">(gettlk)</span></div>
+<div class="item"><strong>ci</strong>: <span class="xref-line">816</span> <span class="xref-line">815</span> <span class="xref-line">814</span> <span class="xref-line">814</span> <span class="xref-line">814</span> <span class="xref-line">813</span> <span class="xref-line">809</span> <span class="xref-line">808</span> <span class="xref-line">807</span></div>
+<div class="item"><strong>ri</strong>: <span class="xref-line">750</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">749</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">748</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">748</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">748</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">747</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">743</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">742</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">741</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">740</span><span class="xref-proc">(parlabr)</span></div>
+<div class="item"><strong>li</strong>:</div>
+<div class="item"><strong>error</strong>: <span class="xref-line">950</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">845</span> <span class="xref-line">691</span><span class="xref-proc">(parstr)</span> <span class="xref-line">688</span><span class="xref-proc">(parstr)</span> <span class="xref-line">661</span><span class="xref-proc">(parstr)</span> <span class="xref-line">648</span><span class="xref-proc">(parstr)</span> <span class="xref-line">599</span> <span class="xref-line">594</span> <span class="xref-line">570</span> <span class="xref-line">569</span> <span class="xref-line">546</span> <span class="xref-line">540</span> <span class="xref-line">531</span> <span class="xref-line">212</span><span class="xref-proc">(getlin)</span></div>
+<div class="item"><strong>hash</strong>: <span class="xref-line">807</span> <span class="xref-line">795</span><span class="xref-proc">(parchr)</span> <span class="xref-line">740</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">190</span><span class="xref-proc">(hash)</span></div>
+<div class="item"><strong>getlin</strong>: <span class="xref-line">1004</span><span class="xref-proc">(opnscn)</span> <span class="xref-line">322</span><span class="xref-proc">(skpspc)</span></div>
+<div class="item"><strong>endlin</strong>: <span class="xref-line">954</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">650</span><span class="xref-proc">(parstr)</span> <span class="xref-line">322</span><span class="xref-proc">(skpspc)</span> <span class="xref-line">321</span><span class="xref-proc">(skpspc)</span> <span class="xref-line">277</span><span class="xref-proc">(chkchr)</span> <span class="xref-line">256</span><span class="xref-proc">(seof)</span> <span class="xref-line">238</span><span class="xref-proc">(endlin)</span></div>
+<div class="item"><strong>seof</strong>: <span class="xref-line">949</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">946</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">934</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">874</span><span class="xref-proc">(partlk)</span> <span class="xref-line">324</span><span class="xref-proc">(skpspc)</span> <span class="xref-line">256</span><span class="xref-proc">(seof)</span></div>
+<div class="item"><strong>chkchr</strong>: <span class="xref-line">946</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">941</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">933</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">890</span><span class="xref-proc">(partlk)</span> <span class="xref-line">886</span><span class="xref-proc">(partlk)</span> <span class="xref-line">883</span><span class="xref-proc">(partlk)</span> <span class="xref-line">881</span><span class="xref-proc">(partlk)</span> <span class="xref-line">879</span><span class="xref-proc">(partlk)</span> <span class="xref-line">877</span><span class="xref-proc">(partlk)</span> <span class="xref-line">827</span> <span class="xref-line">825</span> <span class="xref-line">734</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">728</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">723</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">717</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">679</span><span class="xref-proc">(parstr)</span> <span class="xref-line">669</span><span class="xref-proc">(parstr)</span> <span class="xref-line">656</span><span class="xref-proc">(parstr)</span> <span class="xref-line">652</span><span class="xref-proc">(parstr)</span> <span class="xref-line">648</span><span class="xref-proc">(parstr)</span> <span class="xref-line">594</span> <span class="xref-line">591</span> <span class="xref-line">587</span> <span class="xref-line">578</span> <span class="xref-line">575</span> <span class="xref-line">572</span> <span class="xref-line">570</span> <span class="xref-line">564</span> <span class="xref-line">564</span> <span class="xref-line">558</span> <span class="xref-line">539</span> <span class="xref-line">538</span> <span class="xref-line">538</span> <span class="xref-line">536</span> <span class="xref-line">533</span> <span class="xref-line">532</span> <span class="xref-line">531</span> <span class="xref-line">530</span> <span class="xref-line">528</span> <span class="xref-line">525</span> <span class="xref-line">522</span> <span class="xref-line">506</span> <span class="xref-line">408</span> <span class="xref-line">407</span> <span class="xref-line">324</span><span class="xref-proc">(skpspc)</span> <span class="xref-line">321</span><span class="xref-proc">(skpspc)</span> <span class="xref-line">280</span><span class="xref-proc">(chkchr)</span></div>
+<div class="item"><strong>getchr</strong>: <span class="xref-line">954</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">947</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">944</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">940</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">888</span><span class="xref-proc">(partlk)</span> <span class="xref-line">838</span> <span class="xref-line">826</span> <span class="xref-line">737</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">726</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">683</span><span class="xref-proc">(parstr)</span> <span class="xref-line">681</span><span class="xref-proc">(parstr)</span> <span class="xref-line">678</span><span class="xref-proc">(parstr)</span> <span class="xref-line">670</span><span class="xref-proc">(parstr)</span> <span class="xref-line">655</span><span class="xref-proc">(parstr)</span> <span class="xref-line">649</span><span class="xref-proc">(parstr)</span> <span class="xref-line">508</span> <span class="xref-line">409</span> <span class="xref-line">321</span><span class="xref-proc">(skpspc)</span></div>
+<div class="item"><strong>skpspc</strong>: <span class="xref-line">939</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">873</span><span class="xref-proc">(partlk)</span> <span class="xref-line">646</span><span class="xref-proc">(parstr)</span> <span class="xref-line">516</span></div>
+<div class="item"><strong>conchr</strong>: <span class="xref-line">666</span><span class="xref-proc">(parstr)</span></div>
+<div class="item"><strong>lookup</strong>: <span class="xref-line">420</span> <span class="xref-line">416</span> <span class="xref-line">412</span></div>
+<div class="item"><strong>parnum</strong>: <span class="xref-line">893</span><span class="xref-proc">(partlk)</span> <span class="xref-line">882</span><span class="xref-proc">(partlk)</span> <span class="xref-line">660</span><span class="xref-proc">(parstr)</span> <span class="xref-line">597</span></div>
+<div class="item"><strong>pwrten</strong>: <span class="xref-line">602</span> <span class="xref-line">601</span> <span class="xref-line">496</span><span class="xref-proc">(parnum)</span></div>
+<div class="item"><strong>getchrb</strong>: <span class="xref-line">593</span> <span class="xref-line">589</span> <span class="xref-line">581</span> <span class="xref-line">563</span> <span class="xref-line">552</span> <span class="xref-line">529</span> <span class="xref-line">526</span> <span class="xref-line">523</span></div>
+<div class="item"><strong>parstr</strong>: <span class="xref-line">878</span><span class="xref-proc">(partlk)</span></div>
+<div class="item"><strong>parlabr</strong>: <span class="xref-line">880</span><span class="xref-proc">(partlk)</span></div>
+<div class="item"><strong>parchr</strong>: <span class="xref-line">904</span><span class="xref-proc">(partlk)</span></div>
+<div class="item"><strong>hash</strong>: <span class="xref-line">807</span> <span class="xref-line">795</span><span class="xref-proc">(parchr)</span> <span class="xref-line">740</span><span class="xref-proc">(parlabr)</span> <span class="xref-line">190</span><span class="xref-proc">(hash)</span></div>
+<div class="item"><strong>search</strong>: <span class="xref-line">844</span> <span class="xref-line">831</span></div>
+<div class="item"><strong>partlk</strong>: <span class="xref-line">955</span><span class="xref-proc">(gettlk)</span> <span class="xref-line">926</span><span class="xref-proc">(gettlk)</span></div>
+<div class="item"><strong>gettlk</strong>: <span class="xref-line">1005</span><span class="xref-proc">(opnscn)</span></div>
+<div class="item"><strong>opnscn</strong>:</div>
+<div class="item"><strong>clsscn</strong>:</div>
+</div>
+<h2 id="sec-extmodules">External Modules</h2>
+<div class="module-section">
+<h3>spctbl</h3>
+<p>Symbol hash table</p>
+<h4>Constants</h4><div class="section">
+<div class="item">chrmax</div>
+<div class="item">chroff</div>
+<div class="item">spcmax</div>
+</div>
+<h4>Types</h4><div class="section">
+<div class="item">chrinx</div>
+<div class="item">chrstr</div>
+</div>
+<h4>Variables</h4><div class="section">
+<div class="item">spctbl: <span class="item-type">array</span></div>
+</div>
+</div>
+<div class="module-section">
+<h3>restbl</h3>
+<p>Reserved word hash table</p>
+<h4>Constants</h4><div class="section">
+<div class="item">resmax</div>
+<div class="item">hashoff</div>
+</div>
+<h4>Types</h4><div class="section">
+<div class="item">resinx</div>
+</div>
+<h4>Variables</h4><div class="section">
+<div class="item">restbl: <span class="item-type">array</span></div>
+</div>
+</div>
+<div class="module-section">
+<h3>tolkens</h3>
+<p>Scanner tolkens</p>
+<h4>Types</h4><div class="section">
+<div class="item">tolken</div>
+</div>
+</div>
+<div class="module-section">
+<h3>strings</h3>
+<p>STRING HANDLING LIBRARY                             </p>
+<h4>Procedures and Functions</h4><div class="section">
+<div class="item"><code><span class="keyword">function</span> lcase: (unknown)</code></div>
+<div class="item"><code><span class="keyword">function</span> lcase: (unknown)</code></div>
+<div class="item"><code><span class="keyword">procedure</span> clears</code></div>
+<div class="item"><code><span class="keyword">function</span> len: (unknown)</code></div>
+<div class="item"><code><span class="keyword">function</span> len: (unknown)</code></div>
+<div class="item"><code><span class="keyword">procedure</span> copy</code></div>
+<div class="item"><code><span class="keyword">procedure</span> copy</code></div>
+<div class="item"><code><span class="keyword">function</span> copy: (unknown)</code></div>
+<div class="item"><code><span class="keyword">function</span> copy: (unknown)</code></div>
+<div class="item"><code><span class="keyword">procedure</span> copy</code></div>
+<div class="item"><code><span class="keyword">function</span> compp: (unknown)</code></div>
+<div class="item"><code><span class="keyword">procedure</span> reads</code></div>
+<div class="item"><code><span class="keyword">procedure</span> reads</code></div>
+<div class="item"><code><span class="keyword">procedure</span> reads</code></div>
+<div class="item"><code><span class="keyword">procedure</span> reads</code></div>
+<div class="item"><code><span class="keyword">procedure</span> reads</code></div>
+<div class="item"><code><span class="keyword">procedure</span> reads</code></div>
+<div class="item"><code><span class="keyword">procedure</span> reads</code></div>
+<div class="item"><code><span class="keyword">procedure</span> reads</code></div>
+</div>
+</div>
+</div>
+<div class="content-tabs">
+<a class="content-tab" href="#sec-modules">Modules</a>
+<a class="content-tab" href="#sec-constants">Constants</a>
+<a class="content-tab" href="#sec-types">Types</a>
+<a class="content-tab" href="#sec-variables">Variables</a>
+<a class="content-tab" href="#sec-procedures">Procedures</a>
+</div>
+</div>
+</div>
+</div>
+<div class="page-footer">
+<span>scanner.pas</span>
+<span>Generated on 2026/02/25 by pasdoc vs. 0.4.x</span>
+</div>
+<script>
+function switchTab(name) {
+  var tabs = document.querySelectorAll('.nav-tab');
+  var contents = document.querySelectorAll('.sidebar-content');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
+  event.target.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+function switchView(name) {
+  var tabs = document.querySelectorAll('.view-tab');
+  var views = document.querySelectorAll('.view-panel');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  for (var i = 0; i < views.length; i++) views[i].classList.remove('active');
+  event.target.classList.add('active');
+  document.getElementById('view-'+name).classList.add('active');
+}
+function toggleTree(el) {
+  var children = el.parentElement.querySelector('.tree-children');
+  if (children) {
+    children.classList.toggle('collapsed');
+    el.innerHTML = children.classList.contains('collapsed') ? '&#9654;' : '&#9660;';
+  }
+}
+function filterTree() {
+  var f = document.getElementById('sidebar-filter').value.toLowerCase();
+  var panels = document.querySelectorAll('.sidebar-content');
+  for (var p = 0; p < panels.length; p++) {
+    var items = panels[p].querySelectorAll('.tree-item');
+    for (var i = 0; i < items.length; i++) {
+      var link = items[i].querySelector('.tree-link');
+      if (!link) continue;
+      var txt = link.textContent.toLowerCase();
+      if (f === '' || txt.indexOf(f) >= 0) {
+        items[i].style.display = '';
+        var par = items[i].parentElement;
+        while (par && par.classList) {
+          if (par.classList.contains('tree-children'))
+            par.classList.remove('collapsed');
+          par = par.parentElement;
+        }
+      } else {
+        items[i].style.display = 'none';
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>
