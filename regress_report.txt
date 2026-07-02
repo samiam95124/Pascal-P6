@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Thu 02 Jul 2026 07:58:35 AM PDT
+Thu 02 Jul 2026 10:40:51 AM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/test_results/pint/hello.dif
@@ -141,12 +141,12 @@ services_test run
 
 Total differences: 0
 Fails: 0
-Thu 02 Jul 2026 08:04:15 AM PDT
+Thu 02 Jul 2026 10:46:30 AM PDT
 Files sha256sum ***************************************
 Source files
-24ec91c69323268d55484ab7fa9f09e2e7c32ce8f924ee482be61f522fb38bad  -
+6f607985ee1aa7148faaab4fb8714786dd95840126762ec996e0be18409b4385  -
 batch files
-0b677029310d0feb923ca730f59450c2bf63abdd128aefcaba36d0704f7aceff  -
+0c04fea8540739c4d11d5e468c91236d0274c0e17f1e61223a65a327ae4bd27f  -
 P2 files
 abb5a8a00d377dbcf7c793f9f399fb51e017f2e27ecab9607e4cace253472cfb  -
 p4 files
@@ -156,4 +156,4 @@ aa2864140f55e5f81f8695e03a15ebfeef655a8cec7377be3a419321f6d5d674  -
 standard test files
 dfebd148fc9f3cf0359273ff261325253c260f785fd66a8cbae7cdc57ef3632d  -
 other files
-7efc93ad92f368997b038027d4a23e04215f5a639a3da06ba79aefd6679be2af  -
+53a31ef2c22bc9834f7f6ef8c9a1f82281e01c235339ef0660b8823ffa3b6164  -
