@@ -138,6 +138,8 @@ type
 
 var
 
+   astf:          pstring; { scratch asset-file path (getpgm-resolved) }
+
    { board state: board[0..23] = number of checkers on each point
      (board[0] = point 1, board[23] = point 24)
      positive = p1 (white), negative = p2 (black) }
@@ -3121,8 +3123,13 @@ begin
    opensynthout(synth_out);
    instchange(synth_out, 0, 1, inst_woodblock);
    starttimeout;
-   loadwave(waveslide, 'graph_games/slide.wav');
-   loadwave(wavedice, 'graph_games/dice.wav');
+   { the sound files accompany the program (getpgm), else the current dir }
+   astf := maknam(getpgm, 'slide', 'wav');
+   if not exists(astf^) then astf := copy('slide.wav');
+   loadwave(waveslide, astf^);
+   astf := maknam(getpgm, 'dice', 'wav');
+   if not exists(astf^) then astf := copy('dice.wav');
+   loadwave(wavedice, astf^);
    openwaveout(wave_out);
    soundenabled := true;
 

@@ -38,9 +38,13 @@ done
 for g in backgammon breakout checkers chess conquest defenders pong; do
     [ -f "bin/$g" ] && cp "bin/$g" "$root/bin/"
 done
-# chess resolves its piece bitmaps in its own program directory (getpgm); the
-# build installs chess_pieces alongside the binary in bin, so ship that too.
+# The asset-loading games (chess, conquest, backgammon) resolve their data in
+# their own program directory (getpgm); the build installs those assets in bin
+# alongside the binaries, so ship them too.
 [ -d bin/chess_pieces ] && cp -r bin/chess_pieces "$root/bin/"
+for a in conquest_map.bmp slide.wav dice.wav; do
+    [ -f "bin/$a" ] && cp "bin/$a" "$root/bin/"
+done
 
 # Library link products (.a/.o/.p6) and the headers that resolve `uses` (the
 # .pas module interfaces), plus the psystem runtime and its C support header.
