@@ -11,5 +11,12 @@ modulepath "../libs"
 exclude "../libs"
 
 !
+! Declare the system component directory, which holds modules shared by all
+! components (the version module). Not excluded, so that version.pas
+! recompiles freely and version/experiment changes take effect on next build.
+!
+modulepath "../source"
+
+!
 ! Declare packaged libraries
 !

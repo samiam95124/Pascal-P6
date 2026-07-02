@@ -468,7 +468,7 @@ begin
    if lenstr(role) = 0 then begin
 
       { main mode: run the test suite }
-      writeln('Network test vs. 0.1');
+      writeln('Network test vs. 0.4');
       writeln;
 
       { Per-instance port offset: when NETTEST_PORTBASE is set, shift every

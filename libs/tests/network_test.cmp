@@ -1,4 +1,4 @@
-Network test vs. 0.1
+Network test vs. 0.4
 
 addrnet localhost                        pass
 TCP exchange in the clear                pass

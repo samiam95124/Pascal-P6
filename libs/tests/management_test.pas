@@ -16,6 +16,7 @@ program management_test(input, output);
 
 uses graphics,
      services,
+     version,
      strings;
 
 label 99; { terminate }
@@ -329,7 +330,9 @@ begin
 
    auto(output, false);
    curvis(output, false);
-   writeln('Managed screen test vs. 0.1');
+   write('Managed screen test vs. ', majorver:1, '.', minorver:1);
+   if experiment then write('.x');
+   writeln;
    writeln;
    scnsiz(output, x, y);
    writeln('Screen size character: x: ', x:1, ' y: ', y:1);

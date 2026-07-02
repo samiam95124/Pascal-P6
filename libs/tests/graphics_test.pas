@@ -17,6 +17,7 @@ program graphics_test(input, output);
 
 uses graphics,
      services,
+     version,
      strings;
 
 label 99; { terminate }
@@ -1170,7 +1171,9 @@ begin
    frametimer(output, true);
    curvis(output, false);
    binvis(output);
-   writeln('Graphics screen test vs. 0.1');
+   write('Graphics screen test vs. ', majorver:1, '.', minorver:1);
+   if experiment then write('.x');
+   writeln;
    writeln;
    writeln('Screen size in characters: x -> ', maxx(output):1,
            ' y -> ', maxy(output):1);

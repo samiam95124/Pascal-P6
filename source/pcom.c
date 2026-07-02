@@ -63,8 +63,8 @@ typedef int boolean;
  *****************************************************************************/
 
 /* Version information */
-#define MAJORVER 1
-#define MINORVER 2
+#define MAJORVER 0
+#define MINORVER 4
 
 /* Program object sizes and characteristics, sync with pint */
 #define DISPLIMIT    300

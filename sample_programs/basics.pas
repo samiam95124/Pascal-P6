@@ -1321,7 +1321,7 @@ begin (* executive *)
    keywd[cstr]   := 'str$      '; keywd[cval]   := 'val       ';
    keywd[cchr]   := 'chr       ';
    writeln;
-   writeln('Tiny basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore');
+   writeln('Tiny basic interpreter vs. 0.4 Copyright (C) 1994 S. A. Moore');
    writeln;
    88: while true do begin
 

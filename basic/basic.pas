@@ -8237,7 +8237,7 @@ end;
 begin { executive }
 
    writeln;
-   writeln('Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore');
+   writeln('Basic interpreter vs. 0.4 Copyright (C) 1994 S. A. Moore');
    writeln;
    { initalize keycode translation }
    for ki := cinput to clend do ktrans[chr(ord(ki))] := ki;
