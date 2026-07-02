@@ -1,13 +1,10 @@
-******************************* NEWS FOR 2024-09-12 ****************************
+******************************* NEWS FOR 2026-07-01 ****************************
 
-Welcome to the v0.3 release!
+Welcome to the v0.4 release!
 
-This is the third beta release of Pascal-P6. The v0.3 release is the first
-completely stand-alone release of Pascal-P6. This is due to the new program, 
-pgen, which generates a 64 bit x86 (AMD64) machine code runnable version
-of Pascal-P6.
+This is the forth beta release of Pascal-P6.
 
-What has been done since the v0.2 release:
+What has been done since the v0.3 release:
 
 * pgen brought up.
 
