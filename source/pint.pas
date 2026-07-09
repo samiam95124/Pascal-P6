@@ -890,6 +890,7 @@ var   pc, pcs     : address;   (*program address register*)
       dodckout: boolean; { do output code deck }
       dochkvbk: boolean; { do check VAR blocks }
       amd64_sysv: boolean; { use SYS V AMD64 ABI calling convention }
+      windows: boolean; { use Windows calling convention }
       doechlin: boolean; { echo input command line }
 
       { other flags }
@@ -2525,6 +2526,7 @@ procedure load;
                             if amd64_sysv then
                               errorl('Call convention mismatch ')
                           end;
+                      31: windows := option[oi];
                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
                       24:; 25:; 26:; 10:; 18:; 27:; 28:; 30:;
                     end
@@ -7770,6 +7772,7 @@ begin
               goto 99
             end
           end;
+      31: windows := option[oi];
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:; 27:; 28:; 30:;
     end
@@ -7778,17 +7781,17 @@ end;
 begin (* main *)
 
   { suppress unreferenced errors. }
-  if adral = 0 then;
-  if adral = 0 then;
-  if boolal = 0 then;
-  if charmax = 0 then;
-  if charal = 0 then;
-  if codemax = 0 then;
-  if filesize = 0 then;
-  if intdig = 0 then;
-  if ordminchar = 0 then;
-  if ordmaxchar = 0 then;
-  if stackelsize = 0 then;
+  refer(adral);
+  refer(boolal);
+  refer(charmax);
+  refer(charal);
+  refer(codemax);
+  refer(filesize);
+  refer(intdig);
+  refer(ordminchar);
+  refer(ordmaxchar);
+  refer(stackelsize);
+  refer(windows); { used by pgen only }
 
   write('P6 Pascal interpreter vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
@@ -7828,6 +7831,7 @@ begin (* main *)
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
   amd64_sysv := false; { don't use SYS V AMD64 ABI calling convention }
+  windows := false; { don't use Windows calling convention }
   doechlin := false; { don't echo command lines }
 
   strcnt := 0; { clear string quanta allocation count }

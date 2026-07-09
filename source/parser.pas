@@ -1626,6 +1626,10 @@ end;
           25: switch(dodmpdsp);
           26: switch(dummy);
           27: switch(dummy);
+          28: switch(dummy);
+          29: switch(dummy);
+          30: switch(dummy);
+          31: switch(dummy);
         end else begin
           { skip all likely option chars }
           while ch in ['a'..'z','A'..'Z','+','-','0'..'9','_'] do

@@ -221,7 +221,7 @@ const
       maxgblfx = 10000;      { maximum global access fixup in intermediate }
       resspc   = 0;          { reserve space in heap (if you want) }
 
-      maxopt   = 28;         { number of options }
+      maxopt   = 31;         { number of options }
       optlen   = 10;         { maximum length of option words }
 
       { locations of header files after program block mark, each header
@@ -535,6 +535,7 @@ var   pc          : address;   (*program address register*)
       dodckout: boolean; { do output code deck }
       dochkvbk: boolean; { do check VAR blocks }
       doechlin: boolean; { do echo command line for testing (unused) }
+      windows: boolean; { use Windows calling convention }
       
       iso7185: boolean; { iso7185 standard flag }
       flipend: boolean; { endian mode is opposing }
@@ -3433,6 +3434,7 @@ begin
     setflg('y',  'prtdisplay', option[25], options[25]);
     setflg('z',  'lineinfo',   option[26], options[26]);
     setflg('mal', 'mrkasslin', option[28], options[28]);
+    setflg('windows', 'windows', option[31], options[31]);
     if not optfnd then begin
       writeln('*** Unknown option ', w:*); goto 99
     end;
@@ -3444,7 +3446,7 @@ end;
 procedure plcopt;
 var oi: 1..maxopt;
 begin
-  for oi := 1 to 26 do if options[oi] then
+  for oi := 1 to maxopt do if options[oi] then
     case oi of
       7:  dodmplab   := option[oi];
       8:  dosrclin   := option[oi];
@@ -3460,8 +3462,9 @@ begin
       6:  dodbgsrc   := option[oi];
       5:  dodckout   := option[oi];
       9:  dochkvbk   := option[oi];
+      31: windows    := option[oi];
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
-      24:; 25:; 26:; 10:; 18:;
+      24:; 25:; 26:; 10:; 18:; 27:; 28:; 29:; 30:;
     end
 end;
 
@@ -3491,6 +3494,7 @@ begin (* main *)
   if dodckout then;
   if dochkvbk then;
   if doechlin then;
+  refer(windows);
   extvecbase := 0;
   if extvecbase = 0 then;
 
@@ -3533,6 +3537,9 @@ begin (* main *)
   opts[26] := 'z         ';
   opts[27] := 'md        ';
   opts[28] := 'mal       ';
+  opts[29] := 'amd64_sysv';
+  opts[30] := 'amdpar    ';
+  opts[31] := 'windows   ';
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
   optsl[3]  := 'lstcod    ';
@@ -3561,6 +3568,9 @@ begin (* main *)
   optsl[26] := 'lineinfo  ';
   optsl[27] := 'modules   ';
   optsl[28] := 'mrkasslin ';
+  optsl[29] := 'amd64_sysv';
+  optsl[30] := 'amdpar    ';
+  optsl[31] := 'windows   ';
   { preset options }
   dochkovf := true;  { check arithmetic overflow }
   dosrclin := true;  { add source line sets to code }
@@ -3569,6 +3579,7 @@ begin (* main *)
   donorecpar := false; { check reuse, but leave whole block unused }
   dochkdef := true;  { check undefined accesses }
   iso7185 := false;  { iso7185 standard mode }
+  windows := false; { don't use Windows calling convention }
   varlst := nil; { set no VAR block entries }
   varfre := nil;
   wthlst := nil; { set no with block entries }

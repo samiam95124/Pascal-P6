@@ -436,7 +436,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
 #define REALEF       8    /* real extra field in floating format -1.0e+00 */
-#define MAXOPT       26   /* number of options */
+#define MAXOPT       31   /* number of options */
 #define OPTLEN       10   /* maximum length of option words */
 
 /* version numbers */
@@ -612,7 +612,12 @@ char* opts[] = {
     "w",
     "x",
     "y",
-    "z"
+    "z",
+    "md",
+    "mal",
+    "amd64_sysv",
+    "amdpar",
+    "windows"
 };
 
 char* optsl[] = {
@@ -641,7 +646,12 @@ char* optsl[] = {
     "debug",
     "prtlex",
     "prtdisplay",
-    "lineinfo"
+    "lineinfo",
+    "modules",
+    "mrkasslin",
+    "amd64_sysv",
+    "amdpar",
+    "windows"
 };
 
 /**************************** Global Variables ********************************/
@@ -728,6 +738,7 @@ boolean dochkcov; /* do code coverage */
 boolean doanalys; /* do analyze */
 boolean dodckout; /* do output code deck */
 boolean dochkvbk; /* do check VAR blocks */
+boolean windows; /* use Windows calling convention */
 boolean iso7185; /* iso7185 standard flag */
 
 long i;
@@ -1039,19 +1050,20 @@ void paroptions(void)
                 option[oi] = TRUE; if (bufcommand() == '-') option[oi] = FALSE;
                 if (bufcommand() == '+' || bufcommand() == '-') getcommand();
                 switch (oi+1) {
-                    case 7:  dodmplab   = option[oi];
-                    case 8:  dosrclin   = option[oi];
-                    case 14: dorecycl   = option[oi];
-                    case 15: dochkovf   = option[oi];
-                    case 16: dochkrpt   = option[oi];
-                    case 13: donorecpar = option[oi];
-                    case 17: dochkdef   = option[oi];
-                    case 19: iso7185    = option[oi];
-                    case 23: dodebug    = option[oi];
-                    case 1:  dodbgflt   = option[oi];
-                    case 6:  dodbgsrc   = option[oi];
-                    case 5:  dodckout   = option[oi];
-                    case 9:  dochkvbk   = option[oi];
+                    case 7:  dodmplab   = option[oi]; break;
+                    case 8:  dosrclin   = option[oi]; break;
+                    case 14: dorecycl   = option[oi]; break;
+                    case 15: dochkovf   = option[oi]; break;
+                    case 16: dochkrpt   = option[oi]; break;
+                    case 13: donorecpar = option[oi]; break;
+                    case 17: dochkdef   = option[oi]; break;
+                    case 19: iso7185    = option[oi]; break;
+                    case 23: dodebug    = option[oi]; break;
+                    case 1:  dodbgflt   = option[oi]; break;
+                    case 6:  dodbgsrc   = option[oi]; break;
+                    case 5:  dodckout   = option[oi]; break;
+                    case 9:  dochkvbk   = option[oi]; break;
+                    case 31: windows    = option[oi]; break;
                 }
             }
         }
@@ -3588,6 +3600,7 @@ int main (int argc, char *argv[])
     doanalys = FALSE; /* do analyze */
     dodckout = FALSE; /* do output code deck */
     dochkvbk = FALSE; /* do check VAR blocks */
+    windows = FALSE; /* use Windows calling convention */
     iso7185 = FALSE; /* iso7185 standard flag */
 
     argc--; argv++; /* discard the program parameter */

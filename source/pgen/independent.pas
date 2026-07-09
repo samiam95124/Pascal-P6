@@ -885,6 +885,7 @@ doechlin: boolean; { echo input command line }
 domrklin: boolean; { mark source line translations in assembly }
 prologue_pending: boolean; { next source line marks a routine's prologue end }
 amd64_sysv: boolean; { use SYS V AMD64 ABI calling convention }
+windows: boolean; { use Windows calling convention }
 
 { other flags }
 iso7185: boolean; { iso7185 standard flag }
@@ -1942,6 +1943,7 @@ begin
                     9:  dochkvbk   := option[oi];
                     28: domrklin   := option[oi];
                     29: amd64_sysv := option[oi];
+                    31: windows    := option[oi];
                     2:; 3:; 4:; 12:; 20:; 21:; 22:;
                     24:; 25:; 26:; 10:; 18:; 27:; 30:;
                   end
@@ -3690,6 +3692,7 @@ begin
       9:  dochkvbk   := option[oi];
       28: domrklin   := option[oi];
       29: amd64_sysv := option[oi];
+      31: windows    := option[oi];
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:; 27:; 30:;
     end
@@ -3741,6 +3744,7 @@ begin
   domrklin := true;  { mark assembly lines }
   prologue_pending := false; { not inside a routine prologue yet }
   amd64_sysv := false; { SYS V AMD64 calling convention not yet seen }
+  windows := false; { don't use Windows calling convention }
 
   { supress warnings }
   refer(dochkovf);
@@ -3763,6 +3767,7 @@ begin
   refer(dodckout);
   refer(dochkvbk);
   refer(dodbgchk);
+  refer(windows);
 
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
