@@ -14,6 +14,9 @@ maxintreg = 14; { maximum number of assignable integer reg }
 maxfltreg = 16; { maximum number of assignable float reg }
 maxintparreg = 6; { maximum number of integer/pointer parameter regs }
 maxfltparreg = 8; { maximum number of floating parameter regs }
+maxfltregw = 6; { maximum number of assignable float regs (Windows) }
+maxintparregw = 4; { maximum number of parameter register slots (Windows) }
+maxfltparregw = 4; { maximum number of float parameter register slots (Windows) }
 regprefix = true; { % register prefix required }
 
 type 
@@ -48,6 +51,30 @@ end;
 { floating point parameter registers }
 parregf: array [1..8] of reg = array
     rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6, rgxmm7
+end;
+
+{ integer register assignment order (Windows x64): callee saved first, then
+  the volatile non-parameter registers, then the parameter registers }
+intassordw: array [1..maxintreg] of reg = array
+    rgrbx, rgr12, rgr13, rgr14, rgr15, rgr10, rgr11, rgrcx, rgr8, rgr9, rgrsi,
+    rgrdi, rgrdx, rgrax
+end;
+
+{ floating point register assignment order (Windows x64): xmm6-xmm15 are
+  callee saved and are never assigned, only the volatile xmm0-xmm5 are used,
+  with the non-parameter registers preferred }
+fltassordw: array [1..maxfltregw] of reg = array
+    rgxmm4, rgxmm5, rgxmm0, rgxmm1, rgxmm2, rgxmm3
+end;
+
+{ parameter registers (Windows x64) }
+parregw: array [1..5] of reg = array
+    rgrcx, rgrdx, rgr8, rgr9, rgnull
+end;
+
+{ floating point parameter registers (Windows x64) }
+parregfw: array [1..4] of reg = array
+    rgxmm0, rgxmm1, rgxmm2, rgxmm3
 end;
 
 { all possible registers }

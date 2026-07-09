@@ -49,6 +49,8 @@ uses endian,      { endian mode }
 
 label 99;
 
+const shadowsize = 32; { Windows x64 caller allocated shadow space }
+
 override procedure abort;
 
 begin
@@ -57,16 +59,85 @@ begin
 
 end;
 
+{ Find parameter register for argument slot n by the active calling
+  convention. The SYS V convention has 6 integer argument registers, the
+  Windows convention 4. Callers place system routine arguments via this
+  mapping so that the same site serves both conventions; arguments past
+  the register slots are handled explicitly at each site. }
+function argr(n: integer): reg;
+var r: reg;
+begin
+  r := rgnull;
+  if windows then case n of
+    1: r := rgrcx; 2: r := rgrdx; 3: r := rgr8; 4: r := rgr9;
+    5: r := rgnull; 6: r := rgnull
+  end else case n of
+    1: r := rgrdi; 2: r := rgrsi; 3: r := rgrdx;
+    4: r := rgrcx; 5: r := rgr8;  6: r := rgr9
+  end;
+  if r = rgnull then error('System error: argument slot');
+  argr := r
+end;
+
+{ Write call to a system (psystem) routine. The Windows convention requires
+  the caller to allocate 32 bytes of shadow space immediately below the
+  return address on every call, and to remove it afterwards. The shadow
+  space is a multiple of 16 bytes, so stack alignment is unchanged. }
+procedure wrtcps(view si: string);
+begin
+  if windows then
+    wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
+  wrtins(si);
+  if windows then
+    wrtins(' addq $0,%rsp # remove shadow space', shadowsize)
+end;
+
+{ Write return epilogue: restore the protected registers, undo the frame
+  and remove the frame data. The Windows convention adds rsi and rdi to
+  the callee saved register set. The .cfi directives are DWARF/ELF
+  specific and are not accepted by the COFF assembler on Windows. }
+procedure wrtrestore;
+begin
+  if windows then begin
+    wrtins(' popq %rdi # undo alignment push');
+    wrtins(' popq %rdi # restore protected registers');
+    wrtins(' popq %rsi');
+    wrtins(' popq %r15');
+    wrtins(' popq %r14');
+    wrtins(' popq %r13');
+    wrtins(' popq %r12');
+    wrtins(' popq %rbx')
+  end else begin
+    wrtins(' popq %r15 # undo alignment push');
+    wrtins(' popq %r15 # restore protected registers');
+    wrtins(' popq %r14');
+    wrtins(' popq %r13');
+    wrtins(' popq %r12');
+    wrtins(' popq %rbx')
+  end;
+  wrtins(' leave # undo frame');
+  if not windows then begin
+    writeln(prr, '        .cfi_restore rbp');
+    writeln(prr, '        .cfi_def_cfa rsp, 32')
+  end;
+  wrtins(' addq $0,%rsp # remove frame data', marksize);
+  if not windows then writeln(prr, '        .cfi_def_cfa rsp, 8')
+end;
+
 override procedure preamble;
 begin
   { see how much of this is really required }
+  { the .type and .cfi directives are ELF/DWARF specific and are not
+    accepted by the COFF assembler on Windows }
   write(prr, '        .globl  '); write(prr, modnam^); writeln(prr);
-  write(prr, '        .type   '); write(prr, modnam^); writeln(prr, ', @function');
+  if not windows then begin
+    write(prr, '        .type   '); write(prr, modnam^); writeln(prr, ', @function')
+  end;
   writeln(prr, modnam^, ':');
-  writeln(prr, '        .cfi_startproc');
+  if not windows then writeln(prr, '        .cfi_startproc');
   writeln(prr, '# Align stack');
   writeln(prr, '        pushq   %rax');
-  writeln(prr, '        .cfi_adjust_cfa_offset 8');
+  if not windows then writeln(prr, '        .cfi_adjust_cfa_offset 8');
   writeln(prr, '# Set up default files');
   writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
   writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
@@ -78,10 +149,10 @@ begin
   writeln(prr, '# Call startup code');
   writeln(prr, '        call    1f');
   writeln(prr, '        popq    %rax');
-  writeln(prr, '        .cfi_adjust_cfa_offset -8');
+  if not windows then writeln(prr, '        .cfi_adjust_cfa_offset -8');
   writeln(prr, '        sub     %rax,%rax');
   writeln(prr, '        ret');
-  writeln(prr, '        .cfi_endproc');
+  if not windows then writeln(prr, '        .cfi_endproc');
   writeln(prr, '1:');
 end;
 
@@ -112,9 +183,15 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   var i: 1..maxintreg;
   begin
     i := 1;
-    r := intassord[i];
-    while not (r in rf) and (i < maxintreg) do 
-      begin i := i+1; r := intassord[i] end;
+    if windows then begin
+      r := intassordw[i];
+      while not (r in rf) and (i < maxintreg) do
+        begin i := i+1; r := intassordw[i] end
+    end else begin
+      r := intassord[i];
+      while not (r in rf) and (i < maxintreg) do
+        begin i := i+1; r := intassord[i] end
+    end;
     if not (r in rf) then error('Out of registers');
     rf := rf-[r];
   end;
@@ -123,9 +200,16 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   var i: 1..maxfltreg;
   begin
     i := 1;
-    r := fltassord[i];
-    while not (r in rf) and (i < maxfltreg) do 
-      begin i := i+1; r := fltassord[i] end;
+    if windows then begin
+      { Windows x64: xmm6-xmm15 are callee saved, only assign xmm0-xmm5 }
+      r := fltassordw[i];
+      while not (r in rf) and (i < maxfltregw) do
+        begin i := i+1; r := fltassordw[i] end
+    end else begin
+      r := fltassord[i];
+      while not (r in rf) and (i < maxfltreg) do
+        begin i := i+1; r := fltassord[i] end
+    end;
     if not (r in rf) then error('Out of registers');
     rf := rf-[r];
   end;
@@ -162,11 +246,50 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     end
   end;
 
+  { assign registers to parameters in call, Windows x64 convention.
+    A single positional slot counter is used: the first 4 parameter slots
+    are in registers regardless of type, integers/pointers in parregw and
+    floats in the matching parregfw register. Parameters past the register
+    slots get scratch registers and are pushed to the stack by the caller. }
+  procedure assparw(ep: expptr);
+  var pp: expptr; pc: integer; r1, r2: reg; fr: reg;
+  begin
+    pp := ep^.pl; pc := 1;
+    while pp <> nil do begin
+      if isfltres(pp) then begin { floating result }
+        if pc <= maxfltparregw then begin
+          resreg(parregfw[pc]); assreg(pp, rf, parregfw[pc], rgnull)
+        end else begin
+          getfreg(fr, rf); assreg(pp, rf, rgnull, rgnull)
+        end;
+        pc := pc+1
+      end else if instab[pp^.op].insr = 2 then begin { double register }
+        if pc <= maxintparregw-1 then begin
+          resreg(parregw[pc]); resreg(parregw[pc+1]);
+          assreg(pp, rf, parregw[pc], parregw[pc+1])
+        end else begin
+          getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2)
+        end;
+        pc := pc+2
+      end else begin { single register }
+        if pc <= maxintparregw then begin
+          resreg(parregw[pc]); assreg(pp, rf, parregw[pc], rgnull)
+        end else begin
+          getreg(r1, rf); assreg(pp, rf, r1, rgnull)
+        end;
+        pc := pc+1
+      end;
+      pp := pp^.next
+    end
+  end;
+
   { assign registers to parameters in call }
   procedure asspar(ep: expptr; mi: integer);
   var pp: expptr; pc: integer; fpc: integer; r1, r2: reg; fr: reg;
   begin
     refer(mi);
+    if windows then assparw(ep)
+    else begin
     pp := ep^.pl; pc := 1; fpc := 1;
     while pp <> nil do begin
       if isfltres(pp) then begin { floating result }
@@ -194,18 +317,27 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
       pp := pp^.next
     end
+    end
   end;
 
   procedure asscall;
   begin
-    { calling convention says can trash these }
-    dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgrsi); 
-    dstreg(rgrdi); dstreg(rgr8); dstreg(rgr9); dstreg(rgr10); 
-    dstreg(rgr11); dstreg(rgxmm0); dstreg(rgxmm1); dstreg(rgxmm2); 
-    dstreg(rgxmm3); dstreg(rgxmm4); dstreg(rgxmm5); dstreg(rgxmm6); 
-    dstreg(rgxmm7); dstreg(rgxmm8); dstreg(rgxmm9); dstreg(rgxmm10);
-    dstreg(rgxmm11); dstreg(rgxmm12); dstreg(rgxmm13); dstreg(rgxmm14); 
-    dstreg(rgxmm15)
+    if windows then begin
+      { Windows x64: rsi/rdi and xmm6-xmm15 are callee saved }
+      dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgr8);
+      dstreg(rgr9); dstreg(rgr10); dstreg(rgr11); dstreg(rgxmm0);
+      dstreg(rgxmm1); dstreg(rgxmm2); dstreg(rgxmm3); dstreg(rgxmm4);
+      dstreg(rgxmm5)
+    end else begin
+      { calling convention says can trash these }
+      dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgrsi);
+      dstreg(rgrdi); dstreg(rgr8); dstreg(rgr9); dstreg(rgr10);
+      dstreg(rgr11); dstreg(rgxmm0); dstreg(rgxmm1); dstreg(rgxmm2);
+      dstreg(rgxmm3); dstreg(rgxmm4); dstreg(rgxmm5); dstreg(rgxmm6);
+      dstreg(rgxmm7); dstreg(rgxmm8); dstreg(rgxmm9); dstreg(rgxmm10);
+      dstreg(rgxmm11); dstreg(rgxmm12); dstreg(rgxmm13); dstreg(rgxmm14);
+      dstreg(rgxmm15)
+    end
   end;
 
   begin { assreg }
@@ -248,10 +380,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       158,170: ; { are invalid }
 
       {equs,neqs,geqs,leqs}
-      140,146,152,164: begin 
+      140,146,152,164: begin
         asscall;
-        assreg(ep^.l, rf, rgrdi, rgnull); 
-        assreg(ep^.r, rf, rgrsi, rgnull);
+        assreg(ep^.l, rf, argr(1), rgnull);
+        assreg(ep^.r, rf, argr(2), rgnull);
         if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
         else ep^.r1 := r1;
         if ep^.r1 = rgnull then getreg(ep^.r1, rf)
@@ -272,12 +404,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end; 
 
       {equm,neqm,geqm,grtm,leqm,lesm}
-      142, 148, 154, 160, 166, 172: begin 
+      142, 148, 154, 160, 166, 172: begin
         asscall;
-        ep^.r1 := r1; 
+        ep^.r1 := r1;
         if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        assreg(ep^.l, rf, rgrdi, rgnull); 
-        assreg(ep^.r, rf, rgrsi, rgnull)
+        assreg(ep^.l, rf, argr(1), rgnull);
+        assreg(ep^.r, rf, argr(2), rgnull)
       end;
 
       5{lao},234{lto}: begin ep^.r1 := r1;
@@ -351,30 +483,52 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         asscall;
         ep^.r1 := rgrax;
         resreg(ep^.r1);
-        assreg(ep^.l, rf, rgrdi, rgnull)
+        assreg(ep^.l, rf, argr(1), rgnull)
       end;
 
       {ckvi,ckvb,ckvc,ckvx}
       175, 179, 180, 203: ;
 
       {cvbi,cvbx,cvbb,cvbc}
-      100, 115, 116, 121: begin 
+      100, 115, 116, 121: begin
         asscall;
-        assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull);
+        if windows then begin
+          { 6 C arguments: 4 in registers, the tag address and old tag are
+            stacked. The new tag is argument 4, the address gets a scratch
+            register outside the argument registers and is pushed at the
+            call site. }
+          assreg(ep^.l, rf-[rgrcx,rgrdx,rgr8,rgr9], rgnull, rgnull);
+          assreg(ep^.r, rf, rgr9, rgnull)
+        end else begin
+          assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull)
+        end;
         ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax
       end;
 
       {ivti,ivtx,ivtb,ivtc}
-      192,101,102,111: begin 
+      192,101,102,111: begin
         asscall;
-        assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull);
+        if windows then begin
+          assreg(ep^.l, rf-[rgrcx,rgrdx,rgr8,rgr9], rgnull, rgnull);
+          assreg(ep^.r, rf, rgr9, rgnull)
+        end else begin
+          assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull)
+        end;
         ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax
       end;
 
       {cta}
       191: begin
         asscall;
-        assreg(ep^.l, rf, rgr8, rgnull); assreg(ep^.r, rf, rgrcx, rgnull)
+        if windows then begin
+          { 5 C arguments: the tag address (argument 5) gets a scratch
+            register outside the argument registers and is pushed at the
+            call site }
+          assreg(ep^.l, rf-[rgrcx,rgrdx,rgr8,rgr9], rgnull, rgnull);
+          assreg(ep^.r, rf, rgr9, rgnull)
+        end else begin
+          assreg(ep^.l, rf, rgr8, rgnull); assreg(ep^.r, rf, rgrcx, rgnull)
+        end
       end;
 
       {cps}
@@ -386,8 +540,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
       {cpc}
       177: begin
-        asscall; 
-        assreg(ep^.l, rf, rgnull, rgrsi); assreg(ep^.r, rf, rgnull, rgrdx);
+        asscall;
+        assreg(ep^.l, rf, rgnull, argr(2)); assreg(ep^.r, rf, rgnull, argr(3));
       end;
 
       {lpa}
@@ -469,7 +623,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {sgs}
       32: begin
         asscall;
-        assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
+        assreg(ep^.l, rf, argr(1), rgnull); resreg(argr(1));
         assreg(ep^.r, rf, rgnull, rgnull);
         ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
@@ -557,10 +711,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end;
 
       {inn}
-      48: begin 
+      48: begin
         asscall;
-        assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
-        assreg(ep^.r, rf, rgrsi, rgnull);
+        assreg(ep^.l, rf, argr(1), rgnull); resreg(argr(1));
+        assreg(ep^.r, rf, argr(2), rgnull);
         if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax else 
         ep^.r1 := r1; 
         if ep^.r1 = rgnull then getreg(ep^.r1, rf)
@@ -611,8 +765,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {rgs}
       110: begin
         asscall;
-        assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
-        assreg(ep^.r, rf, rgrsi, rgnull); resreg(rgrsi);
+        assreg(ep^.l, rf, argr(1), rgnull); resreg(argr(1));
+        assreg(ep^.r, rf, argr(2), rgnull); resreg(argr(2));
         assreg(ep^.x1, rf, rgnull, rgnull);
         ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
@@ -626,7 +780,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {csp}
       15: begin
         asscall; asspar(ep, sfptab[ep^.q].sppar);
-        if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then resreg(rgrcx);
+        if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
+          { the tag list pointer register (argument 4) }
+          if windows then resreg(rgr9) else resreg(rgrcx)
+        end;
         if sfptab[ep^.q].spfunc then begin { function }
           if isfltres(ep) then begin
             if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
@@ -645,6 +802,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {cuf}
       246: begin
         asscall;
+        { the structure result copy at the call site uses the movs string
+          registers, which are callee saved under the Windows convention
+          and so not covered by asscall }
+        if windows then
+          if ep^.rc = 3 then begin dstreg(rgrsi); dstreg(rgrdi) end;
         if ep^.rc = 1 then begin
           if r1 = rgnull then begin
             if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
@@ -675,6 +837,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {cif}
       247: begin
         asscall; resreg(rgr15);
+        if windows then
+          if ep^.rc = 3 then begin dstreg(rgrsi); dstreg(rgrdi) end;
         if ep^.rc = 1 then begin
           if r1 = rgnull then begin
             if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
@@ -700,6 +864,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {cvf}
       249: begin
         asscall;
+        if windows then
+          if ep^.rc = 3 then begin dstreg(rgrsi); dstreg(rgrdi) end;
         if ep^.rc = 1 then begin
           if r1 = rgnull then begin
             if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
@@ -771,13 +937,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         assreg(ep^.r, rf, rgnull, rgnull)
       end;
 
-      {equv,neqv,lesv,grtv,leqv,geqv} 
+      {equv,neqv,lesv,grtv,leqv,geqv}
       215,216,217,218,219,220: begin
         asscall;
         ep^.r1 := r1;
         if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        assreg(ep^.l, rf, rgrdi, rgrdx); 
-        assreg(ep^.r, rf, rgrsi, rgnull)
+        assreg(ep^.l, rf, argr(1), argr(3));
+        assreg(ep^.r, rf, argr(2), rgnull)
       end;
 
       {spc} 
@@ -926,6 +1092,76 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     pshovf(pp, ipc, fpc)
   end;
 
+  { push parameters Windows x64 style.
+    List is in left-to-right order.
+    A single positional slot counter is used. Register params (slots 1-4)
+    are evaluated left-to-right to match the allocation order in assparw.
+    Overflow params (slots 5+) are evaluated right-to-left and pushed to
+    the stack. The caller allocates the 32 byte shadow space separately,
+    just before the call. }
+  procedure pshparwin(pp: expptr);
+  var pc, tpc: integer; p: expptr;
+      stk: boolean;
+
+    { recursively traverse list to process overflow params right-to-left }
+    procedure pshovfw(p: expptr; var pc: integer);
+    var stk: boolean;
+    begin
+      if p <> nil then begin
+        pshovfw(p^.next, pc); { recurse to end first }
+        { now processing right-to-left }
+        if isfltres(p) then begin
+          pc := pc-1; stk := pc >= maxfltparregw
+        end else if instab[p^.op].insr = 2 then begin
+          pc := pc-2; stk := pc >= maxintparregw-1
+        end else begin
+          pc := pc-1; stk := pc >= maxintparregw
+        end;
+        if stk then begin
+          genexp(p);
+          if p^.r2 <> rgnull then begin
+            wrtins(' pushq %1 # place 2nd register on stack', p^.r2);
+            stkadr := stkadr-intsize
+          end;
+          if p^.r1 in [rgrax..rgr15] then begin
+            wrtins(' pushq %1 # save parameter', p^.r1);
+            stkadr := stkadr-intsize
+          end else if p^.r1 in [rgxmm0..rgxmm15] then begin
+            wrtins(' subq $0,%rsp # allocate real on stack', realsize);
+            stkadr := stkadr-realsize;
+            wrtins(' movsd %1,(%rsp) # place real on stack', p^.r1)
+          end
+        end
+      end
+    end;
+
+  begin
+    { pre-count total parameter slots }
+    pc := 0; p := pp;
+    while p <> nil do begin
+      if instab[p^.op].insr = 2 then pc := pc+2
+      else pc := pc+1;
+      p := p^.next
+    end;
+    tpc := pc; { save total }
+    { Pass 1: evaluate register params left-to-right }
+    pc := 1; p := pp;
+    while p <> nil do begin
+      if isfltres(p) then begin
+        stk := pc > maxfltparregw; pc := pc+1
+      end else if instab[p^.op].insr = 2 then begin
+        stk := pc > maxintparregw-1; pc := pc+2
+      end else begin
+        stk := pc > maxintparregw; pc := pc+1
+      end;
+      if not stk then genexp(p);
+      p := p^.next
+    end;
+    { Pass 2: evaluate overflow params right-to-left and push }
+    pc := tpc;
+    pshovfw(pp, pc)
+  end;
+
   { compute overflow parameter stack space for alignment pre-check.
     pp = param list in original order.
     When a set value param is found, it and all following int params
@@ -952,23 +1188,76 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     cmpparmspc := sz
   end;
 
+  { compute overflow parameter stack space for the Windows x64 convention.
+    A single positional slot counter is used; the first 4 slots are in
+    registers, the rest overflow to the stack. The caller shadow space is
+    NOT included; it is accounted for separately. }
+  function cmpparmspcw(pp: expptr): integer;
+  var sz, pc: integer; p: expptr;
+  begin
+    sz := 0; pc := 0; p := pp;
+    while p <> nil do begin
+      if isfltres(p) then begin
+        pc := pc + 1;
+        if pc > maxfltparregw then sz := sz + realsize
+      end else begin
+        if instab[p^.op].insr = 2 then begin
+          pc := pc + 2;
+          if pc > maxintparregw then sz := sz + intsize * 2
+        end else begin
+          pc := pc + 1;
+          if pc > maxintparregw then sz := sz + intsize
+        end
+      end;
+      p := p^.next
+    end;
+    cmpparmspcw := sz
+  end;
+
   { call system procedure/function }
   procedure callsp(ep: expptr; var sc: alfa; r: boolean);
   var si: packed array [1..60] of char; i: integer; pp: expptr; aln: boolean;
+      ps: integer;
   begin
-    { evaluate all parameters }
-    pp := ep^.pl;
-    while pp <> nil do begin genexp(pp); pp := pp^.next end;
-    aln := false;
-    if stkadr mod 16 <> 0 then begin
-      wrtins(' pushq %rbx # align');
-      aln := true
+    ps := 0;
+    if windows then begin
+      { Windows x64: parameters past the 4 register slots are stacked, and
+        the caller allocates shadow space (which is 16 byte neutral) }
+      ps := cmpparmspcw(ep^.pl);
+      aln := false;
+      if (stkadr - ps) mod 16 <> 0 then begin
+        wrtins(' pushq %rbx # align');
+        stkadr := stkadr-intsize;
+        aln := true
+      end;
+      pshparwin(ep^.pl)
+    end else begin
+      { evaluate all parameters }
+      pp := ep^.pl;
+      while pp <> nil do begin genexp(pp); pp := pp^.next end;
+      aln := false;
+      if stkadr mod 16 <> 0 then begin
+        wrtins(' pushq %rbx # align');
+        aln := true
+      end
     end;
     si := ' call psystem_     # call system procedure/function         ';
     for i := 1 to maxalfa do if sc[i] <> ' ' then si[15+i-1] := sc[i];
-    wrtins(si);
-    if aln then
-      wrtins(' popq %rbx # drop alignment');
+    if windows then begin
+      wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
+      wrtins(si);
+      wrtins(' addq $0,%rsp # remove shadow space and parameters',
+             shadowsize+ps);
+      stkadr := stkadr+ps;
+      if aln then begin
+        wrtins(' popq %rbx # drop alignment');
+        stkadr := stkadr+intsize
+      end
+    end else begin
+      wrtins(si);
+      if aln then
+        wrtins(' popq %rbx # drop alignment')
+    end;
     if r then begin
       if isfltres(ep) then begin
         if ep^.r1 <> rgxmm0 then 
@@ -993,22 +1282,26 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       ep2 := ep2^.next
     end;
     pshpar(ep2);
-    pp := ep^.pl; genexp(pp); { addr rdi }
-    pp := pp^.next; genexp(pp); { size rsi }
-    pp := pp^.next; genexp(pp); { tagcnt rdx }
+    pp := ep^.pl; genexp(pp); { addr argument 1 }
+    pp := pp^.next; genexp(pp); { size argument 2 }
+    pp := pp^.next; genexp(pp); { tagcnt argument 3 }
     wrtins(' pushq %1 # save tag count', pp^.r1);
-    wrtins(' movq %rsp,%rcx # index tag list');
-    wrtins(' addq $0,%rcx', intsize);
+    wrtins(' movq %rsp,%1 # index tag list', argr(4));
+    wrtins(' addq $0,%1', intsize, argr(4));
     stkadr := stkadr-adrsize;
     aln := false;
     if stkadr mod 16 <> 0 then begin
-      wrtins(' pushq %rbx # align'); 
+      wrtins(' pushq %rbx # align');
       stkadr := stkadr-adrsize; aln := true
     end;
+    if windows then
+      wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
     if ep^.q = 39 then
       wrtins(' call psystem_nwl # call new')
     else
       wrtins(' call psystem_dsl # call dispose');
+    if windows then
+      wrtins(' addq $0,%rsp # remove shadow space', shadowsize);
     if aln then begin
       wrtins(' popq %rbx # dump align');
       stkadr := stkadr+adrsize
@@ -1089,10 +1382,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' add %1,%2 # add integers', ep^.r^.r1, ep^.l^.r1);
           if dochkovf then begin
             wrtins(' jno 1f # skip no overflow');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # set line number', sline);
-            wrtins(' movq $IntegerValueOverflow,%rdx # set error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # set line number', sline, argr(2));
+            wrtins(' movq $IntegerValueOverflow,%1 # set error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end
         end;
@@ -1106,10 +1399,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' sub %1,%2 # subtract integers', ep^.r^.r1, ep^.l^.r1);
           if dochkovf then begin
             wrtins(' jno 1f # skip no overflow');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # set line number', sline);
-            wrtins(' movq $IntegerValueOverflow,%rdx # set error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # set line number', sline, argr(2));
+            wrtins(' movq $IntegerValueOverflow,%1 # set error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end
         end;
@@ -1148,8 +1441,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {equm,neqm,geqm,gtrm,leqm,lesm}
         142,148,154,160,166,172: begin 
-          wrtins(' movq $0,%rdx # get string length', ep^.q);
-          wrtins(' call psystem_strcmp # compare strings'); 
+          wrtins(' movq $0,%1 # get string length', ep^.q, argr(3));
+          wrtcps(' call psystem_strcmp # compare strings');
           wrtins(' cmpq $0,%rax # compare -0+ result');
           case ep^.op of
             142{equm}: wrtins(' sete %1l # set equal', ep^.r1);
@@ -1232,10 +1525,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' addq $0,%1 # increment by n', ep^.q, ep^.r1);
           if dochkovf then begin
             wrtins(' jno 1f # skip no overflow');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # set line number', sline);
-            wrtins(' movq $IntegerValueOverflow,%rdx # set error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # set line number', sline, argr(2));
+            wrtins(' movq $IntegerValueOverflow,%1 # set error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end
         end;
@@ -1249,10 +1542,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' subq $0,%1 # decrement by n', ep^.q, ep^.r1);
           if dochkovf then begin
             wrtins(' jno 1f # skip no overflow');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # set line number', sline);
-            wrtins(' movq $IntegerValueOverflow,%rdx # set error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # set line number', sline, argr(2));
+            wrtins(' movq $IntegerValueOverflow,%1 # set error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end
         end;
@@ -1260,8 +1553,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {s2c}
         173: begin
           genexp(ep^.l); { evaluate string address into rdi }
-          wrtins(' movq $0,%rsi # load string size', ep^.q);
-          wrtins(' call psystem_s2c # convert string to C string');
+          wrtins(' movq $0,%1 # load string size', ep^.q, argr(2));
+          wrtcps(' call psystem_s2c # convert string to C string');
           { result in rax }
         end;
 
@@ -1280,51 +1573,101 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {cvbi,cvbx,cvbb,cvbc}
         100, 115, 116, 121: begin
-          wrtins(' movq $0,%rdi # load tagfield offset', ep^.q);
-          wrtins(' movq $0,%rsi # load size of variant', ep^.q1);
-          wrtins(' leaq @s(%rip),%rdx # load logical variant table', ep^.lt^);
-          if ep^.op = 100 then
-            wrtins(' movq (%1),%r8 # get existing tag value', ep^.l^.r1)
-          else
-            wrtins(' movzx (%1),%r8 # get existing tag value', ep^.q, ep^.l^.r1);
-          wrtins(' call psystem_tagchgvar # check valid tag change')
+          if windows then begin
+            { 6 C arguments: the old tag (5) and tag address (6) are pushed
+              right to left above the shadow space; the new tag is already
+              in r9 }
+            if ep^.op = 100 then
+              wrtins(' movq (%1),%rax # get existing tag value', ep^.l^.r1)
+            else
+              wrtins(' movzx (%1),%rax # get existing tag value', ep^.q, ep^.l^.r1);
+            wrtins(' pushq %1 # place tag address on stack', ep^.l^.r1);
+            wrtins(' pushq %rax # place existing tag value on stack');
+            wrtins(' movq $0,%rcx # load tagfield offset', ep^.q);
+            wrtins(' movq $0,%rdx # load size of variant', ep^.q1);
+            wrtins(' leaq @s(%rip),%r8 # load logical variant table', ep^.lt^);
+            wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
+            wrtins(' call psystem_tagchgvar # check valid tag change');
+            wrtins(' addq $0,%rsp # remove shadow space and arguments',
+                   shadowsize+2*intsize)
+          end else begin
+            wrtins(' movq $0,%rdi # load tagfield offset', ep^.q);
+            wrtins(' movq $0,%rsi # load size of variant', ep^.q1);
+            wrtins(' leaq @s(%rip),%rdx # load logical variant table', ep^.lt^);
+            if ep^.op = 100 then
+              wrtins(' movq (%1),%r8 # get existing tag value', ep^.l^.r1)
+            else
+              wrtins(' movzx (%1),%r8 # get existing tag value', ep^.q, ep^.l^.r1);
+            wrtins(' call psystem_tagchgvar # check valid tag change')
+          end
         end;
 
         {ivti,ivtx,ivtb,ivtc}
         192,101,102,111: begin
-          wrtins(' movq $0,%rdi # load tagfield offset', ep^.q);
-          wrtins(' movq $0,%rsi # load size of variant', ep^.q1);
-          wrtins(' leaq @s(%rip),%rdx # load logical variant table', ep^.lt^);
-          if ep^.op = 100 then
-            wrtins(' movq (%1),%r8 # get existing tag value ', ep^.q, ep^.l^.r1)
-          else
-            wrtins(' movzx (%1),%r8 # get existing tag value', ep^.q, ep^.l^.r1);
-          wrtins(' call psystem_tagchginv # invalidate tag changes')
+          if windows then begin
+            if ep^.op = 100 then
+              wrtins(' movq (%1),%rax # get existing tag value ', ep^.q, ep^.l^.r1)
+            else
+              wrtins(' movzx (%1),%rax # get existing tag value', ep^.q, ep^.l^.r1);
+            wrtins(' pushq %1 # place tag address on stack', ep^.l^.r1);
+            wrtins(' pushq %rax # place existing tag value on stack');
+            wrtins(' movq $0,%rcx # load tagfield offset', ep^.q);
+            wrtins(' movq $0,%rdx # load size of variant', ep^.q1);
+            wrtins(' leaq @s(%rip),%r8 # load logical variant table', ep^.lt^);
+            wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
+            wrtins(' call psystem_tagchginv # invalidate tag changes');
+            wrtins(' addq $0,%rsp # remove shadow space and arguments',
+                   shadowsize+2*intsize)
+          end else begin
+            wrtins(' movq $0,%rdi # load tagfield offset', ep^.q);
+            wrtins(' movq $0,%rsi # load size of variant', ep^.q1);
+            wrtins(' leaq @s(%rip),%rdx # load logical variant table', ep^.lt^);
+            if ep^.op = 100 then
+              wrtins(' movq (%1),%r8 # get existing tag value ', ep^.q, ep^.l^.r1)
+            else
+              wrtins(' movzx (%1),%r8 # get existing tag value', ep^.q, ep^.l^.r1);
+            wrtins(' call psystem_tagchginv # invalidate tag changes')
+          end
         end;
 
         {cps}
         176: begin 
           wrtins(' cmpq %1,%2 # compare container lengths', ep^.r^.r2, ep^.l^.r2);
           wrtins(' je 1f # skip equal', ep^.q, ep^.r^.r1);
-          wrtins(' leaq modnam(%rip),%rdi # load module name');
-          wrtins(' movq $0,%rsi # load line number', sline);
-          wrtins(' movq $ContainerMismatch,%rdx # load error code');
-          wrtins(' call psystem_errore # process error');
+          wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+          wrtins(' movq $0,%1 # load line number', sline, argr(2));
+          wrtins(' movq $ContainerMismatch,%1 # load error code', argr(3));
+          wrtcps(' call psystem_errore # process error');
           wrtins('1:');
         end;
 
         {cpc}
         177: begin
-          wrtins(' movq $0,%rdi # get level number', ep^.q);
-          wrtins(' call psystem_cmptmp # compare templates')
+          wrtins(' movq $0,%1 # get level number', ep^.q, argr(1));
+          wrtcps(' call psystem_cmptmp # compare templates')
         end;
 
         {cta}
         191: begin
-          wrtins(' movq $0,%rdi # get tag offset', ep^.q);
-          wrtins(' movq $0,%rsi # get tag nesting level', ep^.q1);
-          wrtins(' leaq @s(%rip),%rdx # index logical variant table', ep^.lt^);
-          wrtins(' call psystem_tagchkass # check tag assignment')
+          if windows then begin
+            { 5 C arguments: the tag address (5) is pushed above the shadow
+              space with a pad quad to preserve stack parity; the new tag is
+              already in r9 }
+            wrtins(' subq $0,%rsp # pad stacked arguments', ptrsize);
+            wrtins(' pushq %1 # place tag address on stack', ep^.l^.r1);
+            wrtins(' movq $0,%rcx # get tag offset', ep^.q);
+            wrtins(' movq $0,%rdx # get tag nesting level', ep^.q1);
+            wrtins(' leaq @s(%rip),%r8 # index logical variant table', ep^.lt^);
+            wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
+            wrtins(' call psystem_tagchkass # check tag assignment');
+            wrtins(' addq $0,%rsp # remove shadow space and arguments',
+                   shadowsize+2*intsize)
+          end else begin
+            wrtins(' movq $0,%rdi # get tag offset', ep^.q);
+            wrtins(' movq $0,%rsi # get tag nesting level', ep^.q1);
+            wrtins(' leaq @s(%rip),%rdx # index logical variant table', ep^.lt^);
+            wrtins(' call psystem_tagchkass # check tag assignment')
+          end
         end;
 
         {lpa}
@@ -1355,18 +1698,18 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' movq $0,%1 # load low bound', ep^.vi, ep^.t1);
           wrtins(' cmpq %1,%2 # compare', ep^.t1, ep^.r1);
           wrtins(' jge 1f # skip if greater or equal');
-          wrtins(' leaq modnam(%rip),%rdi # load module name');
-          wrtins(' movq $0,%rsi # load line number', sline);
-          wrtins(' movq $ValueOutOfRange,%rdx # load error code');
-          wrtins(' call psystem_errore # process error');
+          wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+          wrtins(' movq $0,%1 # load line number', sline, argr(2));
+          wrtins(' movq $ValueOutOfRange,%1 # load error code', argr(3));
+          wrtcps(' call psystem_errore # process error');
           wrtins('1:        ');
           wrtins(' movq $0,%1 # load high bound', ep^.vi2, ep^.t1);
           wrtins(' cmpq %1,%2 # compare', ep^.t1, ep^.r1);
           wrtins(' jle 1f # skip if less or equal');
-          wrtins(' leaq modnam(%rip),%rdi # load module name');
-          wrtins(' movq $0,%rsi # load line number', sline);
-          wrtins(' movq $ValueOutOfRange,%rdx # load error code');
-          wrtins(' call psystem_errore # process error');
+          wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+          wrtins(' movq $0,%1 # load line number', sline, argr(2));
+          wrtins(' movq $ValueOutOfRange,%1 # load error code', argr(3));
+          wrtcps(' call psystem_errore # process error');
           wrtins('1:')
         end;
 
@@ -1374,20 +1717,20 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         95: begin 
           wrtins(' orq %1,%1 # check nil', ep^.r1);
           wrtins(' jnz 1f # skip if not');
-          wrtins(' leaq modnam(%rip),%rdi # load module name');
-          wrtins(' movq $0,%rsi # load line number', sline);
-          wrtins(' movq $DereferenceOfNilPointer,%rdx # load error code');
-          wrtins(' call psystem_errore # process error');
+          wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+          wrtins(' movq $0,%1 # load line number', sline, argr(2));
+          wrtins(' movq $DereferenceOfNilPointer,%1 # load error code', argr(3));
+          wrtcps(' call psystem_errore # process error');
           wrtins('1:')
         end;
 
         {chks}
         97: begin
-          wrtins(' movq $0,%rdi # load low bound', ep^.vi);
-          wrtins(' movq $0,%rsi # load high bound', ep^.vi2);
-          if ep^.l^.r1 <> rgrdx then
-            wrtins(' movq %1,%rdx # set addr to rdx', ep^.l^.r1);
-          wrtins(' call psystem_chksetbnd # check set in bounds');
+          wrtins(' movq $0,%1 # load low bound', ep^.vi, argr(1));
+          wrtins(' movq $0,%1 # load high bound', ep^.vi2, argr(2));
+          if ep^.l^.r1 <> argr(3) then
+            wrtins(' movq %1,%2 # set addr to argument 3', ep^.l^.r1, argr(3));
+          wrtcps(' call psystem_chksetbnd # check set in bounds');
           if ep^.r1 <> ep^.l^.r1 then
             wrtins(' movq %1,%2 # move addr to result', ep^.l^.r1, ep^.r1)
         end;
@@ -1397,10 +1740,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if ep^.q <> 0 then begin
             wrtins(' orq %1,%1 # check nil', ep^.r1);
             wrtins(' jge 1f # skip greater or equal', ep^.r2);
-            wrtins(' leaq modnam(%rip),%rdi # load module name');
-            wrtins(' movq $0,%rsi # load line number', sline);
-            wrtins(' movq $DereferenceOfNilPointer,%rdx # load error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+            wrtins(' movq $0,%1 # load line number', sline, argr(2));
+            wrtins(' movq $DereferenceOfNilPointer,%1 # load error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end
         end;
@@ -1413,12 +1756,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {equs,neqs,geqs,leqs}
         140,146,152,164: begin
           case ep^.op of
-            140: wrtins(' call psystem_setequ # check set equal');
+            140: wrtcps(' call psystem_setequ # check set equal');
             146: begin
-              wrtins(' call psystem_setequ # check set equal');
+              wrtcps(' call psystem_setequ # check set equal');
               wrtins(' xor $0,%rax # invert equal status', 1);
             end;
-            152,164: wrtins(' call psystem_setinc # check set inclusion');
+            152,164: wrtcps(' call psystem_setinc # check set inclusion');
           end;
           if ep^.r1 <> rgrax then
             wrtins(' movq %rax,%1 # move result to final register', ep^.r1)
@@ -1459,9 +1802,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {sgs}
         32: begin
-          if ep^.r^.r1 <> rgrsi then
-            wrtins(' movq %1,%rsi # set destination', ep^.r^.r1);
-          wrtins(' call psystem_setsgl # make singleton set');
+          if ep^.r^.r1 <> argr(2) then
+            wrtins(' movq %1,%2 # set destination', ep^.r^.r1, argr(2));
+          wrtcps(' call psystem_setsgl # make singleton set');
           if ep^.r1 <> ep^.r^.r1 then
             wrtins(' movq %1,%2 # move dest addr to result', ep^.r^.r1, ep^.r1);
         end;
@@ -1483,10 +1826,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' orq %1,%1 # check zero', ep^.t2);
             wrtins(' jnz 1f # skip not zero');
             wrtins('2:');
-            wrtins(' leaq modnam(%rip),%rdi # load module name');
-            wrtins(' movq $0,%rsi # load line number', sline);
-            wrtins(' movq $RealArgumentTooLarge,%rdx # load error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+            wrtins(' movq $0,%1 # load line number', sline, argr(2));
+            wrtins(' movq $RealArgumentTooLarge,%1 # load error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end;                            
           wrtins(' cvttsd2si %1,%2 # trucate real to integer', ep^.l^.r1, ep^.r1);
@@ -1506,10 +1849,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' imulq %1,%1 # square integer', ep^.r1);
           if dochkovf then begin
             wrtins(' jno 1f # skip no overflow');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # set line number', sline);
-            wrtins(' movq $IntegerValueOverflow,%rdx # set error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # set line number', sline, argr(2));
+            wrtins(' movq $IntegerValueOverflow,%1 # set error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end
         end;
@@ -1549,10 +1892,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if dodbgchk then begin
             wrtins(' orq %1,%1 # test signed', ep^.r1);
             wrtins(' jns 1f # skip if not');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # set line number', sline);
-            wrtins(' movq $BooleanOperatorOfNegative,%rdx # set error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # set line number', sline, argr(2));
+            wrtins(' movq $BooleanOperatorOfNegative,%1 # set error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:');
           end;
           wrtins(' notq %1 # not integer', ep^.r1);
@@ -1579,10 +1922,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' orq %1,%1 # check zero', ep^.t2);
             wrtins(' jnz 1f # skip not zero');
             wrtins('2:');
-            wrtins(' leaq modnam(%rip),%rdi # load module name');
-            wrtins(' movq $0,%rsi # load line number', sline);
-            wrtins(' movq $RealArgumentTooLarge,%rdx # load error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+            wrtins(' movq $0,%1 # load line number', sline, argr(2));
+            wrtins(' movq $RealArgumentTooLarge,%1 # load error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end;
           wrtins(' cvtsd2si %1,%2 # round to integer', ep^.l^.r1, ep^.r1)
@@ -1596,17 +1939,17 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if dodbgchk then begin
             wrtins(' orq %1,%1 # check signed', ep^.l^.r1);
             wrtins(' jns 1f # skip if not');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # get line number', sline);
-            wrtins(' movq $BooleanOperatorOfNegative,%rdx # get error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # get line number', sline, argr(2));
+            wrtins(' movq $BooleanOperatorOfNegative,%1 # get error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:');
             wrtins(' orq %1,%1 # check signed', ep^.r^.r1);
             wrtins(' jns 1f # skip if not');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # get line number', sline);
-            wrtins(' movq $BooleanOperatorOfNegative,%rdx # get error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # get line number', sline, argr(2));
+            wrtins(' movq $BooleanOperatorOfNegative,%1 # get error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:');
           end;
           case ep^.op of
@@ -1626,12 +1969,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' movsq');
           wrtins(' movsq');
           { call psystem op with dest, src2 }
-          wrtins(' movq %1,%rdi # set dest', ep^.x1^.r1);
-          wrtins(' movq %1,%rsi # set src2', ep^.r^.r1);
+          wrtins(' movq %1,%2 # set dest', ep^.x1^.r1, argr(1));
+          wrtins(' movq %1,%2 # set src2', ep^.r^.r1, argr(2));
           case ep^.op of
-            45: wrtins(' call psystem_setdif # find set difference');
-            46: wrtins(' call psystem_setint # find set intersection');
-            47: wrtins(' call psystem_setuni # find set union');
+            45: wrtcps(' call psystem_setdif # find set difference');
+            46: wrtcps(' call psystem_setint # find set intersection');
+            47: wrtcps(' call psystem_setuni # find set union');
           end;
           if ep^.r1 <> ep^.x1^.r1 then
             wrtins(' movq %1,%2 # move dest addr to result', ep^.x1^.r1, ep^.r1)
@@ -1639,7 +1982,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {inn}
         48: begin
-          wrtins(' call psystem_setsin # find set membership');
+          wrtcps(' call psystem_setsin # find set membership');
           if ep^.r1 <> rgrax then
             wrtins(' movq %rax,%1 # move result to target reg', ep^.r1)
         end;
@@ -1648,10 +1991,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         49: begin 
           wrtins(' cmpq $0,%1 # check zero divide', ep^.r^.r1);
           wrtins(' jg 1f # skip <= 0');
-          wrtins(' leaq modnam(%rip),%rdi # index module name');
-          wrtins(' movq $0,%rsi # set line number', sline);
-          wrtins(' movq $InvalidDivisorToMod,%rdx # set error code');
-          wrtins(' call psystem_errore # process error');
+          wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+          wrtins(' movq $0,%1 # set line number', sline, argr(2));
+          wrtins(' movq $InvalidDivisorToMod,%1 # set error code', argr(3));
+          wrtcps(' call psystem_errore # process error');
           wrtins('1:');
           wrtins(' xorq %rdx,%rdx # clear upper dividend');
           wrtins(' subq $0,%rax # find sign of dividend', ep^.r^.r1);
@@ -1674,10 +2017,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         53: begin 
           wrtins(' cmpq $0,%1 # check zero divide', ep^.r^.r1);
           wrtins(' jne 1f # skip no overflow');
-          wrtins(' leaq modnam(%rip),%rdi # index module name');
-          wrtins(' movq $0,%rsi # set line number', sline);
-          wrtins(' movq $ZeroDivide,%rdx # set error code');
-          wrtins(' call psystem_errore # process error');
+          wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+          wrtins(' movq $0,%1 # set line number', sline, argr(2));
+          wrtins(' movq $ZeroDivide,%1 # set error code', argr(3));
+          wrtcps(' call psystem_errore # process error');
           wrtins('1:');
           wrtins(' xorq %rdx,%rdx # clear upper dividend');
           wrtins(' subq $0,%rax # find sign of dividend', ep^.r^.r1);
@@ -1694,10 +2037,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' imulq %1,%2 # multiply integers', ep^.r^.r1, ep^.l^.r1);
           if dochkovf then begin
             wrtins(' jno 1f # skip no overflow');
-            wrtins(' leaq modnam(%rip),%rdi # index module name');
-            wrtins(' movq $0,%rsi # set line number', sline);
-            wrtins(' movq $IntegerValueOverflow,%rdx # set error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # index module name', argr(1));
+            wrtins(' movq $0,%1 # set line number', sline, argr(2));
+            wrtins(' movq $IntegerValueOverflow,%1 # set error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end
         end;
@@ -1713,10 +2056,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' movq %1,%2 # move result to temp', ep^.t1, ep^.t2);
             wrtins(' orq %1,%1 # check zero', 1, ep^.t2);
             wrtins(' jz 1f # skip not zero', ep^.r^.r1);
-            wrtins(' leaq modnam(%rip),%rdi # load module name');
-            wrtins(' movq $0,%rsi # load line number', sline);
-            wrtins(' movq $ZeroDivide,%rdx # load error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+            wrtins(' movq $0,%1 # load line number', sline, argr(2));
+            wrtins(' movq $ZeroDivide,%1 # load error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:');
           end;
           wrtins(' divsd %1,%2 # divide reals   ', ep^.r^.r1, ep^.l^.r1)
@@ -1724,9 +2067,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {rgs}
         110: begin
-          if ep^.x1^.r1 <> rgrdx then
-            wrtins(' movq %1,%rdx # set destination', ep^.x1^.r1);
-          wrtins(' call psystem_setrgs # set range of values');
+          if ep^.x1^.r1 <> argr(3) then
+            wrtins(' movq %1,%2 # set destination', ep^.x1^.r1, argr(3));
+          wrtcps(' call psystem_setrgs # set range of values');
           if ep^.r1 <> ep^.x1^.r1 then
             wrtins(' movq %1,%2 # move dest addr to result', ep^.x1^.r1, ep^.r1);
         end;
@@ -1762,10 +2105,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {cup,cuf}
         12, 246: begin
-          { 16-byte alignment for SYS V ABI user calls }
+          { 16-byte alignment for user calls. The Windows convention adds 32
+            bytes of caller shadow space, which is alignment neutral. }
           callalnsysv := false;
           if ep^.op = 246{cuf} then ls := ep^.q3 else ls := 0;
-          ps := cmpparmspc(ep^.pl);
+          if windows then ps := cmpparmspcw(ep^.pl)
+          else ps := cmpparmspc(ep^.pl);
           if (stkadr - ls - ps) mod 16 <> 0 then begin
             wrtins(' subq $0,%rsp # align for user call', ptrsize);
             stkadr := stkadr - ptrsize;
@@ -1773,18 +2118,25 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
+          if windows then begin
+            pshparwin(ep^.pl); { eval 1-4 l-r, stack 5+ r-l }
+            wrtins(' subq $0,%rsp # allocate shadow space', shadowsize)
+          end else
+            pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
           if ep^.blk <> nil then begin
-            write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc; 
-            wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl); 
+            write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc;
+            wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl);
             lftjst(cmtspc-fl); writeln(prr, '# call user procedure')
           end else begin
             write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc;
             wrtextnam(prr, ep^.fn, fl);
             lftjst(cmtspc-fl); writeln(prr, '# call user procedure')
           end;
-          { remove overflow parameters pushed by caller (SysV ABI) }
-          if ps > 0 then
+          { remove overflow parameters pushed by caller, and shadow space }
+          if windows then
+            wrtins(' addq $0,%rsp # remove shadow space and parameters',
+                   shadowsize+ps)
+          else if ps > 0 then
             wrtins(' addq $0,%rsp # remove overflow parameters', ps);
           if ep^.op = 246{cuf} then begin
             if ep^.rc = 1 then begin
@@ -1822,10 +2174,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {cip,cif}
         113,247: begin
-          { 16-byte alignment for SYS V ABI user calls }
+          { 16-byte alignment for user calls. The Windows convention adds 32
+            bytes of caller shadow space, which is alignment neutral. }
           callalnsysv := false;
           if ep^.op = 247{cif} then ls := ep^.q3 else ls := 0;
-          ps := cmpparmspc(ep^.pl);
+          if windows then ps := cmpparmspcw(ep^.pl)
+          else ps := cmpparmspc(ep^.pl);
           if (stkadr - ls - ps) mod 16 <> 0 then begin
             wrtins(' subq $0,%rsp # align for user call', ptrsize);
             stkadr := stkadr - ptrsize;
@@ -1833,13 +2187,19 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
+          if windows then pshparwin(ep^.pl) { eval 1-4 l-r, stack 5+ r-l }
+          else pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
           genexp(ep^.l); { load procedure address }
+          if windows then
+            wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
           wrtins(' movq %rbp,%r15 # move our frame pointer to preserved register');
           wrtins(' movq ^0(%1),%rbp # set callee frame pointer', 1*ptrsize, ep^.l^.r1);
           wrtins(' call *(%1) # call indirect', ep^.l^.r1);
-          { remove overflow parameters pushed by caller (SysV ABI) }
-          if ps > 0 then
+          { remove overflow parameters pushed by caller, and shadow space }
+          if windows then
+            wrtins(' addq $0,%rsp # remove shadow space and parameters',
+                   shadowsize+ps)
+          else if ps > 0 then
             wrtins(' addq $0,%rsp # remove overflow parameters', ps);
           if ep^.op = 247{cif} then begin
             if ep^.rc = 1 then begin
@@ -1876,10 +2236,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {cuv,cvf}
         27,249: begin
-          { 16-byte alignment for SYS V ABI virtual calls }
+          { 16-byte alignment for virtual calls. The Windows convention adds
+            32 bytes of caller shadow space, which is alignment neutral. }
           callalnsysv := false;
           if ep^.op = 249{cvf} then ls := ep^.q3 else ls := 0;
-          ps := cmpparmspc(ep^.pl);
+          if windows then ps := cmpparmspcw(ep^.pl)
+          else ps := cmpparmspc(ep^.pl);
           if (stkadr - ls - ps) mod 16 <> 0 then begin
             wrtins(' subq $0,%rsp # align for virtual call', ptrsize);
             stkadr := stkadr - ptrsize;
@@ -1887,11 +2249,18 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end;
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
-          pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
+          if windows then begin
+            pshparwin(ep^.pl); { eval 1-4 l-r, stack 5+ r-l }
+            wrtins(' subq $0,%rsp # allocate shadow space', shadowsize)
+          end else
+            pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
           if ep^.qs <> nil then wrtins(' call *@s(%rip) # call vectored', ep^.qs^)
           else wrtins(' call *@g(%rip) # call vectored', ep^.q);
-          { remove overflow parameters pushed by caller (SysV ABI) }
-          if ps > 0 then
+          { remove overflow parameters pushed by caller, and shadow space }
+          if windows then
+            wrtins(' addq $0,%rsp # remove shadow space and parameters',
+                   shadowsize+ps)
+          else if ps > 0 then
             wrtins(' addq $0,%rsp # remove overflow parameters', ps);
           if ep^.op = 249{cvf} then begin
             if ep^.rc = 1 then begin
@@ -1936,16 +2305,16 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             genexp(ep2); ep2 := ep2^.next 
           end;   
           wrtins(' jnz 1f # skip any variant active');
-          wrtins(' leaq modnam(%rip),%rdi # set module name');
-          wrtins(' movq $0,%rsi # set line number', sline);
-          wrtins(' movq $VariantNotActive,%rdx # set error code');
-          wrtins(' call psystem_errore # process error');
+          wrtins(' leaq modnam(%rip),%1 # set module name', argr(1));
+          wrtins(' movq $0,%1 # set line number', sline, argr(2));
+          wrtins(' movq $VariantNotActive,%1 # set error code', argr(3));
+          wrtcps(' call psystem_errore # process error');
           wrtins('1:');
         end;
 
         {wbs}
         243: begin
-          wrtins(' call psystem_withenter # establish with reference');
+          wrtcps(' call psystem_withenter # establish with reference');
         end;
 
         {cxs}
@@ -1954,10 +2323,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if dodbgchk then begin
             wrtins(' cmpq %1,%2 # check index < length', ep^.l^.r2, ep^.r^.r1);
             wrtins(' jb 1f # skip below');
-            wrtins(' leaq modnam(%rip),%rdi # load module name');
-            wrtins(' movq $0,%rsi # load line number', sline);
-            wrtins(' movq $ValueOutOfRange,%rdx # load error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+            wrtins(' movq $0,%1 # load line number', sline, argr(2));
+            wrtins(' movq $ValueOutOfRange,%1 # load error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:');
           end;
           wrtins(' movq $0,%rax # get element size', ep^.q);
@@ -1974,10 +2343,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if dodbgchk then begin
             wrtins(' cmpq (%1),%2 # check index < length', ep^.l^.r2, ep^.r^.r1);
             wrtins(' jb 1f # skip below ');
-            wrtins(' leaq modnam(%rip),%rdi # load module name');
-            wrtins(' movq $0,%rsi # load line number', sline);
-            wrtins(' movq $ValueOutOfRange,%rdx # load error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+            wrtins(' movq $0,%1 # load line number', sline, argr(2));
+            wrtins(' movq $ValueOutOfRange,%1 # load error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:        ');
           end;
           wrtins(' movq $0,%1 # get # levels-1', ep^.q-1, ep^.t1);
@@ -2004,10 +2373,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' cmpq $0,%1 # compare', ep^.q, ep^.r^.r1);
             wrtins(' jbe 1f # skip if less or equal');
             wrtins('2:');
-            wrtins(' leaq modnam(%rip),%rdi # load module name');
-            wrtins(' movq $0,%rsi # load line number', sline);
-            wrtins(' movq $InvalidContainerLevel,%rdx # load error code');
-            wrtins(' call psystem_errore # process error');
+            wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+            wrtins(' movq $0,%1 # load line number', sline, argr(2));
+            wrtins(' movq $InvalidContainerLevel,%1 # load error code', argr(3));
+            wrtcps(' call psystem_errore # process error');
             wrtins('1:')
           end;
           if ep^.q <> 1 then begin
@@ -2021,7 +2390,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {equv,neqv,lesv,grtv,leqv,geqv} 
         215,216,217,218,219,220: begin
-          wrtins(' call psystem_strcmp # compare strings'); 
+          wrtcps(' call psystem_strcmp # compare strings');
           wrtins(' cmpq $0,%rax # compare -0+ result');
           case ep^.op of
             215{equv}: wrtins(' sete %1l # set equal', ep^.r1);
@@ -2797,45 +3166,68 @@ begin { assemble }
       if blkstk <> nil then
         if blkstk^.btyp in [btproc, btfunc] then begin
           write(prr, '        .globl   '); wrtblklng(blkstk); writeln(prr);
-          write(prr, '        .type    '); wrtblklng(blkstk); writeln(prr, ', @function');
+          if not windows then begin
+            write(prr, '        .type    '); wrtblklng(blkstk);
+            writeln(prr, ', @function')
+          end;
           wrtblklabs(blkstk);
         end;
-      writeln(prr, '        .cfi_startproc');
+      if not windows then writeln(prr, '        .cfi_startproc');
       frereg := allreg;
       { We limit to the enter instruction }
       if p >= 32 then error('Too many nested levels');
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' pushq $0 # place current ep');
-      writeln(prr, '        .cfi_adjust_cfa_offset 8');
+      if not windows then writeln(prr, '        .cfi_adjust_cfa_offset 8');
       wrtins(' pushq $0 # place bottom of stack');
-      writeln(prr, '        .cfi_adjust_cfa_offset 8');
+      if not windows then writeln(prr, '        .cfi_adjust_cfa_offset 8');
       wrtins(' pushq $0 # place previous ep');
-      writeln(prr, '        .cfi_adjust_cfa_offset 8');
+      if not windows then writeln(prr, '        .cfi_adjust_cfa_offset 8');
       wrtins(' enterq $1,$0 # enter frame', p+1);
-      writeln(prr, '        .cfi_def_cfa rbp, 40');
-      writeln(prr, '        .cfi_offset rbp, -40');
-      { save integer parameter registers to known frame slots.
-        Push in reverse order so that reg 1 (rdi) ends up at
-        the lowest address, giving ascending layout for
-        multi-slot params (e.g., container arrays via ldp). }
-      wrtins(' pushq %r9 # save int param reg 6');
-      wrtins(' pushq %r8 # save int param reg 5');
-      wrtins(' pushq %rcx # save int param reg 4');
-      wrtins(' pushq %rdx # save int param reg 3');
-      wrtins(' pushq %rsi # save int param reg 2');
-      wrtins(' pushq %rdi # save int param reg 1');
-      wrtins(' pushq %rax # save function result');
-      { save float parameter registers to known frame slots }
-      wrtins(' subq $0,%rsp # allocate float param save area', 6*realsize);
-      wrtins(' movsd %xmm0,^0(%rsp) # save float param reg 1', 5*realsize);
-      wrtins(' movsd %xmm1,^0(%rsp) # save float param reg 2', 4*realsize);
-      wrtins(' movsd %xmm2,^0(%rsp) # save float param reg 3', 3*realsize);
-      wrtins(' movsd %xmm3,^0(%rsp) # save float param reg 4', 2*realsize);
-      wrtins(' movsd %xmm4,^0(%rsp) # save float param reg 5', 1*realsize);
-      wrtins(' movsd %xmm5,^0(%rsp) # save float param reg 6', 0*realsize);
+      if not windows then begin
+        writeln(prr, '        .cfi_def_cfa rbp, 40');
+        writeln(prr, '        .cfi_offset rbp, -40')
+      end;
+      if windows then begin
+        { save integer parameter registers to known frame slots.
+          The Windows convention has 4 positional parameter slots. Push in
+          reverse order so that slot 1 (rcx) ends up at the lowest address,
+          giving ascending layout for multi-slot params. }
+        wrtins(' pushq %r9 # save int param reg 4');
+        wrtins(' pushq %r8 # save int param reg 3');
+        wrtins(' pushq %rdx # save int param reg 2');
+        wrtins(' pushq %rcx # save int param reg 1');
+        wrtins(' pushq %rax # save function result');
+        { save float parameter registers to known frame slots }
+        wrtins(' subq $0,%rsp # allocate float param save area', 4*realsize);
+        wrtins(' movsd %xmm0,^0(%rsp) # save float param reg 1', 3*realsize);
+        wrtins(' movsd %xmm1,^0(%rsp) # save float param reg 2', 2*realsize);
+        wrtins(' movsd %xmm2,^0(%rsp) # save float param reg 3', 1*realsize);
+        wrtins(' movsd %xmm3,^0(%rsp) # save float param reg 4', 0*realsize)
+      end else begin
+        { save integer parameter registers to known frame slots.
+          Push in reverse order so that reg 1 (rdi) ends up at
+          the lowest address, giving ascending layout for
+          multi-slot params (e.g., container arrays via ldp). }
+        wrtins(' pushq %r9 # save int param reg 6');
+        wrtins(' pushq %r8 # save int param reg 5');
+        wrtins(' pushq %rcx # save int param reg 4');
+        wrtins(' pushq %rdx # save int param reg 3');
+        wrtins(' pushq %rsi # save int param reg 2');
+        wrtins(' pushq %rdi # save int param reg 1');
+        wrtins(' pushq %rax # save function result');
+        { save float parameter registers to known frame slots }
+        wrtins(' subq $0,%rsp # allocate float param save area', 6*realsize);
+        wrtins(' movsd %xmm0,^0(%rsp) # save float param reg 1', 5*realsize);
+        wrtins(' movsd %xmm1,^0(%rsp) # save float param reg 2', 4*realsize);
+        wrtins(' movsd %xmm2,^0(%rsp) # save float param reg 3', 3*realsize);
+        wrtins(' movsd %xmm3,^0(%rsp) # save float param reg 4', 2*realsize);
+        wrtins(' movsd %xmm4,^0(%rsp) # save float param reg 5', 1*realsize);
+        wrtins(' movsd %xmm5,^0(%rsp) # save float param reg 6', 0*realsize)
+      end;
       wrtins(' movq %rsp,%rax # copy sp');
       { find sp-locals }
-      write(prr, '        subq    $'); write(prr, lclspc^); write(prr, '+'); 
+      write(prr, '        subq    $'); write(prr, lclspc^); write(prr, '+');
       write(prr, blkstk^.tmpnam^); writeln(prr, ',%rax # find sp-locals');
       wrtins('1:', lclspc^);
       wrtins(' cmpq %rax,%rsp # check have reached stack');
@@ -2846,13 +3238,26 @@ begin { assemble }
       wrtins(' movq %rsp,^0(%rbp) # set bottom of stack', marksb);
       { note there is no way to know locals space in advance }
       wrtins(' andq $0xfffffffffffffff0,%rsp # align stack');
-      { save protected registers and keep aligned }
-      wrtins(' pushq %rbx # save protected registers and keep aligned');
-      wrtins(' pushq %r12');
-      wrtins(' pushq %r13');
-      wrtins(' pushq %r14');
-      wrtins(' pushq %r15');
-      wrtins(' pushq %r15 # second push aligns');
+      if windows then begin
+        { save protected registers and keep aligned. The Windows convention
+          adds rsi and rdi to the callee saved set. }
+        wrtins(' pushq %rbx # save protected registers and keep aligned');
+        wrtins(' pushq %r12');
+        wrtins(' pushq %r13');
+        wrtins(' pushq %r14');
+        wrtins(' pushq %r15');
+        wrtins(' pushq %rsi');
+        wrtins(' pushq %rdi');
+        wrtins(' pushq %rdi # second push aligns')
+      end else begin
+        { save protected registers and keep aligned }
+        wrtins(' pushq %rbx # save protected registers and keep aligned');
+        wrtins(' pushq %r12');
+        wrtins(' pushq %r13');
+        wrtins(' pushq %r14');
+        wrtins(' pushq %r15');
+        wrtins(' pushq %r15 # second push aligns')
+      end;
       tmpoff := -(p+1)*ptrsize;
       tmpspc := 0; { clear temps }
       stkadr := 0;
@@ -2952,32 +3357,66 @@ begin { assemble }
     63: begin parqq;
       frereg := allreg; popstk(ep);
       popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep);
-      assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
-      assreg(ep2, frereg, rgrcx, rgnull); frereg := frereg-[rgrcx];
-      assreg(ep3, frereg, rgr8, rgnull);
-      genexp(ep); genexp(ep2); genexp(ep3);
-      writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' movq $0,%rdi # get size of packed array', q);
-      wrtins(' movq $0,%rsi # get size of unpacked array', q1);
-      wrtins(' call psystem_pack # pack the array');
-      deltre(ep); deltre(ep2); deltre(ep3); 
-      botstk 
+      if windows then begin
+        { 5 C arguments: the unpacked array address (5) is pushed above the
+          shadow space with a pad quad to preserve stack parity }
+        assreg(ep, frereg, rgr8, rgnull); frereg := frereg-[rgr8];
+        assreg(ep2, frereg, rgr9, rgnull); frereg := frereg-[rgr9];
+        assreg(ep3, frereg-[rgrcx,rgrdx], rgnull, rgnull);
+        genexp(ep); genexp(ep2); genexp(ep3);
+        writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
+        wrtins(' subq $0,%rsp # pad stacked arguments', ptrsize);
+        wrtins(' pushq %1 # place unpacked array on stack', ep3^.r1);
+        wrtins(' movq $0,%rcx # get size of packed array', q);
+        wrtins(' movq $0,%rdx # get size of unpacked array', q1);
+        wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
+        wrtins(' call psystem_pack # pack the array');
+        wrtins(' addq $0,%rsp # remove shadow space and arguments',
+               shadowsize+2*intsize)
+      end else begin
+        assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
+        assreg(ep2, frereg, rgrcx, rgnull); frereg := frereg-[rgrcx];
+        assreg(ep3, frereg, rgr8, rgnull);
+        genexp(ep); genexp(ep2); genexp(ep3);
+        writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
+        wrtins(' movq $0,%rdi # get size of packed array', q);
+        wrtins(' movq $0,%rsi # get size of unpacked array', q1);
+        wrtins(' call psystem_pack # pack the array')
+      end;
+      deltre(ep); deltre(ep2); deltre(ep3);
+      botstk
     end;
 
     {upk}
     64: begin parqq;
       frereg := allreg; popstk(ep);
-      popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
-      assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
-      assreg(ep2, frereg, rgrcx, rgnull); frereg := frereg-[rgrcx];
-      assreg(ep3, frereg, rgr8, rgnull);
-      genexp(ep); genexp(ep2); genexp(ep3);
-      writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' movq $0,%rdi # load size of packed array', q);
-      wrtins(' movq $0,%rsi # load size of unpacked array', q1);
-      wrtins(' call psystem_unpack # unpack the array');
-      deltre(ep); deltre(ep2); deltre(ep3); 
-      botstk 
+      popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep);
+      if windows then begin
+        assreg(ep, frereg, rgr8, rgnull); frereg := frereg-[rgr8];
+        assreg(ep2, frereg, rgr9, rgnull); frereg := frereg-[rgr9];
+        assreg(ep3, frereg-[rgrcx,rgrdx], rgnull, rgnull);
+        genexp(ep); genexp(ep2); genexp(ep3);
+        writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
+        wrtins(' subq $0,%rsp # pad stacked arguments', ptrsize);
+        wrtins(' pushq %1 # place unpacked array on stack', ep3^.r1);
+        wrtins(' movq $0,%rcx # load size of packed array', q);
+        wrtins(' movq $0,%rdx # load size of unpacked array', q1);
+        wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
+        wrtins(' call psystem_unpack # unpack the array');
+        wrtins(' addq $0,%rsp # remove shadow space and arguments',
+               shadowsize+2*intsize)
+      end else begin
+        assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
+        assreg(ep2, frereg, rgrcx, rgnull); frereg := frereg-[rgrcx];
+        assreg(ep3, frereg, rgr8, rgnull);
+        genexp(ep); genexp(ep2); genexp(ep3);
+        writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
+        wrtins(' movq $0,%rdi # load size of packed array', q);
+        wrtins(' movq $0,%rsi # load size of unpacked array', q1);
+        wrtins(' call psystem_unpack # unpack the array')
+      end;
+      deltre(ep); deltre(ep2); deltre(ep3);
+      botstk
     end;
 
     {ujp}
@@ -3028,12 +3467,12 @@ begin { assemble }
 
     {vbs}
     92: begin parq;
-      frereg := allreg; popstk(ep); 
-      assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
+      frereg := allreg; popstk(ep);
+      assreg(ep, frereg, argr(1), rgnull); dmptrel(ep, 19); genexp(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' movq %rdi,%rsi # set start of variable block');
-      wrtins(' addq $0,%rsi # set end of variable block', ep^.q-1);
-      wrtins(' call psystem_varenter # establish variable reference block');
+      wrtins(' movq %1,%2 # set start of variable block', argr(1), argr(2));
+      wrtins(' addq $0,%1 # set end of variable block', ep^.q-1, argr(2));
+      wrtcps(' call psystem_varenter # establish variable reference block');
       deltre(ep);
       botstk
     end;
@@ -3041,7 +3480,7 @@ begin { assemble }
     {vbe}
     96: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' call psystem_varexit # remove variable reference block');
+      wrtcps(' call psystem_varexit # remove variable reference block');
       botstk
     end;
 
@@ -3056,24 +3495,14 @@ begin { assemble }
     14,237: begin parq;
       frereg := allreg;
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' popq %r15 # undo alignment push');
-      wrtins(' popq %r15 # restore protected registers');
-      wrtins(' popq %r14');
-      wrtins(' popq %r13');
-      wrtins(' popq %r12');
-      wrtins(' popq %rbx');
-      wrtins(' leave # undo frame');
-      writeln(prr, '        .cfi_restore rbp');
-      writeln(prr, '        .cfi_def_cfa rsp, 32');
-      wrtins(' addq $0,%rsp # remove frame data', marksize);
-      writeln(prr, '        .cfi_def_cfa rsp, 8');
+      wrtrestore;
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', 0);
       if op = 237{retm} then
         wrtins(' movq %rsp,%rax # index result in rax');
       wrtins(' pushq %rcx # replace return address');
       wrtins(' ret # return to caller');
-      writeln(prr, '        .cfi_endproc');
+      if not windows then writeln(prr, '        .cfi_endproc');
       fnendcnt := fnendcnt+1; blkstk^.fnendlab := fnendcnt;
       writeln(prr, '.Lfnend_', fnendcnt:1, ':');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
@@ -3085,26 +3514,20 @@ begin { assemble }
       frereg := allreg;
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       { load function result from register pad before frame teardown }
-      wrtins(' movq ^0(%rbp),%rax # load function result',
-             -(blkstk^.lvl*ptrsize + 7*ptrsize));
+      if windows then
+        wrtins(' movq ^0(%rbp),%rax # load function result',
+               -(blkstk^.lvl*ptrsize + 5*ptrsize))
+      else
+        wrtins(' movq ^0(%rbp),%rax # load function result',
+               -(blkstk^.lvl*ptrsize + 7*ptrsize));
       if op in [204{retx},130{retc},131{retb}] then
         wrtins(' andq $0,%rax # mask byte result', 255);
-      wrtins(' popq %r15 # undo alignment push');
-      wrtins(' popq %r15 # restore protected registers');
-      wrtins(' popq %r14');
-      wrtins(' popq %r13');
-      wrtins(' popq %r12');
-      wrtins(' popq %rbx');
-      wrtins(' leave # undo frame');
-      writeln(prr, '        .cfi_restore rbp');
-      writeln(prr, '        .cfi_def_cfa rsp, 32');
-      wrtins(' addq $0,%rsp # remove frame data', marksize);
-      writeln(prr, '        .cfi_def_cfa rsp, 8');
+      wrtrestore;
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', 0);
       wrtins(' pushq %rcx # replace return address');
       wrtins(' ret # return to caller');
-      writeln(prr, '        .cfi_endproc');
+      if not windows then writeln(prr, '        .cfi_endproc');
       fnendcnt := fnendcnt+1; blkstk^.fnendlab := fnendcnt;
       writeln(prr, '.Lfnend_', fnendcnt:1, ':');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
@@ -3116,25 +3539,19 @@ begin { assemble }
       frereg := allreg;
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       { load function result from register pad before frame teardown }
-      wrtins(' movsd ^0(%rbp),%xmm0 # load float result',
-             -(blkstk^.lvl*ptrsize + 7*ptrsize));
+      if windows then
+        wrtins(' movsd ^0(%rbp),%xmm0 # load float result',
+               -(blkstk^.lvl*ptrsize + 5*ptrsize))
+      else
+        wrtins(' movsd ^0(%rbp),%xmm0 # load float result',
+               -(blkstk^.lvl*ptrsize + 7*ptrsize));
       { restore protected registers }
-      wrtins(' popq %r15 # undo alignment push');
-      wrtins(' popq %r15 # restore protected registers');
-      wrtins(' popq %r14');
-      wrtins(' popq %r13');
-      wrtins(' popq %r12');
-      wrtins(' popq %rbx');
-      wrtins(' leave # undo frame');
-      writeln(prr, '        .cfi_restore rbp');
-      writeln(prr, '        .cfi_def_cfa rsp, 32');
-      wrtins(' addq $0,%rsp # remove frame data', marksize);
-      writeln(prr, '        .cfi_def_cfa rsp, 8');
+      wrtrestore;
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', 0);
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
-      writeln(prr, '        .cfi_endproc');
+      if not windows then writeln(prr, '        .cfi_endproc');
       fnendcnt := fnendcnt+1; blkstk^.fnendlab := fnendcnt;
       writeln(prr, '.Lfnend_', fnendcnt:1, ':');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
@@ -3146,22 +3563,12 @@ begin { assemble }
       frereg := allreg;
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       { restore protected registers }
-      wrtins(' popq %r15 # undo alignment push');
-      wrtins(' popq %r15 # restore protected registers');
-      wrtins(' popq %r14');
-      wrtins(' popq %r13');
-      wrtins(' popq %r12');
-      wrtins(' popq %rbx');
-      wrtins(' leave # undo frame');
-      writeln(prr, '        .cfi_restore rbp');
-      writeln(prr, '        .cfi_def_cfa rsp, 32');
-      wrtins(' addq $0,%rsp # remove frame data', marksize);
-      writeln(prr, '        .cfi_def_cfa rsp, 8');
+      wrtrestore;
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', 0);
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
-      writeln(prr, '        .cfi_endproc');
+      if not windows then writeln(prr, '        .cfi_endproc');
       fnendcnt := fnendcnt+1; blkstk^.fnendlab := fnendcnt;
       writeln(prr, '.Lfnend_', fnendcnt:1, ':');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
@@ -3227,7 +3634,7 @@ begin { assemble }
 
     61 {ujc}: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' call psystem_caseerror');
+      wrtcps(' call psystem_caseerror');
       botstk
     end;
 
@@ -3249,21 +3656,21 @@ begin { assemble }
     244: begin
       frereg := allreg;
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' call psystem_withexit # remove last with');
+      wrtcps(' call psystem_withexit # remove last with');
       botstk
     end;
 
     {vip}
     133: begin parqq;
       frereg := allreg;
-      popstk(ep); 
+      popstk(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      pshexps(q); 
-      assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
-      wrtins(' movq $0,%rdi # load # levels', q);
-      wrtins(' movq $0,%rsi # base element size', q1);
-      wrtins(' movq %rsp,%rcx # load array dimension list');
-      wrtins(' call psystem_vip # fill template and allocate variable');
+      pshexps(q);
+      assreg(ep, frereg, argr(3), rgnull); dmptre(ep); genexp(ep);
+      wrtins(' movq $0,%1 # load # levels', q, argr(1));
+      wrtins(' movq $0,%1 # base element size', q1, argr(2));
+      wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
+      wrtcps(' call psystem_vip # fill template and allocate variable');
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
       deltre(ep);
       botstk
@@ -3272,20 +3679,20 @@ begin { assemble }
     {vis}
     122: begin parqq;
       frereg := allreg;
-      popstk(ep); 
+      popstk(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      pshexps(q); 
-      assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
-      wrtins(' movq $0,%rdi # index level', q, r1);
-      wrtins(' movq $0,%rsi # base element size', q1);
-      wrtins(' movq %rsp,%rcx # load array dimension list');
-      wrtins(' pushq %rdx # save variable address');
-      wrtins(' call psystem_vis # fill template and allocate variable');
-      wrtins(' popq %rdx # restore variable address');
+      pshexps(q);
+      assreg(ep, frereg, argr(3), rgnull); dmptre(ep); genexp(ep);
+      wrtins(' movq $0,%1 # index level', q, argr(1));
+      wrtins(' movq $0,%1 # base element size', q1, argr(2));
+      wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
+      wrtins(' pushq %1 # save variable address', argr(3));
+      wrtcps(' call psystem_vis # fill template and allocate variable');
+      wrtins(' popq %1 # restore variable address', argr(3));
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
       wrtins(' popq %rbx # get return address');
       wrtins(' subq %rax,%rsp # allocate vector on stack', q*intsize);
-      wrtins(' movq %rsp,(%rdx) # set variable address');
+      wrtins(' movq %rsp,(%1) # set variable address', argr(3));
       wrtins(' andq $0xfffffffffffffff0,%rsp # align stack');
       wrtins(' pushq %rbx # replace return address');
       deltre(ep);
@@ -3295,14 +3702,14 @@ begin { assemble }
     {vin}
     226: begin parqq;
       frereg := allreg;
-      popstk(ep); 
+      popstk(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      pshexps(q); 
-      assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
-      wrtins(' movq $0,%rdi # load # levels', q, r1);
-      wrtins(' movq $0,%rsi # base element size', q1);
-      wrtins(' movq %rsp,%rcx # load array dimension list');
-      wrtins(' call psystem_vin # fill template and allocate variable');
+      pshexps(q);
+      assreg(ep, frereg, argr(3), rgnull); dmptre(ep); genexp(ep);
+      wrtins(' movq $0,%1 # load # levels', q, argr(1));
+      wrtins(' movq $0,%1 # base element size', q1, argr(2));
+      wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
+      wrtcps(' call psystem_vin # fill template and allocate variable');
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
       deltre(ep);
       botstk
@@ -3362,10 +3769,14 @@ begin { assemble }
       wrtins(' orq %rax,%rax');
       wrtins(' jnz 1f # skip if less or equal');
       wrtins('1:');
-      wrtins(' leaq modnam(%rip),%rdi # load module name');
-      wrtins(' movq $0,%rsi # load line number', sline);
+      wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+      wrtins(' movq $0,%1 # load line number', sline, argr(2));
+      { the error vector rides in rdx, which is argument 3 in the SYS V
+        convention; the Windows convention takes it in r8 }
+      if windows then
+        wrtins(' movq %rdx,%r8 # place error vector argument');
 {??? Why didn't this stop unhandled exceptions ???}
-      wrtins(' call psystem_errorv # process error');
+      wrtcps(' call psystem_errorv # process error');
 
       wrtins(' movq psystem_expmrk(%rip),%rbp # throw to new frame');
       wrtins(' popq psystem_expstk(%rip)');
@@ -3379,28 +3790,46 @@ begin { assemble }
     210: begin parqq;
       frereg := allreg;
       popstk(ep); popstk(ep2);
-      assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
-      assreg(ep2, frereg, rgrcx, rgr8); 
-      writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      dmptre(ep2); genexp(ep2);
-      dmptre(ep); genexp(ep);
-      wrtins(' movq $0,%rdi # load # levels ', q, r1);
-      wrtins(' movq $0,%rsi # base element size       ', q1);
-      wrtins(' call psystem_apc # assign containers   ');
+      if windows then begin
+        { 5 C arguments: the template address (5) is pushed above the shadow
+          space with a pad quad to preserve stack parity }
+        assreg(ep, frereg, rgr8, rgnull); frereg := frereg-[rgr8];
+        assreg(ep2, frereg-[rgrcx,rgrdx], rgr9, rgnull);
+        writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
+        dmptre(ep2); genexp(ep2);
+        dmptre(ep); genexp(ep);
+        wrtins(' subq $0,%rsp # pad stacked arguments', ptrsize);
+        wrtins(' pushq %1 # place template address on stack', ep2^.r2);
+        wrtins(' movq $0,%rcx # load # levels ', q);
+        wrtins(' movq $0,%rdx # base element size       ', q1);
+        wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
+        wrtins(' call psystem_apc # assign containers   ');
+        wrtins(' addq $0,%rsp # remove shadow space and arguments',
+               shadowsize+2*intsize)
+      end else begin
+        assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
+        assreg(ep2, frereg, rgrcx, rgr8);
+        writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
+        dmptre(ep2); genexp(ep2);
+        dmptre(ep); genexp(ep);
+        wrtins(' movq $0,%rdi # load # levels ', q, r1);
+        wrtins(' movq $0,%rsi # base element size       ', q1);
+        wrtins(' call psystem_apc # assign containers   ')
+      end;
       deltre(ep); deltre(ep2);
       botstk
     end;
 
-    {vdp,vdd} 
+    {vdp,vdd}
     221,227: begin
       frereg := allreg;
       popstk(ep);
-      assreg(ep, frereg, rgrdi, rgnull);
+      assreg(ep, frereg, argr(1), rgnull);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       dmptre(ep); genexp(ep);
-      wrtins(' movq $0,%rsi # load size', 1);
-      wrtins(' call psystem_dsp # dispose of vector');
-      deltre(ep); 
+      wrtins(' movq $0,%1 # load size', 1, argr(2));
+      wrtcps(' call psystem_dsp # dispose of vector');
+      deltre(ep);
       botstk
     end;
 
@@ -3500,7 +3929,8 @@ begin (* main *)
 
   xlate; (* assembles and stores code *)
 
-  if not amd64_sysv then error('Calling convention mismatch');
+  if not (amd64_sysv or windows) then error('Calling convention mismatch');
+  if amd64_sysv and windows then error('Calling convention mismatch');
 
   99 : { abort run }
 
