@@ -3494,7 +3494,7 @@ begin (* main *)
   if dodckout then;
   if dochkvbk then;
   if doechlin then;
-  if windows then;
+  refer(windows);
   extvecbase := 0;
   if extvecbase = 0 then;
 

@@ -7781,17 +7781,17 @@ end;
 begin (* main *)
 
   { suppress unreferenced errors. }
-  if adral = 0 then;
-  if adral = 0 then;
-  if boolal = 0 then;
-  if charmax = 0 then;
-  if charal = 0 then;
-  if codemax = 0 then;
-  if filesize = 0 then;
-  if intdig = 0 then;
-  if ordminchar = 0 then;
-  if ordmaxchar = 0 then;
-  if stackelsize = 0 then;
+  refer(adral);
+  refer(boolal);
+  refer(charmax);
+  refer(charal);
+  refer(codemax);
+  refer(filesize);
+  refer(intdig);
+  refer(ordminchar);
+  refer(ordmaxchar);
+  refer(stackelsize);
+  refer(windows); { used by pgen only }
 
   write('P6 Pascal interpreter vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
@@ -7832,7 +7832,6 @@ begin (* main *)
   dochkvbk := false; { don't check variable blocks }
   amd64_sysv := false; { don't use SYS V AMD64 ABI calling convention }
   windows := false; { don't use Windows calling convention }
-  if windows then; { supress unreferenced error, used by pgen only }
   doechlin := false; { don't echo command lines }
 
   strcnt := 0; { clear string quanta allocation count }

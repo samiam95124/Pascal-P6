@@ -11833,8 +11833,7 @@ begin
   if breakflag = true then;
 
   { supress errors on windows, only passed through to pgen }
-  windows := false;
-  if windows = true then;
+  refer(windows);
 
   prdopn := false; { set input and output files not open }
   prropn := false;
