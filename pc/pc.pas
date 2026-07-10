@@ -194,6 +194,7 @@ fprtdisplay, sprtdisplay: boolean;
 flineinfo,   slineinfo:   boolean;
 fmrklin,     smrklin:     boolean;
 famd64sysv,  samd64sysv:  boolean;
+fwindows,    swindows:    boolean;
 { error file passthrough }
 errfil:      filnam;
 serrfil:     boolean;
@@ -453,6 +454,7 @@ begin
       setflg('lineinfo',        flineinfo,   slineinfo);
       setflg('mrkasslin',       fmrklin,     smrklin);
       setflg('amd64_sysv',      famd64sysv,  samd64sysv);
+      setflg('windows',         fwindows,    swindows);
       { non-flag options }
       if compp(w, 'modulepath') or
          compp(w, 'mp') then begin
@@ -1802,6 +1804,7 @@ begin
       putflg('lineinfo', slineinfo, flineinfo, prefix);
       putflg('mrkasslin', smrklin, fmrklin, prefix);
       putflg('amd64_sysv', samd64sysv, famd64sysv, prefix);
+      putflg('windows', swindows, fwindows, prefix);
       { error file: pcom only }
       if prefix and serrfil then begin
          putstr(' -errfile=');
@@ -2821,6 +2824,8 @@ begin
    smrklin := false;
    famd64sysv := false;
    samd64sysv := false;
+   fwindows := false;
+   swindows := false;
    serrfil := false;
    slistfil := false;
 
@@ -2879,6 +2884,7 @@ begin
       writeln('       -debug               Enable debug mode');
       writeln('       -reference           Check references');
       writeln('       -amd64_sysv         Use SYS V AMD64 ABI calling convention');
+      writeln('       -windows            Use Windows x64 calling convention');
       goto 99
 
    end;
@@ -2945,8 +2951,9 @@ begin
    services.maknam(tmpnam, tarpath, n, 'ins');
    services.fulnam(tmpnam); { normalize }
    if exists(tmpnam) then parinst(tmpnam);
-   { auto-enable amd64_sysv in pgen mode unless user overrode }
-   if fpgen and not samd64sysv then begin
+   { auto-enable amd64_sysv in pgen mode unless user overrode or selected
+     the Windows calling convention }
+   if fpgen and not samd64sysv and not fwindows then begin
       famd64sysv := true; samd64sysv := true
    end;
    logfil(prgnam, hp); { form tree from file }

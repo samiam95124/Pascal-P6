@@ -2526,7 +2526,10 @@ procedure load;
                             if amd64_sysv then
                               errorl('Call convention mismatch ')
                           end;
-                      31: windows := option[oi];
+                      31: begin windows := option[oi];
+                            if windows then
+                              errorl('Call convention mismatch ')
+                          end;
                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
                       24:; 25:; 26:; 10:; 18:; 27:; 28:; 30:;
                     end
@@ -7772,7 +7775,12 @@ begin
               goto 99
             end
           end;
-      31: windows := option[oi];
+      31: begin windows := option[oi];
+            if windows then begin
+              writeln('*** Calling convention mismatch');
+              goto 99
+            end
+          end;
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:; 27:; 28:; 30:;
     end
@@ -7791,7 +7799,6 @@ begin (* main *)
   refer(ordminchar);
   refer(ordmaxchar);
   refer(stackelsize);
-  refer(windows); { used by pgen only }
 
   write('P6 Pascal interpreter vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');

@@ -4989,6 +4989,45 @@ end;
     parmspc7 := lp
   end;
 
+  { compute parameter space for overflow params only (Windows x64).
+    A single positional slot counter is used: the first 4 parameter slots
+    are in registers regardless of type, the rest overflow to the stack.
+    Container arrays and proc/func params consume 2 slots. }
+  function parmspcw(plst: ctp): addrrange;
+  var lp: addrrange; pc, n: integer; stk: boolean;
+  begin
+    pc := 0; lp := 0;
+    while plst <> nil do begin
+      stk := false;
+      if plst^.klass = vars then begin
+        if plst^.idtype <> nil then begin
+          if plst^.idtype^.form = arrayc then n := 2 else n := 1;
+          pc := pc+n; if pc > 4 then stk := true
+        end
+      end else if (plst^.klass = proc) or (plst^.klass = func) then begin
+        pc := pc+2; if pc > 4 then stk := true
+      end;
+      if stk then begin
+        if (plst^.idtype <> nil) and (plst^.klass = vars) then begin
+          if (plst^.part = ptval) or (plst^.part = ptview) then begin
+            if plst^.idtype^.form <= power then
+              lp := lp+plst^.idtype^.size
+            else if plst^.idtype^.form = arrayc then
+              lp := lp+ptrsize*2
+            else lp := lp+ptrsize
+          end else begin
+            if plst^.idtype^.form = arrayc then lp := lp+ptrsize*2
+            else lp := lp+ptrsize
+          end
+        end else if (plst^.klass = proc) or (plst^.klass = func) then
+          lp := lp+ptrsize*2;
+        alignu(parmptr,lp)
+      end;
+      plst := plst^.next
+    end;
+    parmspcw := lp
+  end;
+
   procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
   var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer;
       id: stp; lastptr: boolean; cc: integer; ct: boolean;
@@ -5159,6 +5198,14 @@ end;
                       if fcp^.idtype <> nil then
                         if not (fcp^.idtype^.form in [records, arrays, power]) then
                           dplmt := -((pflev+1)*ptrsize + 7*ptrsize)
+                    end else if windows then begin
+                      { as amd64_sysv, but the overflow parameters sit above
+                        the caller allocated 32 byte shadow space and the
+                        register pad holds 4 int slots plus the result }
+                      dplmt := marksize+ptrsize+adrsize+4*ptrsize+parmspcw(pflist);
+                      if fcp^.idtype <> nil then
+                        if not (fcp^.idtype^.form in [records, arrays, power]) then
+                          dplmt := -((pflev+1)*ptrsize + 5*ptrsize)
                     end else
                       dplmt := marksize+ptrsize+adrsize+locpar { addr of fr }
                   end
@@ -6447,13 +6494,17 @@ end;
                 if lcp^.klass in [proc,func] then begin
                 { Search matching overload. For proc/func parameters, we allow
                   all features of the target to match, including function
-                  result. }
+                  result. Note nxtprc can return an overload with fewer
+                  parameters than the current position, leaving nxt nil; such
+                  an overload cannot match a proc/func parameter. }
                 repeat
-                  if nxt^.klass = proc then begin
-                    if cmpparlst(nxt^.pflist, lcp^.pflist) then match := true
-                  end else if nxt^.klass = func then begin
-                    if cmpparlst(nxt^.pflist, lcp^.pflist) then
-                      if comptypes(lcp^.idtype,nxt^.idtype) then match := true
+                  if nxt <> nil then begin
+                    if nxt^.klass = proc then begin
+                      if cmpparlst(nxt^.pflist, lcp^.pflist) then match := true
+                    end else if nxt^.klass = func then begin
+                      if cmpparlst(nxt^.pflist, lcp^.pflist) then
+                        if comptypes(lcp^.idtype,nxt^.idtype) then match := true
+                    end
                   end;
                   if not match then nxtprc { no match get next overload }
                 until match or (fcp = nil);
@@ -8709,6 +8760,8 @@ end;
              values*)
             if amd64_sysv then
               lc := -level*ptrsize - 13*ptrsize { reserve int+float+result reg save slots }
+            else if windows then
+              lc := -level*ptrsize - 9*ptrsize { reserve int+float+result reg save slots }
             else lc := -level*ptrsize; { set locals top }
             while lcp1 <> nil do
               with lcp1^ do
@@ -8732,6 +8785,8 @@ end;
           end else begin fpar := nil;
             if amd64_sysv then
               lc := -level*ptrsize - 13*ptrsize
+            else if windows then
+              lc := -level*ptrsize - 9*ptrsize
             else lc := -level*ptrsize
           end
     end (*parameterlist*) ;
@@ -8912,6 +8967,86 @@ end;
               '*** Warning: gap in AMD64 registered parameters');
           ipc := ipc + n { always advance to match pgen asspar }
         end;
+        if not inreg then begin
+          { overflow: assign stacked address }
+          if (p^.klass = vars) and (p^.idtype <> nil) then begin
+            if not p^.isloc then begin
+              if (p^.part = ptval) or (p^.part = ptview) then begin
+                if p^.idtype^.form <= power then sz := p^.idtype^.size
+                else if p^.idtype^.form = arrayc then sz := ptrsize*2
+                else sz := ptrsize
+              end else begin
+                if p^.idtype^.form = arrayc then sz := ptrsize*2
+                else sz := ptrsize
+              end;
+              alignu(parmptr, off);
+              p^.vaddr := off;
+              off := off+sz
+            end else begin
+              { isloc: structured value param stored locally, but its
+                address occupies ptrsize on the overflow stack }
+              alignu(parmptr, off);
+              off := off+ptrsize
+            end
+          end else if (p^.klass = proc) or (p^.klass = func) then begin
+            alignu(parmptr, off);
+            p^.pfaddr := off;
+            off := off+ptrsize*2
+          end
+        end;
+        p := p^.next
+      end
+    end;
+
+    { reassign parameter addresses for the Windows x64 ABI.
+      A single positional slot counter is used. Slots 1-4 index the saved
+      register pad below the display: integer/pointer slot s maps to
+        rbp - lev*8 - (5-s)*8
+      (MST pushes r9,r8,rdx,rcx so slot 1 is at the lowest address), the
+      function result (rax save) to rbp - lev*8 - 5*8, and a float in
+      slot s (saved from xmm(s-1)) to rbp - lev*8 - 5*8 - s*8.
+      Slots 5+ overflow to the stack above the caller allocated 32 byte
+      shadow space, ascending from marksize+ptrsize+adrsize+32 = 72.
+      Container arrays and proc/func params consume 2 register slots. }
+    procedure parmoffwin(plst: ctp; lev: levrange);
+    var p: ctp; pc: integer;
+        off: addrrange; sz: addrrange; inreg: boolean;
+        n: integer;
+
+    function isflt(p: ctp): boolean;
+    begin isflt := false;
+      if p^.klass = vars then
+        if p^.vkind = actual then { only value params; VAR passes address }
+          if p^.idtype <> nil then
+            if p^.idtype = realptr then isflt := true
+    end;
+
+    begin
+      p := plst; pc := 0;
+      off := marksize+ptrsize+adrsize+4*ptrsize; { past shadow space }
+      while p <> nil do begin
+        inreg := false;
+        { determine number of register slots needed }
+        n := 1;
+        if p^.klass = vars then begin
+          if p^.idtype <> nil then
+            if p^.idtype^.form = arrayc then n := 2
+        end else if (p^.klass = proc) or (p^.klass = func) then n := 2;
+        if pc + n <= 4 then begin
+          inreg := true;
+          if p^.klass = vars then begin
+            if not p^.isloc then begin
+              if isflt(p) then
+                p^.vaddr := -(lev*ptrsize + 5*ptrsize + (pc+1)*ptrsize)
+              else
+                p^.vaddr := -(lev*ptrsize + (4 - pc)*ptrsize)
+            end
+          end else if (p^.klass = proc) or (p^.klass = func) then
+            p^.pfaddr := -(lev*ptrsize + (4 - pc)*ptrsize)
+        end else if (n > 1) and (pc < 4) then
+          if amdpar then writeln(output,
+            '*** Warning: gap in AMD64 registered parameters');
+        pc := pc + n; { always advance to match pgen }
         if not inreg then begin
           { overflow: assign stacked address }
           if (p^.klass = vars) and (p^.idtype <> nil) then begin
@@ -9174,7 +9309,9 @@ end;
         lcp^.locpar := parmspc(lcp^.pflist);
         parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
         if amd64_sysv then
-          parmoffsysv(lcp^.pflist, level);
+          parmoffsysv(lcp^.pflist, level)
+        else if windows then
+          parmoffwin(lcp^.pflist, level);
         lcp^.locstr := lc; { save locals counter }
         { emit external descriptor to intermediate }
         if extn and prrval then begin
@@ -10203,6 +10340,8 @@ end;
       begin llc1 := marksize+ptrsize+adrsize+fprocp^.locpar; { index params }
         ipc := 0; fpc := 0;
         amd64_sysvoff := marksize+ptrsize+adrsize; { for sysv mode }
+        if windows then { overflow params sit above the shadow space }
+          amd64_sysvoff := marksize+ptrsize+adrsize+4*ptrsize;
         lcp := fprocp^.pflist;
         while lcp <> nil do
           with lcp^ do
@@ -10242,6 +10381,22 @@ end;
                         amd64_sysvoff := amd64_sysvoff+psz
                       end
                     end
+                  end else if windows then begin
+                    { Windows: compute source address by positional slot,
+                      matching parmoffwin; ipc is the slot counter }
+                    if idtype^.form = arrayc then n := 2 else n := 1;
+                    if ipc + n <= 4 then begin
+                      if (idtype = realptr) and (vkind = actual) then
+                        llc1 := -(level*ptrsize + 5*ptrsize + (ipc+1)*ptrsize)
+                      else
+                        llc1 := -(level*ptrsize + (4 - ipc)*ptrsize);
+                      ipc := ipc + n
+                    end else begin
+                      ipc := ipc + n;
+                      alignu(parmptr, amd64_sysvoff);
+                      llc1 := amd64_sysvoff;
+                      amd64_sysvoff := amd64_sysvoff+psz
+                    end
                   end else begin
                     { normal: count down from top }
                     llc1 := llc1-psz;
@@ -10276,6 +10431,17 @@ end;
                   { proc/func params need 2 integer register slots }
                   if ipc + 2 <= 6 then begin
                     llc1 := -(level*ptrsize + (6 - ipc)*ptrsize);
+                    ipc := ipc + 2
+                  end else begin
+                    ipc := ipc + 2;
+                    alignu(parmptr, amd64_sysvoff);
+                    llc1 := amd64_sysvoff;
+                    amd64_sysvoff := amd64_sysvoff+ptrsize*2
+                  end
+                end else if windows then begin
+                  { proc/func params need 2 register slots }
+                  if ipc + 2 <= 4 then begin
+                    llc1 := -(level*ptrsize + (4 - ipc)*ptrsize);
                     ipc := ipc + 2
                   end else begin
                     ipc := ipc + 2;
@@ -10359,14 +10525,16 @@ end;
           end;
         if amd64_sysv then
           amd64_sysvoff := parmspc7(fprocp^.pflist)
+        else if windows then
+          amd64_sysvoff := parmspcw(fprocp^.pflist)
         else amd64_sysvoff := fprocp^.locpar;
         if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),amd64_sysvoff)
         else if fprocp^.idtype^.form in [records, arrays] then
           gen2t(42(*ret*),amd64_sysvoff,fprocp^.idtype^.size,basetype(fprocp^.idtype))
         else gen1t(42(*ret*),amd64_sysvoff,fprocp^.idtype);
         alignd(parmptr,lc);
-        { SysV ABI requires 16-byte stack alignment at call sites }
-        if amd64_sysv then
+        { SysV and Windows ABIs require 16-byte stack alignment at call sites }
+        if amd64_sysv or windows then
           if (-level*ptrsize-lc) mod 16 <> 0 then lc := lc-8;
         if prcode then
           begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
@@ -10383,8 +10551,8 @@ end;
     else
       begin gen2(42(*ret*),ord('p'),0);
         alignd(parmptr,lc);
-        { SysV ABI requires 16-byte stack alignment at call sites }
-        if amd64_sysv then
+        { SysV and Windows ABIs require 16-byte stack alignment at call sites }
+        if amd64_sysv or windows then
           if (-level*ptrsize-lc) mod 16 <> 0 then lc := lc-8;
         if prcode then
           begin
@@ -11832,9 +12000,6 @@ begin
   breakflag := false;
   if breakflag = true then;
 
-  { supress errors on windows, only passed through to pgen }
-  refer(windows);
-
   prdopn := false; { set input and output files not open }
   prropn := false;
 
@@ -11914,6 +12079,12 @@ begin
   if not prrval then prcode := false;
   paropt; { parse command line options }
   plcopt; { place options in flags }
+
+  { the calling convention options select one convention or the other }
+  if amd64_sysv and windows then begin
+    writeln('*** Options amd64_sysv and windows are mutually exclusive');
+    goto 99
+  end;
 
   { open error file if specified }
   if errfval then begin
