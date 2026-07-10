@@ -6494,13 +6494,17 @@ end;
                 if lcp^.klass in [proc,func] then begin
                 { Search matching overload. For proc/func parameters, we allow
                   all features of the target to match, including function
-                  result. }
+                  result. Note nxtprc can return an overload with fewer
+                  parameters than the current position, leaving nxt nil; such
+                  an overload cannot match a proc/func parameter. }
                 repeat
-                  if nxt^.klass = proc then begin
-                    if cmpparlst(nxt^.pflist, lcp^.pflist) then match := true
-                  end else if nxt^.klass = func then begin
-                    if cmpparlst(nxt^.pflist, lcp^.pflist) then
-                      if comptypes(lcp^.idtype,nxt^.idtype) then match := true
+                  if nxt <> nil then begin
+                    if nxt^.klass = proc then begin
+                      if cmpparlst(nxt^.pflist, lcp^.pflist) then match := true
+                    end else if nxt^.klass = func then begin
+                      if cmpparlst(nxt^.pflist, lcp^.pflist) then
+                        if comptypes(lcp^.idtype,nxt^.idtype) then match := true
+                    end
                   end;
                   if not match then nxtprc { no match get next overload }
                 until match or (fcp = nil);
