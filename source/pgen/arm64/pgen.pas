@@ -2753,9 +2753,13 @@ begin { assemble }
       wrtins(' str xzr, [sp, #8] // place previous ep (0)');
       wrtins(' str x29, [sp] // save FP');
       wrtins(' mov x29, sp // set up frame pointer');
-      { Allocate and clear locals }
-      write(prr, '        sub     sp, sp, #'); write(prr, lclspc^); write(prr, '+');
-      write(prr, blkstk^.tmpnam^); writeln(prr, ' // allocate locals');
+      { Allocate and clear locals. The plain-layout offsets pcom assigns to
+        locals are display-inclusive (a variable at 1-based level n sits below
+        the n display slots), so the frame must reserve the (p+1)*ptrsize
+        display region in addition to the local and temporary space. }
+      write(prr, '        sub     sp, sp, #'); write(prr, (p+1)*ptrsize:1);
+      write(prr, '+'); write(prr, lclspc^); write(prr, '+');
+      write(prr, blkstk^.tmpnam^); writeln(prr, ' // allocate display+locals');
       wrtins(' mov x16, sp // align stack');
       wrtins(' and x16, x16, #0xfffffffffffffff0');
       wrtins(' mov sp, x16');
@@ -2766,9 +2770,28 @@ begin { assemble }
       wrtins(' str xzr, [x9], #8 // clear word');
       wrtins(' b 1b // loop');
       wrtins('2:');
-      write(prr, '        sub     x9, x29, #'); write(prr, lclspc^); write(prr, '+');
+      write(prr, '        sub     x9, x29, #'); write(prr, (p+1)*ptrsize:1);
+      write(prr, '+'); write(prr, lclspc^); write(prr, '+');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' // calc stack bottom');
       wrtins(' str x9, [x29, #^0] // set bottom of stack', marksb);
+      { Build the pull-down display, emulating the x86 ENTER instruction that
+        AMD64 relies on. pcom reserves the slots [x29-ptrsize..x29-(p+1)*ptrsize]
+        so that a variable at lexical level n is reached via [x29-n*ptrsize].
+        The caller's frame pointer is saved at [x29]; copy its p enclosing
+        display slots down into this frame, then append our own frame pointer.
+        This is done after the local clear, which would otherwise wipe it. }
+      wrtins(' ldr x10, [x29] // caller frame pointer');
+      wrtins(' mov x11, x29 // display destination pointer');
+      wrtins(' mov x12, x10 // display source pointer');
+      wrtins(' mov x13, #^0 // inherited display slot count', p);
+      wrtins('3:');
+      wrtins(' cbz x13, 4f // done copying display');
+      wrtins(' ldr x14, [x12, #-8]! // pull down enclosing display slot');
+      wrtins(' str x14, [x11, #-8]!');
+      wrtins(' sub x13, x13, #1');
+      wrtins(' b 3b');
+      wrtins('4:');
+      wrtins(' str x29, [x11, #-8] // append own frame pointer');
       { Save callee-saved registers }
       wrtins(' stp x19, x20, [sp, #-16]! // save callee-saved registers');
       wrtins(' stp x21, x22, [sp, #-16]!');
@@ -2927,12 +2950,13 @@ begin { assemble }
       assreg(ep, frereg, rgnull, rgnull);
       dmptre(ep); genexp(ep);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
-      { ARM64 case jump: table contains offsets from table base }
+      { the case jump table is a sequence of 4-byte branch instructions (one
+        per zero-based case value, from ujp); index the Nth entry and branch
+        to it, executing that branch }
       wrtins(' adrp %1, @s // index case jump table (page)', r1, sp^);
       wrtins(' add %1, %1, :lo12:@s // index case jump table', r1, sp^);
-      wrtins(' ldr x9, [%1, %2, lsl #3] // load jump offset', r1, ep^.r1);
-      wrtins(' add %1, %1, x9 // compute target', r1);
-      wrtins(' br %1 // branch to target', r1);
+      wrtins(' add %1, %1, %2, lsl #2 // index Nth branch entry', r1, ep^.r1);
+      wrtins(' br %1 // branch to case target', r1);
       deltre(ep);
       botstk
     end;
