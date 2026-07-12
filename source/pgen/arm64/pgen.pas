@@ -960,8 +960,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' add x16, %1, #@l // frame address', ep^.q, ep^.p, ep^.r1)
           end else
             wrtins(' add x16, x29, #@l // frame address', ep^.q, ep^.p);
-          wrtins(' ldrb w0, [x16] // fetch local byte');
-          wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
+          wrtins(' ldrb %1l, [x16] // fetch local byte', ep^.r1);
+          wrtins(' uxtb %1, %1l // zero extend', ep^.r1)
         end;
 
         {lodr}
@@ -1109,12 +1109,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         68,69,194,231,232,233:
           if ep^.fl <> nil then begin
             wrtins(' adrp x9, @s // load global byte (page)', ep^.fl^);
-            wrtins(' ldrb w0, [x9, :lo12:@s] // load global byte', ep^.fl^);
-            wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
+            wrtins(' ldrb %1l, [x9, :lo12:@s] // load global byte', ep^.r1, ep^.fl^);
+            wrtins(' uxtb %1, %1l // zero extend', ep^.r1)
           end else begin
             wrtins(' adrp x9, @g // load global byte (page)', ep^.q);
-            wrtins(' ldrb w0, [x9, :lo12:@g] // load global byte', ep^.q);
-            wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
+            wrtins(' ldrb %1l, [x9, :lo12:@g] // load global byte', ep^.q, ep^.r1);
+            wrtins(' uxtb %1, %1l // zero extend', ep^.r1)
           end;
 
         {ldor,ltcr}
@@ -1156,8 +1156,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {indb,indc,indx}
         88,89,198: begin
-          wrtins(' ldrb w0, [%1, #^0] // load byte from address', ep^.q, ep^.l^.r1);
-          wrtins(' uxtb %1, w0 // zero extend', ep^.l^.r1)
+          wrtins(' ldrb %1l, [%1, #^0] // load byte from address', ep^.q, ep^.l^.r1);
+          wrtins(' uxtb %1, %1l // zero extend', ep^.l^.r1)
         end;
 
         {inds}
