@@ -838,25 +838,73 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   procedure genexp(ep: expptr);
   var r: reg; ep2: expptr; stkadrs: integer; fl: integer;
 
-  { push parameters in order }
-  procedure pshpar(pp: expptr);
+  { find packed stack space for parameters }
+  function cmpparspc(pp: expptr): integer;
+  var total: integer;
   begin
+    total := 0;
     while pp <> nil do begin
-      genexp(pp);
-      if pp^.r2 <> rgnull then begin
-        wrtins(' str %1, [sp, #-16]! // place 2nd register on stack', pp^.r2);
-        stkadr := stkadr-intsize
-      end;
-      if pp^.r1 in [rgx0..rgx28] then begin
-        wrtins(' str %1, [sp, #-16]! // save parameter', pp^.r1);
-        stkadr := stkadr-intsize
-      end else if pp^.r1 in [rgv0..rgv31] then begin
-        wrtins(' sub sp, sp, #^0 // allocate real on stack', realsize);
-        stkadr := stkadr-realsize;
-        wrtins(' str %1, [sp] // place real on stack', pp^.r1)
-      end;
+      if pp^.r2 <> rgnull then total := total+2*intsize
+      else total := total+intsize;
       pp := pp^.next
+    end;
+    cmpparspc := total
+  end;
+
+  { place parameters on stack }
+  procedure pshpar(pp: expptr);
+  var total, off: integer;
+  begin
+    { pcom lays parameters out as a packed sequence of 8 byte slots, with the
+      function result area contiguously above them, and the callee removes
+      exactly the parameter space on return. Reserve exactly that space and
+      store each parameter into its packed slot, the first parameter in the
+      highest slot. The stack pointer itself may only move in 16 byte units;
+      the 16 byte round-up pad is allocated by pshparpad above the function
+      result area, before the sfr allocation, so that the stack pointer is
+      16 aligned again by the time the parameters are evaluated. }
+    total := cmpparspc(pp);
+    if total > 0 then begin
+      wrtins(' sub sp, sp, #^0 // reserve parameter block', total);
+      stkadr := stkadr-total;
+      off := total;
+      while pp <> nil do begin
+        genexp(pp);
+        off := off-intsize;
+        if pp^.r2 <> rgnull then begin
+          off := off-intsize;
+          wrtins(' str %1, [sp, #^0] // place parameter', off, pp^.r1);
+          wrtins(' str %1, [sp, #^0] // place 2nd register', off+intsize, pp^.r2)
+        end else
+          wrtins(' str %1, [sp, #^0] // place parameter', off, pp^.r1);
+        pp := pp^.next
+      end
     end
+  end;
+
+  { allocate the parameter block round-up pad. Emitted before the sfr
+    allocation so the pad sits above the function result area, keeping the
+    parameters and the result area contiguous as pcom lays them out. }
+  procedure pshparpad(pp: expptr);
+  var total: integer;
+  begin
+    total := cmpparspc(pp);
+    if total mod 16 <> 0 then begin
+      wrtins(' sub sp, sp, #^0 // parameter block round-up pad',
+             16-total mod 16);
+      stkadr := stkadr-(16-total mod 16)
+    end
+  end;
+
+  { remove the parameter block round-up pad after a call. The callee removes
+    the packed parameter space and the result handling removes the function
+    result area, so this runs after both. }
+  procedure remparpad(pp: expptr);
+  var total: integer;
+  begin
+    total := cmpparspc(pp);
+    if total mod 16 <> 0 then
+      wrtins(' add sp, sp, #^0 // remove parameter pad', 16-total mod 16)
   end;
 
   { call system procedure/function }
@@ -1726,8 +1774,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {cup,cuf}
         12, 246: begin
-          genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
+          pshparpad(ep^.pl); { pad above the function result area }
+          genexp(ep^.sl); { process sfr start link }
           pshpar(ep^.pl); { process parameters first }
           { at the flat module level (between the preamble and the module
             return) there is no frame to preserve the link register, so it
@@ -1773,13 +1822,15 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' mov %1, x0 // place result', ep^.r1);
             end
           end;
+          remparpad(ep^.pl);
           stkadr := stkadrs { restore stack position }
         end;
 
         {cip,cif}
         113,247: begin
-          genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
+          pshparpad(ep^.pl); { pad above the function result area }
+          genexp(ep^.sl); { process sfr start link }
           pshpar(ep^.pl); { process parameters first }
           genexp(ep^.l); { load procedure address }
           wrtins(' mov x28, x29 // move our frame pointer to preserved register');
@@ -1815,13 +1866,15 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             end
           end;
           wrtins(' mov x29, x28 // restore our frame pointer');
+          remparpad(ep^.pl);
           stkadr := stkadrs { restore stack position }
         end;
 
         {cuv,cvf}
         27,249: begin
-          genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
+          pshparpad(ep^.pl); { pad above the function result area }
+          genexp(ep^.sl); { process sfr start link }
           pshpar(ep^.pl); { process parameters first }
           if ep^.qs <> nil then begin
             wrtins(' adrp x9, @s // load vectored address (page)', ep^.qs^);
@@ -1862,6 +1915,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' mov %1, x0 // place result', ep^.r1);
             end
           end;
+          remparpad(ep^.pl);
           stkadr := stkadrs { restore stack position }
         end;
 
