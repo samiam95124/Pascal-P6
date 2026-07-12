@@ -2,13 +2,11 @@
 #
 # Update new binaries
 #
-# Go back to original toolset, old programs, old libraries
+# Go back to original toolset, old programs, old libraries. The hosts tree
+# holds the last known good snapshot for this host (see make hostinstall);
+# configure performs the restore.
 #
-flush
-#
-# Override flush's pc restore with the old hosts pc for bootstrapping
-#
-cp hosts/pascaline/linux_X86/bin/pc bin
+configure
 
 #
 # Rebuild Pascal libraries with old tools so old-convention binaries link
