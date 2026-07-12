@@ -385,7 +385,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {cta}
       191: begin
         asscall;
-        assreg(ep^.l, rf, rgx3, rgnull); assreg(ep^.r, rf, rgx4, rgnull)
+        { tagchkass(off, lvl, lvt, ntag, taddr): the new tag value ep^.r is
+          argument 4 (x3) and the target address ep^.l is argument 5 (x4) }
+        assreg(ep^.l, rf, rgx4, rgnull); assreg(ep^.r, rf, rgx3, rgnull)
       end;
 
       {cps}
