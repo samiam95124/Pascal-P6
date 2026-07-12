@@ -1443,7 +1443,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' add x9, x9, :lo12:real_int_max // address');
             wrtins(' ldr %1, [x9] // load maximum int val', ep^.t1);
             wrtins(' fcmp %1, %2 // compare real', ep^.l^.r1, ep^.t1);
-            wrtins(' b.lt 2f // skip if less');
+            wrtins(' b.gt 2f // error if above maximum');
             wrtins(' adrp x9, real_int_min // load minimum int val (page)');
             wrtins(' add x9, x9, :lo12:real_int_min // address');
             wrtins(' ldr %1, [x9] // load minimum int val', ep^.t1);
@@ -1528,7 +1528,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' add x9, x9, :lo12:real_int_max // address');
             wrtins(' ldr %1, [x9] // load maximum int val', ep^.t1);
             wrtins(' fcmp %1, %2 // compare real', ep^.l^.r1, ep^.t1);
-            wrtins(' b.lt 2f // skip if less');
+            wrtins(' b.gt 2f // error if above maximum');
             wrtins(' adrp x9, real_int_min // load minimum int val (page)');
             wrtins(' add x9, x9, :lo12:real_int_min // address');
             wrtins(' ldr %1, [x9] // load minimum int val', ep^.t1);
