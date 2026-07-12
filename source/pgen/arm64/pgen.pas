@@ -1731,16 +1731,19 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           pshpar(ep^.pl); { process parameters first }
           { at the flat module level (between the preamble and the module
             return) there is no frame to preserve the link register, so it
-            is saved around the call; such calls carry no parameters, so
-            the extra stack slot cannot disturb parameter addressing }
-          if blkstk^.btyp in [btprog, btmod] then
+            is saved around the call. Only the frameless preamble calls need
+            this, and they carry no parameters; once the module frame is
+            established the mst prologue has already saved the link register,
+            and pushing here would shift the parameters the callee reads, so
+            restrict it to parameterless calls }
+          if (blkstk^.btyp in [btprog, btmod]) and (ep^.pl = nil) then
             wrtins(' str x30, [sp, #-16]! // save link register');
           if ep^.blk <> nil then begin
             write(prr, ' ':opcspc, 'bl '); lftjst(parspc-(3+opcspc)); fl := parspc;
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl);
             lftjst(cmtspc-fl); writeln(prr, '// call user procedure')
           end else wrtins(' bl @s // call user procedure', ep^.fn^);
-          if blkstk^.btyp in [btprog, btmod] then
+          if (blkstk^.btyp in [btprog, btmod]) and (ep^.pl = nil) then
             wrtins(' ldr x30, [sp], #16 // restore link register');
           if ep^.op = 246{cuf} then begin
             if ep^.rc = 1 then begin
