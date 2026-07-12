@@ -891,21 +891,36 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
   { call nwl/dsl }
   procedure callnwldsl(ep: expptr);
-  var aln: boolean; pp, ep2: expptr; i: integer; stkadrs: integer;
+  var aln: boolean; pp, ep2: expptr; i, n, alloc: integer; stkadrs: integer;
   begin
-    stkadrs := stkadr; { save because we don't know tag count }
+    stkadrs := stkadr;
     ep2 := ep^.pl;
     for i := 1 to 3 do begin
       if ep2 = nil then error('system error');
       ep2 := ep2^.next
     end;
-    pshpar(ep2);
+    { psystem_nwl/dsl read the tag list as a contiguous array of longs, so the
+      tags must be packed 8 bytes apart. pshpar cannot be used: it lays
+      parameters out 16 bytes apart (the user-call convention). Reserve a 16
+      byte aligned block and store the tags into it. The first list element is
+      placed at the highest address so the resulting layout matches the push
+      order the AMD64 backend produces (tl[0] is the last list element). }
+    n := 0; pp := ep2; while pp <> nil do begin n := n+1; pp := pp^.next end;
+    alloc := ((n*intsize+15) div 16)*16;
+    if alloc > 0 then begin
+      wrtins(' sub sp, sp, #^0 // reserve packed tag list', alloc);
+      stkadr := stkadr-alloc
+    end;
+    pp := ep2; i := 0;
+    while pp <> nil do begin
+      genexp(pp);
+      wrtins(' str %1, [sp, #^0] // place tag', (n-1-i)*intsize, pp^.r1);
+      i := i+1; pp := pp^.next
+    end;
     pp := ep^.pl; genexp(pp); { addr x0 }
     pp := pp^.next; genexp(pp); { size x1 }
     pp := pp^.next; genexp(pp); { tagcnt x2 }
-    wrtins(' str %1, [sp, #-16]! // save tag count', pp^.r1);
-    wrtins(' add x3, sp, #^0 // index tag list', intsize);
-    stkadr := stkadr-adrsize;
+    wrtins(' mov x3, sp // index tag list');
     aln := false;
     if stkadr mod 16 <> 0 then begin
       wrtins(' str x9, [sp, #-16]! // align');
@@ -919,12 +934,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       wrtins(' ldr x9, [sp], #16 // dump align');
       stkadr := stkadr+adrsize
     end;
-    wrtins(' ldr x3, [sp], #16 // restore tag count');
-    stkadr := stkadr+adrsize;
-    wrtins(' mov x9, #^0 // find *integer', intsize);
-    wrtins(' mul x9, x3, x9 // multiply');
-    wrtins(' add sp, sp, x9 // dump taglist from stack');
-    stkadr := stkadrs { restore to entry }
+    if alloc > 0 then begin
+      wrtins(' add sp, sp, #^0 // dump taglist from stack', alloc);
+      stkadr := stkadr+alloc
+    end;
+    stkadr := stkadrs
   end;
 
   begin { genexp }
