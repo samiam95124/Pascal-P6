@@ -31,7 +31,9 @@
 ################################################################################
 
         .globl  psystem_caseerror
+.ifndef WINDOWS
         .type   psystem_caseerror, @function
+.endif
 psystem_caseerror:
         andq    $0xfffffffffffffff0,%rsp # align stack
         leaq    modnam(%rip),%rdi        # set no module name
@@ -53,7 +55,9 @@ psystem_caseerror:
 ################################################################################
 
         .globl  psystem_thw
+.ifndef WINDOWS
         .type   psystem_thw, @function
+.endif
 psystem_thw:
 #
 # restore exception frame
@@ -82,7 +86,9 @@ psystem_thw:
 ################################################################################
 
         .globl  psystem_unwind
+.ifndef WINDOWS
         .type   psystem_unwind, @function
+.endif
 psystem_unwind:
         leaq    ExceptionBase(%rip),%rax  # get exception base address
         addq    %rax,%rdx                 # offset

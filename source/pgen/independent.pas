@@ -1943,7 +1943,16 @@ begin
                     9:  dochkvbk   := option[oi];
                     28: domrklin   := option[oi];
                     29: amd64_sysv := option[oi];
-                    31: windows    := option[oi];
+                    31: begin
+                          { the windows flag affects emission before this
+                            point (the .debug_line section header written
+                            for the source file line), so it must arrive on
+                            the command line; the intermediate option only
+                            validates it }
+                          if option[oi] <> windows then
+                            error('windows option must be given on command line');
+                          windows := option[oi]
+                        end;
                     2:; 3:; 4:; 12:; 20:; 21:; 22:;
                     24:; 25:; 26:; 10:; 18:; 27:; 30:;
                   end
@@ -2193,7 +2202,12 @@ begin
              services.brknam(srcfil, p, n, e);
              if domrklin then begin
              { place label at start of .debug_line for DW_AT_stmt_list }
-             writeln(prr, '        .section .debug_line,"",@progbits');
+             { the ELF section attributes are not accepted by the COFF
+               assembler on Windows, which uses "dr" (read-only data) }
+             if windows then
+               writeln(prr, '        .section .debug_line,"dr"')
+             else
+               writeln(prr, '        .section .debug_line,"",@progbits');
              writeln(prr, '.Ldw_line_start:');
              writeln(prr, '        .text');
              writeln(prr, '        .file   "',n:*, '.', e:*, '"');
@@ -2856,7 +2870,10 @@ begin { genabbrev }
   writeln(prr, '#');
   writeln(prr, '# DWARF abbreviation table');
   writeln(prr, '#');
-  writeln(prr, '        .section .debug_abbrev,"",@progbits');
+  if windows then
+    writeln(prr, '        .section .debug_abbrev,"dr"')
+  else
+    writeln(prr, '        .section .debug_abbrev,"",@progbits');
   writeln(prr, '.Ldw_abbrev_start:');
 
   { 1: compile unit }
@@ -3006,7 +3023,10 @@ begin
   writeln(prr, '#');
   writeln(prr, '# DWARF string table');
   writeln(prr, '#');
-  writeln(prr, '        .section .debug_str,"MS",@progbits,1');
+  if windows then
+    writeln(prr, '        .section .debug_str,"dr"')
+  else
+    writeln(prr, '        .section .debug_str,"MS",@progbits,1');
   writeln(prr, '.Ldw_str_start:');
   p := dwstrs;
   while p <> nil do begin
@@ -3511,7 +3531,10 @@ begin
   writeln(prr, '#');
   writeln(prr, '# DWARF debug info');
   writeln(prr, '#');
-  writeln(prr, '        .section .debug_info,"",@progbits');
+  if windows then
+    writeln(prr, '        .section .debug_info,"dr"')
+  else
+    writeln(prr, '        .section .debug_info,"",@progbits');
   writeln(prr, '.Ldw_info_start:');
   { compilation unit header }
   writeln(prr, '        .long   .Ldw_info_end - .Ldw_info_hdr # unit length');

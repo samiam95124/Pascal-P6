@@ -128,6 +128,22 @@ policies, either expressed or implied, of the Pascal-P6 project.
 #include <limits.h>
 #include <math.h>
 #include <string.h>
+#include <stdint.h>
+
+/*
+ * Windows x64 is LLP64: long is 32 bits, unlike every other 64 bit
+ * platform. psystem uses long as the machine word/Pascal integer type,
+ * which scales with the target on all other systems (64 bits on LP64
+ * systems, 32 bits on 32 bit targets). For Windows only, long is
+ * redefined to long long (64 bits), and labs to llabs to match. These
+ * definitions must appear after all system includes so that the C
+ * library prototypes keep their true types. Code that needs an exact
+ * width uses the stdint.h types, which are typedefs and thus unaffected.
+ */
+#ifdef _WIN32
+#define long long long
+#define labs llabs
+#endif
 
 extern void psystem_unwind(const char* modnam, int line, int en);
 
@@ -1529,7 +1545,7 @@ typedef struct { unsigned v[CVT_NL]; int n; } cvtbn;
 
 static void cvt_norm(cvtbn* a) { while (a->n>1 && a->v[a->n-1]==0) a->n--; }
 static int  cvt_zero(const cvtbn* a) { return a->n==1 && a->v[0]==0; }
-static void cvt_set(cvtbn* a, unsigned long long x)
+static void cvt_set(cvtbn* a, uint64_t x)
 { memset(a->v,0,sizeof a->v); a->v[0]=(unsigned)x; a->v[1]=(unsigned)(x>>32);
   a->n = a->v[1]?2:1; }
 static int cvt_cmp(const cvtbn* a, const cvtbn* b)
@@ -1537,13 +1553,13 @@ static int cvt_cmp(const cvtbn* a, const cvtbn* b)
   for (i=a->n-1;i>=0;i--) if (a->v[i]!=b->v[i]) return a->v[i]<b->v[i]?-1:1;
   return 0; }
 static void cvt_muls(cvtbn* a, unsigned s)
-{ unsigned long long c=0; int i;
-  for (i=0;i<a->n;i++){ unsigned long long t=(unsigned long long)a->v[i]*s+c;
+{ uint64_t c=0; int i;
+  for (i=0;i<a->n;i++){ uint64_t t=(uint64_t)a->v[i]*s+c;
       a->v[i]=(unsigned)t; c=t>>32; }
   while (c && a->n<CVT_NL){ a->v[a->n++]=(unsigned)c; c>>=32; } }
 static void cvt_add(cvtbn* a, unsigned d)
-{ unsigned long long c=d; int i=0;
-  while (c && i<CVT_NL){ unsigned long long t=(unsigned long long)a->v[i]+c;
+{ uint64_t c=d; int i=0;
+  while (c && i<CVT_NL){ uint64_t t=(uint64_t)a->v[i]+c;
       a->v[i]=(unsigned)t; c=t>>32; i++; } if (i>a->n) a->n=i; }
 static void cvt_mul10(cvtbn* a, int p) { while (p-->0) cvt_muls(a,10); }
 static void cvt_shl(cvtbn* a, int bits)
@@ -1552,24 +1568,24 @@ static void cvt_shl(cvtbn* a, int bits)
              for (i=0;i<word;i++) a->v[i]=0;
              a->n+=word; }
   if (bit){ unsigned c=0;
-      for (i=word;i<a->n;i++){ unsigned long long t=((unsigned long long)a->v[i]<<bit)|c;
+      for (i=word;i<a->n;i++){ uint64_t t=((uint64_t)a->v[i]<<bit)|c;
           a->v[i]=(unsigned)t; c=(unsigned)(t>>32); }
       if (c && a->n<CVT_NL) a->v[a->n++]=c; }
   cvt_norm(a); }
 static void cvt_sub(cvtbn* a, const cvtbn* b)
-{ long long bw=0; int i;
-  for (i=0;i<a->n;i++){ long long t=(long long)a->v[i]-(i<b->n?b->v[i]:0)-bw;
+{ int64_t bw=0; int i;
+  for (i=0;i<a->n;i++){ int64_t t=(int64_t)a->v[i]-(i<b->n?b->v[i]:0)-bw;
       if (t<0){ t+=0x100000000LL; bw=1; } else bw=0; a->v[i]=(unsigned)t; }
   cvt_norm(a); }
 
 /* Convert value = D*10^E to the bit pattern of the nearest double (magnitude;
    the caller applies the sign). sticky is nonzero if digits beyond those held in
    D were dropped and any was nonzero; ndig is the count of digits held in D. */
-static unsigned long long cvt_bits(cvtbn* D, int E, int sticky, int ndig)
+static uint64_t cvt_bits(cvtbn* D, int E, int sticky, int ndig)
 {
     cvtbn num, den, t;
     int e2, i, biased, dexp10, remnz;
-    unsigned long long Q, bits;
+    uint64_t Q, bits;
 
     if (cvt_zero(D)) return 0;
     dexp10 = E + ndig - 1;
@@ -1597,15 +1613,15 @@ static unsigned long long cvt_bits(cvtbn* D, int E, int sticky, int ndig)
         if ((c>0) || (c==0 && (sticky || (Q&1)))) Q++;
         if (Q == (1ULL<<53)) { Q >>= 1; biased++; }
         if (biased >= 2047) return 0x7ff0000000000000ULL;
-        bits = ((unsigned long long)biased<<52) | (Q & 0xfffffffffffffULL);
+        bits = ((uint64_t)biased<<52) | (Q & 0xfffffffffffffULL);
     } else { /* subnormal: round at a coarser position */
         int shift = 1 - biased;
         if (shift > 53) bits = 0;
         else {
-            unsigned long long roundbit = (Q>>(shift-1)) & 1;
-            unsigned long long lowmask  = (1ULL<<(shift-1)) - 1;
+            uint64_t roundbit = (Q>>(shift-1)) & 1;
+            uint64_t lowmask  = (1ULL<<(shift-1)) - 1;
             int stk = sticky || ((Q & lowmask)!=0) || remnz;
-            unsigned long long M = Q >> shift;
+            uint64_t M = Q >> shift;
             if (roundbit && (stk || (M&1))) M++;
             bits = M & 0x1fffffffffffffULL; /* overflow to 2^52 -> smallest normal */
         }
@@ -1636,7 +1652,7 @@ static void readr(filnum fn, double* r, long w, boolean fld)
     int ndig; /* count of digits held in dig */
     int sticky; /* a dropped digit beyond the cap was nonzero */
     int seen; /* a nonzero leading digit has been seen */
-    unsigned long long bits; /* assembled IEEE bit pattern */
+    uint64_t bits; /* assembled IEEE bit pattern */
 
     e = 0; /* clear exponent */
     s = FALSE; /* set sign */
@@ -6198,6 +6214,13 @@ static void init(int argc, char* argv[])
 {
 
     int i;
+
+#ifdef _WIN32
+    /* Receiving the command line as constructor arguments is a glibc
+       behavior. The Windows C runtime calls constructors without arguments;
+       take the command line from the runtime globals instead. */
+    argc = __argc; argv = __argv;
+#endif
 
     argc--; argv++; /* discard the program parameter */
 
