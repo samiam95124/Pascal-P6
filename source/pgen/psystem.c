@@ -6295,6 +6295,93 @@ char* psystem_s2c(
 
 /** ****************************************************************************
 
+Find host operating system
+
+Returns the number corresponding to the host operating system this psystem
+was built for, determined from the compiler's platform defines:
+
+0 - Unknown
+1 - Linux
+2 - BSD
+3 - Windows
+4 - Mac
+
+*******************************************************************************/
+
+long psystem_host(void)
+
+{
+
+#if defined(_WIN32)
+    return 3; /* Windows */
+#elif defined(__APPLE__)
+    return 4; /* Mac */
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
+      defined(__DragonFly__)
+    return 2; /* BSD */
+#elif defined(__linux__)
+    return 1; /* Linux */
+#else
+    return 0; /* unknown */
+#endif
+
+}
+
+/** ****************************************************************************
+
+Find calling convention
+
+Returns the number corresponding to the calling convention this psystem was
+built for, determined from the compiler's architecture and platform defines.
+The architecture implies the convention, except on x86, where Windows uses
+its own conventions:
+
+0 - Unknown
+1 - i8386 (not used at present)
+2 - AMD64 SYSV
+3 - Win32
+4 - Win64
+5 - ARM32
+6 - ARM64
+7 - RISCV32
+8 - RISCV64
+
+*******************************************************************************/
+
+long psystem_callcon(void)
+
+{
+
+#if defined(__x86_64__) || defined(_M_X64)
+#if defined(_WIN32)
+    return 4; /* Win64 */
+#else
+    return 2; /* AMD64 SYSV */
+#endif
+#elif defined(__i386__) || defined(_M_IX86)
+#if defined(_WIN32)
+    return 3; /* Win32 */
+#else
+    return 1; /* i8386 */
+#endif
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    return 6; /* ARM64 */
+#elif defined(__arm__)
+    return 5; /* ARM32 */
+#elif defined(__riscv)
+#if __riscv_xlen == 64
+    return 8; /* RISCV64 */
+#else
+    return 7; /* RISCV32 */
+#endif
+#else
+    return 0; /* unknown */
+#endif
+
+}
+
+/** ****************************************************************************
+
 Deinitialize psystem support module
 
 *******************************************************************************/
