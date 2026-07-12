@@ -17,3 +17,12 @@
 ! Declare the main library and protect it from recompiles
 !
 modulepath "lendian:mpb64"
+
+!
+! Place the built product in the hosts tree
+!
+linux begin
+   amd64_sysv begin
+      copy pcom "../hosts/linux/x86/bit64/bin/pcom"
+   end
+end

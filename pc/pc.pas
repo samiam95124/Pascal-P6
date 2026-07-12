@@ -133,6 +133,15 @@ pkgety = record
    { next entry in list }          next: pkgptr
 
 end;
+{ hosts tree copy entry }          cpyptr = ^cpyety;
+{ hosts tree copy }
+cpyety = record
+
+   { source file }                 src:  pstring;
+   { destination file }            dst:  pstring;
+   { next link }                   next: cpyptr
+
+end;
 { filename extention }             ext = packed array [1..3] of char;
 
 var
@@ -195,6 +204,12 @@ flineinfo,   slineinfo:   boolean;
 fmrklin,     smrklin:     boolean;
 famd64sysv,  samd64sysv:  boolean;
 fwindows,    swindows:    boolean;
+farm64sysv,  sarm64sysv:  boolean;
+{ host selection overrides }
+fhlinux,     shlinux:     boolean;
+fhbsd,       shbsd:       boolean;
+fhwindows,   shwindows:   boolean;
+fhmac,       shmac:       boolean;
 { error file passthrough }
 errfil:      filnam;
 serrfil:     boolean;
@@ -215,6 +230,8 @@ slistfil:    boolean;
 { temp filename holding }                  tmpnam:  filnam;
 { exclude list }                           exclude: lstptr;
 { packaging list }                         package: pkgptr;
+{ hosts tree copy list }                   copies:  cpyptr;
+{ host identifier (psystem_host code) }    hostid:  integer;
 { a graphical window library exists }      windowed:  boolean;
 { the terminal library is the I/O library } terminaled: boolean;
 { the sound library is used }              sounded:   boolean;
@@ -235,6 +252,11 @@ Takes from one to 5 parameters, which are embedded with '%' markers. Each
 parameters corresponds to the position of the mark in the first string.
 
 ******************************************************************************}
+
+{ host and calling convention queries from psystem: the world this pc was
+  built for. See cross_compile.md for the codes. }
+function psystem_host: integer; cexternal;
+function psystem_callcon: integer; cexternal;
 
 procedure error(view es, s1, s2, s3, s4, s5: string);
 
@@ -454,7 +476,13 @@ begin
       setflg('lineinfo',        flineinfo,   slineinfo);
       setflg('mrkasslin',       fmrklin,     smrklin);
       setflg('amd64_sysv',      famd64sysv,  samd64sysv);
-      setflg('windows',         fwindows,    swindows);
+      setflg('win64',           fwindows,    swindows);
+      setflg('arm64_sysv',      farm64sysv,  sarm64sysv);
+      { host selection (overrides the runtime detection) }
+      setflg('linux',           fhlinux,     shlinux);
+      setflg('bsd',             fhbsd,       shbsd);
+      setflg('windows',         fhwindows,   shwindows);
+      setflg('mac',             fhmac,       shmac);
       { non-flag options }
       if compp(w, 'modulepath') or
          compp(w, 'mp') then begin
@@ -1804,7 +1832,8 @@ begin
       putflg('lineinfo', slineinfo, flineinfo, prefix);
       putflg('mrkasslin', smrklin, fmrklin, prefix);
       putflg('amd64_sysv', samd64sysv, famd64sysv, prefix);
-      putflg('windows', swindows, fwindows, prefix);
+      putflg('win64', swindows, fwindows, prefix);
+      putflg('arm64_sysv', sarm64sysv, farm64sysv, prefix);
       { error file: pcom only }
       if prefix and serrfil then begin
          putstr(' -errfile=');
@@ -2511,6 +2540,22 @@ Sets the uses path. This can also come from the environment, and if it appears
 here, will override the environment setting. This is the normal method used to
 create an "environment free" setup.
 
+copy <source> <destination>
+
+Copies the source file to the destination after a successful build. Used to
+place built products into the hosts tree. Paths are relative to the
+instruction file.
+
+<tag> begin
+...
+end
+
+Conditional block: the instructions between begin and end apply only if the
+given tag is set. The tags are the hosts (linux, bsd, windows, mac) and the
+calling conventions (amd64_sysv, win64, arm64_sysv), matching the host this
+pc runs on (or the host override flag) and the calling convention in force.
+Blocks nest.
+
 *******************************************************************************}
 
 procedure parinst(view ifn: string);
@@ -2522,12 +2567,16 @@ const cmdmax = 250;
 var inshan:  parse.parhan; { handle for instruction parsing }
     pn:      filnam;       { path of instruction file }
     fn:      filnam;       { filename holder }
+    fn2:     filnam;       { second filename holder }
     en:      filnam;       { extension holder }
     cp:      filnam;       { current path holder }
     cmd:     filnam;       { command verb }
     err:     boolean;      { parsing error }
     lp:      lstptr;       { pointer to file list entry }
     pp:      pkgptr;       { pointer to package list entry }
+    cyp:     cpyptr;       { pointer to hosts copy entry }
+    condlvl: integer;      { active conditional block level }
+    tagact:  boolean;      { conditional tag is active }
 
 procedure inserr(view es: string);
 
@@ -2605,9 +2654,80 @@ begin
 
 end;
 
+{ match a conditional tag name; sets whether the tag is active }
+
+function tagcon(view s: string; var act: boolean): boolean;
+
+begin
+
+   tagcon := true; act := false;
+   if compp(s, 'linux') then act := hostid = 1
+   else if compp(s, 'bsd') then act := hostid = 2
+   else if compp(s, 'windows') then act := hostid = 3
+   else if compp(s, 'mac') then act := hostid = 4
+   else if compp(s, 'amd64_sysv') then act := famd64sysv
+   else if compp(s, 'win64') then act := fwindows
+   else if compp(s, 'arm64_sysv') then act := farm64sysv
+   else tagcon := false
+
+end;
+
+{ skip an inactive conditional block, tracking nested blocks. Enters with the
+  position after the block header's "begin"; consumes lines through the
+  matching "end" line. }
+
+procedure skipblk;
+
+var lvl: integer; { block nesting level }
+    w:   filnam;  { word holders }
+    w2:  filnam;
+    err: boolean; { parsing error }
+
+begin
+
+   lvl := 1; { we are inside one block }
+   { consume the rest of the header line }
+   while not parse.endlin(inshan) do parse.getchr(inshan);
+   while (lvl > 0) and not parse.endfil(inshan) do begin
+
+      parse.getlin(inshan); { next line }
+      parse.skpspc(inshan); { skip leading spaces }
+      if not parse.endlin(inshan) and (parse.chkchr(inshan) <> '!') then begin
+
+         parse.parlab(inshan, w, err); { get first word }
+         if not err then begin
+
+            if compp(w, 'end') then lvl := lvl-1
+            else begin
+
+               { a nested conditional block header is "<tag> begin" }
+               lskpspc(inshan);
+               if not parse.endlin(inshan) then begin
+
+                  parse.parlab(inshan, w2, err);
+                  if not err then
+                     if compp(w2, 'begin') then lvl := lvl+1
+
+               end
+
+            end
+
+         end
+
+      end;
+      { consume the rest of the line }
+      if lvl > 0 then
+         while not parse.endlin(inshan) do parse.getchr(inshan)
+
+   end;
+   if lvl > 0 then inserr('Unterminated conditional block')
+
+end;
+
 begin
 
    if fverb then writeln('Reading instruction file', ifn:*);
+   condlvl := 0; { no conditional blocks open }
    services.brknam(ifn, pn, fn, en); { extract path of instruction file }
    services.getcur(cp); { save current path }
    { this makes relative paths work }
@@ -2718,7 +2838,38 @@ begin
          else
             { no generate coff symbols in binary }
             if compp(cmd, 'nosymcoff') then fsymcof := false
-         else inserr('No such instruction');
+         else if compp(cmd, 'copy') then begin
+
+            { copy product to destination after a successful build }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn); { get source filename }
+            services.fulnam(fn); { expand it }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn2); { get destination filename }
+            services.fulnam(fn2); { expand it }
+            new(cyp); { get new copy list entry }
+            copy(cyp^.src, fn); { place source }
+            copy(cyp^.dst, fn2); { place destination }
+            cyp^.next := copies; { push onto copy list }
+            copies := cyp
+
+         end else if compp(cmd, 'end') then begin
+
+            { close conditional block }
+            if condlvl > 0 then condlvl := condlvl-1
+            else inserr('"end" without conditional block')
+
+         end else if tagcon(cmd, tagact) then begin
+
+            { conditional block header: <tag> begin }
+            lskpspc(inshan); { skip spaces }
+            parse.parlab(inshan, fn, err); { get keyword }
+            if err then inserr('"begin" expected');
+            if not compp(fn, 'begin') then inserr('"begin" expected');
+            if tagact then condlvl := condlvl+1 { active: process contents }
+            else skipblk { inactive: skip to matching end }
+
+         end else inserr('No such instruction');
          parse.skpspc(inshan); { skip trailing spaces }
          if parse.chkchr(inshan) = '!' then { skip comment line }
             while not parse.endlin(inshan) do parse.getchr(inshan);
@@ -2728,9 +2879,70 @@ begin
       parse.getlin(inshan) { skip to new line }
 
    end;
+   if condlvl > 0 then
+      error('Unterminated conditional block in instruction file %', ifn);
    parse.closefil(inshan); { close the file }
    parse.closepar(inshan); { close the parser instance }
    services.setcur(cp) { reset to current path }
+
+end;
+
+{******************************************************************************
+
+Perform hosts tree copies
+
+Executes the copy instructions collected from the instruction files. Run
+after a successful build, so the products copied are up to date.
+
+*******************************************************************************}
+
+procedure docopies;
+
+var p:      cpyptr; { copy list pointer }
+    cmdbuf: linbuf; { command buffer }
+    i:      lininx; { index for that }
+
+{ place output character }
+
+procedure putchr(c: char);
+
+begin
+
+   if i > maxlin then { overflow }
+      error('Copy command too long');
+   cmdbuf[i] := c; { place character }
+   i := i+1
+
+end;
+
+{ place string in output }
+
+procedure putstr(view s: string);
+
+var i: integer; { index for name }
+
+begin
+
+   for i := 1 to len(s) do putchr(s[i])
+
+end;
+
+begin
+
+   p := copies; { index top of copy list }
+   while p <> nil do begin
+
+      i := 1; { set 1st command character }
+      clears(cmdbuf); { clear command buffer }
+      putstr('cp');
+      putchr(' ');
+      putstr(p^.src^);
+      putchr(' ');
+      putstr(p^.dst^);
+      excact(cmdbuf); { execute command buffer action }
+      p := p^.next
+
+   end
 
 end;
 
@@ -2826,6 +3038,14 @@ begin
    samd64sysv := false;
    fwindows := false;
    swindows := false;
+   farm64sysv := false;
+   sarm64sysv := false;
+   fhlinux := false; shlinux := false;
+   fhbsd := false; shbsd := false;
+   fhwindows := false; shwindows := false;
+   fhmac := false; shmac := false;
+   copies := nil; { clear hosts tree copy list }
+   hostid := 0; { set host unknown }
    serrfil := false;
    slistfil := false;
 
@@ -2915,6 +3135,25 @@ begin
       services.getenv('MODULEPATH', modpth); { get any module path }
    if fverb and (modpth[1] <> ' ') then 
       writeln('Environment module path: ', modpth:*);
+   { determine the host: an override flag wins, otherwise ask the runtime
+     which host this pc was built for }
+   if shlinux then hostid := 1
+   else if shbsd then hostid := 2
+   else if shwindows then hostid := 3
+   else if shmac then hostid := 4
+   else hostid := psystem_host;
+   { determine the default calling convention for executable builds from the
+     convention this pc was built with, unless the user selected one. This
+     must precede the instruction files, whose conditional blocks test the
+     convention. }
+   if fpgen and not samd64sysv and not swindows and not sarm64sysv then begin
+
+      if psystem_callcon = 4 then begin fwindows := true; swindows := true end
+      else if psystem_callcon = 6 then begin
+         farm64sysv := true; sarm64sysv := true
+      end else begin famd64sysv := true; samd64sysv := true end
+
+   end;
    { find any instruction files for us }
    services.getpgm(pgmpath); { get the program path }
    services.getusr(usrpath); { get the user path }
@@ -2951,11 +3190,6 @@ begin
    services.maknam(tmpnam, tarpath, n, 'ins');
    services.fulnam(tmpnam); { normalize }
    if exists(tmpnam) then parinst(tmpnam);
-   { auto-enable amd64_sysv in pgen mode unless user overrode or selected
-     the Windows calling convention }
-   if fpgen and not samd64sysv and not fwindows then begin
-      famd64sysv := true; samd64sysv := true
-   end;
    logfil(prgnam, hp); { form tree from file }
    stdlib; { place standard libary }
    fndpkg; { find any included packages }
@@ -2971,8 +3205,12 @@ begin
    chkexc; { check executable needs rebuild }
    if (actcnt = 0) and not excrbl then
       writeln('No action required, files up to date')
-   else
+   else begin
+
       if hp^.pgm then dolink; { perform link }
+      docopies { place built products in the hosts tree }
+
+   end;
    if fverb and (actcnt > 0) then begin
 
       writeln;
