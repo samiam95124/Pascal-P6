@@ -245,7 +245,7 @@ begin
   opts[28] := 'mal       ';
   opts[29] := 'amd64_sysv';
   opts[30] := 'amdpar    ';
-  opts[31] := 'windows   ';
+  opts[31] := 'win64     ';
 
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
@@ -277,6 +277,6 @@ begin
   optsl[28] := 'mrkasslin ';
   optsl[29] := 'amd64_sysv';
   optsl[30] := 'amdpar    ';
-  optsl[31] := 'windows   ';
+  optsl[31] := 'win64     ';
 end.
 

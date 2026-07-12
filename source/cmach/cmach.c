@@ -617,7 +617,7 @@ char* opts[] = {
     "mal",
     "amd64_sysv",
     "amdpar",
-    "windows"
+    "win64"
 };
 
 char* optsl[] = {
@@ -651,7 +651,7 @@ char* optsl[] = {
     "mrkasslin",
     "amd64_sysv",
     "amdpar",
-    "windows"
+    "win64"
 };
 
 /**************************** Global Variables ********************************/

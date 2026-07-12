@@ -7,7 +7,7 @@
 # pcwin [<options>] <file>
 #
 # <file> is the filename without extension. Compiles <file>.pas with the
-# Windows x64 calling convention (--windows), producing the intermediate
+# Windows x64 calling convention (--win64), producing the intermediate
 # <file>.p6, the assembly <file>.s, the object <file>.o and the executable
 # <file>.exe. The executable is a Windows PE image: on Windows it runs
 # directly, on Linux it runs under Wine (directly if wine binfmt support is
@@ -87,7 +87,7 @@ fi
 #
 # Compile to intermediate with the Windows calling convention
 #
-pcom --windows $pcomflags "$prog.pas"
+pcom --win64 $pcomflags "$prog.pas"
 if [ $? -ne 0 ]; then
 
     echo "*** Error: Compile of $prog.pas failed"
@@ -96,10 +96,10 @@ if [ $? -ne 0 ]; then
 fi
 
 #
-# Generate Windows x64 assembly. The windows option must be given on the
+# Generate Windows x64 assembly. The win64 option must be given on the
 # command line; the intermediate carries it only as a validation.
 #
-pgen "$prog.p6" "$prog.s" --windows+
+pgen "$prog.p6" "$prog.s" --win64+
 if [ $? -ne 0 ]; then
 
     echo "*** Error: Code generation for $prog.p6 failed"

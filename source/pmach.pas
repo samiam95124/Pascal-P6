@@ -3434,7 +3434,7 @@ begin
     setflg('y',  'prtdisplay', option[25], options[25]);
     setflg('z',  'lineinfo',   option[26], options[26]);
     setflg('mal', 'mrkasslin', option[28], options[28]);
-    setflg('windows', 'windows', option[31], options[31]);
+    setflg('win64', 'win64', option[31], options[31]);
     if not optfnd then begin
       writeln('*** Unknown option ', w:*); goto 99
     end;
@@ -3539,7 +3539,7 @@ begin (* main *)
   opts[28] := 'mal       ';
   opts[29] := 'amd64_sysv';
   opts[30] := 'amdpar    ';
-  opts[31] := 'windows   ';
+  opts[31] := 'win64     ';
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
   optsl[3]  := 'lstcod    ';
@@ -3570,7 +3570,7 @@ begin (* main *)
   optsl[28] := 'mrkasslin ';
   optsl[29] := 'amd64_sysv';
   optsl[30] := 'amdpar    ';
-  optsl[31] := 'windows   ';
+  optsl[31] := 'win64     ';
   { preset options }
   dochkovf := true;  { check arithmetic overflow }
   dosrclin := true;  { add source line sets to code }

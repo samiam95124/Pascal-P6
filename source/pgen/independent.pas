@@ -1966,7 +1966,7 @@ begin
                             the command line; the intermediate option only
                             validates it }
                           if option[oi] <> windows then
-                            error('windows option must be given on command line');
+                            error('win64 option must be given on command line');
                           windows := option[oi]
                         end;
                     2:; 3:; 4:; 12:; 20:; 21:; 22:;
