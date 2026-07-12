@@ -221,7 +221,7 @@ const
       maxgblfx = 10000;      { maximum global access fixup in intermediate }
       resspc   = 0;          { reserve space in heap (if you want) }
 
-      maxopt   = 31;         { number of options }
+      maxopt   = 32;         { number of options }
       optlen   = 10;         { maximum length of option words }
 
       { locations of header files after program block mark, each header
@@ -536,6 +536,7 @@ var   pc          : address;   (*program address register*)
       dochkvbk: boolean; { do check VAR blocks }
       doechlin: boolean; { do echo command line for testing (unused) }
       windows: boolean; { use Windows calling convention }
+      arm64_sysv: boolean; { use the AAPCS64 (ARM64) calling convention }
       
       iso7185: boolean; { iso7185 standard flag }
       flipend: boolean; { endian mode is opposing }
@@ -3435,6 +3436,7 @@ begin
     setflg('z',  'lineinfo',   option[26], options[26]);
     setflg('mal', 'mrkasslin', option[28], options[28]);
     setflg('win64', 'win64', option[31], options[31]);
+    setflg('arm64_sysv', 'arm64_sysv', option[32], options[32]);
     if not optfnd then begin
       writeln('*** Unknown option ', w:*); goto 99
     end;
@@ -3463,6 +3465,7 @@ begin
       5:  dodckout   := option[oi];
       9:  dochkvbk   := option[oi];
       31: windows    := option[oi];
+      32: arm64_sysv := option[oi];
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:; 27:; 28:; 29:; 30:;
     end
@@ -3540,6 +3543,7 @@ begin (* main *)
   opts[29] := 'amd64_sysv';
   opts[30] := 'amdpar    ';
   opts[31] := 'win64     ';
+  opts[32] := 'arm64_sysv';
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
   optsl[3]  := 'lstcod    ';
@@ -3571,6 +3575,7 @@ begin (* main *)
   optsl[29] := 'amd64_sysv';
   optsl[30] := 'amdpar    ';
   optsl[31] := 'win64     ';
+  optsl[32] := 'arm64_sysv';
   { preset options }
   dochkovf := true;  { check arithmetic overflow }
   dosrclin := true;  { add source line sets to code }
@@ -3580,6 +3585,7 @@ begin (* main *)
   dochkdef := true;  { check undefined accesses }
   iso7185 := false;  { iso7185 standard mode }
   windows := false; { don't use Windows calling convention }
+  arm64_sysv := false; { don't use the AAPCS64 calling convention }
   varlst := nil; { set no VAR block entries }
   varfre := nil;
   wthlst := nil; { set no with block entries }

@@ -891,6 +891,7 @@ var   pc, pcs     : address;   (*program address register*)
       dochkvbk: boolean; { do check VAR blocks }
       amd64_sysv: boolean; { use SYS V AMD64 ABI calling convention }
       windows: boolean; { use Windows calling convention }
+      arm64_sysv: boolean; { use the AAPCS64 (ARM64) calling convention }
       doechlin: boolean; { echo input command line }
 
       { other flags }
@@ -2528,6 +2529,10 @@ procedure load;
                           end;
                       31: begin windows := option[oi];
                             if windows then
+                              errorl('Call convention mismatch ')
+                          end;
+                      32: begin arm64_sysv := option[oi];
+                            if arm64_sysv then
                               errorl('Call convention mismatch ')
                           end;
                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
@@ -7781,6 +7786,12 @@ begin
               goto 99
             end
           end;
+      32: begin arm64_sysv := option[oi];
+            if arm64_sysv then begin
+              writeln('*** Calling convention mismatch');
+              goto 99
+            end
+          end;
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:; 27:; 28:; 30:;
     end
@@ -7839,6 +7850,7 @@ begin (* main *)
   dochkvbk := false; { don't check variable blocks }
   amd64_sysv := false; { don't use SYS V AMD64 ABI calling convention }
   windows := false; { don't use Windows calling convention }
+  arm64_sysv := false; { don't use the AAPCS64 calling convention }
   doechlin := false; { don't echo command lines }
 
   strcnt := 0; { clear string quanta allocation count }

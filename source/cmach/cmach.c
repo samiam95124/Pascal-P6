@@ -436,7 +436,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
 #define REALEF       8    /* real extra field in floating format -1.0e+00 */
-#define MAXOPT       31   /* number of options */
+#define MAXOPT       32   /* number of options */
 #define OPTLEN       10   /* maximum length of option words */
 
 /* version numbers */
@@ -617,7 +617,8 @@ char* opts[] = {
     "mal",
     "amd64_sysv",
     "amdpar",
-    "win64"
+    "win64",
+    "arm64_sysv"
 };
 
 char* optsl[] = {
@@ -651,7 +652,8 @@ char* optsl[] = {
     "mrkasslin",
     "amd64_sysv",
     "amdpar",
-    "win64"
+    "win64",
+    "arm64_sysv"
 };
 
 /**************************** Global Variables ********************************/
@@ -739,6 +741,7 @@ boolean doanalys; /* do analyze */
 boolean dodckout; /* do output code deck */
 boolean dochkvbk; /* do check VAR blocks */
 boolean windows; /* use Windows calling convention */
+boolean arm64_sysv; /* use the AAPCS64 (ARM64) calling convention */
 boolean iso7185; /* iso7185 standard flag */
 
 long i;
@@ -1064,6 +1067,7 @@ void paroptions(void)
                     case 5:  dodckout   = option[oi]; break;
                     case 9:  dochkvbk   = option[oi]; break;
                     case 31: windows    = option[oi]; break;
+                    case 32: arm64_sysv = option[oi]; break;
                 }
             }
         }
@@ -3601,6 +3605,7 @@ int main (int argc, char *argv[])
     dodckout = FALSE; /* do output code deck */
     dochkvbk = FALSE; /* do check VAR blocks */
     windows = FALSE; /* use Windows calling convention */
+    arm64_sysv = FALSE; /* use the AAPCS64 (ARM64) calling convention */
     iso7185 = FALSE; /* iso7185 standard flag */
 
     argc--; argv++; /* discard the program parameter */

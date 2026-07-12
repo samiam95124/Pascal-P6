@@ -96,9 +96,9 @@ if [ ! -x "$PASCALP6/source/pgen/arm64/pgen" ]; then
 fi
 
 #
-# Compile to intermediate with the plain stack model layout
+# Compile to intermediate with the AAPCS64 calling convention
 #
-pcom $pcomflags "$prog.pas"
+pcom --arm64_sysv $pcomflags "$prog.pas"
 if [ $? -ne 0 ]; then
 
     echo "*** Error: Compile of $prog.pas failed"
