@@ -11437,7 +11437,7 @@ end;
       setflg('mal', 'mrkasslin', option[28], options[28]);
       setflg('amd64_sysv', 'amd64_sysv', option[29], options[29]);
       setflg('amdpar', 'amdpar', option[30], options[30]);
-      setflg('windows', 'windows', option[31], options[31]);
+      setflg('win64', 'win64', option[31], options[31]);
       if not optfnd then begin
         writeln('*** Unknown option ', w:*); goto 99
       end;
@@ -11497,7 +11497,7 @@ end;
     opts[27] := 'md        '; opts[28] := 'mal       ';
     opts[29] := 'amd64_sysv';
     opts[30] := 'amdpar    ';
-    opts[31] := 'windows   ';
+    opts[31] := 'win64     ';
     optsl[1]  := 'debugflt  '; optsl[2]  := 'prtlab    ';
     optsl[3]  := 'lstcod    '; optsl[4]  := 'chk       ';
     optsl[5]  := 'machdeck  '; optsl[6]  := 'debugsrc  ';
@@ -11514,7 +11514,7 @@ end;
     optsl[27] := 'modules   '; optsl[28] := 'mrkasslin ';
     optsl[29] := 'amd64_sysv';
     optsl[30] := 'amdpar    ';
-    optsl[31] := 'windows   ';
+    optsl[31] := 'win64     ';
     prtables := false; option[20] := false; list := false; option[12] := false;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
@@ -12082,7 +12082,7 @@ begin
 
   { the calling convention options select one convention or the other }
   if amd64_sysv and windows then begin
-    writeln('*** Options amd64_sysv and windows are mutually exclusive');
+    writeln('*** Options amd64_sysv and win64 are mutually exclusive');
     goto 99
   end;
 
