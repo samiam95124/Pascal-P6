@@ -1,9 +1,12 @@
 #!/bin/bash
 ################################################################################
 #
-# Configure scipt for Pascal-p6
+# Configure script for Pascal-p6
 #
-# Sets up the complete Pascal-p6 project.
+# Sets up the complete Pascal-p6 project: determines the host, architecture
+# and bit length this machine presents, and restores the working bin and libs
+# directories from the matching directory of the hosts tree. The hostinstall
+# make target performs the reverse snapshot.
 #
 ################################################################################
 
@@ -25,11 +28,37 @@ function checkexists {
 }
 
 #
-# Set default variables
+# Determine the running host, architecture and bit length, matching the
+# makefile's detection.
 #
-compiler="pascaline"
-bits="64"
-host="linux"
+if [ -n "$OS" ] && [ "$OS" = "Windows_NT" ] ; then
+
+    host="windows"
+
+else
+
+    case `uname` in
+
+        Linux)  host="linux" ;;
+        Darwin) host="mac" ;;
+        *BSD*)  host="bsd" ;;
+        *)      host="linux" ;;
+
+    esac
+
+fi
+
+case `uname -m` in
+
+    x86_64|amd64)        arch="x86";   bits="64" ;;
+    i386|i486|i586|i686) arch="x86";   bits="32" ;;
+    aarch64)             arch="arm";   bits="64" ;;
+    armv*)               arch="arm";   bits="32" ;;
+    riscv64)             arch="riscv"; bits="64" ;;
+    riscv32)             arch="riscv"; bits="32" ;;
+    *)                   arch="x86";   bits="64" ;;
+
+esac
 
 #
 # Determine if needed programs exist. The only fatal one is grep, because we
@@ -101,29 +130,20 @@ do
 done
 
 #
-# Set up for chosen Pascal compiler combination
+# Restore the working binaries and libraries from the hosts tree
 #
-echo "Set up for $compiler"
-cp hosts/$compiler/bit$bits/p6.bat bin/p6.bat
-cp hosts/$compiler/compile.bat     bin/compile.bat
-cp hosts/$compiler/run.bat         bin/run.bat
+hostcell="hosts/$host/$arch/bit$bits"
+echo "Set up for $host/$arch/bit$bits"
 
-cp hosts/$compiler/bit$bits/p6     bin/p6
-cp hosts/$compiler/compile         bin/compile
-cp hosts/$compiler/run             bin/run
-cp hosts/$compiler/testp2          bin/testp2
+if [ ! -d "$hostcell/bin" ] ; then
 
-cp hosts/$compiler/bit$bits/Makefile    .
+    echo "*** No hosts tree entry for $hostcell"
+    exit 1
 
-cp hosts/$compiler/bit$bits/standard_tests/iso7185pat.cmp standard_tests
-cp hosts/$compiler/bit$bits/standard_tests/iso7185patc.cmp standard_tests
-cp hosts/$compiler/bit$bits/standard_tests/iso7185pats.cmp standard_tests
-   
-cp hosts/$compiler/bit$bits/p4/standardp.cmp p4
-cp hosts/$compiler/bit$bits/p4/standardpc.cmp p4
+fi
 
-cp -r hosts/$compiler/linux_X86/* bin
-
-echo "Bit length $bits"
+cp $hostcell/bin/* bin 2>/dev/null
+cp $hostcell/lib/* libs 2>/dev/null
+rm -f bin/.gitkeep libs/.gitkeep
 
 echo "Configure completed!"

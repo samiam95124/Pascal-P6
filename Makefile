@@ -2,37 +2,25 @@
 #
 # Makefile for Pascal-P6
 #
-# Makes the main compiler/interpreter set.
+# Makes the C-built components: the runtime support libraries, the C
+# interpreter (cmach and its flavors) and the test tools. The Pascal-built
+# tools (pcom, pgen, pint, pmach, ...) are built with pc; the hostinstall
+# target snapshots them, along with everything this makefile builds, into the
+# hosts tree.
 #
-# The generated executables are named according to:
+# This is the single makefile for all hosts. It determines the host it is
+# running on, the architecture and the bit length, and places each product it
+# builds into the matching directory of the hosts tree:
 #
-# bin16le
+#     hosts/<host>/<arch>/<bits>/bin
+#     hosts/<host>/<arch>/<bits>/lib
 #
-# where 16 is the bit size of the target, and le is the endian mode.
-# The current bit lengths are:
-# 
-# 16
-# 32
-# 64
-#
-# Note that 16 bits actually covers both 8 bit and 16 bit processors, since 
-# 8 bit processors usually have 16 bit addressing, regardless of their basic
-# word size.
-#
-# The endian modes are:
-#
-# le - Little endian.
-# be - Big endian.
-#
-# The make process will create all of the combinations that are possible given
-# the current host processor. Not all combinations make sense. For example, 
-# pcom, the compiler front end, has no endian mode, and its output decks are
-# universal for all endian targets.
-#
-# After all possible bit and endian modes are generated, the versions  of the
-# executable that match the current host are copied to their executable names,
-# but without the bit or endian endings. Thus it is not necessary to 
-# specifically state the characteristics of the host.
+# where <host> is linux, bsd, windows or mac, <arch> is x86, arm or riscv,
+# and <bits> is bit32 or bit64. Products for the running host are also copied
+# to the top of tree bin and libs directories, so it is not necessary to state
+# the characteristics of the host. Cross compiled products (the win64 and
+# arm64 runtime libraries when built on another host) are placed in the
+# directory of the host they run on.
 #
 # Note the convention used here is that .asm files are assembly files that were
 # manually generated and not to be erased, and .s files are assembly files that
@@ -41,16 +29,66 @@
 ################################################################################
 
 #
-# Set OSTYPE according to operating system (see the Petit-Ami makefile for
-# the model). If the OS environment variable is set we are on Windows,
-# otherwise a Unix variant that has uname.
+# Determine the running host, architecture and bit length. If the OS
+# environment variable is set we are on Windows; otherwise uname names a Unix
+# variant. uname -m gives the architecture and implies the bit length.
 #
 ifeq ($(OS),Windows_NT)
     OSTYPE=Windows_NT
-    HOSTTARGET=win64
+    HOST=windows
 else
     OSTYPE=$(shell uname)
-    HOSTTARGET=linux64
+    ifeq ($(OSTYPE),Linux)
+        HOST=linux
+    else ifeq ($(OSTYPE),Darwin)
+        HOST=mac
+    else ifneq ($(findstring BSD,$(OSTYPE)),)
+        HOST=bsd
+    else
+        HOST=linux
+    endif
+endif
+
+MACHINE=$(shell uname -m)
+ifneq ($(filter x86_64 amd64,$(MACHINE)),)
+    ARCH=x86
+    BITS=bit64
+else ifneq ($(filter i386 i486 i586 i686,$(MACHINE)),)
+    ARCH=x86
+    BITS=bit32
+else ifeq ($(MACHINE),aarch64)
+    ARCH=arm
+    BITS=bit64
+else ifneq ($(findstring armv,$(MACHINE)),)
+    ARCH=arm
+    BITS=bit32
+else ifeq ($(MACHINE),riscv64)
+    ARCH=riscv
+    BITS=bit64
+else ifeq ($(MACHINE),riscv32)
+    ARCH=riscv
+    BITS=bit32
+else
+    ARCH=x86
+    BITS=bit64
+endif
+
+#
+# The hosts tree directory for the running host, and the fixed directories
+# for the cross compiled runtimes: the win64 runtime runs on windows/x86 and
+# the arm64 runtime on linux/arm, wherever they are built.
+#
+HOSTCELL=hosts/$(HOST)/$(ARCH)/$(BITS)
+WINCELL=hosts/windows/x86/bit64
+ARMCELL=hosts/linux/arm/bit64
+
+#
+# The default build target for each host.
+#
+ifeq ($(HOST),windows)
+    HOSTTARGET=win64
+else
+    HOSTTARGET=all
 endif
 
 CC=gcc
@@ -136,9 +174,10 @@ PSYSTEM_STDIO=
 endif
 
 #
-# The default build is for the current host. linux64 is the standard native
+# The default build is for the current host. all is the standard native
 # build; win64 builds the Windows x64 runtime components (cross compiled via
-# mingw-w64 on non-Windows hosts).
+# mingw-w64 on non-Windows hosts) and arm64 the aarch64 linux runtime
+# components (cross compiled via the aarch64 toolchain on other hosts).
 #
 default: $(HOSTTARGET)
 
@@ -187,6 +226,8 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	fi
 	ar rc $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
 		$(BUILD)/pgen/amd64/psystem_asm.o $(PSYSTEM_STDIO)
+	mkdir -p $(HOSTCELL)/lib
+	cp $(LIBS)/psystem.a $(HOSTCELL)/lib
 endif
 
 #
@@ -201,6 +242,8 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/main.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/main.asm
 	cp $(BUILD)/pgen/amd64/main.o $(LIBS)
+	mkdir -p $(HOSTCELL)/lib
+	cp $(BUILD)/pgen/amd64/main.o $(HOSTCELL)/lib
 
 ################################################################################
 #
@@ -234,6 +277,8 @@ $(LIBS)/win64/psystem.a: $(SOURCE)/pgen/psystem.c \
 		-c -x assembler $(SOURCE)/pgen/amd64/psystem.asm
 	$(WINAR) rc $(LIBS)/win64/psystem.a $(BUILD)/win64/psystem.o \
 		$(BUILD)/win64/psystem_asm.o
+	mkdir -p $(WINCELL)/lib
+	cp $(LIBS)/win64/psystem.a $(WINCELL)/lib
 
 #
 # Build main for win64, the program stack startup shim.
@@ -248,6 +293,8 @@ $(LIBS)/win64/main.o: $(SOURCE)/pgen/amd64/main.asm
 		-o $(BUILD)/win64/main.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/main.asm
 	cp $(BUILD)/win64/main.o $(LIBS)/win64
+	mkdir -p $(WINCELL)/lib
+	cp $(BUILD)/win64/main.o $(WINCELL)/lib
 
 ################################################################################
 #
@@ -276,6 +323,8 @@ $(LIBS)/arm64/psystem.a: $(SOURCE)/pgen/psystem.c \
 		-c -x assembler $(SOURCE)/pgen/arm64/psystem.asm
 	$(ARMAR) rc $(LIBS)/arm64/psystem.a $(BUILD)/arm64/psystem.o \
 		$(BUILD)/arm64/psystem_asm.o
+	mkdir -p $(ARMCELL)/lib
+	cp $(LIBS)/arm64/psystem.a $(ARMCELL)/lib
 
 #
 # Build main for arm64, the program stack startup shim.
@@ -289,6 +338,8 @@ $(LIBS)/arm64/main.o: $(SOURCE)/pgen/arm64/main.asm
 	$(ARMCC) $(ARMCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/arm64/main.o \
 		-c -x assembler $(SOURCE)/pgen/arm64/main.asm
 	cp $(BUILD)/arm64/main.o $(LIBS)/arm64
+	mkdir -p $(ARMCELL)/lib
+	cp $(BUILD)/arm64/main.o $(ARMCELL)/lib
 
 ################################################################################
 #
@@ -345,6 +396,8 @@ $(LIBS)/services.a: $(AMI)/services.c \
 	ar rc $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
 		$(BUILD)/libs/services_wrapper.o $(BUILD)/libs/services.o \
 		$(BUILD)/libs/services_support.o $(BUILD)/libs/support.o
+	mkdir -p $(HOSTCELL)/lib
+	cp $(LIBS)/services.a $(HOSTCELL)/lib
 endif
 
 #
@@ -393,6 +446,8 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 		$(BUILD)/libs/terminal.o $(BUILD)/libs/term_services.o \
 		$(BUILD)/libs/system_event.o $(BUILD)/libs/config.o \
 		$(BUILD)/libs/support.o
+	mkdir -p $(HOSTCELL)/lib
+	cp $(LIBS)/terminal.a $(HOSTCELL)/lib
 endif
 
 #
@@ -439,6 +494,8 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 		$(BUILD)/libs/graphics.o $(BUILD)/libs/graph_services.o \
 		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o \
 		$(BUILD)/libs/support.o
+	mkdir -p $(HOSTCELL)/lib
+	cp $(LIBS)/graphics.a $(HOSTCELL)/lib
 
 #
 # The "blonde" graphics archive for the graphics-hosted interpreter (pintg):
@@ -470,6 +527,8 @@ source/graph/graphics.a: $(LIBS)/graphics.a
 $(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(LIBS)/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+	mkdir -p $(HOSTCELL)/lib
+	cp $(LIBS)/gnome_widgets.o $(HOSTCELL)/lib
 endif
 
 #
@@ -510,6 +569,8 @@ $(LIBS)/sound.a: $(AMI)/sound.c $(AMI)/dumpsynthplug.c $(AMI)/fluidsynthplug.c \
 		$(BUILD)/libs/sound_wrapper.o $(BUILD)/libs/sound.o \
 		$(BUILD)/libs/dumpsynthplug.o $(BUILD)/libs/fluidsynthplug.o \
 		$(BUILD)/libs/support.o
+	mkdir -p $(HOSTCELL)/lib
+	cp $(LIBS)/sound.a $(HOSTCELL)/lib
 
 $(LIBS)/network.a: $(AMI)/network.c \
 	$(LIBS)/source/network_wrapper.asm \
@@ -532,6 +593,8 @@ $(LIBS)/network.a: $(AMI)/network.c \
 	ar rc $(LIBS)/network.a $(BUILD)/libs/network_wrapper_asm.o \
 		$(BUILD)/libs/network_wrapper.o $(BUILD)/libs/network_support.o \
 		$(BUILD)/libs/network.o $(BUILD)/libs/support.o
+	mkdir -p $(HOSTCELL)/lib
+	cp $(LIBS)/network.a $(HOSTCELL)/lib
 endif
 
 #
@@ -600,6 +663,8 @@ bin/cmach: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc \
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -o $(BUILD)/cmach64le \
 		$(SOURCE)/cmach/cmach.c $(CMACHEXTLIBS)
 	cp $(BUILD)/cmach64le $(PASCALP6)/bin/cmach
+	mkdir -p $(HOSTCELL)/bin
+	cp $(BUILD)/cmach64le $(HOSTCELL)/bin/cmach
 
 # Package-mode cmach objects: cmach.c compiled -DPACKAGE. The per-program deck is
 # now a separate program_code.o that pc links against (rather than #included into
@@ -637,6 +702,8 @@ bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
 		$(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/sound.a $(LIBS)/network.a \
 		$(PSYSTEM_STDIO) -lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpthread -ldl -lm
 	cp $(BUILD)/cmacht64le $(PASCALP6)/bin/cmacht
+	mkdir -p $(HOSTCELL)/bin
+	cp $(BUILD)/cmacht64le $(HOSTCELL)/bin/cmacht
 
 cmachg: bin/cmachg
 # cmachg hosts a graphics window over the interpreted program like pmachg/pintg,
@@ -662,6 +729,8 @@ bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 		-lexpat -luuid -lxcb -lXau -lXdmcp \
 		-Wl,--end-group
 	cp $(BUILD)/cmachg64le $(PASCALP6)/bin/cmachg
+	mkdir -p $(HOSTCELL)/bin
+	cp $(BUILD)/cmachg64le $(HOSTCELL)/bin/cmachg
 
 #
 # Build spew, an automated test facillity.
@@ -674,6 +743,32 @@ bin/spew: $(SOURCE)/spew.c
 	mkdir -p $(BUILD)
 	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
+	mkdir -p $(HOSTCELL)/bin
+	cp $(BUILD)/spew $(HOSTCELL)/bin/spew
+
+#
+# Snapshot the working binaries and libraries into the running host's
+# directory in the hosts tree. The Pascal-built tools (pcom, pgen, pint and
+# friends) are built with pc, not this makefile, so this is how they enter
+# the hosts tree; the C-built products are copied as well, giving a complete
+# restorable set. The configure script performs the reverse restore. Run
+# after a clean regression, before committing.
+#
+HOSTBINS=cmach cmacht cmachg genobj pcom pgen pint pintt pintg pmach pmacht \
+	pmachg spew
+HOSTLIBS=main.o parse.o psystem.a services.a strings.o terminal.a graphics.a \
+	sound.a network.a gnome_widgets.o
+
+hostinstall:
+	mkdir -p $(HOSTCELL)/bin $(HOSTCELL)/lib
+	for f in $(HOSTBINS); do cp bin/$$f $(HOSTCELL)/bin; done
+	for f in $(HOSTLIBS); do cp libs/$$f $(HOSTCELL)/lib; done
+
+#
+# Report the detected host characteristics.
+#
+whathost:
+	@echo "host: $(HOST) arch: $(ARCH) bits: $(BITS) -> $(HOSTCELL)"
 
 clean:
 	find . -name "*.pint" -type f -delete
@@ -708,11 +803,22 @@ help:
 	@echo
 	@echo Make targets:
 	@echo
-	@echo All	Make all binaries
+	@echo "all           Make all native C-built components (default on unix hosts)."
 	@echo
-	@echo cmach         Make cmach, the stand-alone interpreter written in C.
+	@echo "win64         Make the Windows x64 runtime components (cross compiled"
+	@echo "              via mingw-w64 on non-Windows hosts)."
 	@echo
-	@echo spew          Make spew, a fault generator test program.
+	@echo "arm64         Make the arm64 linux runtime components (cross compiled"
+	@echo "              via the aarch64 toolchain on other hosts)."
 	@echo
-	@echo clean         Clean intermediate/temp files from tree.
+	@echo "cmach         Make cmach, the stand-alone interpreter written in C."
+	@echo
+	@echo "spew          Make spew, a fault generator test program."
+	@echo
+	@echo "hostinstall   Snapshot the working bin and libs into the hosts tree"
+	@echo "              directory for this host (run after a clean regression)."
+	@echo
+	@echo "whathost      Report the detected host, architecture and bit length."
+	@echo
+	@echo "clean         Clean intermediate/temp files from tree."
 	@echo
