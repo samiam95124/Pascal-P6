@@ -838,73 +838,107 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   procedure genexp(ep: expptr);
   var r: reg; ep2: expptr; stkadrs: integer; fl: integer;
 
-  { find packed stack space for parameters }
-  function cmpparspc(pp: expptr): integer;
-  var total: integer;
+  { compute packed stack space for overflow parameters (AAPCS64). The
+    first 8 integer/pointer and the first 8 float parameters travel in
+    registers and take no stack space; the rest are stacked as packed
+    8 byte slots. The counters always advance, matching asspar and pcom's
+    parmoffarm. }
+  function cmpovfspc(pp: expptr): integer;
+  var sz, ipc, fpc: integer;
   begin
-    total := 0;
+    sz := 0; ipc := 0; fpc := 0;
     while pp <> nil do begin
-      if pp^.r2 <> rgnull then total := total+2*intsize
-      else total := total+intsize;
+      if isfltres(pp) then begin
+        fpc := fpc+1;
+        if fpc > maxfltparreg then sz := sz+realsize
+      end else if instab[pp^.op].insr = 2 then begin
+        ipc := ipc+2;
+        if ipc > maxintparreg then sz := sz+intsize*2
+      end else begin
+        ipc := ipc+1;
+        if ipc > maxintparreg then sz := sz+intsize
+      end;
       pp := pp^.next
     end;
-    cmpparspc := total
+    cmpovfspc := sz
   end;
 
-  { place parameters on stack }
-  procedure pshpar(pp: expptr);
-  var total, off: integer;
+  { place parameters for a call (AAPCS64). Register parameters (the first
+    8 integer/pointer and the first 8 float) were bound to their argument
+    registers by asspar and evaluate into them in place. Overflow
+    parameters are stored into a packed block of 8 byte slots reserved
+    here, the first overflow parameter in the lowest slot, matching pcom's
+    parmoffarm layout. The caller removes the block after the call. }
+  procedure pshpararm(pp: expptr);
+  var ipc, fpc, off, ps: integer;
   begin
-    { pcom lays parameters out as a packed sequence of 8 byte slots, with the
-      function result area contiguously above them, and the callee removes
-      exactly the parameter space on return. Reserve exactly that space and
-      store each parameter into its packed slot, the first parameter in the
-      highest slot. The stack pointer itself may only move in 16 byte units;
-      the 16 byte round-up pad is allocated by pshparpad above the function
-      result area, before the sfr allocation, so that the stack pointer is
-      16 aligned again by the time the parameters are evaluated. }
-    total := cmpparspc(pp);
-    if total > 0 then begin
-      wrtins(' sub sp, sp, #^0 // reserve parameter block', total);
-      stkadr := stkadr-total;
-      off := total;
-      while pp <> nil do begin
-        genexp(pp);
-        off := off-intsize;
-        if pp^.r2 <> rgnull then begin
-          off := off-intsize;
-          wrtins(' str %1, [sp, #^0] // place parameter', off, pp^.r1);
-          wrtins(' str %1, [sp, #^0] // place 2nd register', off+intsize, pp^.r2)
-        end else
-          wrtins(' str %1, [sp, #^0] // place parameter', off, pp^.r1);
-        pp := pp^.next
-      end
+    ps := cmpovfspc(pp);
+    if ps > 0 then begin
+      wrtins(' sub sp, sp, #^0 // reserve overflow parameters', ps);
+      stkadr := stkadr-ps
+    end;
+    ipc := 0; fpc := 0; off := 0;
+    while pp <> nil do begin
+      genexp(pp);
+      if isfltres(pp) then begin
+        fpc := fpc+1;
+        if fpc > maxfltparreg then begin
+          wrtins(' str %1, [sp, #^0] // place overflow parameter', off, pp^.r1);
+          off := off+realsize
+        end
+      end else if instab[pp^.op].insr = 2 then begin
+        ipc := ipc+2;
+        if ipc > maxintparreg then begin
+          wrtins(' str %1, [sp, #^0] // place overflow parameter', off, pp^.r1);
+          wrtins(' str %1, [sp, #^0] // place 2nd register', off+intsize, pp^.r2);
+          off := off+intsize*2
+        end
+      end else begin
+        ipc := ipc+1;
+        if ipc > maxintparreg then begin
+          wrtins(' str %1, [sp, #^0] // place overflow parameter', off, pp^.r1);
+          off := off+intsize
+        end
+      end;
+      pp := pp^.next
     end
   end;
 
-  { allocate the parameter block round-up pad. Emitted before the sfr
+  { remove the overflow parameter block after a call (the callee removes
+    nothing; AAPCS64 is caller cleanup). Any stack-returned function result
+    sits directly above the block, so this runs before the result is
+    indexed. }
+  procedure remparovf(pp: expptr);
+  var ps: integer;
+  begin
+    ps := cmpovfspc(pp);
+    if ps > 0 then
+      wrtins(' add sp, sp, #^0 // remove overflow parameters', ps)
+  end;
+
+  { allocate the overflow block round-up pad. Emitted before the sfr
     allocation so the pad sits above the function result area, keeping the
-    parameters and the result area contiguous as pcom lays them out. }
+    overflow parameters and the result area contiguous as pcom lays them
+    out, and the stack pointer 16 aligned while the parameters evaluate. }
   procedure pshparpad(pp: expptr);
-  var total: integer;
+  var ps: integer;
   begin
-    total := cmpparspc(pp);
-    if total mod 16 <> 0 then begin
-      wrtins(' sub sp, sp, #^0 // parameter block round-up pad',
-             16-total mod 16);
-      stkadr := stkadr-(16-total mod 16)
+    ps := cmpovfspc(pp);
+    if ps mod 16 <> 0 then begin
+      wrtins(' sub sp, sp, #^0 // overflow block round-up pad',
+             16-ps mod 16);
+      stkadr := stkadr-(16-ps mod 16)
     end
   end;
 
-  { remove the parameter block round-up pad after a call. The callee removes
-    the packed parameter space and the result handling removes the function
-    result area, so this runs after both. }
+  { remove the overflow block round-up pad after a call. The overflow
+    removal and the result handling run first. }
   procedure remparpad(pp: expptr);
-  var total: integer;
+  var ps: integer;
   begin
-    total := cmpparspc(pp);
-    if total mod 16 <> 0 then
-      wrtins(' add sp, sp, #^0 // remove parameter pad', 16-total mod 16)
+    ps := cmpovfspc(pp);
+    if ps mod 16 <> 0 then
+      wrtins(' add sp, sp, #^0 // remove overflow pad', 16-ps mod 16)
   end;
 
   { call system procedure/function }
@@ -1769,7 +1803,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
               wrtins(' b 1b // loop');
               wrtins('2:')
             end else
-              wrtins(' sub sp, sp, #@s // set new stack depth', ep^.lb^);
+              { rounded up to 16 so the stack pointer stays 16 aligned (the
+                checking clear loop above rounds naturally) }
+              wrtins(' sub sp, sp, #((@s+15)&-16) // set new stack depth',
+                     ep^.lb^);
           end;
 
         {cup,cuf}
@@ -1777,7 +1814,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           stkadrs := stkadr; { save stack track here }
           pshparpad(ep^.pl); { pad above the function result area }
           genexp(ep^.sl); { process sfr start link }
-          pshpar(ep^.pl); { process parameters first }
+          pshpararm(ep^.pl); { process parameters first }
           { at the flat module level (between the preamble and the module
             return) there is no frame to preserve the link register, so it
             is saved around the call. Only the frameless preamble calls need
@@ -1794,6 +1831,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end else wrtins(' bl @s // call user procedure', ep^.fn^);
           if (blkstk^.btyp in [btprog, btmod]) and (ep^.pl = nil) then
             wrtins(' ldr x30, [sp], #16 // restore link register');
+          remparovf(ep^.pl); { caller removes overflow parameters }
           if ep^.op = 246{cuf} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgv0 then
@@ -1815,12 +1853,22 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' strb w12, [x10], #1');
                 wrtins(' subs x11, x11, #1');
                 wrtins(' b.ne 1b');
-                wrtins(' add sp, sp, #^0 // remove structure from stack', ep^.q3);
+                wrtins(' add sp, sp, #^0 // remove structure from stack',
+                       ((ep^.q3+15) div 16)*16);
                 wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else begin
               if ep^.r1 <> rgx0 then
                 wrtins(' mov %1, x0 // place result', ep^.r1);
-            end
+            end;
+            { the result returns in x0/d0, loaded from the register save
+              slot by reti/retr; remove the function result space that
+              sfr allocated (rounded as allocated) }
+            if ep^.rc <> 2 then
+              if ep^.rc <> 3 then
+                if ep^.sl <> nil then
+                  if ep^.sl^.lb <> nil then
+                    wrtins(' add sp, sp, #((@s+15)&-16) // remove function result space',
+                           ep^.sl^.lb^)
           end;
           remparpad(ep^.pl);
           stkadr := stkadrs { restore stack position }
@@ -1831,12 +1879,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           stkadrs := stkadr; { save stack track here }
           pshparpad(ep^.pl); { pad above the function result area }
           genexp(ep^.sl); { process sfr start link }
-          pshpar(ep^.pl); { process parameters first }
+          pshpararm(ep^.pl); { process parameters first }
           genexp(ep^.l); { load procedure address }
           wrtins(' mov x28, x29 // move our frame pointer to preserved register');
           wrtins(' ldr x29, [%1, #^0] // set callee frame pointer', ptrsize, ep^.l^.r1);
           wrtins(' ldr x9, [%1] // load procedure address', ep^.l^.r1);
           wrtins(' blr x9 // call indirect');
+          remparovf(ep^.pl); { caller removes overflow parameters }
           if ep^.op = 247{cif} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgv0 then
@@ -1858,12 +1907,20 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' strb w12, [x10], #1');
                 wrtins(' subs x11, x11, #1');
                 wrtins(' b.ne 1b');
-                wrtins(' add sp, sp, #^0 // remove structure from stack', ep^.q3);
+                wrtins(' add sp, sp, #^0 // remove structure from stack',
+                       ((ep^.q3+15) div 16)*16);
                 wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else begin
               if ep^.r1 <> rgx0 then
                 wrtins(' mov %1, x0 // place result', ep^.r1)
-            end
+            end;
+            { remove the function result space that sfr allocated }
+            if ep^.rc <> 2 then
+              if ep^.rc <> 3 then
+                if ep^.sl <> nil then
+                  if ep^.sl^.lb <> nil then
+                    wrtins(' add sp, sp, #((@s+15)&-16) // remove function result space',
+                           ep^.sl^.lb^)
           end;
           wrtins(' mov x29, x28 // restore our frame pointer');
           remparpad(ep^.pl);
@@ -1875,7 +1932,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           stkadrs := stkadr; { save stack track here }
           pshparpad(ep^.pl); { pad above the function result area }
           genexp(ep^.sl); { process sfr start link }
-          pshpar(ep^.pl); { process parameters first }
+          pshpararm(ep^.pl); { process parameters first }
           if ep^.qs <> nil then begin
             wrtins(' adrp x9, @s // load vectored address (page)', ep^.qs^);
             wrtins(' add x9, x9, :lo12:@s // vectored slot address', ep^.qs^);
@@ -1887,6 +1944,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' ldr x9, [x9] // load vectored address');
             wrtins(' blr x9 // call vectored')
           end;
+          remparovf(ep^.pl); { caller removes overflow parameters }
           if ep^.op = 249{cvf} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgv0 then
@@ -1908,12 +1966,20 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' strb w12, [x10], #1');
                 wrtins(' subs x11, x11, #1');
                 wrtins(' b.ne 1b');
-                wrtins(' add sp, sp, #^0 // remove structure from stack', ep^.q3);
+                wrtins(' add sp, sp, #^0 // remove structure from stack',
+                       ((ep^.q3+15) div 16)*16);
                 wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else begin
               if ep^.r1 <> rgx0 then
                 wrtins(' mov %1, x0 // place result', ep^.r1);
-            end
+            end;
+            { remove the function result space that sfr allocated }
+            if ep^.rc <> 2 then
+              if ep^.rc <> 3 then
+                if ep^.sl <> nil then
+                  if ep^.sl^.lb <> nil then
+                    wrtins(' add sp, sp, #((@s+15)&-16) // remove function result space',
+                           ep^.sl^.lb^)
           end;
           remparpad(ep^.pl);
           stkadr := stkadrs { restore stack position }
@@ -2865,6 +2931,29 @@ begin { assemble }
       wrtins(' b 3b');
       wrtins('4:');
       wrtins(' str x29, [x11, #-8] // append own frame pointer');
+      { Spill the AAPCS64 argument registers to their frame slots. The
+        register save area sits directly below the display: 8 integer
+        slots (x0 in the lowest), the function result slot, then 8 float
+        slots (v0 in the highest). pcom reserves this area in the frame
+        and assigns the register parameters their addresses within it
+        (parmoffarm), so the body reads them as ordinary frame variables.
+        Program and module bodies take no parameters and have no save
+        area. }
+      if blkstk <> nil then
+        if blkstk^.btyp in [btproc, btfunc] then begin
+          wrtins(' sub x16, x29, #^0 // index integer register save area',
+                 (p+1)*ptrsize+8*ptrsize);
+          wrtins(' stp x0, x1, [x16] // spill integer argument registers');
+          wrtins(' stp x2, x3, [x16, #16]');
+          wrtins(' stp x4, x5, [x16, #32]');
+          wrtins(' stp x6, x7, [x16, #48]');
+          wrtins(' sub x16, x29, #^0 // index float register save area',
+                 (p+1)*ptrsize+17*ptrsize);
+          wrtins(' stp d7, d6, [x16] // spill float argument registers');
+          wrtins(' stp d5, d4, [x16, #16]');
+          wrtins(' stp d3, d2, [x16, #32]');
+          wrtins(' stp d1, d0, [x16, #48]')
+        end;
       { Save callee-saved registers }
       wrtins(' stp x19, x20, [sp, #-16]! // save callee-saved registers');
       wrtins(' stp x21, x22, [sp, #-16]!');
@@ -3068,7 +3157,8 @@ begin { assemble }
       wrtins(' ldr x30, [sp, #^0] // restore LR', marksize+ptrsize);
       wrtins(' ldr x29, [sp] // restore FP');
       wrtins(' add sp, sp, #^0 // pop frame header', marksize+2*ptrsize);
-      wrtins(' add sp, sp, #^0 // remove caller parameters', q);
+      { AAPCS64 is caller cleanup: the caller removes any overflow
+        parameters after the call }
       if op = 237{retm} then
         wrtins(' mov x0, sp // index result in x0');
       wrtins(' ret // return to caller');
@@ -3080,6 +3170,13 @@ begin { assemble }
     128,132,204,130,131: begin parq;
       frereg := allreg;
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      { load the function result from the register save slot before the
+        frame is torn down; the result returns in x0 }
+      wrtins(' sub x16, x29, #^0 // index function result',
+             blkstk^.lvl*ptrsize+9*ptrsize);
+      wrtins(' ldr x0, [x16] // load function result');
+      if op in [204{retx},130{retc},131{retb}] then
+        wrtins(' and x0, x0, #255 // mask byte result');
       { Restore callee-saved registers }
       wrtins(' ldp x27, x28, [sp], #16 // restore callee-saved registers');
       wrtins(' ldp x25, x26, [sp], #16');
@@ -3090,10 +3187,7 @@ begin { assemble }
       wrtins(' ldr x30, [sp, #^0] // restore LR', marksize+ptrsize);
       wrtins(' ldr x29, [sp] // restore FP');
       wrtins(' add sp, sp, #^0 // pop frame header', marksize+2*ptrsize);
-      wrtins(' add sp, sp, #^0 // remove caller parameters', q);
-      wrtins(' ldr x0, [sp], #16 // get qword result');
-      if op in [204{retx},130{retc},131{retb}] then
-        wrtins(' and x0, x0, #255 // mask byte result');
+      { AAPCS64 is caller cleanup }
       wrtins(' ret // return to caller');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
@@ -3103,6 +3197,11 @@ begin { assemble }
     129: begin parq;
       frereg := allreg;
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      { load the function result from the register save slot before the
+        frame is torn down; the result returns in d0 }
+      wrtins(' sub x16, x29, #^0 // index function result',
+             blkstk^.lvl*ptrsize+9*ptrsize);
+      wrtins(' ldr d0, [x16] // load function result');
       { Restore callee-saved registers }
       wrtins(' ldp x27, x28, [sp], #16 // restore callee-saved registers');
       wrtins(' ldp x25, x26, [sp], #16');
@@ -3113,8 +3212,7 @@ begin { assemble }
       wrtins(' ldr x30, [sp, #^0] // restore LR', marksize+ptrsize);
       wrtins(' ldr x29, [sp] // restore FP');
       wrtins(' add sp, sp, #^0 // pop frame header', marksize+2*ptrsize);
-      wrtins(' add sp, sp, #^0 // remove caller parameters', q);
-      wrtins(' ldr d0, [sp], #16 // get real result');
+      { AAPCS64 is caller cleanup }
       wrtins(' ret // return to caller');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
@@ -3124,6 +3222,8 @@ begin { assemble }
     236: begin parq;
       frereg := allreg;
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      { the structured result was written to the function result area above
+        the overflow parameters by the body; AAPCS64 is caller cleanup }
       { Restore callee-saved registers }
       wrtins(' ldp x27, x28, [sp], #16 // restore callee-saved registers');
       wrtins(' ldp x25, x26, [sp], #16');
@@ -3134,7 +3234,6 @@ begin { assemble }
       wrtins(' ldr x30, [sp, #^0] // restore LR', marksize+ptrsize);
       wrtins(' ldr x29, [sp] // restore FP');
       wrtins(' add sp, sp, #^0 // pop frame header', marksize+2*ptrsize);
-      wrtins(' add sp, sp, #^0 // remove caller parameters', q);
       wrtins(' ret // return to caller');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
@@ -3342,6 +3441,8 @@ end; (*assemble*)
 begin (* main *)
 
   proginit; { perform independent init }
+
+  convarm := true; { require the AAPCS64 calling convention selection }
 
   write('P6 Pascal ARM64/gcc 64 bit code generator vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');

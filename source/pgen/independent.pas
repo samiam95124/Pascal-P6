@@ -886,7 +886,9 @@ domrklin: boolean; { mark source line translations in assembly }
 prologue_pending: boolean; { next source line marks a routine's prologue end }
 amd64_sysv: boolean; { use SYS V AMD64 ABI calling convention }
 windows: boolean; { use Windows calling convention }
-convreq: boolean; { code generator requires a calling convention selection }
+convreq: boolean; { code generator requires an x86 calling convention selection }
+convarm: boolean; { code generator requires the AAPCS64 calling convention }
+arm64_sysv: boolean; { use the AAPCS64 (ARM64) calling convention }
 
 { other flags }
 iso7185: boolean; { iso7185 standard flag }
@@ -1969,25 +1971,33 @@ begin
                             error('win64 option must be given on command line');
                           windows := option[oi]
                         end;
+                    32: arm64_sysv := option[oi];
                     2:; 3:; 4:; 12:; 20:; 21:; 22:;
                     24:; 25:; 26:; 10:; 18:; 27:; 30:;
                   end
                 end else error('No valid option found');
                 skpspc
               until not (ch in ['a'..'z']);
-              { each code generator declares whether it requires an x86
-                calling convention selection (amd64: SYS V or Windows x64) or
-                the plain stack model parameter layout (arm64); reject a
-                mismatched intermediate up front, before any code is
-                generated, rather than emitting a mismatched object that
+              { each code generator declares the calling convention family
+                it requires (amd64: exactly one of SYS V or Windows x64;
+                arm64: AAPCS64) or the plain stack model parameter layout;
+                reject a mismatched intermediate up front, before any code
+                is generated, rather than emitting a mismatched object that
                 crashes at run }
               if convreq then begin
                 if not (amd64_sysv or windows) then
                   error('Calling convention mismatch');
                 if amd64_sysv and windows then
+                  error('Calling convention mismatch');
+                if arm64_sysv then
+                  error('Calling convention mismatch')
+              end else if convarm then begin
+                if not arm64_sysv then
+                  error('Calling convention mismatch');
+                if amd64_sysv or windows then
                   error('Calling convention mismatch')
               end else begin
-                if amd64_sysv or windows then
+                if amd64_sysv or windows or arm64_sysv then
                   error('Calling convention mismatch')
               end
             end;
@@ -3741,6 +3751,7 @@ begin
       28: domrklin   := option[oi];
       29: amd64_sysv := option[oi];
       31: windows    := option[oi];
+      32: arm64_sysv := option[oi];
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:; 27:; 30:;
     end
@@ -3794,6 +3805,8 @@ begin
   amd64_sysv := false; { SYS V AMD64 calling convention not yet seen }
   windows := false; { don't use Windows calling convention }
   convreq := false; { plain stack model layout unless the target says else }
+  convarm := false; { AAPCS64 required if the target says so }
+  arm64_sysv := false; { don't use the AAPCS64 calling convention }
 
   { supress warnings }
   refer(dochkovf);
