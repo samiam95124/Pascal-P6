@@ -97,6 +97,19 @@ begin
 
 end;
 
+{ jump forward over the inline constants in the code section }
+override procedure jmpfwd;
+begin
+   writeln(prr, '        b       1f')
+end;
+
+{ align the code resumption after the variable width data constants; arm64
+  instructions must be word aligned }
+override procedure codealign;
+begin
+   writeln(prr, '        .balign 4')
+end;
+
 override procedure assemble; (*translate symbolic code into machine code and store*)
 
   var name :alfa; r :real; s :settype;
@@ -433,10 +446,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {chks}
       97: begin
         asscall;
-        assreg(ep^.l, rf, rgx2, rgnull);
+        { let the allocator pick a callee-saved register for the set address
+          so it survives the chksetbnd call (x2, the arg register, is caller
+          saved and clobbered) }
+        assreg(ep^.l, rf, rgnull, rgnull);
         ep^.r1 := r1;
-        if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        ep^.r1a := ep^.l^.r1a
+        if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       {ckla}
@@ -465,9 +480,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
       {sgs}
       32: begin
-        asscall; assreg(ep^.l, rf, rgx0, rgnull);
-        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        gettmp(ep^.r1a, setsize)
+        asscall;
+        { keep operands callee-saved so the destination survives the call }
+        assreg(ep^.l, rf, rgnull, rgnull); resreg(ep^.l^.r1); { element }
+        assreg(ep^.r, rf, rgnull, rgnull); { destination set address }
+        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       {flt,flo}
@@ -543,11 +560,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {dif,int,uni}
       45,46,47: begin
         asscall;
-        assreg(ep^.l, rf, rgx0, rgnull); resreg(rgx0);
-        assreg(ep^.r, rf, rgx1, rgnull);
+        { keep all three operands in callee-saved registers so the
+          destination address survives the psystem call (the arg registers
+          are caller saved); they are moved to arg registers at the call }
+        assreg(ep^.l, rf, rgnull, rgnull); resreg(ep^.l^.r1);
+        assreg(ep^.r, rf, rgnull, rgnull); resreg(ep^.r^.r1);
+        assreg(ep^.x1, rf, rgnull, rgnull);
         ep^.r1 := r1;
-        if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        ep^.r1a := ep^.l^.r1a
+        if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       {inn}
@@ -562,18 +582,23 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
       {mod}
       49: begin
+        { the result shares the dividend's register (as for mpi), so the
+          genexp, which can only name two registers per instruction, forms
+          the remainder in place }
         ep^.r1 := r1;
-        assreg(ep^.l, rf, rgnull, rgnull); resreg(ep^.l^.r1);
-        assreg(ep^.r, rf, rgnull, rgnull);
-        if ep^.r1 = rgnull then getreg(ep^.r1, rf)
+        if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+        assreg(ep^.l, rf, ep^.r1, rgnull);
+        assreg(ep^.r, rf, rgnull, rgnull)
       end;
 
       {dvi}
       53: begin
+        { the result shares the dividend's register so the quotient is
+          formed in place }
         ep^.r1 := r1;
-        assreg(ep^.l, rf, rgnull, rgnull); resreg(ep^.l^.r1);
-        assreg(ep^.r, rf, rgnull, rgnull);
-        if ep^.r1 = rgnull then getreg(ep^.r1, rf)
+        if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+        assreg(ep^.l, rf, ep^.r1, rgnull);
+        assreg(ep^.r, rf, rgnull, rgnull)
       end;
 
       {mpi}
@@ -601,9 +626,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {rgs}
       110: begin
         asscall;
-        assreg(ep^.l, rf, rgx0, rgnull); assreg(ep^.r, rf, rgx1, rgnull);
-        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-        gettmp(ep^.r1a, setsize)
+        { keep operands callee-saved so the destination survives the call }
+        assreg(ep^.l, rf, rgnull, rgnull); resreg(ep^.l^.r1);
+        assreg(ep^.r, rf, rgnull, rgnull); resreg(ep^.r^.r1);
+        assreg(ep^.x1, rf, rgnull, rgnull);
+        ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf)
       end;
 
       { dupi, dupa, dupr, dups, dupb, dupc }
@@ -822,7 +849,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         wrtins(' str %1, [sp, #-16]! // save parameter', pp^.r1);
         stkadr := stkadr-intsize
       end else if pp^.r1 in [rgv0..rgv31] then begin
-        wrtins(' sub sp, sp, #0 // allocate real on stack', realsize);
+        wrtins(' sub sp, sp, #^0 // allocate real on stack', realsize);
         stkadr := stkadr-realsize;
         wrtins(' str %1, [sp] // place real on stack', pp^.r1)
       end;
@@ -843,7 +870,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       aln := true
     end;
     si := ' bl psystem_      // call system procedure/function         ';
-    for i := 1 to maxalfa do if sc[i] <> ' ' then si[12+i-1] := sc[i];
+    for i := 1 to maxalfa do if sc[i] <> ' ' then si[13+i-1] := sc[i];
     wrtins(si);
     if aln then
       wrtins(' ldr x9, [sp], #16 // drop alignment');
@@ -875,7 +902,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     pp := pp^.next; genexp(pp); { size x1 }
     pp := pp^.next; genexp(pp); { tagcnt x2 }
     wrtins(' str %1, [sp, #-16]! // save tag count', pp^.r1);
-    wrtins(' add x3, sp, #0 // index tag list', intsize);
+    wrtins(' add x3, sp, #^0 // index tag list', intsize);
     stkadr := stkadr-adrsize;
     aln := false;
     if stkadr mod 16 <> 0 then begin
@@ -892,7 +919,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     end;
     wrtins(' ldr x3, [sp], #16 // restore tag count');
     stkadr := stkadr+adrsize;
-    wrtins(' mov x9, #0 // find *integer', intsize);
+    wrtins(' mov x9, #^0 // find *integer', intsize);
     wrtins(' mul x9, x3, x9 // multiply');
     wrtins(' add sp, sp, x9 // dump taglist from stack');
     stkadr := stkadrs { restore to entry }
@@ -905,7 +932,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' str %1, [sp, #-16]! // save used register', r);
             stkadr := stkadr-intsize
           end else begin
-            wrtins(' sub sp, sp, #0 // allocate real on stack', realsize);
+            wrtins(' sub sp, sp, #^0 // allocate real on stack', realsize);
             wrtins(' str %1, [sp] // save used register', r);
             stkadr := stkadr-realsize
           end
@@ -919,52 +946,53 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {lodi,loda}
         0,105: begin
           if ep^.p <> blkstk^.lvl then begin
-            wrtins(' ldr %1, [x29, #0] // get display pointer', ep^.q1, ep^.r1);
-            wrtins(' ldr %1, [%1, #@l] // fetch local qword', ep^.q, ep^.p, ep^.r1)
+            wrtins(' ldr %1, [x29, #^0] // get display pointer', ep^.q1, ep^.r1);
+            wrtins(' add x16, %1, #@l // frame address', ep^.q, ep^.p, ep^.r1)
           end else
-            wrtins(' ldr %1, [x29, #@l] // fetch local qword', ep^.q, ep^.p, ep^.r1)
+            wrtins(' add x16, x29, #@l // frame address', ep^.q, ep^.p);
+          wrtins(' ldr %1, [x16] // fetch local qword', ep^.r1)
         end;
 
         {lodx,lodb,lodc}
         193,108,109: begin
           if ep^.p <> blkstk^.lvl then begin
-            wrtins(' ldr %1, [x29, #0] // get display pointer', ep^.q1, ep^.r1);
-            wrtins(' ldrb w0, [%1, #@l] // fetch local byte', ep^.q, ep^.p, ep^.r1);
-            wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
-          end else begin
-            wrtins(' ldrb w0, [x29, #@l] // fetch local byte', ep^.q, ep^.p);
-            wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
-          end
+            wrtins(' ldr %1, [x29, #^0] // get display pointer', ep^.q1, ep^.r1);
+            wrtins(' add x16, %1, #@l // frame address', ep^.q, ep^.p, ep^.r1)
+          end else
+            wrtins(' add x16, x29, #@l // frame address', ep^.q, ep^.p);
+          wrtins(' ldrb w0, [x16] // fetch local byte');
+          wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
         end;
 
         {lodr}
         106: begin
           if ep^.p <> blkstk^.lvl then begin
-            wrtins(' ldr %1, [x29, #0] // get display pointer', ep^.q1, ep^.t1);
-            wrtins(' ldr %1, [%2, #@l] // fetch local real', ep^.q, ep^.p, ep^.r1, ep^.t1)
+            wrtins(' ldr %1, [x29, #^0] // get display pointer', ep^.q1, ep^.t1);
+            wrtins(' add x16, %1, #@l // frame address', ep^.q, ep^.p, ep^.t1)
           end else
-            wrtins(' ldr %1, [x29, #@l] // fetch local real', ep^.q, ep^.p, ep^.r1)
+            wrtins(' add x16, x29, #@l // frame address', ep^.q, ep^.p);
+          wrtins(' ldr %1, [x16] // fetch local real', ep^.r1)
         end;
 
         {lods}
         107: begin
           if ep^.p <> blkstk^.lvl then begin
-            wrtins(' ldr x9, [x29, #0] // get display pointer', ep^.q1);
+            wrtins(' ldr x9, [x29, #^0] // get display pointer', ep^.q1);
             wrtins(' add x9, x9, #@l // index local set', ep^.q, ep^.p)
           end else
             wrtins(' add x9, x29, #@l // index local set', ep^.q, ep^.p);
-          wrtins(' sub x10, x29, #@s+0 // index destination temp', ep^.r1a, lclspc^);
+          wrtins(' sub x10, x29, #@s-^0 // index destination temp', ep^.r1a, lclspc^);
           wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
           wrtins(' stp x11, x12, [x10], #16 // store set part 1');
           wrtins(' ldp x11, x12, [x9] // load set part 2');
           wrtins(' stp x11, x12, [x10] // store set part 2');
-          wrtins(' sub %1, x29, #@s+0 // index temp again', ep^.r1a, ep^.r1, lclspc^);
+          wrtins(' sub %1, x29, #@s-^0 // index temp again', ep^.r1a, ep^.r1, lclspc^);
         end;
 
         {lda}
         4: begin
           if ep^.p <> blkstk^.lvl then begin
-            wrtins(' ldr %1, [x29, #0] // get display pointer', ep^.q1, ep^.r1);
+            wrtins(' ldr %1, [x29, #^0] // get display pointer', ep^.q1, ep^.r1);
             wrtins(' add %1, %1, #@l // index local', ep^.q, ep^.r1)
           end else
             wrtins(' add %1, x29, #@l // index local', ep^.q, ep^.r1)
@@ -977,7 +1005,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.vc 1f // skip no overflow');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // set line number', sline);
+            wrtins(' mov x1, #^0 // set line number', sline);
             wrtins(' mov x2, #IntegerValueOverflow // set error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -995,7 +1023,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.vc 1f // skip no overflow');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // set line number', sline);
+            wrtins(' mov x1, #^0 // set line number', sline);
             wrtins(' mov x2, #IntegerValueOverflow // set error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -1021,18 +1049,17 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         120{lip}: begin
           if ep^.p <> blkstk^.lvl then begin
-            wrtins(' ldr %1, [x29, #0] // get display pointer', ep^.q1, ep^.t1);
-            wrtins(' ldr %1, [%2, #@l+ptrsize] // load frame pointer', ep^.q, ep^.p, ep^.r2, ep^.t1);
-            wrtins(' ldr %1, [%2, #@l] // load procedure address', ep^.q, ep^.p, ep^.r1, ep^.t1)
-          end else begin
-            wrtins(' ldr %1, [x29, #@l+ptrsize] // load frame pointer', ep^.q, ep^.p, ep^.r2);
-            wrtins(' ldr %1, [x29, #@l] // load procedure address', ep^.q, ep^.p, ep^.r1)
-          end
+            wrtins(' ldr %1, [x29, #^0] // get display pointer', ep^.q1, ep^.t1);
+            wrtins(' add x16, %1, #@l // frame address', ep^.q, ep^.p, ep^.t1)
+          end else
+            wrtins(' add x16, x29, #@l // frame address', ep^.q, ep^.p);
+          wrtins(' ldr %1, [x16, #^0] // load frame pointer', ptrsize, ep^.r2);
+          wrtins(' ldr %1, [x16] // load procedure address', ep^.r1)
         end;
 
         {equm,neqm,geqm,gtrm,leqm,lesm}
         142,148,154,160,166,172: begin
-          wrtins(' mov x2, #0 // get string length', ep^.q);
+          wrtins(' mov x2, #^0 // get string length', ep^.q);
           wrtins(' bl psystem_strcmp // compare strings');
           wrtins(' cmp x0, #0 // compare -0+ result');
           case ep^.op of
@@ -1050,13 +1077,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' adrp %1, @s // load address of global (page)', ep^.r1, ep^.fl^);
             wrtins(' add %1, %1, :lo12:@s // load address of global (offset)', ep^.r1, ep^.fl^)
           end else begin
-            wrtins(' adrp %1, globals+0 // load address of global (page)', ep^.q, ep^.r1);
-            wrtins(' add %1, %1, :lo12:globals+0 // load address of global (offset)', ep^.q, ep^.r1)
+            wrtins(' adrp %1, @g // load address of global (page)', ep^.q, ep^.r1);
+            wrtins(' add %1, %1, :lo12:@g // load address of global (offset)', ep^.q, ep^.r1)
           end;
 
         16{ixa}: begin
           { left is address right is index, size is q }
-          wrtins(' mov x9, #0 // get element size', ep^.q);
+          wrtins(' mov x9, #^0 // get element size', ep^.q);
           wrtins(' mul x9, %1, x9 // find index*size', ep^.r^.r1);
           wrtins(' add %1, %1, x9 // add to base', ep^.l^.r1)
         end;
@@ -1065,12 +1092,17 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {ldoi,ltci}
         1,65,228:
+          { form the full global address in x9 with adrp+add (no alignment
+            requirement) rather than a :lo12: load offset, which for a 64-bit
+            load requires 8-byte alignment the byte-packed globals may lack }
           if ep^.fl <> nil then begin
             wrtins(' adrp x9, @s // load global quad (page)', ep^.fl^);
-            wrtins(' ldr %1, [x9, :lo12:@s] // load global quad', ep^.r1, ep^.fl^)
+            wrtins(' add x9, x9, :lo12:@s // global address', ep^.fl^);
+            wrtins(' ldr %1, [x9] // load global quad', ep^.r1)
           end else begin
-            wrtins(' adrp x9, globals+0 // load global quad (page)', ep^.q);
-            wrtins(' ldr %1, [x9, :lo12:globals+0] // load global quad', ep^.q, ep^.r1)
+            wrtins(' adrp x9, @g // load global quad (page)', ep^.q);
+            wrtins(' add x9, x9, :lo12:@g // global address', ep^.q);
+            wrtins(' ldr %1, [x9] // load global quad', ep^.r1)
           end;
 
         {ldob,ldoc,ldox,ltcb,ltcc,ltcx}
@@ -1080,8 +1112,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' ldrb w0, [x9, :lo12:@s] // load global byte', ep^.fl^);
             wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
           end else begin
-            wrtins(' adrp x9, globals+0 // load global byte (page)', ep^.q);
-            wrtins(' ldrb w0, [x9, :lo12:globals+0] // load global byte', ep^.q);
+            wrtins(' adrp x9, @g // load global byte (page)', ep^.q);
+            wrtins(' ldrb w0, [x9, :lo12:@g] // load global byte', ep^.q);
             wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
           end;
 
@@ -1089,10 +1121,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         66,229:
           if ep^.fl <> nil then begin
             wrtins(' adrp x9, @s // load global real (page)', ep^.fl^);
-            wrtins(' ldr %1, [x9, :lo12:@s] // load global real', ep^.r1, ep^.fl^)
+            wrtins(' add x9, x9, :lo12:@s // global address', ep^.fl^);
+            wrtins(' ldr %1, [x9] // load global real', ep^.r1)
           end else begin
-            wrtins(' adrp x9, globals+0 // load global real (page)', ep^.q);
-            wrtins(' ldr %1, [x9, :lo12:globals+0] // load global real', ep^.q, ep^.r1)
+            wrtins(' adrp x9, @g // load global real (page)', ep^.q);
+            wrtins(' add x9, x9, :lo12:@g // global address', ep^.q);
+            wrtins(' ldr %1, [x9] // load global real', ep^.r1)
           end;
 
         {ldos,ltcs}
@@ -1101,50 +1135,50 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' adrp x9, @s // load address of global set (page)', ep^.fl^);
             wrtins(' add x9, x9, :lo12:@s // load address of global set', ep^.fl^)
           end else begin
-            wrtins(' adrp x9, globals+0 // load address of global set (page)', ep^.q);
-            wrtins(' add x9, x9, :lo12:globals+0 // load address of global set', ep^.q)
+            wrtins(' adrp x9, @g // load address of global set (page)', ep^.q);
+            wrtins(' add x9, x9, :lo12:@g // load address of global set', ep^.q)
           end;
-          wrtins(' sub x10, x29, #@s+0 // load temp destination', ep^.r1a, lclspc^);
+          wrtins(' sub x10, x29, #@s-^0 // load temp destination', ep^.r1a, lclspc^);
           wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
           wrtins(' stp x11, x12, [x10], #16 // store set part 1');
           wrtins(' ldp x11, x12, [x9] // load set part 2');
           wrtins(' stp x11, x12, [x10] // store set part 2');
-          wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
+          wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
         end;
 
         {indi,inda}
         9,85:
-          wrtins(' ldr %1, [%1, #0] // load qword from address', ep^.q, ep^.l^.r1);
+          wrtins(' ldr %1, [%1, #^0] // load qword from address', ep^.q, ep^.l^.r1);
 
         {indr}
         86:
-          wrtins(' ldr %1, [%2, #0] // load real from address', ep^.q, ep^.r1, ep^.t1);
+          wrtins(' ldr %1, [%2, #^0] // load real from address', ep^.q, ep^.r1, ep^.t1);
 
         {indb,indc,indx}
         88,89,198: begin
-          wrtins(' ldrb w0, [%1, #0] // load byte from address', ep^.q, ep^.l^.r1);
+          wrtins(' ldrb w0, [%1, #^0] // load byte from address', ep^.q, ep^.l^.r1);
           wrtins(' uxtb %1, w0 // zero extend', ep^.l^.r1)
         end;
 
         {inds}
         87: begin
-          wrtins(' add x9, %1, #0 // offset source', ep^.q, ep^.l^.r1);
-          wrtins(' sub x10, x29, #@s+0 // load temp destination', ep^.r1a, lclspc^);
+          wrtins(' add x9, %1, #^0 // offset source', ep^.q, ep^.l^.r1);
+          wrtins(' sub x10, x29, #@s-^0 // load temp destination', ep^.r1a, lclspc^);
           wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
           wrtins(' stp x11, x12, [x10], #16 // store set part 1');
           wrtins(' ldp x11, x12, [x9] // load set part 2');
           wrtins(' stp x11, x12, [x10] // store set part 2');
-          wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
+          wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
         end;
 
         {inci,incb,incc,incx}
         10, 93, 94, 201: begin
-          wrtins(' adds %1, %1, #0 // increment by n', ep^.q, ep^.r1);
+          wrtins(' adds %1, %1, #^0 // increment by n', ep^.q, ep^.r1);
           if dochkovf then begin
             wrtins(' b.vc 1f // skip no overflow');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // set line number', sline);
+            wrtins(' mov x1, #^0 // set line number', sline);
             wrtins(' mov x2, #IntegerValueOverflow // set error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -1153,16 +1187,16 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {inca}
         90:
-          wrtins(' add %1, %1, #0 // increment by n', ep^.q, ep^.r1);
+          wrtins(' add %1, %1, #^0 // increment by n', ep^.q, ep^.r1);
 
         {deci,decb,decc,decx}
         57, 103, 104, 202: begin
-          wrtins(' subs %1, %1, #0 // decrement by n', ep^.q, ep^.r1);
+          wrtins(' subs %1, %1, #^0 // decrement by n', ep^.q, ep^.r1);
           if dochkovf then begin
             wrtins(' b.vc 1f // skip no overflow');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // set line number', sline);
+            wrtins(' mov x1, #^0 // set line number', sline);
             wrtins(' mov x2, #IntegerValueOverflow // set error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -1172,20 +1206,20 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {mdc}
         254: begin
           wrtins(' mov %1, %2 // copy template pointer to data', ep^.r2, ep^.r1);
-          wrtins(' add %1, %1, #0 // skip template to data', ep^.q, ep^.r1)
+          wrtins(' add %1, %1, #^0 // skip template to data', ep^.q, ep^.r1)
         end;
 
         {ckvi,ckvb,ckvc,ckvx}
         175, 179, 180, 203: begin
-          wrtins(' cmp %1, #0 // check this tag value', ep^.q, ep^.r1);
+          wrtins(' cmp %1, #^0 // check this tag value', ep^.q, ep^.r1);
           wrtins(' cset x9, eq // set boolean equal');
           wrtins(' orr %1, %1, x9 // or with running total', ep^.r2);
         end;
 
         {cvbi,cvbx,cvbb,cvbc}
         100, 115, 116, 121: begin
-          wrtins(' mov x0, #0 // load tagfield offset', ep^.q);
-          wrtins(' mov x1, #0 // load size of variant', ep^.q1);
+          wrtins(' mov x0, #^0 // load tagfield offset', ep^.q);
+          wrtins(' mov x1, #^0 // load size of variant', ep^.q1);
           wrtins(' adrp x2, @s // load logical variant table (page)', ep^.lt^);
           wrtins(' add x2, x2, :lo12:@s // load logical variant table', ep^.lt^);
           if ep^.op = 100 then
@@ -1199,8 +1233,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {ivti,ivtx,ivtb,ivtc}
         192,101,102,111: begin
-          wrtins(' mov x0, #0 // load tagfield offset', ep^.q);
-          wrtins(' mov x1, #0 // load size of variant', ep^.q1);
+          wrtins(' mov x0, #^0 // load tagfield offset', ep^.q);
+          wrtins(' mov x1, #^0 // load size of variant', ep^.q1);
           wrtins(' adrp x2, @s // load logical variant table (page)', ep^.lt^);
           wrtins(' add x2, x2, :lo12:@s // load logical variant table', ep^.lt^);
           if ep^.op = 192 then
@@ -1218,7 +1252,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' b.eq 1f // skip equal');
           wrtins(' adrp x0, modnam // load module name');
           wrtins(' add x0, x0, :lo12:modnam');
-          wrtins(' mov x1, #0 // load line number', sline);
+          wrtins(' mov x1, #^0 // load line number', sline);
           wrtins(' mov x2, #ContainerMismatch // load error code');
           wrtins(' bl psystem_errore // process error');
           wrtins('1:');
@@ -1226,14 +1260,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {cpc}
         177: begin
-          wrtins(' mov x0, #0 // get level number', ep^.q);
+          wrtins(' mov x0, #^0 // get level number', ep^.q);
           wrtins(' bl psystem_cmptmp // compare templates')
         end;
 
         {cta}
         191: begin
-          wrtins(' mov x0, #0 // get tag offset', ep^.q);
-          wrtins(' mov x1, #0 // get tag nesting level', ep^.q1);
+          wrtins(' mov x0, #^0 // get tag offset', ep^.q);
+          wrtins(' mov x1, #^0 // get tag nesting level', ep^.q1);
           wrtins(' adrp x2, @s // index logical variant table (page)', ep^.lt^);
           wrtins(' add x2, x2, :lo12:@s // index logical variant table', ep^.lt^);
           wrtins(' bl psystem_tagchkass // check tag assignment')
@@ -1243,12 +1277,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         114: begin
           wrtins(' adrp %1, @s // load procedure/function address (page)', ep^.r1, ep^.fn^);
           wrtins(' add %1, %1, :lo12:@s // load procedure/function address', ep^.r1, ep^.fn^);
-          wrtins(' ldr %1, [x29, #@l] // load display pointer', ep^.q1, ep^.p, ep^.r2)
+          wrtins(' add x16, x29, #@l // frame address', ep^.q1, ep^.p);
+          wrtins(' ldr %1, [x16] // load display pointer', ep^.r2)
         end;
 
         {ldci,ldcc,ldcb}
         123,127,126:
-          wrtins(' mov %1, #0 // load constant', ep^.vi, ep^.r1);
+          wrtins(' ldr %1, =^0 // load constant', ep^.vi, ep^.r1);
 
         {ldcn}
         125:
@@ -1256,39 +1291,40 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {ldcr}
         124: begin
-          wrtins(' adrp x9, real0 // load real constant (page)', ep^.realn);
-          wrtins(' ldr %1, [x9, :lo12:real0] // load real constant', ep^.realn, ep^.r1)
+          wrtins(' adrp x9, real^0 // load real constant (page)', ep^.realn);
+          wrtins(' add x9, x9, :lo12:real^0 // address', ep^.realn);
+          wrtins(' ldr %1, [x9] // load real constant', ep^.r1)
         end;
 
         {ldcs}
         7: begin
-          wrtins(' adrp x9, set0 // index constant set (page)', ep^.setn);
-          wrtins(' add x9, x9, :lo12:set0 // index constant set', ep^.setn);
-          wrtins(' sub x10, x29, #@s+0 // index temp', ep^.r1a, lclspc^);
+          wrtins(' adrp x9, set^0 // index constant set (page)', ep^.setn);
+          wrtins(' add x9, x9, :lo12:set^0 // index constant set', ep^.setn);
+          wrtins(' sub x10, x29, #@s-^0 // index temp', ep^.r1a, lclspc^);
           wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
           wrtins(' stp x11, x12, [x10], #16 // store set part 1');
           wrtins(' ldp x11, x12, [x9] // load set part 2');
           wrtins(' stp x11, x12, [x10] // store set part 2');
-          wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^);
+          wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^);
         end;
 
         {chki,chkb,chkc,chkx}
         26, 98, 99, 199: begin
-          wrtins(' mov %1, #0 // load low bound', ep^.vi, ep^.t1);
+          wrtins(' mov %1, #^0 // load low bound', ep^.vi, ep^.t1);
           wrtins(' cmp %1, %2 // compare', ep^.r1, ep^.t1);
           wrtins(' b.ge 1f // skip if greater or equal');
           wrtins(' adrp x0, modnam // load module name');
           wrtins(' add x0, x0, :lo12:modnam');
-          wrtins(' mov x1, #0 // load line number', sline);
+          wrtins(' mov x1, #^0 // load line number', sline);
           wrtins(' mov x2, #ValueOutOfRange // load error code');
           wrtins(' bl psystem_errore // process error');
           wrtins('1:');
-          wrtins(' mov %1, #0 // load high bound', ep^.vi2, ep^.t1);
+          wrtins(' mov %1, #^0 // load high bound', ep^.vi2, ep^.t1);
           wrtins(' cmp %1, %2 // compare', ep^.r1, ep^.t1);
           wrtins(' b.le 1f // skip if less or equal');
           wrtins(' adrp x0, modnam // load module name');
           wrtins(' add x0, x0, :lo12:modnam');
-          wrtins(' mov x1, #0 // load line number', sline);
+          wrtins(' mov x1, #^0 // load line number', sline);
           wrtins(' mov x2, #ValueOutOfRange // load error code');
           wrtins(' bl psystem_errore // process error');
           wrtins('1:')
@@ -1300,7 +1336,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' b.ne 1f // skip if not');
           wrtins(' adrp x0, modnam // load module name');
           wrtins(' add x0, x0, :lo12:modnam');
-          wrtins(' mov x1, #0 // load line number', sline);
+          wrtins(' mov x1, #^0 // load line number', sline);
           wrtins(' mov x2, #DereferenceOfNilPointer // load error code');
           wrtins(' bl psystem_errore // process error');
           wrtins('1:')
@@ -1308,10 +1344,15 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {chks}
         97: begin
-          wrtins(' mov x0, #0 // load low bound', ep^.vi);
-          wrtins(' mov x1, #0 // load high bound', ep^.vi2);
+          wrtins(' mov x0, #^0 // load low bound', ep^.vi);
+          wrtins(' mov x1, #^0 // load high bound', ep^.vi2);
+          if ep^.l^.r1 <> rgx2 then
+            wrtins(' mov x2, %1 // set addr to x2', ep^.l^.r1);
           wrtins(' bl psystem_chksetbnd // check set in bounds');
-          wrtins(' sub %1, x29, #@s+0 // reindex temp set', ep^.r1a, ep^.r1, lclspc^)
+          { check leaves the set in place, so the result is that same address,
+            preserved in a callee-saved register across the call }
+          if ep^.r1 <> ep^.l^.r1 then
+            wrtins(' mov %1, %2 // move set addr to result', ep^.r1, ep^.l^.r1)
         end;
 
         {ckla}
@@ -1321,7 +1362,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.ne 1f // skip if not nil');
             wrtins(' adrp x0, modnam // load module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // load line number', sline);
+            wrtins(' mov x1, #^0 // load line number', sline);
             wrtins(' mov x2, #DereferenceOfNilPointer // load error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -1329,8 +1370,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         end;
 
         56 {lca}: begin
-          wrtins(' adrp %1, string0 // load string constant address (page)', ep^.strn, ep^.r1);
-          wrtins(' add %1, %1, :lo12:string0 // load string constant address', ep^.strn, ep^.r1)
+          wrtins(' adrp %1, string^0 // load string constant address (page)', ep^.strn, ep^.r1);
+          wrtins(' add %1, %1, :lo12:string^0 // load string constant address', ep^.strn, ep^.r1)
         end;
 
         {grts,less}
@@ -1347,8 +1388,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             152,164: wrtins(' bl psystem_setinc // check set inclusion');
           end;
           if ep^.r1 <> rgx0 then
-            wrtins(' mov %1, x0 // move result to final register', ep^.r1);
-          puttmp(ep^.l^.r1a); puttmp(ep^.r^.r1a)
+            wrtins(' mov %1, x0 // move result to final register', ep^.r1)
         end;
 
         {equa,equi,equb,equc}
@@ -1379,15 +1419,18 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {lcp}
         135: begin
-          wrtins(' add %1, %2, #0 // get length/template', ptrsize, ep^.r2, ep^.l^.r1);
+          wrtins(' add %1, %2, #^0 // get length/template', ptrsize, ep^.r2, ep^.l^.r1);
           wrtins(' ldr %1, [%1] // get pointer', ep^.l^.r1)
         end;
 
         {sgs}
         32: begin
-          wrtins(' sub x1, x29, #@s+0 // index temp', ep^.r1a, lclspc^);
+          { element to arg 1, destination set address to arg 2 }
+          wrtins(' mov x0, %1 // element to arg 1', ep^.l^.r1);
+          wrtins(' mov x1, %1 // destination to arg 2', ep^.r^.r1);
           wrtins(' bl psystem_setsgl // make singleton set');
-          wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^);
+          if ep^.r1 <> ep^.r^.r1 then
+            wrtins(' mov %1, %2 // move dest addr to result', ep^.r1, ep^.r^.r1)
         end;
 
         {flt,flo}
@@ -1397,17 +1440,19 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         35: begin
           if dochkovf then begin
             wrtins(' adrp x9, real_int_max // load maximum int val (page)');
-            wrtins(' ldr %1, [x9, :lo12:real_int_max] // load maximum int val', ep^.t1);
+            wrtins(' add x9, x9, :lo12:real_int_max // address');
+            wrtins(' ldr %1, [x9] // load maximum int val', ep^.t1);
             wrtins(' fcmp %1, %2 // compare real', ep^.l^.r1, ep^.t1);
             wrtins(' b.lt 2f // skip if less');
             wrtins(' adrp x9, real_int_min // load minimum int val (page)');
-            wrtins(' ldr %1, [x9, :lo12:real_int_min] // load minimum int val', ep^.t1);
+            wrtins(' add x9, x9, :lo12:real_int_min // address');
+            wrtins(' ldr %1, [x9] // load minimum int val', ep^.t1);
             wrtins(' fcmp %1, %2 // compare real', ep^.l^.r1, ep^.t1);
             wrtins(' b.ge 1f // skip if greater or equal');
             wrtins('2:');
             wrtins(' adrp x0, modnam // load module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // load line number', sline);
+            wrtins(' mov x1, #^0 // load line number', sline);
             wrtins(' mov x2, #RealArgumentTooLarge // load error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -1428,7 +1473,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.vc 1f // skip no overflow');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // set line number', sline);
+            wrtins(' mov x1, #^0 // set line number', sline);
             wrtins(' mov x2, #IntegerValueOverflow // set error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -1462,13 +1507,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.ge 1f // skip if not negative');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // set line number', sline);
+            wrtins(' mov x1, #^0 // set line number', sline);
             wrtins(' mov x2, #BooleanOperatorOfNegative // set error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:');
           end;
           wrtins(' mvn %1, %1 // not integer', ep^.r1);
-          wrtins(' mov %1, #0 // load max positive int', pmmaxint, ep^.t1);
+          wrtins(' ldr %1, =^0 // load max positive int', pmmaxint, ep^.t1);
           wrtins(' and %1, %1, %2 // mask to positive', ep^.r1, ep^.t1)
         end;
 
@@ -1480,17 +1525,19 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         62: begin
           if dochkovf then begin
             wrtins(' adrp x9, real_int_max // load maximum int val (page)');
-            wrtins(' ldr %1, [x9, :lo12:real_int_max] // load maximum int val', ep^.t1);
+            wrtins(' add x9, x9, :lo12:real_int_max // address');
+            wrtins(' ldr %1, [x9] // load maximum int val', ep^.t1);
             wrtins(' fcmp %1, %2 // compare real', ep^.l^.r1, ep^.t1);
             wrtins(' b.lt 2f // skip if less');
             wrtins(' adrp x9, real_int_min // load minimum int val (page)');
-            wrtins(' ldr %1, [x9, :lo12:real_int_min] // load minimum int val', ep^.t1);
+            wrtins(' add x9, x9, :lo12:real_int_min // address');
+            wrtins(' ldr %1, [x9] // load minimum int val', ep^.t1);
             wrtins(' fcmp %1, %2 // compare real', ep^.l^.r1, ep^.t1);
             wrtins(' b.ge 1f // skip if greater or equal');
             wrtins('2:');
             wrtins(' adrp x0, modnam // load module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // load line number', sline);
+            wrtins(' mov x1, #^0 // load line number', sline);
             wrtins(' mov x2, #RealArgumentTooLarge // load error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -1508,7 +1555,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.ge 1f // skip if not negative');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // get line number', sline);
+            wrtins(' mov x1, #^0 // get line number', sline);
             wrtins(' mov x2, #BooleanOperatorOfNegative // get error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:');
@@ -1516,7 +1563,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.ge 1f // skip if not negative');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // get line number', sline);
+            wrtins(' mov x1, #^0 // get line number', sline);
             wrtins(' mov x2, #BooleanOperatorOfNegative // get error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:');
@@ -1530,21 +1577,29 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {dif,int,uni}
         45,46,47: begin
+          { copy source 1 into the destination, then operate the destination
+            against source 2 in place. Operands are in callee-saved registers;
+            move the destination and source 2 to arg registers for the call. }
+          wrtins(' ldp x9, x10, [%1] // load source 1 part 1', ep^.l^.r1);
+          wrtins(' stp x9, x10, [%1] // store to destination part 1', ep^.x1^.r1);
+          wrtins(' ldp x9, x10, [%1, #16] // load source 1 part 2', ep^.l^.r1);
+          wrtins(' stp x9, x10, [%1, #16] // store to destination part 2', ep^.x1^.r1);
+          wrtins(' mov x0, %1 // destination to arg 1', ep^.x1^.r1);
+          wrtins(' mov x1, %1 // source 2 to arg 2', ep^.r^.r1);
           case ep^.op of
             45: wrtins(' bl psystem_setdif // find set difference');
             46: wrtins(' bl psystem_setint // find set intersection');
             47: wrtins(' bl psystem_setuni // find set union');
           end;
-          wrtins(' sub %1, x29, #@s+0 // reindex the temp', ep^.r1a, ep^.r1, lclspc^);
-          puttmp(ep^.r^.r1a)
+          if ep^.r1 <> ep^.x1^.r1 then
+            wrtins(' mov %1, %2 // move dest addr to result', ep^.r1, ep^.x1^.r1)
         end;
 
         {inn}
         48: begin
           wrtins(' bl psystem_setsin // find set membership');
           if ep^.r1 <> rgx0 then
-            wrtins(' mov %1, x0 // move result to target reg', ep^.r1);
-          puttmp(ep^.r^.r1a)
+            wrtins(' mov %1, x0 // move result to target reg', ep^.r1)
         end;
 
         {mod}
@@ -1553,7 +1608,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' b.gt 1f // skip <= 0');
           wrtins(' adrp x0, modnam // index module name');
           wrtins(' add x0, x0, :lo12:modnam');
-          wrtins(' mov x1, #0 // set line number', sline);
+          wrtins(' mov x1, #^0 // set line number', sline);
           wrtins(' mov x2, #InvalidDivisorToMod // set error code');
           wrtins(' bl psystem_errore // process error');
           wrtins('1:');
@@ -1573,7 +1628,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' b.ne 1f // skip if not zero');
           wrtins(' adrp x0, modnam // index module name');
           wrtins(' add x0, x0, :lo12:modnam');
-          wrtins(' mov x1, #0 // set line number', sline);
+          wrtins(' mov x1, #^0 // set line number', sline);
           wrtins(' mov x2, #ZeroDivide // set error code');
           wrtins(' bl psystem_errore // process error');
           wrtins('1:');
@@ -1587,7 +1642,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.vc 1f // skip no overflow');
             wrtins(' adrp x0, modnam // index module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // set line number', sline);
+            wrtins(' mov x1, #^0 // set line number', sline);
             wrtins(' mov x2, #IntegerValueOverflow // set error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
@@ -1604,7 +1659,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.ne 1f // skip not zero');
             wrtins(' adrp x0, modnam // load module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // load line number', sline);
+            wrtins(' mov x1, #^0 // load line number', sline);
             wrtins(' mov x2, #ZeroDivide // load error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:');
@@ -1614,9 +1669,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {rgs}
         110: begin
-          wrtins(' sub x2, x29, #@s+0 // index temp', ep^.r1a, lclspc^);
+          wrtins(' sub x2, x29, #@s-^0 // index temp', ep^.r1a, lclspc^);
+          { low bound to arg 1, high bound to arg 2, destination to arg 3 }
+          wrtins(' mov x0, %1 // low bound to arg 1', ep^.l^.r1);
+          wrtins(' mov x1, %1 // high bound to arg 2', ep^.r^.r1);
+          wrtins(' mov x2, %1 // destination to arg 3', ep^.x1^.r1);
           wrtins(' bl psystem_setrgs // set range of values');
-          wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^);
+          if ep^.r1 <> ep^.x1^.r1 then
+            wrtins(' mov %1, %2 // move dest addr to result', ep^.r1, ep^.x1^.r1)
         end;
 
         { dupi, dupa, dupr, dups, dupb, dupc }
@@ -1637,7 +1697,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if ep^.lb <> nil then begin
             if dodbgchk then begin
               wrtins(' mov x9, sp // copy stack pointer');
-              wrtins(' sub x9, x9, s // set new stack depth', ep^.lb^);
+              wrtins(' sub x9, x9, #@s // set new stack depth', ep^.lb^);
               wrtins('1:');
               wrtins(' cmp sp, x9 // check done');
               wrtins(' b.ls 2f // skip if below stack');
@@ -1645,7 +1705,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
               wrtins(' b 1b // loop');
               wrtins('2:')
             end else
-              wrtins(' sub sp, sp, s // set new stack depth', ep^.lb^);
+              wrtins(' sub sp, sp, #@s // set new stack depth', ep^.lb^);
           end;
 
         {cup,cuf}
@@ -1653,34 +1713,42 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           genexp(ep^.sl); { process sfr start link }
           stkadrs := stkadr; { save stack track here }
           pshpar(ep^.pl); { process parameters first }
+          { at the flat module level (between the preamble and the module
+            return) there is no frame to preserve the link register, so it
+            is saved around the call; such calls carry no parameters, so
+            the extra stack slot cannot disturb parameter addressing }
+          if blkstk^.btyp in [btprog, btmod] then
+            wrtins(' str x30, [sp, #-16]! // save link register');
           if ep^.blk <> nil then begin
             write(prr, ' ':opcspc, 'bl '); lftjst(parspc-(3+opcspc)); fl := parspc;
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl);
             lftjst(cmtspc-fl); writeln(prr, '// call user procedure')
           end else wrtins(' bl @s // call user procedure', ep^.fn^);
+          if blkstk^.btyp in [btprog, btmod] then
+            wrtins(' ldr x30, [sp], #16 // restore link register');
           if ep^.op = 246{cuf} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgv0 then
                 wrtins(' fmov %1, d0 // place result', ep^.r1)
             end else if ep^.rc = 2 then begin { move set from stack to temp }
                 wrtins(' mov x9, sp // index set on stack');
-                wrtins(' sub x10, x29, #@s+0 // load temp destination', ep^.r1a, lclspc^);
+                wrtins(' sub x10, x29, #@s-^0 // load temp destination', ep^.r1a, lclspc^);
                 wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
                 wrtins(' stp x11, x12, [x10], #16 // store set part 1');
                 wrtins(' ldp x11, x12, [x9] // load set part 2');
                 wrtins(' stp x11, x12, [x10] // store set part 2');
-                wrtins(' add sp, sp, #0 // remove set from stack', setsize);
-                wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
+                wrtins(' add sp, sp, #^0 // remove set from stack', setsize);
+                wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else if ep^.rc = 3 then begin { move structure from stack to temp }
                 wrtins(' mov x9, sp // index structure on stack');
-                wrtins(' sub x10, x29, #@s+0 // load temp destination', ep^.r1a, lclspc^);
-                wrtins(' mov x11, #0 // load size', ep^.q2);
+                wrtins(' sub x10, x29, #@s-^0 // load temp destination', ep^.r1a, lclspc^);
+                wrtins(' mov x11, #^0 // load size', ep^.q2);
                 wrtins('1: ldrb w12, [x9], #1 // copy loop');
                 wrtins(' strb w12, [x10], #1');
                 wrtins(' subs x11, x11, #1');
                 wrtins(' b.ne 1b');
-                wrtins(' add sp, sp, #0 // remove structure from stack', ep^.q3);
-                wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
+                wrtins(' add sp, sp, #^0 // remove structure from stack', ep^.q3);
+                wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else begin
               if ep^.r1 <> rgx0 then
                 wrtins(' mov %1, x0 // place result', ep^.r1);
@@ -1696,7 +1764,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           pshpar(ep^.pl); { process parameters first }
           genexp(ep^.l); { load procedure address }
           wrtins(' mov x28, x29 // move our frame pointer to preserved register');
-          wrtins(' ldr x29, [%1, #0] // set callee frame pointer', ptrsize, ep^.l^.r1);
+          wrtins(' ldr x29, [%1, #^0] // set callee frame pointer', ptrsize, ep^.l^.r1);
           wrtins(' ldr x9, [%1] // load procedure address', ep^.l^.r1);
           wrtins(' blr x9 // call indirect');
           if ep^.op = 247{cif} then begin
@@ -1705,23 +1773,23 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' fmov %1, d0 // place result', ep^.r1)
             end else if ep^.rc = 2 then begin { move set from stack to temp }
                 wrtins(' mov x9, sp // index set on stack');
-                wrtins(' sub x10, x29, #@s+0 // load temp destination', ep^.r1a, lclspc^);
+                wrtins(' sub x10, x29, #@s-^0 // load temp destination', ep^.r1a, lclspc^);
                 wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
                 wrtins(' stp x11, x12, [x10], #16 // store set part 1');
                 wrtins(' ldp x11, x12, [x9] // load set part 2');
                 wrtins(' stp x11, x12, [x10] // store set part 2');
-                wrtins(' add sp, sp, #0 // remove set from stack', setsize);
-                wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
+                wrtins(' add sp, sp, #^0 // remove set from stack', setsize);
+                wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else if ep^.rc = 3 then begin { move structure from stack to temp }
                 wrtins(' mov x9, sp // index structure on stack');
-                wrtins(' sub x10, x29, #@s+0 // load temp destination', ep^.r1a, lclspc^);
-                wrtins(' mov x11, #0 // load size', ep^.q2);
+                wrtins(' sub x10, x29, #@s-^0 // load temp destination', ep^.r1a, lclspc^);
+                wrtins(' mov x11, #^0 // load size', ep^.q2);
                 wrtins('1: ldrb w12, [x9], #1 // copy loop');
                 wrtins(' strb w12, [x10], #1');
                 wrtins(' subs x11, x11, #1');
                 wrtins(' b.ne 1b');
-                wrtins(' add sp, sp, #0 // remove structure from stack', ep^.q3);
-                wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
+                wrtins(' add sp, sp, #^0 // remove structure from stack', ep^.q3);
+                wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else begin
               if ep^.r1 <> rgx0 then
                 wrtins(' mov %1, x0 // place result', ep^.r1)
@@ -1738,11 +1806,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           pshpar(ep^.pl); { process parameters first }
           if ep^.qs <> nil then begin
             wrtins(' adrp x9, @s // load vectored address (page)', ep^.qs^);
-            wrtins(' ldr x9, [x9, :lo12:@s] // load vectored address', ep^.qs^);
+            wrtins(' add x9, x9, :lo12:@s // vectored slot address', ep^.qs^);
+            wrtins(' ldr x9, [x9] // load vectored address');
             wrtins(' blr x9 // call vectored')
           end else begin
-            wrtins(' adrp x9, globals+0 // load vectored address (page)', q);
-            wrtins(' ldr x9, [x9, :lo12:globals+0] // load vectored address', q);
+            wrtins(' adrp x9, @g // load vectored address (page)', q);
+            wrtins(' add x9, x9, :lo12:@g // vectored slot address', q);
+            wrtins(' ldr x9, [x9] // load vectored address');
             wrtins(' blr x9 // call vectored')
           end;
           if ep^.op = 249{cvf} then begin
@@ -1751,23 +1821,23 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                 wrtins(' fmov %1, d0 // place result', ep^.r1)
             end else if ep^.rc = 2 then begin { move set from stack to temp }
                 wrtins(' mov x9, sp // index set on stack');
-                wrtins(' sub x10, x29, #@s+0 // load temp destination', ep^.r1a, lclspc^);
+                wrtins(' sub x10, x29, #@s-^0 // load temp destination', ep^.r1a, lclspc^);
                 wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
                 wrtins(' stp x11, x12, [x10], #16 // store set part 1');
                 wrtins(' ldp x11, x12, [x9] // load set part 2');
                 wrtins(' stp x11, x12, [x10] // store set part 2');
-                wrtins(' add sp, sp, #0 // remove set from stack', setsize);
-                wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
+                wrtins(' add sp, sp, #^0 // remove set from stack', setsize);
+                wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else if ep^.rc = 3 then begin { move structure from stack to temp }
                 wrtins(' mov x9, sp // index structure on stack');
-                wrtins(' sub x10, x29, #@s+0 // load temp destination', ep^.r1a, lclspc^);
-                wrtins(' mov x11, #0 // load size', ep^.q2);
+                wrtins(' sub x10, x29, #@s-^0 // load temp destination', ep^.r1a, lclspc^);
+                wrtins(' mov x11, #^0 // load size', ep^.q2);
                 wrtins('1: ldrb w12, [x9], #1 // copy loop');
                 wrtins(' strb w12, [x10], #1');
                 wrtins(' subs x11, x11, #1');
                 wrtins(' b.ne 1b');
-                wrtins(' add sp, sp, #0 // remove structure from stack', ep^.q3);
-                wrtins(' sub %1, x29, #@s+0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
+                wrtins(' add sp, sp, #^0 // remove structure from stack', ep^.q3);
+                wrtins(' sub %1, x29, #@s-^0 // reindex temp', ep^.r1a, ep^.r1, lclspc^)
             end else begin
               if ep^.r1 <> rgx0 then
                 wrtins(' mov %1, x0 // place result', ep^.r1);
@@ -1787,7 +1857,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' cbnz %1, 1f // skip any variant active', ep^.r2);
           wrtins(' adrp x0, modnam // set module name');
           wrtins(' add x0, x0, :lo12:modnam');
-          wrtins(' mov x1, #0 // set line number', sline);
+          wrtins(' mov x1, #^0 // set line number', sline);
           wrtins(' mov x2, #VariantNotActive // set error code');
           wrtins(' bl psystem_errore // process error');
           wrtins('1:');
@@ -1805,12 +1875,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.lo 1f // skip below');
             wrtins(' adrp x0, modnam // load module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // load line number', sline);
+            wrtins(' mov x1, #^0 // load line number', sline);
             wrtins(' mov x2, #ValueOutOfRange // load error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:');
           end;
-          wrtins(' mov x9, #0 // get element size', ep^.q);
+          wrtins(' mov x9, #^0 // get element size', ep^.q);
           wrtins(' mul x9, %1, x9 // find index*size', ep^.r^.r1);
           wrtins(' add %1, %1, x9 // add to base', ep^.l^.r1)
         end;
@@ -1824,21 +1894,21 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' b.lo 1f // skip below');
             wrtins(' adrp x0, modnam // load module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // load line number', sline);
+            wrtins(' mov x1, #^0 // load line number', sline);
             wrtins(' mov x2, #ValueOutOfRange // load error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:');
           end;
-          wrtins(' mov %1, #0 // get # levels-1', ep^.q-1, ep^.t1);
-          wrtins(' mov x9, #0 // get base element size', ep^.q1);
+          wrtins(' mov %1, #^0 // get # levels-1', ep^.q-1, ep^.t1);
+          wrtins(' mov x9, #^0 // get base element size', ep^.q1);
           wrtins(' mov x10, %1 // copy template address', ep^.l^.r2);
           wrtins('1:');
-          wrtins(' add x10, x10, #0 // next template location', intsize);
+          wrtins(' add x10, x10, #^0 // next template location', intsize);
           wrtins(' ldr x11, [x10] // get template value');
           wrtins(' mul x9, x9, x11 // multiply by template');
           wrtins(' subs %1, %1, #1 // count down levels', ep^.t1);
           wrtins(' b.ne 1b // loop over templates');
-          wrtins(' add %1, %1, #0 // advance template slot', intsize, ep^.l^.r2);
+          wrtins(' add %1, %1, #^0 // advance template slot', intsize, ep^.l^.r2);
           wrtins(' mul x9, %1, x9 // find index*size', ep^.r^.r1);
           wrtins(' add %1, %1, x9 // add to base', ep^.l^.r1)
         end;
@@ -1854,18 +1924,18 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if dodbgchk then begin
             wrtins(' cmp %1, #1 // chk lvl < 1', ep^.r^.r1);
             wrtins(' b.lo 2f // skip if below');
-            wrtins(' cmp %1, #0 // compare', ep^.q, ep^.r^.r1);
+            wrtins(' cmp %1, #^0 // compare', ep^.q, ep^.r^.r1);
             wrtins(' b.ls 1f // skip if less or equal');
             wrtins('2:');
             wrtins(' adrp x0, modnam // load module name');
             wrtins(' add x0, x0, :lo12:modnam');
-            wrtins(' mov x1, #0 // load line number', sline);
+            wrtins(' mov x1, #^0 // load line number', sline);
             wrtins(' mov x2, #InvalidContainerLevel // load error code');
             wrtins(' bl psystem_errore // process error');
             wrtins('1:')
           end;
           if ep^.q <> 1 then begin
-            wrtins(' mov %1, #0 // get total lvl', ep^.q, ep^.t1);
+            wrtins(' mov %1, #^0 // get total lvl', ep^.q, ep^.t1);
             wrtins(' sub %1, %1, %2 // find tl-al', ep^.t1, ep^.r^.r1);
             wrtins(' lsl %1, %1, #4 // *16 (long)', ep^.t1);
             wrtins(' add %1, %1, %2 // add to base template', ep^.t1, ep^.l^.r2);
@@ -1894,21 +1964,23 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         {ccs}
         223: begin
           if ep^.q = 1 then begin
-            wrtins(' mov x9, #0 // get base element size', ep^.q1);
+            wrtins(' mov x9, #^0 // get base element size', ep^.q1);
             wrtins(' mul %1, %2, x9 // find base size*len', ep^.t2, ep^.l^.r2)
           end else begin
-            wrtins(' mov %1, #0 // get # levels', ep^.q, ep^.t1);
-            wrtins(' mov %1, #0 // get base element size', ep^.q1, ep^.t2);
+            wrtins(' mov %1, #^0 // get # levels', ep^.q, ep^.t1);
+            wrtins(' mov %1, #^0 // get base element size', ep^.q1, ep^.t2);
             wrtins(' mov %1, %2 // copy template address', ep^.t3, ep^.l^.r2);
             wrtins('1:');
             wrtins(' ldr x9, [%1] // get size from template', ep^.t3);
             wrtins(' mul %1, %1, x9 // multiply by size', ep^.t2);
-            wrtins(' add %1, %1, #0 // next template location', intsize, ep^.t3);
+            wrtins(' add %1, %1, #^0 // next template location', intsize, ep^.t3);
             wrtins(' subs %1, %1, #1 // count down levels', ep^.t1);
             wrtins(' b.ne 1b // loop over templates')
           end;
           wrtins(' sub sp, sp, %1 // allocate on stack', ep^.t2);
-          wrtins(' and sp, sp, #0xfffffffffffffff0 // align stack');
+          wrtins(' mov x16, sp // align stack');
+      wrtins(' and x16, x16, #0xfffffffffffffff0');
+      wrtins(' mov sp, x16');
           wrtins(' mov x9, %1 // move source', ep^.l^.r1);
           wrtins(' mov x10, sp // move dest');
           wrtins(' mov x11, %1 // move count', ep^.t2);
@@ -1922,7 +1994,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {ldp}
         225: begin
-          wrtins(' ldr %1, [%2, #0] // get template adr', intsize, ep^.r2, ep^.l^.r1);
+          wrtins(' ldr %1, [%2, #^0] // get template adr', intsize, ep^.r2, ep^.l^.r1);
           wrtins(' ldr %1, [%2] // get data adr', ep^.r1, ep^.l^.r1)
         end;
 
@@ -1939,7 +2011,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           stkadr := stkadr-intsize
         end else begin
           wrtins(' ldr %1, [sp] // restore used real register', r);
-          wrtins(' add sp, sp, #0 // remove from stack', realsize);
+          wrtins(' add sp, sp, #^0 // remove from stack', realsize);
           stkadr := stkadr-intsize
         end
       end;
@@ -2268,7 +2340,7 @@ begin { assemble }
         end
       until c = '''';
       getexp(ep); attach(ep); pshstk(ep);
-      new(cstp); cstp^.ct := cstr; cstp^.str := strp(str);
+      new(cstp); cstp^.ct := cstr; cstp^.str := extract(str, 1, len(str));
       cstp^.strl := l; strnum := strnum+1; cstp^.strn := strnum;
       cstp^.next := csttbl; csttbl := cstp; ep^.strn := strnum
     end;
@@ -2310,7 +2382,7 @@ begin { assemble }
 
     {sgs}
     32: begin
-      getexp(ep); popstk(ep^.l); pshstk(ep)
+      getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep)
     end;
 
     {flt}
@@ -2350,8 +2422,14 @@ begin { assemble }
     end;
 
     {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
-    43,44,45,46,47,48,49,51,52,53,54,110,206: begin
+    43,44,48,49,51,52,53,54,206: begin
       getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep)
+    end;
+
+    { dif,int,uni,rgs take a destination set operand (x1) supplied by the
+      compiler, plus the two source operands }
+    45,46,47,110: begin
+      getexp(ep); popstk(ep^.x1); popstk(ep^.r); popstk(ep^.l); pshstk(ep)
     end;
 
     { dupi, dupa, dupr, dups, dupb, dupc }
@@ -2513,10 +2591,6 @@ begin { assemble }
       else getparc(ep, sfptab[q].sppar);
       if sfptab[q].spfunc then pshstk(ep) { non-terminal, stack it }
       else begin { terminal, execute here }
-        if sfptab[ep^.q].spkeep then begin
-          if ep^.pl = nil then error('System error');
-          duptre(ep^.pl, ep2); pshstk(ep2)
-        end;
         frereg := allreg; assreg(ep, frereg, rgnull, rgnull);
         dmptre(ep); genexp(ep);
         deltre(ep)
@@ -2564,7 +2638,13 @@ begin { assemble }
     end;
 
     {rip}
-    13: parq;
+    13: begin skpspc;
+      { the operand is a label (l <label>) for an indirect return, or an
+        address; read the correct form so the parse position is not
+        corrupted (which would skip the rest of the routine) }
+      if ch = 'l' then labelsearch(def, val, sp, blk)
+      else parq
+    end;
 
     {stri,stra}
     2,70: begin parpq;
@@ -2574,10 +2654,11 @@ begin { assemble }
       dmptre(ep); genexp(ep);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
       if p <> blkstk^.lvl then begin
-        wrtins(' ldr %1, [x29, #0] // get display pointer', -p*ptrsize, r1);
-        wrtins(' str %1, [%2, #@l] // store qword', q, p, ep^.r1, r1)
+        wrtins(' ldr %1, [x29, #^0] // get display pointer', -p*ptrsize, r1);
+        wrtins(' add x16, %1, #@l // frame address', q, p, r1)
       end else
-        wrtins(' str %1, [x29, #@l] // store qword', q, p, ep^.r1);
+        wrtins(' add x16, x29, #@l // frame address', q, p);
+      wrtins(' str %1, [x16] // store qword', ep^.r1);
       deltre(ep)
     end;
 
@@ -2588,10 +2669,11 @@ begin { assemble }
       dmptre(ep); genexp(ep);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
       if p <> blkstk^.lvl then begin
-        wrtins(' ldr %1, [x29, #0] // get display pointer', -p*ptrsize, r1);
-        wrtins(' strb %1, [%2, #@l] // store byte', q, p, ep^.r1, r1)
+        wrtins(' ldr %1, [x29, #^0] // get display pointer', -p*ptrsize, r1);
+        wrtins(' add x16, %1, #@l // frame address', q, p, r1)
       end else
-        wrtins(' strb %1, [x29, #@l] // store byte', q, p, ep^.r1);
+        wrtins(' add x16, x29, #@l // frame address', q, p);
+      wrtins(' strb %1l, [x16] // store byte', ep^.r1);
       deltre(ep)
     end;
 
@@ -2602,10 +2684,11 @@ begin { assemble }
       dmptre(ep); genexp(ep);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
       if p <> blkstk^.lvl then begin
-        wrtins(' ldr %1, [x29, #0] // get display pointer', -p*ptrsize, r1);
-        wrtins(' str %1, [%2, #@l] // store real', q, p, ep^.r1, r1)
+        wrtins(' ldr %1, [x29, #^0] // get display pointer', -p*ptrsize, r1);
+        wrtins(' add x16, %1, #@l // frame address', q, p, r1)
       end else
-        wrtins(' str %1, [x29, #@l] // store real', q, p, ep^.r1);
+        wrtins(' add x16, x29, #@l // frame address', q, p);
+      wrtins(' str %1, [x16] // store real', ep^.r1);
       deltre(ep)
     end;
 
@@ -2615,7 +2698,7 @@ begin { assemble }
       dmptre(ep); genexp(ep);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
       if p <> blkstk^.lvl then
-        wrtins(' ldr x9, [x29, #0] // get display pointer', -p*ptrsize)
+        wrtins(' ldr x9, [x29, #^0] // get display pointer', -p*ptrsize)
       else
         wrtins(' mov x9, x29 // use frame pointer');
       wrtins(' add x9, x9, #@l // index destination', q, p);
@@ -2634,10 +2717,11 @@ begin { assemble }
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
       wrtins(' ldr x9, [sp] // get exception vector');
       if p <> blkstk^.lvl then begin
-        wrtins(' ldr %1, [x29, #0] // get display pointer', -p*ptrsize, r1);
-        wrtins(' str x9, [%1, #@l] // store qword', q, p, r1)
+        wrtins(' ldr %1, [x29, #^0] // get display pointer', -p*ptrsize, r1);
+        wrtins(' add x16, %1, #@l // frame address', q, p, r1)
       end else
-        wrtins(' str x9, [x29, #@l] // store qword', q, p)
+        wrtins(' add x16, x29, #@l // frame address', q, p);
+      wrtins(' str x9, [x16] // store qword')
     end;
 
     {mst}
@@ -2653,19 +2737,28 @@ begin { assemble }
       { ARM64 allows more nesting levels }
       if p >= 32 then error('Too many nested levels');
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
-      { ARM64 uses STP/LDP for frame setup }
-      wrtins(' stp x29, x30, [sp, #-16]! // save FP and LR');
+      { ARM64 frame. The mark area sits ABOVE the frame pointer, matching the
+        machine independent convention that locals occupy negative offsets
+        from the frame base and the mark positive ones (markep=8, marksb=16,
+        market=24). Layout, high to low address:
+          [x29+32] saved LR      [x29+24] current ep (market)
+          [x29+16] bottom (marksb) [x29+8] previous ep (markep)
+          [x29]    saved FP       then locals below x29.
+        This mirrors AMD64, where the three mark words are pushed before the
+        frame is entered so they land above the frame pointer. }
+      wrtins(' sub sp, sp, #^0 // reserve frame header', marksize+2*ptrsize);
+      wrtins(' str x30, [sp, #^0] // save LR', marksize+ptrsize);
+      wrtins(' str xzr, [sp, #24] // place current ep (0)');
+      wrtins(' str xzr, [sp, #16] // place bottom of stack (0)');
+      wrtins(' str xzr, [sp, #8] // place previous ep (0)');
+      wrtins(' str x29, [sp] // save FP');
       wrtins(' mov x29, sp // set up frame pointer');
-      { Allocate space for display, mark, and locals }
-      wrtins(' sub sp, sp, #0 // allocate mark space', marksize);
-      { Store mark elements }
-      wrtins(' str xzr, [x29, #-8] // place current ep (0)');
-      wrtins(' str xzr, [x29, #-16] // place bottom of stack (0)');
-      wrtins(' str xzr, [x29, #-24] // place previous ep (0)');
       { Allocate and clear locals }
       write(prr, '        sub     sp, sp, #'); write(prr, lclspc^); write(prr, '+');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' // allocate locals');
-      wrtins(' and sp, sp, #0xfffffffffffffff0 // align stack');
+      wrtins(' mov x16, sp // align stack');
+      wrtins(' and x16, x16, #0xfffffffffffffff0');
+      wrtins(' mov sp, x16');
       wrtins(' mov x9, sp // save SP for clearing');
       wrtins('1:');
       wrtins(' cmp x9, x29 // check have reached frame');
@@ -2674,8 +2767,8 @@ begin { assemble }
       wrtins(' b 1b // loop');
       wrtins('2:');
       write(prr, '        sub     x9, x29, #'); write(prr, lclspc^); write(prr, '+');
-      write(prr, blkstk^.tmpnam^); writeln(prr, '+', marksize:1, ' // calc stack bottom');
-      wrtins(' str x9, [x29, #0] // set bottom of stack', marksb);
+      write(prr, blkstk^.tmpnam^); writeln(prr, ' // calc stack bottom');
+      wrtins(' str x9, [x29, #^0] // set bottom of stack', marksb);
       { Save callee-saved registers }
       wrtins(' stp x19, x20, [sp, #-16]! // save callee-saved registers');
       wrtins(' stp x21, x22, [sp, #-16]!');
@@ -2694,13 +2787,47 @@ begin { assemble }
       assreg(ep2, frereg, rgx0, rgnull); frereg := frereg-[rgx0];
       assreg(ep, frereg, rgx1, rgnull);
       genexp(ep2); genexp(ep);
-      wrtins(' mov x2, #0 // load the length of move', q);
+      wrtins(' mov x2, #^0 // load the length of move', q);
       wrtins('1: ldrb w9, [x1], #1 // copy loop');
       wrtins(' strb w9, [x0], #1');
       wrtins(' subs x2, x2, #1');
       wrtins(' b.ne 1b');
       deltre(ep); deltre(ep2);
       botstk
+    end;
+
+    {stoi,stoa,stor,stob,stoc,stox}
+    6, 80, 81, 83, 84, 197: begin
+      frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
+      getreg(ep^.r1, frereg);
+      assreg(ep, frereg, ep^.r1, rgnull);
+      assreg(ep2, frereg, rgnull, rgnull);
+      dmptre(ep); dmptre(ep2);
+      genexp(ep); genexp(ep2);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      case op of
+        6{stoi},80{stoa}: wrtins(' str %1, [%2] // store quad to address', ep2^.r1, ep^.r1);
+        81{stor}: wrtins(' str %1, [%2] // store real to address', ep2^.r1, ep^.r1);
+        83{stob},84{stoc},197{stox}:
+          wrtins(' strb %1l, [%2] // store byte to address', ep2^.r1, ep^.r1)
+      end;
+      deltre(ep); deltre(ep2)
+    end;
+
+    {stos}
+    82: begin
+      frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
+      assreg(ep, frereg, rgx0, rgnull); frereg := frereg-[rgx0];
+      assreg(ep2, frereg, rgx1, rgnull);
+      dmptre(ep); dmptre(ep2);
+      genexp(ep); genexp(ep2);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      { copy the 32 byte set value from the source (x1) to the address (x0) }
+      wrtins(' ldp x9, x10, [x1] // store set to address');
+      wrtins(' stp x9, x10, [x0]');
+      wrtins(' ldp x9, x10, [x1, #16]');
+      wrtins(' stp x9, x10, [x0, #16]');
+      deltre(ep); deltre(ep2)
     end;
 
     {dmp}
@@ -2721,26 +2848,30 @@ begin { assemble }
       if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then begin
         if sp <> nil then begin
           wrtins(' adrp x9, @s // store byte to global (page)', sp^);
-          wrtins(' strb %1, [x9, :lo12:@s] // store byte to global', ep^.r1, sp^)
+          wrtins(' strb %1l, [x9, :lo12:@s] // store byte to global', ep^.r1, sp^)
         end else begin
-          wrtins(' adrp x9, globals+0 // store byte to global (page)', q);
-          wrtins(' strb %1, [x9, :lo12:globals+0] // store byte to global', q, ep^.r1)
+          wrtins(' adrp x9, @g // store byte to global (page)', q);
+          wrtins(' strb %1l, [x9, :lo12:@g] // store byte to global', q, ep^.r1)
         end
       end else if op = 76{sror} then begin
         if sp <> nil then begin
           wrtins(' adrp x9, @s // store real to global (page)', sp^);
-          wrtins(' str %1, [x9, :lo12:@s] // store real to global', ep^.r1, sp^)
+          wrtins(' add x9, x9, :lo12:@s // global address', sp^);
+          wrtins(' str %1, [x9] // store real to global', ep^.r1)
         end else begin
-          wrtins(' adrp x9, globals+0 // store real to global (page)', q);
-          wrtins(' str %1, [x9, :lo12:globals+0] // store real to global', q, ep^.r1)
+          wrtins(' adrp x9, @g // store real to global (page)', q);
+          wrtins(' add x9, x9, :lo12:@g // global address', q);
+          wrtins(' str %1, [x9] // store real to global', ep^.r1)
         end
       end else begin {sroi, sroa}
         if sp <> nil then begin
           wrtins(' adrp x9, @s // store quad to global (page)', sp^);
-          wrtins(' str %1, [x9, :lo12:@s] // store quad to global', ep^.r1, sp^)
+          wrtins(' add x9, x9, :lo12:@s // global address', sp^);
+          wrtins(' str %1, [x9] // store quad to global', ep^.r1)
         end else begin
-          wrtins(' adrp x9, globals+0 // store quad to global (page)', q);
-          wrtins(' str %1, [x9, :lo12:globals+0] // store quad to global', q, ep^.r1)
+          wrtins(' adrp x9, @g // store quad to global (page)', q);
+          wrtins(' add x9, x9, :lo12:@g // global address', q);
+          wrtins(' str %1, [x9] // store quad to global', ep^.r1)
         end
       end;
       deltre(ep)
@@ -2755,13 +2886,13 @@ begin { assemble }
       popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
       genexp(ep);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' sub x9, x29, #@s+0 // index temp set', ep^.r1a, lclspc^);
+      wrtins(' sub x9, x29, #@s-^0 // index temp set', ep^.r1a, lclspc^);
       if sp <> nil then begin
         wrtins(' adrp x10, @s // index global destination (page)', sp^);
         wrtins(' add x10, x10, :lo12:@s // index global destination', sp^)
       end else begin
-        wrtins(' adrp x10, globals+0 // index global destination (page)', q);
-        wrtins(' add x10, x10, :lo12:globals+0 // index global destination', q)
+        wrtins(' adrp x10, @g // index global destination (page)', q);
+        wrtins(' add x10, x10, :lo12:@g // index global destination', q)
       end;
       wrtins(' ldp x11, x12, [x9], #16 // load set part 1');
       wrtins(' stp x11, x12, [x10], #16 // store set part 1');
@@ -2809,9 +2940,12 @@ begin { assemble }
     {ipj}
     112: begin getlvl(p); labelsearch(def, val, sp, blk);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' ldr x29, [x29, #0] // get frame pointer for target', -p*ptrsize);
-      wrtins(' ldr sp, [x29, #0] // get stack for target', marksb);
-      wrtins(' and sp, sp, #0xfffffffffffffff0 // align stack');
+      wrtins(' ldr x29, [x29, #^0] // get frame pointer for target', -p*ptrsize);
+      wrtins(' ldr x9, [x29, #^0] // get stack for target', marksb);
+      wrtins(' mov sp, x9');
+      wrtins(' mov x16, sp // align stack');
+      wrtins(' and x16, x16, #0xfffffffffffffff0');
+      wrtins(' mov sp, x16');
       wrtins(' b @s // goto jump target', sp^);
       botstk
     end;
@@ -2833,9 +2967,11 @@ begin { assemble }
       wrtins(' ldp x23, x24, [sp], #16');
       wrtins(' ldp x21, x22, [sp], #16');
       wrtins(' ldp x19, x20, [sp], #16');
-      wrtins(' mov sp, x29 // restore stack pointer');
-      wrtins(' ldp x29, x30, [sp], #16 // restore FP and LR');
-      wrtins(' add sp, sp, #0 // remove caller parameters', q);
+      wrtins(' mov sp, x29 // restore stack pointer to frame base');
+      wrtins(' ldr x30, [sp, #^0] // restore LR', marksize+ptrsize);
+      wrtins(' ldr x29, [sp] // restore FP');
+      wrtins(' add sp, sp, #^0 // pop frame header', marksize+2*ptrsize);
+      wrtins(' add sp, sp, #^0 // remove caller parameters', q);
       if op = 237{retm} then
         wrtins(' mov x0, sp // index result in x0');
       wrtins(' ret // return to caller');
@@ -2853,9 +2989,11 @@ begin { assemble }
       wrtins(' ldp x23, x24, [sp], #16');
       wrtins(' ldp x21, x22, [sp], #16');
       wrtins(' ldp x19, x20, [sp], #16');
-      wrtins(' mov sp, x29 // restore stack pointer');
-      wrtins(' ldp x29, x30, [sp], #16 // restore FP and LR');
-      wrtins(' add sp, sp, #0 // remove caller parameters', q);
+      wrtins(' mov sp, x29 // restore stack pointer to frame base');
+      wrtins(' ldr x30, [sp, #^0] // restore LR', marksize+ptrsize);
+      wrtins(' ldr x29, [sp] // restore FP');
+      wrtins(' add sp, sp, #^0 // pop frame header', marksize+2*ptrsize);
+      wrtins(' add sp, sp, #^0 // remove caller parameters', q);
       wrtins(' ldr x0, [sp], #16 // get qword result');
       if op in [204{retx},130{retc},131{retb}] then
         wrtins(' and x0, x0, #255 // mask byte result');
@@ -2874,9 +3012,11 @@ begin { assemble }
       wrtins(' ldp x23, x24, [sp], #16');
       wrtins(' ldp x21, x22, [sp], #16');
       wrtins(' ldp x19, x20, [sp], #16');
-      wrtins(' mov sp, x29 // restore stack pointer');
-      wrtins(' ldp x29, x30, [sp], #16 // restore FP and LR');
-      wrtins(' add sp, sp, #0 // remove caller parameters', q);
+      wrtins(' mov sp, x29 // restore stack pointer to frame base');
+      wrtins(' ldr x30, [sp, #^0] // restore LR', marksize+ptrsize);
+      wrtins(' ldr x29, [sp] // restore FP');
+      wrtins(' add sp, sp, #^0 // pop frame header', marksize+2*ptrsize);
+      wrtins(' add sp, sp, #^0 // remove caller parameters', q);
       wrtins(' ldr d0, [sp], #16 // get real result');
       wrtins(' ret // return to caller');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
@@ -2893,16 +3033,210 @@ begin { assemble }
       wrtins(' ldp x23, x24, [sp], #16');
       wrtins(' ldp x21, x22, [sp], #16');
       wrtins(' ldp x19, x20, [sp], #16');
-      wrtins(' mov sp, x29 // restore stack pointer');
-      wrtins(' ldp x29, x30, [sp], #16 // restore FP and LR');
-      wrtins(' add sp, sp, #0 // remove caller parameters', q);
+      wrtins(' mov sp, x29 // restore stack pointer to frame base');
+      wrtins(' ldr x30, [sp, #^0] // restore LR', marksize+ptrsize);
+      wrtins(' ldr x29, [sp] // restore FP');
+      wrtins(' add sp, sp, #^0 // pop frame header', marksize+2*ptrsize);
+      wrtins(' add sp, sp, #^0 // remove caller parameters', q);
       wrtins(' ret // return to caller');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
 
-    { Remaining terminal instructions truncated for file size }
-    { These follow similar patterns to the AMD64 version }
+    {stp}
+    58: ; { unused }
+
+    {ujc}
+    61: begin
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' bl psystem_caseerror');
+      botstk
+    end;
+
+    {pck}
+    63: begin parqq;
+      frereg := allreg; popstk(ep);
+      popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep);
+      assreg(ep, frereg, rgx2, rgnull); frereg := frereg-[rgx2];
+      assreg(ep2, frereg, rgx3, rgnull); frereg := frereg-[rgx3];
+      assreg(ep3, frereg, rgx4, rgnull);
+      genexp(ep); genexp(ep2); genexp(ep3);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' mov x0, #^0 // get size of packed array', q);
+      wrtins(' mov x1, #^0 // get size of unpacked array', q1);
+      wrtins(' bl psystem_pack // pack the array');
+      deltre(ep); deltre(ep2); deltre(ep3);
+      botstk
+    end;
+
+    {upk}
+    64: begin parqq;
+      frereg := allreg; popstk(ep);
+      popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep);
+      assreg(ep, frereg, rgx2, rgnull); frereg := frereg-[rgx2];
+      assreg(ep2, frereg, rgx3, rgnull); frereg := frereg-[rgx3];
+      assreg(ep3, frereg, rgx4, rgnull);
+      genexp(ep); genexp(ep2); genexp(ep3);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' mov x0, #^0 // load size of packed array', q);
+      wrtins(' mov x1, #^0 // load size of unpacked array', q1);
+      wrtins(' bl psystem_unpack // unpack the array');
+      deltre(ep); deltre(ep2); deltre(ep3);
+      botstk
+    end;
+
+    {aps}
+    178: begin parq;
+      frereg := allreg; popstk(ep2); popstk(ep);
+      assreg(ep, frereg, rgx0, rgx2); frereg := frereg-[rgx0, rgx2];
+      assreg(ep2, frereg, rgx1, rgnull);
+      dmptre(ep); genexp(ep);
+      dmptre(ep2); genexp(ep2);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' mov x3, #^0 // get size', q);
+      wrtins(' mul x2, x2, x3 // find len*size');
+      wrtins('1: ldrb w9, [x1], #1 // move data');
+      wrtins(' strb w9, [x0], #1');
+      wrtins(' subs x2, x2, #1');
+      wrtins(' b.ne 1b');
+      dmptre(ep); deltre(ep2); deltre(ep);
+      botstk
+    end;
+
+    {stom}
+    235: begin parqq;
+      frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
+      assreg(ep, frereg, rgx0, rgnull); frereg := frereg-[rgx0];
+      assreg(ep2, frereg, rgx1, rgnull);
+      dmptre(ep); dmptre(ep2);
+      genexp(ep); genexp(ep2);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' mov x2, #^0 // set length', q);
+      wrtins('1: ldrb w9, [x1], #1 // move structure to address');
+      wrtins(' strb w9, [x0], #1');
+      wrtins(' subs x2, x2, #1');
+      wrtins(' b.ne 1b');
+      puttmp(ep2^.r1a);
+      deltre(ep); deltre(ep2)
+    end;
+
+    {scp}
+    224: begin
+      frereg := allreg;
+      popstk(ep2); popstk(ep);
+      getreg(r1, frereg);
+      assreg(ep, frereg, r1, rgnull);
+      assreg(ep2, frereg, rgnull, rgnull);
+      dmptre(ep); dmptre(ep2);
+      genexp(ep); genexp(ep2);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' str %1, [%2] // store array address', ep2^.r1, ep^.r1);
+      wrtins(' add %1, %1, #^0 // skip to template', intsize, ep^.r1);
+      wrtins(' str %1, [%2] // store template', ep2^.r2, ep^.r1)
+    end;
+
+    {vdp,vdd}
+    221,227: begin
+      frereg := allreg;
+      popstk(ep);
+      assreg(ep, frereg, rgx0, rgnull);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      dmptre(ep); genexp(ep);
+      wrtins(' mov x1, #^0 // load size', 1);
+      wrtins(' bl psystem_dsp // dispose of vector');
+      deltre(ep);
+      botstk
+    end;
+
+    {inv} { a no-op in pgen }
+    189: begin
+      frereg := allreg; popstk(ep); dmptre(ep); deltre(ep);
+      botstk
+    end;
+
+    {cjp}
+    8: begin getadr(q); getadr(q1); labelsearch(def, val, sp, blk);
+      frereg := allreg; popstk(ep);
+      assreg(ep, frereg, rgnull, rgnull);
+      dmptre(ep); genexp(ep);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' mov x9, #^0 // low bound', q);
+      wrtins(' cmp %1, x9 // check against low bound', ep^.r1);
+      wrtins(' b.lt 1f // skip if lower');
+      wrtins(' mov x9, #^0 // high bound', q1);
+      wrtins(' cmp %1, x9 // check against high bound', ep^.r1);
+      wrtins(' b.le @s // if less or equal jump to target', sp^);
+      wrtins('1:');
+      pshstk(ep)
+    end;
+
+    {cal}
+    21: begin labelsearch(def, val, sp, blk);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' bl @s // call routine/initializer', sp^)
+    end;
+
+    {s2c}
+    173: begin parq;
+      getexp(ep); popstk(ep^.l); pshstk(ep)
+    end;
+
+    {vbs}
+    92: begin parq;
+      frereg := allreg; popstk(ep);
+      assreg(ep, frereg, rgx0, rgnull); dmptrel(ep, 19); genexp(ep);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' add x1, x0, #^0 // set end of variable block', ep^.q-1);
+      wrtins(' bl psystem_varenter // establish variable reference block');
+      deltre(ep);
+      botstk
+    end;
+
+    {vbe}
+    96: begin
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' bl psystem_varexit // remove variable reference block');
+      botstk
+    end;
+
+    {wbe}
+    244: begin
+      frereg := allreg;
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' bl psystem_withexit // remove last with');
+      botstk
+    end;
+
+    {suv}
+    91: ;
+
+    {sfs}
+    252: begin parqq;
+      frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
+      assreg(ep2, frereg, rgx0, rgnull); frereg := frereg-[rgx0];
+      assreg(ep, frereg, rgx1, rgnull);
+      dmptre(ep); dmptre(ep2);
+      genexp(ep); genexp(ep2);
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      wrtins(' mov x2, #^0 // set length', q);
+      wrtins('1: ldrb w9, [x1], #1 // move structure to address');
+      wrtins(' strb w9, [x0], #1');
+      wrtins(' subs x2, x2, #1');
+      wrtins(' b.ne 1b');
+      deltre(ep); deltre(ep2)
+    end;
+
+    {cpp}
+    239: parqq; { a no-op to us }
+
+    {cpr}
+    240: parqq; { a no-op to us }
+
+    {lsa}
+    241: parq;
+
+    {lsp}
+    250: ;
 
   end (*case*)
 
