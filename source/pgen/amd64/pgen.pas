@@ -3909,6 +3909,8 @@ begin (* main *)
 
   proginit; { perform independent init }
 
+  convreq := true; { require a calling convention selection (SYS V/Windows) }
+
   write('P6 Pascal AMD64/gcc 64 bit code generator vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;

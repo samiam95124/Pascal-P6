@@ -886,6 +886,7 @@ domrklin: boolean; { mark source line translations in assembly }
 prologue_pending: boolean; { next source line marks a routine's prologue end }
 amd64_sysv: boolean; { use SYS V AMD64 ABI calling convention }
 windows: boolean; { use Windows calling convention }
+convreq: boolean; { code generator requires a calling convention selection }
 
 { other flags }
 iso7185: boolean; { iso7185 standard flag }
@@ -1506,6 +1507,21 @@ begin
    halt
 end;
 
+{ jump forward over the inline constants in the code section; the default
+  is the x86 mnemonic, targets with another branch instruction override }
+virtual procedure jmpfwd;
+begin
+   writeln(prr, '        jmp     1f')
+end;
+
+{ align the resumption of code after the inline constants; fixed-width
+  instruction targets (arm64) require the label to be word aligned, the
+  data constants above it are variable width. The default emits nothing
+  (x86 has no such requirement), targets override as needed. }
+virtual procedure codealign;
+begin
+end;
+
 { DWARF register number for frame base (e.g., 6 for rbp on AMD64) }
 virtual function dwarf_fbreg: integer;
 begin dwarf_fbreg := 0 end;
@@ -1635,42 +1651,42 @@ end;
 procedure mpb;
 begin
   writeln(prr, '# machine parameters');
-  writeln(prr, 'lendian     = ', lendian:10,     ' # endian mode');
-  writeln(prr, 'intsize     = ', intsize:10,     ' # size of integer');
-  writeln(prr, 'intal       = ', intal:10,       ' # alignment of integer');
-  writeln(prr, 'intdig      = ', intdig:10,      ' # number of decimal digits in integer');
-  writeln(prr, 'inthex      = ', inthex:10,      ' # number of hex digits of integer');
-  writeln(prr, 'realsize    = ', realsize:10,    ' # size of real');
-  writeln(prr, 'realal      = ', realal:10,      ' # alignment of real');
-  writeln(prr, 'charsize    = ', charsize:10,    ' # size of char');
-  writeln(prr, 'charal      = ', charal:10,      ' # alignment of char');
-  writeln(prr, 'boolsize    = ', boolsize:10,    ' # size of boolean');
-  writeln(prr, 'boolal      = ', boolal:10,      ' # alignment of boolean');
-  writeln(prr, 'ptrsize     = ', ptrsize:10,     ' # size of pointer');
-  writeln(prr, 'adrsize     = ', adrsize:10,     ' # size of address');
-  writeln(prr, 'adral       = ', adral:10,       ' # alignment of address');
-  writeln(prr, 'setsize     = ', setsize:10,     ' # size of set');
-  writeln(prr, 'setal       = ', setal:10,       ' # alignment of set');
-  writeln(prr, 'filesize    = ', filesize:10,    ' # required runtime space for file (lfn)');
-  writeln(prr, 'fileidsize  = ', fileidsize:10,  ' # size of the lfn only');
-  writeln(prr, 'exceptsize  = ', exceptsize:10,  ' # size of exception variable');
-  writeln(prr, 'exceptal    = ', exceptal:10,    ' # alignment of exception');
-  writeln(prr, 'stackal     = ', stackal:10,     ' # alignment of stack');
-  writeln(prr, 'stackelsize = ', stackelsize:10, ' # stack element size');
-  writeln(prr, 'maxsize     = ', maxsize:10,     ' # this is the largest type that can be on the stack');
-  writeln(prr, 'heapal      = ', heapal:10,      ' # alignment for each heap arena');
-  writeln(prr, 'gbsal       = ', gbsal:10,       ' # globals area alignment');
-  writeln(prr, 'sethigh     = ', sethigh:10,     ' # set highest value');
-  writeln(prr, 'setlow      = ', setlow:10,      ' # set lowest value');
-  writeln(prr, 'ordmaxchar  = ', ordmaxchar:10,  ' # character highest value');
-  writeln(prr, 'ordminchar  = ', ordminchar:10,  ' # character lowest value');
-  writeln(prr, 'marksize    = ', marksize:10,    ' # size of mark');
-  writeln(prr, 'maxexp      = ', maxexp:10,      ' # maximum exponent of real');
-  writeln(prr, 'nilval      = ', nilval:10,      ' # value of nil');
-  writeln(prr, 'maxint      = ', maxint:10,      ' # value of maxint on target machine');
-  writeln(prr, 'markep      = ', markep:10,      ' # (old) maximum frame size');
-  writeln(prr, 'marksb      = ', marksb:10,      ' # stack bottom');
-  writeln(prr, 'market      = ', market:10,      ' # current ep');
+  writeln(prr, 'lendian     = ', lendian:10,     ' /* endian mode */');
+  writeln(prr, 'intsize     = ', intsize:10,     ' /* size of integer */');
+  writeln(prr, 'intal       = ', intal:10,       ' /* alignment of integer */');
+  writeln(prr, 'intdig      = ', intdig:10,      ' /* number of decimal digits in integer */');
+  writeln(prr, 'inthex      = ', inthex:10,      ' /* number of hex digits of integer */');
+  writeln(prr, 'realsize    = ', realsize:10,    ' /* size of real */');
+  writeln(prr, 'realal      = ', realal:10,      ' /* alignment of real */');
+  writeln(prr, 'charsize    = ', charsize:10,    ' /* size of char */');
+  writeln(prr, 'charal      = ', charal:10,      ' /* alignment of char */');
+  writeln(prr, 'boolsize    = ', boolsize:10,    ' /* size of boolean */');
+  writeln(prr, 'boolal      = ', boolal:10,      ' /* alignment of boolean */');
+  writeln(prr, 'ptrsize     = ', ptrsize:10,     ' /* size of pointer */');
+  writeln(prr, 'adrsize     = ', adrsize:10,     ' /* size of address */');
+  writeln(prr, 'adral       = ', adral:10,       ' /* alignment of address */');
+  writeln(prr, 'setsize     = ', setsize:10,     ' /* size of set */');
+  writeln(prr, 'setal       = ', setal:10,       ' /* alignment of set */');
+  writeln(prr, 'filesize    = ', filesize:10,    ' /* required runtime space for file (lfn) */');
+  writeln(prr, 'fileidsize  = ', fileidsize:10,  ' /* size of the lfn only */');
+  writeln(prr, 'exceptsize  = ', exceptsize:10,  ' /* size of exception variable */');
+  writeln(prr, 'exceptal    = ', exceptal:10,    ' /* alignment of exception */');
+  writeln(prr, 'stackal     = ', stackal:10,     ' /* alignment of stack */');
+  writeln(prr, 'stackelsize = ', stackelsize:10, ' /* stack element size */');
+  writeln(prr, 'maxsize     = ', maxsize:10,     ' /* this is the largest type that can be on the stack */');
+  writeln(prr, 'heapal      = ', heapal:10,      ' /* alignment for each heap arena */');
+  writeln(prr, 'gbsal       = ', gbsal:10,       ' /* globals area alignment */');
+  writeln(prr, 'sethigh     = ', sethigh:10,     ' /* set highest value */');
+  writeln(prr, 'setlow      = ', setlow:10,      ' /* set lowest value */');
+  writeln(prr, 'ordmaxchar  = ', ordmaxchar:10,  ' /* character highest value */');
+  writeln(prr, 'ordminchar  = ', ordminchar:10,  ' /* character lowest value */');
+  writeln(prr, 'marksize    = ', marksize:10,    ' /* size of mark */');
+  writeln(prr, 'maxexp      = ', maxexp:10,      ' /* maximum exponent of real */');
+  writeln(prr, 'nilval      = ', nilval:10,      ' /* value of nil */');
+  writeln(prr, 'maxint      = ', maxint:10,      ' /* value of maxint on target machine */');
+  writeln(prr, 'markep      = ', markep:10,      ' /* (old) maximum frame size */');
+  writeln(prr, 'marksb      = ', marksb:10,      ' /* stack bottom */');
+  writeln(prr, 'market      = ', market:10,      ' /* current ep */');
 end;
 
 { write short block name with field }
@@ -1959,14 +1975,21 @@ begin
                 end else error('No valid option found');
                 skpspc
               until not (ch in ['a'..'z']);
-              { the amd64 code generator emits SYS V or Windows x64 ABI code;
-                reject an intermediate that selects neither (or both) up
-                front, before any code is generated, rather than emitting a
-                mismatched object that crashes at run }
-              if not (amd64_sysv or windows) then
-                error('Calling convention mismatch');
-              if amd64_sysv and windows then
-                error('Calling convention mismatch')
+              { each code generator declares whether it requires an x86
+                calling convention selection (amd64: SYS V or Windows x64) or
+                the plain stack model parameter layout (arm64); reject a
+                mismatched intermediate up front, before any code is
+                generated, rather than emitting a mismatched object that
+                crashes at run }
+              if convreq then begin
+                if not (amd64_sysv or windows) then
+                  error('Calling convention mismatch');
+                if amd64_sysv and windows then
+                  error('Calling convention mismatch')
+              end else begin
+                if amd64_sysv or windows then
+                  error('Calling convention mismatch')
+              end
             end;
        'g': begin getint(i); gblsiz := i end; { set globals space }
        'b': begin { block start }
@@ -2458,15 +2481,17 @@ end;
  $s - Immediate symbol
  %1 - Register 1, l postfix means lower
  %2 - register 2, l postfix means lower
- +0 - Immediate integer 1
- +1 - Immediate integer 2
- -0 - Immediate integer 1
- -1 - Immediate integer 2
  ^0 - Immediate integer 1 without leader
  ^1 - Immediate integer 2 without leader
  @s - Symbol
  @g - Global symbol from integer 1 (by offset)
  @l - Local symbol from integer 1 (by offset)
+
+ A '#' followed by a space starts the comment field (the x86 dialect); a
+ '#' followed by anything else is literal text (the arm64 immediate
+ prefix; arm64 templates comment with '//', which passes through as
+ ordinary text). Literal '+' and '-' likewise pass through, so arm64
+ immediates such as #-16 emit as written.
 }
 procedure wrtins(view si: string; i1, i2: integer; r1, r2: reg; view sn: string);
 var i, j: integer;
@@ -2494,7 +2519,10 @@ begin
  while (cur = ' ') and (i < max(si)) do next; { skip spaces }
  { parse parameters and macros }
  while i <= max(si) do begin
-   if cur = '#' then begin
+   { a '#' followed by a space starts the comment field; a '#' followed by
+     anything else is literal text (an arm64 immediate prefix, where the
+     template comments use '//' instead) and macro processing continues }
+   if (cur = '#') and (looka = ' ') then begin
      while j <= cmtspc do begin write(prr, ' '); j := j+1 end;
      j := max(si);
      while (si[j] = ' ') and (j > 1) do j := j-1;
@@ -2515,14 +2543,6 @@ begin
          if looka = 'l' then begin wrtbreg(prr, r2); next; j := j+bregl(r2) end
          else begin wrtreg(prr, r2); j := j+regl(r2) end
        end else begin write(prr, cur); j := j+1 end
-     end else if cur = '+' then begin next; write(prr, '+'); j := j+1;
-       if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end
-       else if cur = '1' then begin write(prr, i2:1); j := j+digits(i2) end
-       else begin write(prr, cur); j := j+1 end
-     end else if cur = '-' then begin next; write(prr, '-');j := j+1;
-       if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end 
-       else if cur = '1' then begin write(prr, i2:1); j := j+digits(i2) end
-       else begin write(prr, cur); j := j+1 end
      end else if cur = '^' then begin next;
        if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end
        else if cur = '1' then begin write(prr, i2:1); j := j+digits(i1) end
@@ -2617,7 +2637,7 @@ begin
       and .double of the value occupy the same 8 bytes, so this is exact. }
     creal: begin
       ro.rv := cp^.r;
-      writeln(prr, '        .quad   ', ro.iv:1, ' # double ', cp^.r)
+      writeln(prr, '        .quad   ', ro.iv:1, ' /* double ', cp^.r, ' */')
     end;
     cset: begin
       write(prr, '        .byte   ');
@@ -2846,9 +2866,9 @@ procedure genabbrev;
   { write one abbreviation entry: code, tag, children flag }
   procedure abbhdr(code, tag, children: integer);
   begin
-    writeln(prr, '        .uleb128 ', code:1, '  # abbreviation code');
-    writeln(prr, '        .uleb128 ', tag:1, '  # tag');
-    writeln(prr, '        .byte   ', children:1, '  # children')
+    writeln(prr, '        .uleb128 ', code:1, ' /* abbreviation code */');
+    writeln(prr, '        .uleb128 ', tag:1, ' /* tag */');
+    writeln(prr, '        .byte   ', children:1, ' /* children */')
   end;
 
   { write one attribute spec: attribute, form }
@@ -3012,7 +3032,7 @@ begin { genabbrev }
   abbend;
 
   { terminate abbreviation table }
-  writeln(prr, '        .byte   0  # end abbreviation table')
+  writeln(prr, '        .byte   0 /* end abbreviation table */')
 end; { genabbrev }
 
 { emit .debug_str section }
@@ -3113,21 +3133,21 @@ begin
       { emit enumeration type DIE }
       el := dwlnxt; enumlab := el;
       dwldef(el); writeln(prr);
-      writeln(prr, '        .uleb128 ', dwab_enumtyp:1, ' # DW_TAG_enumeration_type');
-      writeln(prr, '        .byte   ', intsize:1, ' # byte_size');
+      writeln(prr, '        .uleb128 ', dwab_enumtyp:1, ' /* DW_TAG_enumeration_type */');
+      writeln(prr, '        .byte   ', intsize:1, ' /* byte_size */');
       { emit enumerators }
       while dwchk(pc) <> ')' do begin
         dwgetsym(pc, sl);
         ns := extract(sn, 1, sl);
-        writeln(prr, '        .uleb128 ', dwab_enumer:1, ' # DW_TAG_enumerator');
+        writeln(prr, '        .uleb128 ', dwab_enumer:1, ' /* DW_TAG_enumerator */');
         dwstrref(ns);
-        writeln(prr, '        .sleb128 ', vi:1, ' # const_value');
+        writeln(prr, '        .sleb128 ', vi:1, ' /* const_value */');
         vi := vi+1;
         c := dwchk(pc); if c = ',' then dwnxt(pc)
       end;
       dwexpect(pc, ')');
       e := vi-1;
-      writeln(prr, '        .byte   0  # end enumeration children')
+      writeln(prr, '        .byte   0 /* end enumeration children */')
     end
   end
 end;
@@ -3138,16 +3158,16 @@ begin
   if (s < -(maxint div 2)) or (s > maxint div 2) or
      (e < -(maxint div 2)) or (e > maxint div 2) then begin
     writeln(prr, '        .uleb128 ', dwab_subrntyp8:1,
-                 ' # DW_TAG_subrange_type');
+                 ' /* DW_TAG_subrange_type */');
     dwlref(btl);
-    writeln(prr, '        .quad   ', s:1, ' # lower_bound');
-    writeln(prr, '        .quad   ', e:1, ' # upper_bound')
+    writeln(prr, '        .quad   ', s:1, ' /* lower_bound */');
+    writeln(prr, '        .quad   ', e:1, ' /* upper_bound */')
   end else begin
     writeln(prr, '        .uleb128 ', dwab_subrntyp:1,
-                 ' # DW_TAG_subrange_type');
+                 ' /* DW_TAG_subrange_type */');
     dwlref(btl);
-    writeln(prr, '        .sleb128 ', s:1, ' # lower_bound');
-    writeln(prr, '        .sleb128 ', e:1, ' # upper_bound')
+    writeln(prr, '        .sleb128 ', s:1, ' /* lower_bound */');
+    writeln(prr, '        .sleb128 ', e:1, ' /* upper_bound */')
   end
 end;
 
@@ -3230,18 +3250,18 @@ begin
     dwnxt(pc);
     tl := dwlnxt; labnum := tl;
     dwldef(tl); writeln(prr);
-    writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+    writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' /* DW_TAG_base_type */');
     cs[1] := 'e';
     dwstrref(extract(cs, 1, 1));
-    writeln(prr, '        .byte   ', dwate_unsigned_char:1, ' # encoding');
-    writeln(prr, '        .byte   ', exceptsize:1, ' # byte_size')
+    writeln(prr, '        .byte   ', dwate_unsigned_char:1, ' /* encoding */');
+    writeln(prr, '        .byte   ', exceptsize:1, ' /* byte_size */')
   end
   else if c = '?' then begin { unspecified type }
     dwnxt(pc);
     tl := dwlnxt; labnum := tl;
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_unspectyp:1,
-                 ' # DW_TAG_unspecified_type');
+                 ' /* DW_TAG_unspecified_type */');
     cs[1] := '?';
     dwstrref(extract(cs, 1, 1))
   end
@@ -3263,15 +3283,15 @@ begin
       dwgetnum(pc, vi);
       dwldef(tl); writeln(prr);
       writeln(prr, '        .uleb128 ', dwab_ptrtyp_void:1,
-                   ' # DW_TAG_pointer_type (void, fwd ref)');
-      writeln(prr, '        .byte   ', ptrsize:1, ' # byte_size')
+                   ' /* DW_TAG_pointer_type (void, fwd ref) */');
+      writeln(prr, '        .byte   ', ptrsize:1, ' /* byte_size */')
     end else begin
       dwparsedigest(pc, btl);
       dwldef(tl); writeln(prr);
       writeln(prr, '        .uleb128 ', dwab_ptrtyp:1,
-                   ' # DW_TAG_pointer_type');
+                   ' /* DW_TAG_pointer_type */');
       dwlref(btl);
-      writeln(prr, '        .byte   ', ptrsize:1, ' # byte_size')
+      writeln(prr, '        .byte   ', ptrsize:1, ' /* byte_size */')
     end
   end
   else if c = 's' then begin { set }
@@ -3280,8 +3300,8 @@ begin
     dwparsedigest(pc, btl);
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_settyp:1,
-                 ' # DW_TAG_set_type');
-    writeln(prr, '        .byte   ', setsize:1, ' # byte_size');
+                 ' /* DW_TAG_set_type */');
+    writeln(prr, '        .byte   ', setsize:1, ' /* byte_size */');
     dwlref(btl)
   end
   else if c = 'a' then begin { array }
@@ -3297,11 +3317,11 @@ begin
     el := dwlnxt;
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_arrtyp:1,
-                 ' # DW_TAG_array_type');
+                 ' /* DW_TAG_array_type */');
     dwlref(btl);
     dwldef(el); writeln(prr);
     dwsubrange(ixl, s, e);
-    writeln(prr, '        .byte   0  # end array children')
+    writeln(prr, '        .byte   0 /* end array children */')
   end
   else if c = 'v' then begin { variable-length array }
     dwnxt(pc);
@@ -3309,16 +3329,16 @@ begin
     dwparsedigest(pc, btl);
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_arrtyp:1,
-                 ' # DW_TAG_array_type');
+                 ' /* DW_TAG_array_type */');
     dwlref(btl);
     el := dwlnxt;
     dwldef(el); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_subrntyp:1,
-                 ' # DW_TAG_subrange_type');
+                 ' /* DW_TAG_subrange_type */');
     dwlref(dwlint);
-    writeln(prr, '        .sleb128 0 # lower_bound');
-    writeln(prr, '        .sleb128 0 # upper_bound');
-    writeln(prr, '        .byte   0  # end array children')
+    writeln(prr, '        .sleb128 0 /* lower_bound */');
+    writeln(prr, '        .sleb128 0 /* upper_bound */');
+    writeln(prr, '        .byte   0 /* end array children */')
   end
   else if c = 'r' then begin { record }
     dwnxt(pc);
@@ -3326,10 +3346,10 @@ begin
     tl := dwlnxt; labnum := tl;
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_structyp:1,
-                 ' # DW_TAG_structure_type');
+                 ' /* DW_TAG_structure_type */');
     cs[1] := 'r';
     dwstrref(extract(cs, 1, 1));
-    writeln(prr, '        .uleb128 ', msz:1, ' # byte_size');
+    writeln(prr, '        .uleb128 ', msz:1, ' /* byte_size */');
     dwexpect(pc, '(');
     while dwchk(pc) <> ')' do begin
       dwgetsym(pc, sl);
@@ -3341,21 +3361,21 @@ begin
       if dwchk(pc) = '(' then begin
         taglab := dwlnxt;
         dwldef(taglab); writeln(prr);
-        writeln(prr, '        .uleb128 ', dwab_member:1, ' # DW_TAG_member');
+        writeln(prr, '        .uleb128 ', dwab_member:1, ' /* DW_TAG_member */');
         dwstrref(ns);
         dwlref(btl);
-        writeln(prr, '        .uleb128 ', vi:1, ' # data_member_location');
+        writeln(prr, '        .uleb128 ', vi:1, ' /* data_member_location */');
         dwnxt(pc);
         el := dwlnxt;
         dwldef(el); writeln(prr);
         writeln(prr, '        .uleb128 ', dwab_varpart:1,
-                     ' # DW_TAG_variant_part');
+                     ' /* DW_TAG_variant_part */');
         dwlref(taglab);
         while dwchk(pc) <> ')' do begin
           dwgetnum(pc, s);
           writeln(prr, '        .uleb128 ', dwab_variant:1,
-                       ' # DW_TAG_variant');
-          writeln(prr, '        .sleb128 ', s:1, ' # discr_value');
+                       ' /* DW_TAG_variant */');
+          writeln(prr, '        .sleb128 ', s:1, ' /* discr_value */');
           dwexpect(pc, '(');
           while dwchk(pc) <> ')' do begin
             dwgetsym(pc, sl);
@@ -3365,28 +3385,28 @@ begin
             dwexpect(pc, ':');
             dwparsedigest(pc, btl);
             writeln(prr, '        .uleb128 ', dwab_member:1,
-                         ' # DW_TAG_member');
+                         ' /* DW_TAG_member */');
             dwstrref(ns);
             dwlref(btl);
             writeln(prr, '        .uleb128 ', vi:1,
-                         ' # data_member_location');
+                         ' /* data_member_location */');
             if dwchk(pc) = ',' then dwnxt(pc)
           end;
           dwexpect(pc, ')');
-          writeln(prr, '        .byte   0  # end variant children')
+          writeln(prr, '        .byte   0 /* end variant children */')
         end;
         dwexpect(pc, ')');
-        writeln(prr, '        .byte   0  # end variant_part children')
+        writeln(prr, '        .byte   0 /* end variant_part children */')
       end else begin
-        writeln(prr, '        .uleb128 ', dwab_member:1, ' # DW_TAG_member');
+        writeln(prr, '        .uleb128 ', dwab_member:1, ' /* DW_TAG_member */');
         dwstrref(ns);
         dwlref(btl);
-        writeln(prr, '        .uleb128 ', vi:1, ' # data_member_location')
+        writeln(prr, '        .uleb128 ', vi:1, ' /* data_member_location */')
       end;
       if dwchk(pc) = ',' then dwnxt(pc)
     end;
     dwexpect(pc, ')');
-    writeln(prr, '        .byte   0  # end structure children')
+    writeln(prr, '        .byte   0 /* end structure children */')
   end
   else if c = 'f' then begin { file }
     dwnxt(pc);
@@ -3394,8 +3414,8 @@ begin
     dwparsedigest(pc, btl);
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_filetyp:1,
-                 ' # DW_TAG_file_type');
-    writeln(prr, '        .byte   ', filesize:1, ' # byte_size');
+                 ' /* DW_TAG_file_type */');
+    writeln(prr, '        .byte   ', filesize:1, ' /* byte_size */');
     dwlref(btl)
   end
   else begin { unknown type — emit unspecified }
@@ -3403,7 +3423,7 @@ begin
     tl := dwlnxt; labnum := tl;
     dwldef(tl); writeln(prr);
     writeln(prr, '        .uleb128 ', dwab_unspectyp:1,
-                 ' # DW_TAG_unspecified_type');
+                 ' /* DW_TAG_unspecified_type */');
     cs[1] := '?';
     dwstrref(extract(cs, 1, 1))
   end
@@ -3417,8 +3437,8 @@ begin
     { global: DW_OP_addr + absolute address }
     loclen := dwarf_addr_size; loclen := loclen + 1;
     writeln(prr, '        .uleb128 ', loclen:1,
-                 ' # location expression length');
-    writeln(prr, '        .byte   ', dwop_addr:1, ' # DW_OP_addr');
+                 ' /* location expression length */');
+    writeln(prr, '        .byte   ', dwop_addr:1, ' /* DW_OP_addr */');
     writeln(prr, '        .quad   globals_start+', sp^.off:1)
   end else begin
     { local or parameter: DW_OP_fbreg + signed offset.
@@ -3427,10 +3447,10 @@ begin
     write(prr, '        .uleb128 .Ldw_loc_end');
     write(prr, loclab:1);
     write(prr, ' - .Ldw_loc_start');
-    writeln(prr, loclab:1, ' # location length');
+    writeln(prr, loclab:1, ' /* location length */');
     write(prr, '.Ldw_loc_start'); writeln(prr, loclab:1, ':');
-    writeln(prr, '        .byte   ', dwop_fbreg:1, ' # DW_OP_fbreg');
-    writeln(prr, '        .sleb128 ', sp^.off:1, ' # offset from frame base');
+    writeln(prr, '        .byte   ', dwop_fbreg:1, ' /* DW_OP_fbreg */');
+    writeln(prr, '        .sleb128 ', sp^.off:1, ' /* offset from frame base */');
     write(prr, '.Ldw_loc_end'); writeln(prr, loclab:1, ':')
   end
 end;
@@ -3448,7 +3468,7 @@ begin
     else if sp^.styp = stparam then abbcode := dwab_fparam
     else abbcode := dwab_lvar;
     { emit variable DIE }
-    writeln(prr, '        .uleb128 ', abbcode:1, ' # variable/parameter');
+    writeln(prr, '        .uleb128 ', abbcode:1, ' /* variable/parameter */');
     dwstrref(sp^.name);
     dwlref(tl);
     dwemitloc(sp)
@@ -3481,25 +3501,25 @@ begin
   if hassyms then abbcode := dwab_subprog
   else abbcode := dwab_subprogn;
   { emit subprogram DIE }
-  writeln(prr, '        .uleb128 ', abbcode:1, ' # DW_TAG_subprogram');
+  writeln(prr, '        .uleb128 ', abbcode:1, ' /* DW_TAG_subprogram */');
   dwstrref(bp^.bname);
   { frame base: DW_OP_regX(fbreg) }
   fbreg := dwarf_fbreg;
   opcode := 80 + fbreg; { DW_OP_reg0 = 0x50 = 80 }
-  writeln(prr, '        .uleb128 1 # frame_base length');
+  writeln(prr, '        .uleb128 1 /* frame_base length */');
   writeln(prr, '        .byte   ', opcode:1,
-               ' # DW_OP_reg', fbreg:1);
+               ' /* DW_OP_reg ', fbreg:1, ' */');
   { low_pc: function entry address }
   write(prr, '        .quad   ');
   dwwrtblklng(bp);
-  writeln(prr, ' # DW_AT_low_pc');
+  writeln(prr, ' /* DW_AT_low_pc */');
   { high_pc: function end address }
   if bp^.fnendlab > 0 then
-    writeln(prr, '        .quad   .Lfnend_', bp^.fnendlab:1, ' # DW_AT_high_pc')
+    writeln(prr, '        .quad   .Lfnend_', bp^.fnendlab:1, ' /* DW_AT_high_pc */')
   else begin
     write(prr, '        .quad   ');
     dwwrtblklng(bp);
-    writeln(prr, ' # DW_AT_high_pc (no end label)')
+    writeln(prr, ' /* DW_AT_high_pc (no end label) */')
   end;
   { emit children: variables and parameters }
   if hassyms then begin
@@ -3508,7 +3528,7 @@ begin
       if sp^.styp <> stglobal then dwemitvar(sp);
       sp := sp^.next
     end;
-    writeln(prr, '        .byte   0  # end subprogram children')
+    writeln(prr, '        .byte   0 /* end subprogram children */')
   end
 end;
 
@@ -3537,63 +3557,63 @@ begin
     writeln(prr, '        .section .debug_info,"",@progbits');
   writeln(prr, '.Ldw_info_start:');
   { compilation unit header }
-  writeln(prr, '        .long   .Ldw_info_end - .Ldw_info_hdr # unit length');
+  writeln(prr, '        .long   .Ldw_info_end - .Ldw_info_hdr /* unit length */');
   writeln(prr, '.Ldw_info_hdr:');
-  writeln(prr, '        .short  4  # DWARF version');
-  writeln(prr, '        .long   .Ldw_abbrev_start  # debug_abbrev offset');
+  writeln(prr, '        .short  4 /* DWARF version */');
+  writeln(prr, '        .long   .Ldw_abbrev_start /* debug_abbrev offset */');
   adrsz := dwarf_addr_size;
-  writeln(prr, '        .byte   ', adrsz:1, ' # address size');
+  writeln(prr, '        .byte   ', adrsz:1, ' /* address size */');
 
   { compile unit DIE }
-  writeln(prr, '        .uleb128 ', dwab_cu:1, ' # DW_TAG_compile_unit');
+  writeln(prr, '        .uleb128 ', dwab_cu:1, ' /* DW_TAG_compile_unit */');
   cs[1] := 'P';
   ns := extract(cs, 1, 1);
   ns := cat(ns, copy('ascal-P6 pgen'));
   dwstrref(ns);
-  writeln(prr, '        .short  ', dwlang_pascal83:1, ' # language');
+  writeln(prr, '        .short  ', dwlang_pascal83:1, ' /* language */');
   dwstrref(modnam);
   { CU address range: from module entry to last function end }
   write(prr, '        .quad   ');
   write(prr, modnam^);
-  writeln(prr, ' # DW_AT_low_pc');
+  writeln(prr, ' /* DW_AT_low_pc */');
   if fnendcnt > 0 then
-    writeln(prr, '        .quad   .Lfnend_', fnendcnt:1, ' # DW_AT_high_pc')
+    writeln(prr, '        .quad   .Lfnend_', fnendcnt:1, ' /* DW_AT_high_pc */')
   else begin
     write(prr, '        .quad   ');
     write(prr, modnam^);
-    writeln(prr, ' # DW_AT_high_pc (no functions)')
+    writeln(prr, ' /* DW_AT_high_pc (no functions) */')
   end;
   { line number table reference }
-  writeln(prr, '        .long   .Ldw_line_start # DW_AT_stmt_list');
+  writeln(prr, '        .long   .Ldw_line_start /* DW_AT_stmt_list */');
 
   { emit base type DIEs }
   dwldef(dwlint); writeln(prr);
-  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' /* DW_TAG_base_type */');
   ns := copy('integer');
   dwstrref(ns);
-  writeln(prr, '        .byte   ', dwate_signed:1, ' # DW_ATE_signed');
-  writeln(prr, '        .byte   ', intsize:1, ' # byte_size');
+  writeln(prr, '        .byte   ', dwate_signed:1, ' /* DW_ATE_signed */');
+  writeln(prr, '        .byte   ', intsize:1, ' /* byte_size */');
 
   dwldef(dwlbool); writeln(prr);
-  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' /* DW_TAG_base_type */');
   ns := copy('boolean');
   dwstrref(ns);
-  writeln(prr, '        .byte   ', dwate_boolean:1, ' # DW_ATE_boolean');
-  writeln(prr, '        .byte   ', boolsize:1, ' # byte_size');
+  writeln(prr, '        .byte   ', dwate_boolean:1, ' /* DW_ATE_boolean */');
+  writeln(prr, '        .byte   ', boolsize:1, ' /* byte_size */');
 
   dwldef(dwlchar); writeln(prr);
-  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' /* DW_TAG_base_type */');
   ns := copy('char');
   dwstrref(ns);
-  writeln(prr, '        .byte   ', dwate_unsigned_char:1, ' # DW_ATE_unsigned_char');
-  writeln(prr, '        .byte   ', charsize:1, ' # byte_size');
+  writeln(prr, '        .byte   ', dwate_unsigned_char:1, ' /* DW_ATE_unsigned_char */');
+  writeln(prr, '        .byte   ', charsize:1, ' /* byte_size */');
 
   dwldef(dwlreal); writeln(prr);
-  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' /* DW_TAG_base_type */');
   ns := copy('real');
   dwstrref(ns);
-  writeln(prr, '        .byte   ', dwate_float:1, ' # DW_ATE_float');
-  writeln(prr, '        .byte   ', realsize:1, ' # byte_size');
+  writeln(prr, '        .byte   ', dwate_float:1, ' /* DW_ATE_float */');
+  writeln(prr, '        .byte   ', realsize:1, ' /* byte_size */');
 
   { emit global variables as direct children of the compile unit so they
     resolve from any scope. If emitted as children of the program/module
@@ -3618,7 +3638,7 @@ begin
   end;
 
   { close compile unit }
-  writeln(prr, '        .byte   0  # end compile unit children');
+  writeln(prr, '        .byte   0 /* end compile unit children */');
   writeln(prr, '.Ldw_info_end:');
 
   { emit abbreviation table }
@@ -3664,7 +3684,7 @@ begin (*xlate*)
    writeln(prr, '#');
    writeln(prr, '# Constants section');
    writeln(prr, '#');
-   writeln(prr, '        jmp     1f');
+   jmpfwd;
    writeln(prr, 'modnam:');
    write(prr, '        .string  "'); write(prr, modnam^); writeln(prr, '"');
    writeln(prr, 'real_zero:');
@@ -3676,6 +3696,7 @@ begin (*xlate*)
 
    gencst;
 
+   codealign;
    writeln(prr, '1:');
 
    writeln(prr, '        .bss');
@@ -3772,6 +3793,7 @@ begin
   prologue_pending := false; { not inside a routine prologue yet }
   amd64_sysv := false; { SYS V AMD64 calling convention not yet seen }
   windows := false; { don't use Windows calling convention }
+  convreq := false; { plain stack model layout unless the target says else }
 
   { supress warnings }
   refer(dochkovf);

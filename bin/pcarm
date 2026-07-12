@@ -1,0 +1,141 @@
+#!/bin/bash
+#
+# Compile a Pascaline program to an arm64 (aarch64 linux) executable.
+#
+# Execution:
+#
+# pcarm [<options>] <file>
+#
+# <file> is the filename without extension. Compiles <file>.pas with the
+# plain stack model parameter layout, producing the intermediate <file>.p6,
+# the assembly <file>.s, the object <file>.o and the executable <file>.
+# The executable is an aarch64 linux image: on an arm64 host it runs
+# directly, elsewhere it runs under qemu (directly if qemu binfmt support
+# is installed, otherwise via "qemu-aarch64 ./<file>").
+#
+# The arm64 code generator is run in place from source/pgen/arm64, since it
+# is under active bring-up and is not installed to bin.
+#
+# All options are passed through to the compiler.
+#
+# Requirements:
+#
+# - The arm64 runtime components must be built ("make arm64"), which on
+#   non-arm64 hosts needs the aarch64 cross toolchain (Ubuntu package
+#   gcc-aarch64-linux-gnu).
+# - The Ami I/O models (terminal, graphics, etc.) are not available in
+#   the arm64 build; programs are limited to standard (console) I/O and
+#   may not reference the Ami modules.
+#
+
+#
+# Select the arm64 toolchain: native gcc on an arm64 host, the aarch64
+# cross toolchain elsewhere (matches the makefile arm64 target).
+#
+if [ "$(uname -m)" = "aarch64" ]; then
+
+    armcc=gcc
+
+else
+
+    armcc=aarch64-linux-gnu-gcc
+
+fi
+
+pcomflags=""
+prog=""
+
+for param in "$@"
+do
+
+    case "$param" in
+
+        -*) pcomflags="$pcomflags $param" ;;  # pass other options through
+        *)  prog="$param" ;;
+
+    esac
+
+done
+
+if [ -z "$prog" ]; then
+
+    echo "*** Error: No compile file specified"
+    exit 1
+
+fi
+
+if [ ! -f "$prog.pas" ]; then
+
+    echo "*** Error: Source file $prog.pas does not exist"
+    exit 1
+
+fi
+
+if ! command -v "$armcc" > /dev/null; then
+
+    echo "*** Error: arm64 toolchain $armcc not found"
+    echo "*** On Ubuntu install it with: sudo apt install gcc-aarch64-linux-gnu"
+    exit 1
+
+fi
+
+if [ ! -f "$PASCALP6/libs/arm64/psystem.a" -o ! -f "$PASCALP6/libs/arm64/main.o" ]; then
+
+    echo "*** Error: arm64 runtime components not found"
+    echo "*** Build them with: make arm64"
+    exit 1
+
+fi
+
+if [ ! -x "$PASCALP6/source/pgen/arm64/pgen" ]; then
+
+    echo "*** Error: arm64 code generator not found"
+    echo "*** Build it with: pc source/pgen/arm64/pgen"
+    exit 1
+
+fi
+
+#
+# Compile to intermediate with the plain stack model layout
+#
+pcom $pcomflags "$prog.pas"
+if [ $? -ne 0 ]; then
+
+    echo "*** Error: Compile of $prog.pas failed"
+    exit 1
+
+fi
+
+#
+# Generate arm64 assembly
+#
+"$PASCALP6/source/pgen/arm64/pgen" "$prog.p6" "$prog.s"
+if [ $? -ne 0 ]; then
+
+    echo "*** Error: Code generation for $prog.p6 failed"
+    exit 1
+
+fi
+
+#
+# Assemble and link the arm64 executable
+#
+$armcc -g3 -o "$prog.o" -c "$prog.s"
+if [ $? -ne 0 ]; then
+
+    echo "*** Error: Assembly of $prog.s failed"
+    exit 1
+
+fi
+
+$armcc -static -g3 -o "$prog" \
+    "$PASCALP6/libs/arm64/main.o" "$prog.o" \
+    "$PASCALP6/libs/arm64/psystem.a" -lm
+if [ $? -ne 0 ]; then
+
+    echo "*** Error: Link of $prog failed"
+    exit 1
+
+fi
+
+echo "$prog complete"
