@@ -449,9 +449,9 @@ table is all you should need to adapt to any byte addressable machine.
 #define PRIVEXCEPTIONTOP                    108
 
 typedef unsigned char byte;   /* 8-bit byte */
-typedef long boolean;         /* true/false */
+typedef long long boolean;         /* true/false */
 typedef unsigned char pasfil; /* Pascal file */
-typedef long filnum;          /* logical file number */
+typedef long long filnum;          /* logical file number */
 typedef char filnam[FILLEN];  /* filename strings */
 typedef enum {
   fsnone,
@@ -459,12 +459,12 @@ typedef enum {
   fsread,
   fswrite
 } filsts;                      /* file states */
-typedef long cmdinx;           /* index for command line buffer */
-typedef long cmdnum;           /* length of command line buffer */
+typedef long long cmdinx;           /* index for command line buffer */
+typedef long long cmdnum;           /* length of command line buffer */
 typedef char cmdbuf[MAXCMD];   /* buffer for command line */
 typedef char errmsg[ERRLEN];   /* error string */
 typedef byte settype[SETSIZE]; /* standard set */
-typedef long address;          /* address */
+typedef long long address;          /* address */
 
 /* VAR reference block */
 typedef struct _varblk *varptr;
@@ -485,7 +485,7 @@ typedef struct _wthblk {
 address psystem_expadr; /* exception address of exception handler starts */
 address psystem_expstk; /* exception address of sp at handlers */
 address psystem_expmrk; /* exception address of mp at handlers */
-long psystem_errret; /* return error for program */
+long long psystem_errret; /* return error for program */
 
 /* internal variables */
 static const char*modnam = "psystem"; /* name of this module */
@@ -707,11 +707,11 @@ together separated by spaces.
 
 *******************************************************************************/
 
-static void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
+static void getcommandline(long long argc, char* argv[], cmdbuf cb, cmdnum* l)
 {
 
     cmdinx i;
-    long x;
+    long long x;
     char *p;
 
     for (i = 0; i < MAXCMD; i++) cb[i] = ' '; i = 0;
@@ -796,7 +796,7 @@ static void readlncommand(void)
 
 static void assignexternal(filnum fn, char hfn[])
 {
-    long i;
+    long long i;
 
     /* skip leading spaces */
     while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
@@ -814,17 +814,17 @@ static void assignexternal(filnum fn, char hfn[])
 
 /* set operations */
 
-static void sset(settype s, long b)
+static void sset(settype s, long long b)
 {
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) s[i] = 0;
     s[b/8] |= 1<<b%8;
 }
 
-static void rset(settype s, long b1, long b2)
+static void rset(settype s, long long b1, long long b2)
 {
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) s[i] = 0;
     if (b1 > b2) { i = b1; b1 = b2; b2 = i; }
@@ -833,33 +833,33 @@ static void rset(settype s, long b1, long b2)
 
 static void suni(settype s1, settype s2)
 {
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] | s2[i];
 }
 
 static void sint(settype s1, settype s2)
 {
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & s2[i];
 }
 
 static void sdif(settype s1, settype s2)
 {
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & ~s2[i];
 }
 
-static boolean sisin(long i, settype s)
+static boolean sisin(long long i, settype s)
 {
     return (!!(s[i/8] & 1<<i%8));
 }
 
 static boolean sequ(settype s1, settype s2)
 {
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) if (s1[i] != s2[i]) return (FALSE);
     return (TRUE);
@@ -867,7 +867,7 @@ static boolean sequ(settype s1, settype s2)
 
 static boolean sinc(settype s1, settype s2)
 {
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++)
         if ((s1[i] & s2[i]) != s2[i]) return (FALSE);
@@ -887,7 +887,7 @@ terminates the destination.
 static void strcpyl(
     /* destination string */ char* ds,
     /* source string */      char* ss,
-    /* source string length */ long sl
+    /* source string length */ long long sl
 )
 
 {
@@ -969,7 +969,7 @@ static void valfil(
 
 {
 
-    long i,ff;
+    long long i,ff;
 
     if (*f == 0) { /* no file */
 
@@ -1043,7 +1043,7 @@ static boolean eoffile(
 
 { 
 
-    long c; 
+    long long c; 
 
     c = fgetc(fp); 
     if (c != EOF) ungetc(c, fp); 
@@ -1066,7 +1066,7 @@ static boolean eolnfile(
 
 { 
 
-    long c; 
+    long long c; 
     
     c = fgetc(fp); 
     if (c != EOF) ungetc(c, fp); 
@@ -1090,7 +1090,7 @@ static char chkfile(
 
 {
 
-    long c;
+    long long c;
 
     c = fgetc(fp); 
     if (c != EOF) ungetc(c, fp);
@@ -1106,13 +1106,13 @@ Find file length
 
 *******************************************************************************/
 
-static long lengthfile(
+static long long lengthfile(
     /** File to get length */ FILE* fp
 )
 
 {
 
-    long s, p;
+    long long s, p;
 
     s = ftell(fp); fseek(fp, 0, SEEK_END);
     p = ftell(fp); fseek(fp, s, SEEK_SET);
@@ -1137,7 +1137,7 @@ static char buffn(
 
 {
 
-    long c;
+    long long c;
 
     if (fn <= COMMANDFN) switch(fn) {
 
@@ -1180,7 +1180,7 @@ static void getfneoln(
 
 {
 
-    long c;
+    long long c;
 
     c = fgetc(fp);
     if (c == EOF && !fileoln[fn]) fileoln[fn] = TRUE;
@@ -1359,7 +1359,7 @@ space if past the field width.
 
 *******************************************************************************/
 
-static char chkbuf(filnum fn, long w)
+static char chkbuf(filnum fn, long long w)
 
 { 
 
@@ -1377,7 +1377,7 @@ or end of the field.
 
 *******************************************************************************/
 
-static boolean chkend(filnum fn, long w)
+static boolean chkend(filnum fn, long long w)
 
 { 
  
@@ -1394,7 +1394,7 @@ an EOF.
 
 *******************************************************************************/
 
-static void getbuf(filnum fn, long* w)
+static void getbuf(filnum fn, long long* w)
 
 {
 
@@ -1416,7 +1416,7 @@ part of number. Allows '_' character as well.
 
 *******************************************************************************/
 
-int valchr(char c, long r)
+int valchr(char c, long long r)
 {
   c = tolower(c);
   return (
@@ -1438,10 +1438,10 @@ is blank.
 
 *******************************************************************************/
 
-void readi(filnum fn, long *i, long* w, boolean fld, long r)
+void readi(filnum fn, long long *i, long long* w, boolean fld, long long r)
 {
-    long s;
-    long d;
+    long long s;
+    long long d;
 
    s = +1; /* set sign */
    /* skip leading spaces */
@@ -1493,7 +1493,7 @@ reading.
 
 *******************************************************************************/
 
-void readifp(pasfil* f, long *i, long* w, boolean fld, long r)
+void readifp(pasfil* f, long long *i, long long* w, boolean fld, long long r)
 
 {
 
@@ -1513,7 +1513,7 @@ Correctly rounded decimal to double conversion (clean room big integer)
 A decimal value D*10^E (D the significant digits as a big integer) is converted
 to the nearest double. The value is formed as the rational num/den, the
 significand is normalized into [2^52,2^53) by powers of two, extracted by exact
-big integer long division, and the last bit is rounded to nearest with ties to
+big integer long long division, and the last bit is rounded to nearest with ties to
 even decided on the exact remainder. Normal, subnormal, underflow and overflow
 are all handled. This matches a correctly rounded library strtod for every input
 without any accumulated floating point error. Original implementation; no third
@@ -1584,7 +1584,7 @@ static unsigned long long cvt_bits(cvtbn* D, int E, int sticky, int ndig)
     for (;;){ t=den; cvt_shl(&t,53); if (cvt_cmp(&num,&t)>=0){ cvt_shl(&den,1); e2++; } else break; }
     for (;;){ t=den; cvt_shl(&t,52); if (cvt_cmp(&num,&t)< 0){ cvt_shl(&num,1); e2--; } else break; }
 
-    /* extract the 53-bit significand by long division; remainder left in num */
+    /* extract the 53-bit significand by long long division; remainder left in num */
     Q = 0;
     for (i=52;i>=0;i--){ t=den; cvt_shl(&t,i); Q<<=1;
         if (cvt_cmp(&num,&t)>=0){ cvt_sub(&num,&t); Q|=1; } }
@@ -1624,13 +1624,13 @@ is blank.
 
 *******************************************************************************/
 
-static void readr(filnum fn, double* r, long w, boolean fld)
+static void readr(filnum fn, double* r, long long w, boolean fld)
 
 {
 
-    long i; /* integer holding */
-    long e; /* decimal exponent */
-    long d; /* digit */
+    long long i; /* integer holding */
+    long long e; /* decimal exponent */
+    long long d; /* digit */
     boolean s; /* sign */
     cvtbn dig; /* significant digits as a big integer */
     int ndig; /* count of digits held in dig */
@@ -1715,7 +1715,7 @@ is blank.
 
 *******************************************************************************/
 
-static void readc(filnum fn, char* c, long w, boolean fld)
+static void readc(filnum fn, char* c, long long w, boolean fld)
 
 {
 
@@ -1742,15 +1742,15 @@ is blank.
 
 *******************************************************************************/
 
-static void reads(filnum fn, char* s, long l, long w, boolean fld)
+static void reads(filnum fn, char* s, long long l, long long w, boolean fld)
 
 {
 
-    long c;
+    long long c;
 
     if (w < 0) { 
 
-        w = labs(w); if (w < l) l = w;
+        w = llabs(w); if (w < l) l = w;
         while (l > 0) {
 
             c = chkbuf(fn, w); getbuf(fn, &w); *s++ = c; l--; 
@@ -1794,7 +1794,7 @@ string are cleared to blanks.
 
 *******************************************************************************/
 
-static void readsp(filnum fn, char* s,  long l)
+static void readsp(filnum fn, char* s,  long long l)
 {
 
     char c;
@@ -1820,7 +1820,7 @@ error.
 
 *******************************************************************************/
 
-static void readsc(filnum fn, char* s,  long l)
+static void readsc(filnum fn, char* s,  long long l)
 {
 
     char c;
@@ -1846,10 +1846,10 @@ string is the last non-space character in the string.
 
 *******************************************************************************/
 
-static void writestrp(FILE* f, char* s, long l)
+static void writestrp(FILE* f, char* s, long long l)
 {
 
-    long i;
+    long long i;
     char* p;
 
     p = s+l-1; /* find end */
@@ -1866,7 +1866,7 @@ Writes n '0's to the file.
 
 *******************************************************************************/
 
-static void filllz(FILE* f, long n)
+static void filllz(FILE* f, long long n)
 
 { 
 
@@ -1888,16 +1888,16 @@ is negative and a non-decimal radix is specified, an error results.
 
 *******************************************************************************/
 
-static void writei(FILE* f, long w, long fl, long r, long lz)
+static void writei(FILE* f, long long w, long long fl, long long r, long long lz)
 {
 
-    long i, d, ds;
+    long long i, d, ds;
     char digit[MAXDBF];
     boolean sgn;
 
     if (w < 0) {
 
-        sgn = TRUE; w = labs(w);
+        sgn = TRUE; w = llabs(w);
         if (r != 10) 
             errore(modnam, __LINE__, NONDECIMALRADIXOFNEGATIVE);
 
@@ -1912,12 +1912,12 @@ static void writei(FILE* f, long w, long fl, long r, long lz)
 
     } while (w != 0);
     if (sgn) ds = d+1; else ds = d; /* add sign */
-    if (ds > labs(fl)) { if (fl < 0) fl = -ds; else fl = ds; }
+    if (ds > llabs(fl)) { if (fl < 0) fl = -ds; else fl = ds; }
     if (fl > 0 && fl > ds)
       { if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", (int)(fl-ds), ' '); }
     if (sgn) fputc('-', f);
     for (i = MAXDBF-d; i < MAXDBF; i++) fputc(digit[i], f);
-    if (fl < 1 && labs(fl) > ds) fprintf(f, "%*c", (int)(labs(fl)-ds), ' ');
+    if (fl < 1 && llabs(fl) > ds) fprintf(f, "%*c", (int)(llabs(fl)-ds), ' ');
 
 }
 
@@ -1930,7 +1930,7 @@ file.
 
 *******************************************************************************/
 
-static void writeipf(pasfil* f, long i, long w, long r, long lz)
+static void writeipf(pasfil* f, long long i, long long w, long long r, long long lz)
 
 {
 
@@ -1970,10 +1970,10 @@ given field.
 
 *******************************************************************************/
 
-static void writeb(FILE* f, boolean b, long w)
+static void writeb(FILE* f, boolean b, long long w)
 {
 
-    long l;
+    long long l;
 
     if (b) {
 
@@ -2119,8 +2119,8 @@ the exception vector mechanisim and directly print and fail the program.
 
 void psystem_errorv(
     /* module name */         const char* modnam, 
-    /* line number */         long        line, 
-    /* error/vector number */ long        en
+    /* line number */         long long        line, 
+    /* error/vector number */ long long        en
 )
 
 { 
@@ -2141,8 +2141,8 @@ is either handled by unwinding it, or directly handling it here.
 
 void psystem_errore(
     /* module name */         const char* modnam,
-    /* line number */         long        line,
-    /* error/vector number */ long        en
+    /* line number */         long long        line,
+    /* error/vector number */ long long        en
 )
 
 {
@@ -2359,7 +2359,7 @@ length of allocation. The space required is allocated and cleared to zeros.
 
 void psystem_new(
     /** Address of pointer */ unsigned char** p,
-    /** length to allocate */ unsigned long l
+    /** length to allocate */ unsigned long long l
 )
 
 {
@@ -2400,22 +2400,22 @@ code to verify access to the variants used.
 
 void psystem_nwl(
     /** Address of pointer */  unsigned char** p,
-    /** length to allocate */  unsigned long   l,
-    /** number of tags */      unsigned long   tc,
-    /** pointer to tag list */ long*           tl
+    /** length to allocate */  unsigned long long   l,
+    /** number of tags */      unsigned long long   tc,
+    /** pointer to tag list */ long long*           tl
 )
 
 {
 
     unsigned char* p2;
-    long* lp;
-    unsigned long* ulp;
-    long i;
+    long long* lp;
+    unsigned long long* ulp;
+    long long i;
 
-    p2 = calloc(l+(tc+1)*sizeof(unsigned long), 1); /* get whole allocation */
-    lp = (long*)p2;
+    p2 = calloc(l+(tc+1)*sizeof(unsigned long long), 1); /* get whole allocation */
+    lp = (long long*)p2;
     for (i = 0; i < tc; i++) *lp++ = *tl++; /* place tags */
-    ulp = (unsigned long*)lp;
+    ulp = (unsigned long long*)lp;
     *ulp++ = tc+ADRSIZE+1; /* place tag count */
     *p = (unsigned char*)ulp; /* place record base */
 
@@ -2477,25 +2477,25 @@ the field specification.
    negative-field pad. Positive widths keep the existing printf right-justify
    path (the libc does honor those). */
 
-static void wrcfld(FILE* f, char c, long w)
+static void wrcfld(FILE* f, char c, long long w)
 {
     if (w >= 0) fprintf(f, "%*c", (int)w, c);
     else { fputc(c, f);
-           if (labs(w) > 1) fprintf(f, "%*c", (int)(labs(w)-1), ' '); }
+           if (llabs(w) > 1) fprintf(f, "%*c", (int)(llabs(w)-1), ' '); }
 }
 
-static void wrsfld(FILE* f, char s[], long l, long w)
+static void wrsfld(FILE* f, char s[], long long l, long long w)
 {
     if (w >= 0) fprintf(f, "%*.*s", (int)w, (int)l, s);
     else { fprintf(f, "%.*s", (int)l, s);
-           if (labs(w) > l) fprintf(f, "%*c", (int)(labs(w)-l), ' '); }
+           if (llabs(w) > l) fprintf(f, "%*c", (int)(llabs(w)-l), ' '); }
 }
 
 void psystem_wrs(
     /* Pascal file to write to */ pasfil* f,
     /* String to write */         char    s[],
-    /* Length of string */        long    l,
-    /* Width of field */          long    w
+    /* Length of string */        long long    l,
+    /* Width of field */          long long    w
 )
 
 {
@@ -2507,7 +2507,7 @@ void psystem_wrs(
 
     if (w < 1 && ISO7185) 
         errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
-    if (l > labs(w)) l = labs(w); /* limit string to field */
+    if (l > llabs(w)) l = llabs(w); /* limit string to field */
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: wrsfld(stdout, s, l, w); break;
@@ -2542,7 +2542,7 @@ the string, that are non-space.
 void psystem_wrsp(
     /* Pascal file to write to */ pasfil* f,
     /* String to write */         char*   s,
-    /* Length of string */        long    l
+    /* Length of string */        long long    l
 )
 
 {
@@ -2659,8 +2659,8 @@ Writes out the given integer in decimal form, with the given field width.
 
 void psystem_wri(
     /* Pascal file to write to */ pasfil* f,
-    /* Integer to write */        long    i,
-    /* Field width */             long    w
+    /* Integer to write */        long long    i,
+    /* Field width */             long long    w
 )
 
 {
@@ -2683,8 +2683,8 @@ Writes out the given integer in hexadecimal form, with the given field width.
 
 void psystem_wrih(
     /* Pascal file to write to */ pasfil* f,
-    /* Integer to write */        long    i,
-    /* Field width */             long    w
+    /* Integer to write */        long long    i,
+    /* Field width */             long long    w
 )
 
 {
@@ -2707,8 +2707,8 @@ Writes out the given integer in octal form, with the given field width.
 
 void psystem_wrio(
     /* Pascal file to write to */ pasfil* f,
-    /* Integer to write */        long    i,
-    /* Field width */             long    w
+    /* Integer to write */        long long    i,
+    /* Field width */             long long    w
 )
 
 {
@@ -2731,8 +2731,8 @@ Writes out the given integer in binary form, with the given field width.
 
 void psystem_wrib(
     /* Pascal file to write to */ pasfil* f,
-    /* Integer to write */        long    i,
-    /* Field width */             long    w
+    /* Integer to write */        long long    i,
+    /* Field width */             long long    w
 )
 
 {
@@ -2756,8 +2756,8 @@ field width is padded out with leading zeros.
 
 void psystem_wiz(
     /* Pascal file to write to */ pasfil* f,
-    /* Integer to write */        long    i,
-    /* Field width */             long    w
+    /* Integer to write */        long long    i,
+    /* Field width */             long long    w
 )
 
 {
@@ -2781,8 +2781,8 @@ The field width is padded out with leading zeros.
 
 void psystem_wizh(
     /* Pascal file to write to */ pasfil* f,
-    /* Integer to write */        long    i,
-    /* Field width */             long    w
+    /* Integer to write */        long long    i,
+    /* Field width */             long long    w
 )
 
 {
@@ -2806,8 +2806,8 @@ The field width is padded out with leading zeros.
 
 void psystem_wizo(
     /* Pascal file to write to */ pasfil* f,
-    /* Integer to write */        long    i,
-    /* Field width */             long    w
+    /* Integer to write */        long long    i,
+    /* Field width */             long long    w
 )
 
 {
@@ -2831,8 +2831,8 @@ The field width is padded out with leading zeros.
 
 void psystem_wizb(
     /* Pascal file to write to */ pasfil* f,
-    /* Integer to write */        long    i,
-    /* Field width */             long    w
+    /* Integer to write */        long long    i,
+    /* Field width */             long long    w
 )
 
 {
@@ -2856,7 +2856,7 @@ Writes out the given real, with the given field width.
 void psystem_wrr(
     /* Pascal file to write to */ pasfil* f,
     /* Real to write */           double  r,
-    /* Field width */             long    w
+    /* Field width */             long long    w
 )
 
 {
@@ -2901,7 +2901,7 @@ Writes out the given character, with the given field width.
 void psystem_wrc(
     /* Pascal file to write to */ pasfil* f,
     /* Character to write */      char    c,
-    /* Field width */             long    w
+    /* Field width */             long long    w
 )
 
 {
@@ -2943,12 +2943,12 @@ Reads an integer from the given text file and returns it.
 
 void psystem_rdi(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i
+    /* integer to read */         long long*    i
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX;
     readifp(f, i, &w, FALSE, 10);
@@ -2965,12 +2965,12 @@ Reads an integer from the given text file with radix 16 and returns it.
 
 void psystem_rdih(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i
+    /* integer to read */         long long*    i
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX;
     readifp(f, i, &w, FALSE, 16);
@@ -2987,12 +2987,12 @@ Reads an integer from the given text file with radix 8 and returns it.
 
 void psystem_rdio(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i
+    /* integer to read */         long long*    i
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX;
     readifp(f, i, &w, FALSE, 8);
@@ -3009,12 +3009,12 @@ Reads an integer from the given text file with radix 2 and returns it.
 
 void psystem_rdib(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i
+    /* integer to read */         long long*    i
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX;
     readifp(f, i, &w, FALSE, 2);
@@ -3036,7 +3036,7 @@ void psystem_rdx(
 
 {
 
-    long i;
+    long long i;
 
     psystem_rdi(f, &i);
     if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
@@ -3059,7 +3059,7 @@ void psystem_rdxh(
 
 {
 
-    long i;
+    long long i;
 
     psystem_rdih(f, &i);
     if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
@@ -3082,7 +3082,7 @@ void psystem_rdxo(
 
 {
 
-    long i;
+    long long i;
 
     psystem_rdio(f, &i);
     if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
@@ -3105,7 +3105,7 @@ void psystem_rdxb(
 
 {
 
-    long i;
+    long long i;
 
     psystem_rdib(f, &i);
     if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
@@ -3125,8 +3125,8 @@ be used, even if followed by other digits.
 
 void psystem_rdif(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i,
-    /* Field */                   long    w
+    /* integer to read */         long long*    i,
+    /* Field */                   long long    w
 )
 
 {
@@ -3147,8 +3147,8 @@ indicated field will be used, even if followed by other digits.
 
 void psystem_rifh(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i,
-    /* Field */                   long    w
+    /* integer to read */         long long*    i,
+    /* Field */                   long long    w
 )
 
 {
@@ -3169,8 +3169,8 @@ indicated field will be used, even if followed by other digits.
 
 void psystem_rifo(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i,
-    /* Field */                   long    w
+    /* integer to read */         long long*    i,
+    /* Field */                   long long    w
 )
 
 {
@@ -3191,8 +3191,8 @@ indicated field will be used, even if followed by other digits.
 
 void psystem_rifb(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i,
-    /* Field */                   long    w
+    /* integer to read */         long long*    i,
+    /* Field */                   long long    w
 )
 
 {
@@ -3214,12 +3214,12 @@ be used, even if followed by other digits.
 void psystem_rdxf(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Field */                   long           w
+    /* Field */                   long long           w
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_rdif(f, &i, w);
     if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
@@ -3240,12 +3240,12 @@ indicated field will be used, even if followed by other digits.
 void psystem_rxfh(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Field */                   long           w
+    /* Field */                   long long           w
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_rifh(f, &i, w);
     if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
@@ -3266,12 +3266,12 @@ indicated field will be used, even if followed by other digits.
 void psystem_rxfo(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Field */                   long           w
+    /* Field */                   long long           w
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_rifo(f, &i, w);
     if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
@@ -3292,12 +3292,12 @@ indicated field will be used, even if followed by other digits.
 void psystem_rxfb(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Field */                   long           w
+    /* Field */                   long long           w
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_rifb(f, &i, w);
     if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
@@ -3318,13 +3318,13 @@ maximum. Out of range integers will result in an error.
 
 void psystem_rib(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i,
-    /* Bounds for integer */      long mn, long mx
+    /* integer to read */         long long*    i,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX;
     readifp(f, i, &w, FALSE, 10);
@@ -3346,13 +3346,13 @@ maximum. Out of range integers will result in an error.
 
 void psystem_ribh(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i,
-    /* Bounds for integer */      long mn, long mx
+    /* integer to read */         long long*    i,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX;
     readifp(f, i, &w, FALSE, 16);
@@ -3374,13 +3374,13 @@ maximum. Out of range integers will result in an error.
 
 void psystem_ribo(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i,
-    /* Bounds for integer */      long mn, long mx
+    /* integer to read */         long long*    i,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX;
     readifp(f, i, &w, FALSE, 8);
@@ -3402,13 +3402,13 @@ maximum. Out of range integers will result in an error.
 
 void psystem_ribb(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long*    i,
-    /* Bounds for integer */      long mn, long mx
+    /* integer to read */         long long*    i,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX;
     readifp(f, i, &w, FALSE, 2);
@@ -3430,12 +3430,12 @@ maximum. Out of range integers will result in an error.
 void psystem_rxb(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Bounds for integer */      long mn, long mx
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_rib(f, &i, mn, mx);
     /* note: value should be in byte range */
@@ -3457,12 +3457,12 @@ maximum. Out of range integers will result in an error.
 void psystem_rxbh(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Bounds for integer */      long mn, long mx
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_ribh(f, &i, mn, mx);
     /* note: value should be in byte range */
@@ -3484,12 +3484,12 @@ maximum. Out of range integers will result in an error.
 void psystem_rxbo(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Bounds for integer */      long mn, long mx
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_ribo(f, &i, mn, mx);
     /* note: value should be in byte range */
@@ -3511,12 +3511,12 @@ maximum. Out of range integers will result in an error.
 void psystem_rxbb(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Bounds for integer */      long mn, long mx
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_ribb(f, &i, mn, mx);
     /* note: value should be in byte range */
@@ -3539,9 +3539,9 @@ maximum. Out of range integers will result in an error.
 
 void psystem_ribf(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long* i,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
+    /* integer to read */         long long* i,
+    /* Field to read */           long long w,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
@@ -3566,9 +3566,9 @@ maximum. Out of range integers will result in an error.
 
 void psystem_rbfh(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long* i,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
+    /* integer to read */         long long* i,
+    /* Field to read */           long long w,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
@@ -3593,9 +3593,9 @@ maximum. Out of range integers will result in an error.
 
 void psystem_rbfo(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long* i,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
+    /* integer to read */         long long* i,
+    /* Field to read */           long long w,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
@@ -3620,9 +3620,9 @@ maximum. Out of range integers will result in an error.
 
 void psystem_rbfb(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         long* i,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
+    /* integer to read */         long long* i,
+    /* Field to read */           long long w,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
@@ -3648,13 +3648,13 @@ maximum. Out of range integers will result in an error.
 void psystem_rxbf(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
+    /* Field to read */           long long w,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_ribf(f, &i, w, mn, mx);
     /* note: value should be in byte range */
@@ -3678,13 +3678,13 @@ maximum. Out of range integers will result in an error.
 void psystem_rbxh(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
+    /* Field to read */           long long w,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_rbfh(f, &i, w, mn, mx);
     /* note: value should be in byte range */
@@ -3708,13 +3708,13 @@ maximum. Out of range integers will result in an error.
 void psystem_rbxo(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
+    /* Field to read */           long long w,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_rbfo(f, &i, w, mn, mx);
     /* note: value should be in byte range */
@@ -3738,13 +3738,13 @@ maximum. Out of range integers will result in an error.
 void psystem_rbxb(
     /* Pascal file to write to */ pasfil*        f,
     /* byte to read */            unsigned char* b,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
+    /* Field to read */           long long w,
+    /* Bounds for integer */      long long mn, long long mx
 )
 
 {
 
-    long i;
+    long long i;
 
     psystem_rbfb(f, &i, w, mn, mx);
     /* note: value should be in byte range */
@@ -3790,7 +3790,7 @@ in the indicated field will be used, even if followed by other digits.
 void psystem_rdrf(
     /* Pascal file to read from */ pasfil* f,
     /* real to read */             double* r,
-    /* Field */                    long    w
+    /* Field */                    long long    w
 )
 
 {
@@ -3841,7 +3841,7 @@ field will be used, even if followed by other digits.
 void psystem_rdcf(
     /* Pascal file to read from */ pasfil* f,
     /* character to read */        char*   c,
-    /* Field */                    long    w
+    /* Field */                    long long    w
 )
 
 {
@@ -3868,7 +3868,7 @@ those two. Returns the character.
 void psystem_rcb(
     /* Pascal file to read from */ pasfil*        f,
     /* character to read */        unsigned char* c,
-    /* Range of values          */ long           mn, long mx
+    /* Range of values          */ long long           mn, long long mx
 )
 
 {
@@ -3898,8 +3898,8 @@ character.
 void psystem_rcbf(
     /* Pascal file to read from */ pasfil*        f,
     /* character to read */        unsigned char* c,
-    /* Field                    */ long           w,
-    /* Range of values          */ long           mn, long mx
+    /* Field                    */ long long           w,
+    /* Range of values          */ long long           mn, long long mx
 )
 
 {
@@ -4151,7 +4151,7 @@ Writes the given boolean to the Pascal text file with width.
 void psystem_wrb(
     /* Pascal file to rewrite */ pasfil* f,
     /* Boolean to write */       boolean b,
-    /* Width */                  long    w
+    /* Width */                  long long    w
 )
 
 {
@@ -4195,8 +4195,8 @@ Writes a given real to a Pascal text file with field and fraction.
 void psystem_wrf(
     /* Pascal file to rewrite */ pasfil* f,
     /* Real to write */          double  r,
-    /* Width */                  long    w,
-    /* Fraction */               long    fr
+    /* Width */                  long long    w,
+    /* Fraction */               long long    fr
 )
 
 {
@@ -4242,7 +4242,7 @@ used. The block is checked for outstanding variable references.
 
 void psystem_dsp(
     /** Block to dispose of */ unsigned char* p,
-    /** Size of block */       unsigned long  s
+    /** Size of block */       unsigned long long  s
 )
 
 {
@@ -4290,23 +4290,23 @@ the variant record.
 
 void psystem_dsl(
     /** Address of block */     unsigned char* p,
-    /** length to deallocate */ unsigned long  l,
-    /** number of tags */       unsigned long  tc,
-    /** pointer to tag list */  long*          tl
+    /** length to deallocate */ unsigned long long  l,
+    /** number of tags */       unsigned long long  tc,
+    /** pointer to tag list */  long long*          tl
 )
 
 {
 
-    unsigned long* ulp;
-    long *         lp;
+    unsigned long long* ulp;
+    long long *         lp;
     unsigned char* bp;
 
     if (!p) errore(modnam, __LINE__, DISPOSEOFNILPOINTER);
-    ulp = (unsigned long*) p; /* point to top */
+    ulp = (unsigned long long*) p; /* point to top */
     ulp--;
     if (*ulp-ADRSIZE-1 != tc) 
         errore(modnam, __LINE__, NEWDISPOSETAGSMISMATCH);
-    lp = (long*)ulp; /* point to bottom */
+    lp = (long long*)ulp; /* point to bottom */
     lp -= tc; /* start of tag list */
     bp = (unsigned char*) lp; /* save that */
     while (tc) { /* compare tags list */
@@ -4318,7 +4318,7 @@ void psystem_dsl(
         tc--;
 
     }
-    if (varlap(bp, bp+((tc+1)*sizeof(unsigned long))))
+    if (varlap(bp, bp+((tc+1)*sizeof(unsigned long long))))
                       errore(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
     if (withsch(p)) errore(modnam, __LINE__, DISPOSEOFWITHREFERENCEDBLOCK);
     free(bp); /* free the net block */
@@ -4340,13 +4340,13 @@ as bytes.
 void psystem_wbf(
     /* Pascal file to rewrite */ pasfil*        f,
     /* Variable to write */      unsigned char* p,
-    /* Length to write */        long           l
+    /* Length to write */        long long           l
 )
 
 {
 
     int  fn;
-    long i;
+    long long i;
     
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
@@ -4371,13 +4371,13 @@ as bytes.
 
 void psystem_wbi(
     /* Pascal file to rewrite */ pasfil* f,
-    /* Variable to write */      long    v
+    /* Variable to write */      long long    v
 )
 
 {
 
     int  fn;
-    long i;
+    long long i;
     
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
@@ -4402,13 +4402,13 @@ as bytes.
 
 void psystem_wbx(
     /* Pascal file to rewrite */ pasfil* f,
-    /* Variable to write */      long    v
+    /* Variable to write */      long long    v
 )
 
 {
 
     int  fn;
-    long i;
+    long long i;
     
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
@@ -4437,7 +4437,7 @@ void psystem_wbr(
 {
 
     int  fn;
-    long i;
+    long long i;
     union { double r; byte ba[REALSIZE]; } r2b;
     
     valfilwm(f); /* validate file for writing */
@@ -4470,7 +4470,7 @@ void psystem_wbc(
 {
 
     int  fn;
-    long i;
+    long long i;
     
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
@@ -4501,7 +4501,7 @@ void psystem_wbb(
 {
 
     int  fn;
-    long i;
+    long long i;
     
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
@@ -4525,15 +4525,15 @@ as bytes.
 void psystem_rbf(
     /* Pascal file to rewrite */ pasfil*        f,
     /* Variable to read */       unsigned char* p,
-    /* Length to read */         long           l
+    /* Length to read */         long long           l
 )
 
 {
 
     FILE* fp;    /* file pointer */
     int   fn;
-    long  i;
-    long  c;
+    long long  i;
+    long long  c;
     
     valfilrm(f);       /* validate file for reading */
     fn = *f;           /* get logical file no. */
@@ -4566,7 +4566,7 @@ void psystem_rsb(
 {
 
     int  fn;
-    long i;
+    long long i;
     
     valfil(f); /* validate file */
     fn = *f;   /* get logical file no. */
@@ -4592,7 +4592,7 @@ void psystem_rwb(
 {
 
     int  fn;
-    long i;
+    long long i;
     
     valfil(f); /* validate file */
     fn = *f;   /* get logical file no. */
@@ -4612,13 +4612,13 @@ specified, with the size of each element.
 
 void psystem_gbf(
     /* Pascal binary file */     pasfil*       f,
-    /* Length of file element */ unsigned long l
+    /* Length of file element */ unsigned long long l
 )
 
 {
 
     int            fn;
-    long           i;
+    long long           i;
     unsigned char* bp;
     FILE*          fp;
     
@@ -4646,13 +4646,13 @@ specified, with the size of each element.
 
 void psystem_pbf(
     /* Pascal binary file */     pasfil*       f,
-    /* Length of file element */ unsigned long l
+    /* Length of file element */ unsigned long long l
 )
 
 {
 
     int            fn;
-    long           i;
+    long long           i;
     unsigned char* bp;
     FILE*          fp;
     
@@ -4684,7 +4684,7 @@ void psystem_fbv(
 {
 
     int            fn;
-    long           i;
+    long long           i;
     unsigned char* bp;
 
     valfil(f); /* validate file */
@@ -4713,13 +4713,13 @@ If not, it is loaded from the input file. This satisfies the Lazy I/O concept.
 
 void psystem_fvb(
     /* Pascal binary file */     pasfil*       f,
-    /* Length of file element */ unsigned long l
+    /* Length of file element */ unsigned long long l
 )
 
 {
 
     int            fn;
-    long           i;
+    long long           i;
     unsigned char* bp;
 
     valfil(f); /* validate file */
@@ -4748,7 +4748,7 @@ part of the filesystem.
 void psystem_asst(
     /* Pascal file to assign name */ pasfil* f,
     /* Name string to assign */      char*   n,
-    /* Length of name */             long    l
+    /* Length of name */             long long    l
 )
 
 {
@@ -4781,7 +4781,7 @@ permanent part of the filesystem.
 void psystem_assb(
     /* Pascal file to assign name */ pasfil* f,
     /* Name string to assign */      char*   n,
-    /* Length of name */             long    l
+    /* Length of name */             long long    l
 )
 
 {
@@ -4871,7 +4871,7 @@ binary files in Pascal can be positioned. File positions are 1 to n.
 
 void psystem_pos(
     /* Pascal file */ pasfil* f,
-    /* Position */    long i
+    /* Position */    long long i
 )
 
 {
@@ -5014,7 +5014,7 @@ Expects a filename string and a length. Deletes the file from storage.
 
 void psystem_del(
     /* Filename string */ char* n,
-    /* Length */          long l
+    /* Length */          long long l
 )
 
 {
@@ -5043,9 +5043,9 @@ is changed on disk. Note that the path must match between the names.
 
 void psystem_chg(
     /* New filename string */ char* nn,
-    /* Length */              long  nl,
+    /* Length */              long long  nl,
     /* Old filename string */ char* on,
-    /* Length */              long  ol
+    /* Length */              long long  ol
 )
 
 {
@@ -5077,7 +5077,7 @@ Finds the length in elements of a given binary file.
 
 *******************************************************************************/
 
-long psystem_len(
+long long psystem_len(
     /* Pascal file */ pasfil* f
 )
 
@@ -5106,14 +5106,14 @@ Finds the current read/write location in elements of a given binary file.
 
 *******************************************************************************/
 
-long psystem_loc(
+long long psystem_loc(
     /* Pascal file */ pasfil* f
 )
 
 {
 
     int fn;
-    long i;
+    long long i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -5140,7 +5140,7 @@ Returns true if so, otherwise false.
 
 boolean psystem_exs(
     /* Filename string */ char* n,
-    /* String length */   long  l
+    /* String length */   long long  l
 )
 
 {
@@ -5185,7 +5185,7 @@ program is halted with an error.
 *******************************************************************************/
 
 void psystem_ast(
-    /* Truth value */ long i
+    /* Truth value */ long long i
 )
 
 {
@@ -5204,9 +5204,9 @@ program is halted with an error message given by the call.
 *******************************************************************************/
 
 void psystem_asts(
-    /* Truth value */          long  i,
+    /* Truth value */          long long  i,
     /* Error message */        char* e,
-    /* Error message length */ long l
+    /* Error message length */ long long l
 )
 
 {
@@ -5234,13 +5234,13 @@ The number of characters in the string are read.
 void psystem_rds(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
-    /* Length */      long    l
+    /* Length */      long long    l
 )
 
 {
 
     int fn;
-    long i;
+    long long i;
 
     valfilrm(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -5264,14 +5264,14 @@ filled, then the rest of the field characters are expected to be blank.
 void psystem_rdsf(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
-    /* Length */      long    l,
-    /* Field */       long    w
+    /* Length */      long long    l,
+    /* Field */       long long    w
 )
 
 {
 
     int fn;
-    long i;
+    long long i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -5294,13 +5294,13 @@ the rest of the string is filled with blanks.
 void psystem_rdsp(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
-    /* Length */      long    l
+    /* Length */      long long    l
 )
 
 {
 
     int fn;
-    long i;
+    long long i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -5323,13 +5323,13 @@ the rest of the string is filled with blanks.
 void psystem_rdsc(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
-    /* Length */      long    l
+    /* Length */      long long    l
 )
 
 {
 
     int fn;
-    long i;
+    long long i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -5353,7 +5353,7 @@ possible, like using the variable name.
 void psystem_aeft(
     /* Pascal file */     pasfil* f,
     /* Filename String */ char*   s,
-    /* Length */          long    l
+    /* Length */          long long    l
 )
 
 {
@@ -5389,7 +5389,7 @@ possible, like using the variable name.
 void psystem_aefb(
     /* Pascal file */     pasfil* f,
     /* Filename String */ char*   s,
-    /* Length */          long    l
+    /* Length */          long long    l
 )
 
 {
@@ -5421,14 +5421,14 @@ behavior is to read the integer from the command line. The integer is returned.
 *******************************************************************************/
 
 void psystem_rdie(
-    /* integer to read */                long* i,
+    /* integer to read */                long long* i,
     /* Name of header variable */        char* n,
-    /* Length of header variable name */ long  l
+    /* Length of header variable name */ long long  l
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX; 
     readi(COMMANDFN, i, &w, FALSE, 10);
@@ -5448,12 +5448,12 @@ behavior is to read the real from the command line. The real is returned.
 void psystem_rdre(
     /* real to read */                   double* r,
     /* Name of header variable */        char*   n,
-    /* Length of header variable name */ long    l
+    /* Length of header variable name */ long long    l
 )
 
 {
 
-    long w;
+    long long w;
 
     w = LONG_MAX; 
     readr(COMMANDFN, r, w, FALSE);
@@ -5559,7 +5559,7 @@ an error.
 void psystem_libcatcfil(
     /** Pascal file to attach to */ pasfil* f,
     /** libc file to attach */      FILE*   fp,
-    /** write (else read) state */  long    wr
+    /** write (else read) state */  long long    wr
 )
 
 {
@@ -5610,17 +5610,17 @@ specified, and both strings must be of the same length.
 
 *******************************************************************************/
 
-long psystem_strcmp(
+long long psystem_strcmp(
     /** First string */  char* s1,
     /** Second string */ char* s2, 
-    /** Length */        long  l
+    /** Length */        long long  l
 )
 
 {
 
     int     i;
     boolean b;
-    long    r;
+    long long    r;
 
     i = 0;
     b = TRUE;
@@ -5651,11 +5651,11 @@ reference overlap check on the variant if so.
 *******************************************************************************/
 
 void psystem_tagchgvar(
-    /* offset to tagfield */               unsigned long off,
-    /* size of variant */                  unsigned long size,
-    /* address of logical variant table */ unsigned long lvt[],
-    /* new tagfield content */             long ntag,
-    /* old tagfield content */             long otag,
+    /* offset to tagfield */               unsigned long long off,
+    /* size of variant */                  unsigned long long size,
+    /* address of logical variant table */ unsigned long long lvt[],
+    /* new tagfield content */             long long ntag,
+    /* old tagfield content */             long long otag,
     /* address of tagfield */              unsigned char* taddr
 )
 
@@ -5687,11 +5687,11 @@ is the whole point of this routine.
 *******************************************************************************/
 
 void psystem_tagchginv(
-    /* offset to tagfield */               unsigned long off,
-    /* size of variant */                  unsigned long size,
-    /* address of logical variant table */ unsigned long lvt[],
-    /* new tagfield content */             long ntag,
-    /* old tagfield content */             long otag,
+    /* offset to tagfield */               unsigned long long off,
+    /* size of variant */                  unsigned long long size,
+    /* address of logical variant table */ unsigned long long lvt[],
+    /* new tagfield content */             long long ntag,
+    /* old tagfield content */             long long otag,
     /* address of tagfield */              unsigned char* taddr
 )
 
@@ -5714,9 +5714,9 @@ templates are matched, and if they don't match, an error is thrown.
 *******************************************************************************/
 
 void psystem_cmptmp(
-    /* number of levels */ unsigned long lvl,
-    /* first template */   unsigned long* tmp1,
-    /* second template */  unsigned long* tmp2
+    /* number of levels */ unsigned long long lvl,
+    /* first template */   unsigned long long* tmp1,
+    /* second template */  unsigned long long* tmp2
 )
 {
 
@@ -5732,20 +5732,20 @@ Check tag assignment
 *******************************************************************************/
 
 void psystem_tagchkass(
-    /* offset to tagfield from record start */ unsigned long  off,
-    /* nesting level of tagfield */            unsigned long  lvl,
-    /* address of logical variant table */     unsigned long  lvt[],
-    /* new tagfield content */                 long           ntag,
+    /* offset to tagfield from record start */ unsigned long long  off,
+    /* nesting level of tagfield */            unsigned long long  lvl,
+    /* address of logical variant table */     unsigned long long  lvt[],
+    /* new tagfield content */                 long long           ntag,
     /* address of tagfield */                  unsigned char* taddr
 )
 
 {
 
-    unsigned long* tcp;
-    unsigned long tc;
+    unsigned long long* tcp;
+    unsigned long long tc;
 
     taddr = taddr-off-INTSIZE; /* index top of tag constant list on heap */
-    tcp = (unsigned long*) taddr; /* put in word form */
+    tcp = (unsigned long long*) taddr; /* put in word form */
     /* fetch table count adjusted for system bias */
     tc = *tcp-ADRSIZE-1; 
     if (tc >= lvl) { /* if in tagfield constant list */
@@ -5773,14 +5773,14 @@ outside the bounds.
 *******************************************************************************/
 
 void psystem_chksetbnd(
-    /* low bound */  long    low,
-    /* high bound */ long    high,
+    /* low bound */  long long    low,
+    /* high bound */ long long    high,
     /* set */        settype s
 )
 
 {
 
-    long j;
+    long long j;
 
     for (j = SETLOW; j < low; j++)
         if (sisin(j, s)) errore(modnam, __LINE__, SETELEMENTOUTOFRANGE);
@@ -5798,13 +5798,13 @@ Clears the given set and sets the single bit given.
 *******************************************************************************/
 
 void psystem_setsgl(
-    /* bit to set */ long    b,
+    /* bit to set */ long long    b,
     /* set */        settype s
 )
 
 {
 
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) s[i] = 0;
     s[b/8] |= 1<<b%8;
@@ -5826,7 +5826,7 @@ void psystem_setdif(
 
 {
 
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) d[i] = d[i] & ~b[i];
 
@@ -5847,7 +5847,7 @@ void psystem_setint(
 
 {
 
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) d[i] = d[i] & b[i];
 
@@ -5868,7 +5868,7 @@ void psystem_setuni(
 
 {
 
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) d[i] = d[i] | b[i];
 
@@ -5884,7 +5884,7 @@ Returns true if the element is included, otherwise false.
 *******************************************************************************/
 
 boolean psystem_setsin(
-    /* set element */ long i,
+    /* set element */ long long i,
     /* set  */        settype s
 )
 
@@ -5910,7 +5910,7 @@ boolean psystem_setequ(
 
 {
 
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) if (a[i] != b[i]) return (FALSE);
     return (TRUE);
@@ -5932,7 +5932,7 @@ boolean psystem_setinc(
 
 {
 
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++)
         if ((a[i] & b[i]) != b[i]) return (FALSE);
@@ -5950,14 +5950,14 @@ high index, and the set to operate on.
 *******************************************************************************/
 
 void psystem_setrgs(
-    /* set element low */  long l,
-    /* set element high */ long h,
+    /* set element low */  long long l,
+    /* set element high */ long long h,
     /* set  */             settype s
 )
 
 {
 
-    long i;
+    long long i;
 
     for (i = 0; i < SETSIZE; i++) s[i] = 0;
     if (l > h) { i = l; l = h; h = i; }
@@ -5976,10 +5976,10 @@ actually done.
 *******************************************************************************/
 
 void psystem_pack(
-    /* size of packed array */             long  sp,
-    /* size of unpacked array */           long  su,
+    /* size of packed array */             long long  sp,
+    /* size of unpacked array */           long long  su,
     /* packed array */                     byte* pa,
-    /* starting index of unpacked array */ long  usi,
+    /* starting index of unpacked array */ long long  usi,
     /* unpacked array */                   byte* upa
 )
 
@@ -6006,9 +6006,9 @@ actually done.
 *******************************************************************************/
 
 void psystem_unpack(
-    /* size of packed array */             long  sp,
-    /* size of unpacked array */           long  su,
-    /* starting index of unpacked array */ long  usi,
+    /* size of packed array */             long long  sp,
+    /* size of unpacked array */           long long  su,
+    /* starting index of unpacked array */ long long  usi,
     /* unpacked array */                   byte* upa,
     /* packed array */                     byte* pa
 )
@@ -6041,20 +6041,20 @@ placed in the pointer.
 *******************************************************************************/
 
 void psystem_vip(
-    /* number of levels */                long            nl,
-    /* size of base element */            long            size,
+    /* number of levels */                long long            nl,
+    /* size of base element */            long long            size,
     /* address of pointer/template */     unsigned char** pa,
-    /* address of array dimension list */ long*           al
+    /* address of array dimension list */ long long*           al
 )
 
 {
 
-    long* tp;
+    long long* tp;
     int   i;
-    long  ts;
-    long  s;
+    long long  ts;
+    long long  s;
 
-    tp = (long*)pa;
+    tp = (long long*)pa;
     tp += nl;
     ts = size;
     for (i = 1; i <= nl; i++) { s = *al++; *tp-- = s; ts *= s; }
@@ -6075,21 +6075,21 @@ total size of the allocation, and the total size returned.
 
 *******************************************************************************/
 
-long psystem_vis(
-    /* number of levels */                long            nl,
-    /* size of base element */            long            size,
+long long psystem_vis(
+    /* number of levels */                long long            nl,
+    /* size of base element */            long long            size,
     /* address of pointer/template */     unsigned char** pa,
-    /* address of array dimension list */ long*           al
+    /* address of array dimension list */ long long*           al
 )
 
 {
 
-    long* tp;
+    long long* tp;
     int   i;
-    long  ts;
-    long  s;
+    long long  ts;
+    long long  s;
 
-    tp = (long*)pa;
+    tp = (long long*)pa;
     tp += nl;
     ts = size;
     for (i = 1; i <= nl; i++) { s = *al++; *tp-- = s; ts *= s; }
@@ -6113,23 +6113,23 @@ filled out at the start of the allocation.
 *******************************************************************************/
 
 void psystem_vin(
-    /* number of levels */                long            nl,
-    /* size of base element */            long            size,
+    /* number of levels */                long long            nl,
+    /* size of base element */            long long            size,
     /* address of pointer/template */     unsigned char** pa,
-    /* address of array dimension list */ long*           al
+    /* address of array dimension list */ long long*           al
 )
 
 {
 
-    long* tp;
+    long long* tp;
     int   i;
-    long  ts;
-    long* alp;
+    long long  ts;
+    long long* alp;
 
     ts = size; alp = al;
     for (i = 1; i <= nl; i++) ts *= *alp++;
     psystem_new(pa, ts+nl*INTSIZE);
-    tp = (long*)(*pa)+nl;
+    tp = (long long*)(*pa)+nl;
     for (i = 1; i <= nl; i++) *--tp = *al++;
 
 }
@@ -6149,17 +6149,17 @@ the two arrays match is done elsewhere.
 *******************************************************************************/
 
 void psystem_apc(
-    /* number of levels */       long            nl,
-    /* size of base element */   long            size,
+    /* number of levels */       long long            nl,
+    /* size of base element */   long long            size,
     /* address of source */      unsigned char*  sa,
     /* address of destination */ unsigned char*  da,
-    /* address of template */    long*           tp
+    /* address of template */    long long*           tp
 )
 
 {
 
-    long ts;
-    long i;
+    long long ts;
+    long long i;
 
     ts = size;
     for (i = 1; i <= nl; i++) ts *= *tp++;
@@ -6178,7 +6178,7 @@ meaning error.
 
 *******************************************************************************/
 
-void psystem_sete(long err)
+void psystem_sete(long long err)
 
 {
 
@@ -6198,6 +6198,13 @@ static void init(int argc, char* argv[])
 {
 
     int i;
+
+#ifdef _WIN32
+    /* Receiving the command line as constructor arguments is a glibc
+       behavior. The Windows C runtime calls constructors without arguments;
+       take the command line from the runtime globals instead. */
+    argc = __argc; argv = __argv;
+#endif
 
     argc--; argv++; /* discard the program parameter */
 
@@ -6249,13 +6256,13 @@ Trailing spaces are stripped.
 
 char* psystem_s2c(
     /* Pascaline string */ char* s,
-    /* max string length */ long maxlen
+    /* max string length */ long long maxlen
 )
 
 {
 
     static char buf[10000]; /* static buffer for converted string */
-    long len;
+    long long len;
 
     /* find actual length (strip trailing spaces) */
     len = maxlen;

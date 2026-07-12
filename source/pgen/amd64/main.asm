@@ -20,7 +20,10 @@
 # Code section
 #
         .globl  main
+# the .type directive is ELF only; the win64 build defines WINDOWS
+.ifndef WINDOWS
         .type   main, @function
+.endif
 main:
 # place master fault handler as exception address
         leaq    main_fault(%rip),%rax
