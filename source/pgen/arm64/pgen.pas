@@ -385,7 +385,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {cta}
       191: begin
         asscall;
-        assreg(ep^.l, rf, rgx3, rgnull); assreg(ep^.r, rf, rgx4, rgnull)
+        { tagchkass(off, lvl, lvt, ntag, taddr): the new tag value ep^.r is
+          argument 4 (x3) and the target address ep^.l is argument 5 (x4) }
+        assreg(ep^.l, rf, rgx4, rgnull); assreg(ep^.r, rf, rgx3, rgnull)
       end;
 
       {cps}
@@ -889,21 +891,36 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
   { call nwl/dsl }
   procedure callnwldsl(ep: expptr);
-  var aln: boolean; pp, ep2: expptr; i: integer; stkadrs: integer;
+  var aln: boolean; pp, ep2: expptr; i, n, alloc: integer; stkadrs: integer;
   begin
-    stkadrs := stkadr; { save because we don't know tag count }
+    stkadrs := stkadr;
     ep2 := ep^.pl;
     for i := 1 to 3 do begin
       if ep2 = nil then error('system error');
       ep2 := ep2^.next
     end;
-    pshpar(ep2);
+    { psystem_nwl/dsl read the tag list as a contiguous array of longs, so the
+      tags must be packed 8 bytes apart. pshpar cannot be used: it lays
+      parameters out 16 bytes apart (the user-call convention). Reserve a 16
+      byte aligned block and store the tags into it. The first list element is
+      placed at the highest address so the resulting layout matches the push
+      order the AMD64 backend produces (tl[0] is the last list element). }
+    n := 0; pp := ep2; while pp <> nil do begin n := n+1; pp := pp^.next end;
+    alloc := ((n*intsize+15) div 16)*16;
+    if alloc > 0 then begin
+      wrtins(' sub sp, sp, #^0 // reserve packed tag list', alloc);
+      stkadr := stkadr-alloc
+    end;
+    pp := ep2; i := 0;
+    while pp <> nil do begin
+      genexp(pp);
+      wrtins(' str %1, [sp, #^0] // place tag', (n-1-i)*intsize, pp^.r1);
+      i := i+1; pp := pp^.next
+    end;
     pp := ep^.pl; genexp(pp); { addr x0 }
     pp := pp^.next; genexp(pp); { size x1 }
     pp := pp^.next; genexp(pp); { tagcnt x2 }
-    wrtins(' str %1, [sp, #-16]! // save tag count', pp^.r1);
-    wrtins(' add x3, sp, #^0 // index tag list', intsize);
-    stkadr := stkadr-adrsize;
+    wrtins(' mov x3, sp // index tag list');
     aln := false;
     if stkadr mod 16 <> 0 then begin
       wrtins(' str x9, [sp, #-16]! // align');
@@ -917,12 +934,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       wrtins(' ldr x9, [sp], #16 // dump align');
       stkadr := stkadr+adrsize
     end;
-    wrtins(' ldr x3, [sp], #16 // restore tag count');
-    stkadr := stkadr+adrsize;
-    wrtins(' mov x9, #^0 // find *integer', intsize);
-    wrtins(' mul x9, x3, x9 // multiply');
-    wrtins(' add sp, sp, x9 // dump taglist from stack');
-    stkadr := stkadrs { restore to entry }
+    if alloc > 0 then begin
+      wrtins(' add sp, sp, #^0 // dump taglist from stack', alloc);
+      stkadr := stkadr+alloc
+    end;
+    stkadr := stkadrs
   end;
 
   begin { genexp }
@@ -960,8 +976,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' add x16, %1, #@l // frame address', ep^.q, ep^.p, ep^.r1)
           end else
             wrtins(' add x16, x29, #@l // frame address', ep^.q, ep^.p);
-          wrtins(' ldrb w0, [x16] // fetch local byte');
-          wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
+          wrtins(' ldrb %1l, [x16] // fetch local byte', ep^.r1);
+          wrtins(' uxtb %1, %1l // zero extend', ep^.r1)
         end;
 
         {lodr}
@@ -1109,12 +1125,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         68,69,194,231,232,233:
           if ep^.fl <> nil then begin
             wrtins(' adrp x9, @s // load global byte (page)', ep^.fl^);
-            wrtins(' ldrb w0, [x9, :lo12:@s] // load global byte', ep^.fl^);
-            wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
+            wrtins(' ldrb %1l, [x9, :lo12:@s] // load global byte', ep^.r1, ep^.fl^);
+            wrtins(' uxtb %1, %1l // zero extend', ep^.r1)
           end else begin
             wrtins(' adrp x9, @g // load global byte (page)', ep^.q);
-            wrtins(' ldrb w0, [x9, :lo12:@g] // load global byte', ep^.q);
-            wrtins(' uxtb %1, w0 // zero extend', ep^.r1)
+            wrtins(' ldrb %1l, [x9, :lo12:@g] // load global byte', ep^.q, ep^.r1);
+            wrtins(' uxtb %1, %1l // zero extend', ep^.r1)
           end;
 
         {ldor,ltcr}
@@ -1156,8 +1172,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {indb,indc,indx}
         88,89,198: begin
-          wrtins(' ldrb w0, [%1, #^0] // load byte from address', ep^.q, ep^.l^.r1);
-          wrtins(' uxtb %1, w0 // zero extend', ep^.l^.r1)
+          wrtins(' ldrb %1l, [%1, #^0] // load byte from address', ep^.q, ep^.l^.r1);
+          wrtins(' uxtb %1, %1l // zero extend', ep^.l^.r1)
         end;
 
         {inds}
@@ -1443,7 +1459,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' add x9, x9, :lo12:real_int_max // address');
             wrtins(' ldr %1, [x9] // load maximum int val', ep^.t1);
             wrtins(' fcmp %1, %2 // compare real', ep^.l^.r1, ep^.t1);
-            wrtins(' b.lt 2f // skip if less');
+            wrtins(' b.gt 2f // error if above maximum');
             wrtins(' adrp x9, real_int_min // load minimum int val (page)');
             wrtins(' add x9, x9, :lo12:real_int_min // address');
             wrtins(' ldr %1, [x9] // load minimum int val', ep^.t1);
@@ -1528,7 +1544,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' add x9, x9, :lo12:real_int_max // address');
             wrtins(' ldr %1, [x9] // load maximum int val', ep^.t1);
             wrtins(' fcmp %1, %2 // compare real', ep^.l^.r1, ep^.t1);
-            wrtins(' b.lt 2f // skip if less');
+            wrtins(' b.gt 2f // error if above maximum');
             wrtins(' adrp x9, real_int_min // load minimum int val (page)');
             wrtins(' add x9, x9, :lo12:real_int_min // address');
             wrtins(' ldr %1, [x9] // load minimum int val', ep^.t1);
@@ -1715,16 +1731,19 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           pshpar(ep^.pl); { process parameters first }
           { at the flat module level (between the preamble and the module
             return) there is no frame to preserve the link register, so it
-            is saved around the call; such calls carry no parameters, so
-            the extra stack slot cannot disturb parameter addressing }
-          if blkstk^.btyp in [btprog, btmod] then
+            is saved around the call. Only the frameless preamble calls need
+            this, and they carry no parameters; once the module frame is
+            established the mst prologue has already saved the link register,
+            and pushing here would shift the parameters the callee reads, so
+            restrict it to parameterless calls }
+          if (blkstk^.btyp in [btprog, btmod]) and (ep^.pl = nil) then
             wrtins(' str x30, [sp, #-16]! // save link register');
           if ep^.blk <> nil then begin
             write(prr, ' ':opcspc, 'bl '); lftjst(parspc-(3+opcspc)); fl := parspc;
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl);
             lftjst(cmtspc-fl); writeln(prr, '// call user procedure')
           end else wrtins(' bl @s // call user procedure', ep^.fn^);
-          if blkstk^.btyp in [btprog, btmod] then
+          if (blkstk^.btyp in [btprog, btmod]) and (ep^.pl = nil) then
             wrtins(' ldr x30, [sp], #16 // restore link register');
           if ep^.op = 246{cuf} then begin
             if ep^.rc = 1 then begin
@@ -2753,9 +2772,13 @@ begin { assemble }
       wrtins(' str xzr, [sp, #8] // place previous ep (0)');
       wrtins(' str x29, [sp] // save FP');
       wrtins(' mov x29, sp // set up frame pointer');
-      { Allocate and clear locals }
-      write(prr, '        sub     sp, sp, #'); write(prr, lclspc^); write(prr, '+');
-      write(prr, blkstk^.tmpnam^); writeln(prr, ' // allocate locals');
+      { Allocate and clear locals. The plain-layout offsets pcom assigns to
+        locals are display-inclusive (a variable at 1-based level n sits below
+        the n display slots), so the frame must reserve the (p+1)*ptrsize
+        display region in addition to the local and temporary space. }
+      write(prr, '        sub     sp, sp, #'); write(prr, (p+1)*ptrsize:1);
+      write(prr, '+'); write(prr, lclspc^); write(prr, '+');
+      write(prr, blkstk^.tmpnam^); writeln(prr, ' // allocate display+locals');
       wrtins(' mov x16, sp // align stack');
       wrtins(' and x16, x16, #0xfffffffffffffff0');
       wrtins(' mov sp, x16');
@@ -2766,9 +2789,28 @@ begin { assemble }
       wrtins(' str xzr, [x9], #8 // clear word');
       wrtins(' b 1b // loop');
       wrtins('2:');
-      write(prr, '        sub     x9, x29, #'); write(prr, lclspc^); write(prr, '+');
+      write(prr, '        sub     x9, x29, #'); write(prr, (p+1)*ptrsize:1);
+      write(prr, '+'); write(prr, lclspc^); write(prr, '+');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' // calc stack bottom');
       wrtins(' str x9, [x29, #^0] // set bottom of stack', marksb);
+      { Build the pull-down display, emulating the x86 ENTER instruction that
+        AMD64 relies on. pcom reserves the slots [x29-ptrsize..x29-(p+1)*ptrsize]
+        so that a variable at lexical level n is reached via [x29-n*ptrsize].
+        The caller's frame pointer is saved at [x29]; copy its p enclosing
+        display slots down into this frame, then append our own frame pointer.
+        This is done after the local clear, which would otherwise wipe it. }
+      wrtins(' ldr x10, [x29] // caller frame pointer');
+      wrtins(' mov x11, x29 // display destination pointer');
+      wrtins(' mov x12, x10 // display source pointer');
+      wrtins(' mov x13, #^0 // inherited display slot count', p);
+      wrtins('3:');
+      wrtins(' cbz x13, 4f // done copying display');
+      wrtins(' ldr x14, [x12, #-8]! // pull down enclosing display slot');
+      wrtins(' str x14, [x11, #-8]!');
+      wrtins(' sub x13, x13, #1');
+      wrtins(' b 3b');
+      wrtins('4:');
+      wrtins(' str x29, [x11, #-8] // append own frame pointer');
       { Save callee-saved registers }
       wrtins(' stp x19, x20, [sp, #-16]! // save callee-saved registers');
       wrtins(' stp x21, x22, [sp, #-16]!');
@@ -2927,12 +2969,13 @@ begin { assemble }
       assreg(ep, frereg, rgnull, rgnull);
       dmptre(ep); genexp(ep);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
-      { ARM64 case jump: table contains offsets from table base }
+      { the case jump table is a sequence of 4-byte branch instructions (one
+        per zero-based case value, from ujp); index the Nth entry and branch
+        to it, executing that branch }
       wrtins(' adrp %1, @s // index case jump table (page)', r1, sp^);
       wrtins(' add %1, %1, :lo12:@s // index case jump table', r1, sp^);
-      wrtins(' ldr x9, [%1, %2, lsl #3] // load jump offset', r1, ep^.r1);
-      wrtins(' add %1, %1, x9 // compute target', r1);
-      wrtins(' br %1 // branch to target', r1);
+      wrtins(' add %1, %1, %2, lsl #2 // index Nth branch entry', r1, ep^.r1);
+      wrtins(' br %1 // branch to case target', r1);
       deltre(ep);
       botstk
     end;
