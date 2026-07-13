@@ -2386,7 +2386,156 @@ pausing the linker) that could cause them to be radically different.
 
 ******************************************************************************}
 
+{ The intermediate products carry no target identity in their names: the same
+  .p6, .s, .o and executable names are used for every build target. The
+  products themselves identify their target, however: objects and executables
+  by their format magic and machine type, and intermediates by the calling
+  convention flags on their option line. These are compared against the
+  current target so that a target or mode switch treats the old target's
+  products as stale, instead of carrying them into the new build (for example
+  linking a native object against the windows runtime). }
+
+{ find the target code an object or executable file was built for:
+  0 = unknown, 1 = ELF x86-64, 2 = COFF x86-64, 3 = ELF aarch64 }
+
+function objtgt(view fn: string): integer;
+
+var f: file of char; { object file }
+    b: array [1..20] of integer; { header bytes }
+    i: integer; { index }
+    c: char;    { byte holder }
+    r: integer; { result holder }
+
+begin
+
+   r := 0; { set unknown }
+   if exists(fn) then begin
+
+      assign(f, fn); { open the file bytewise }
+      reset(f);
+      i := 1; { read the header }
+      while (i <= 20) and not eof(f) do
+         begin read(f, c); b[i] := ord(c); i := i+1 end;
+      close(f);
+      if i > 20 then begin
+
+         if (b[1] = 127) and (b[2] = 69) and (b[3] = 76) and (b[4] = 70) then
+            begin { ELF; the machine type is at offset 18 }
+
+            if (b[19] = 62) and (b[20] = 0) then r := 1 { x86-64 }
+            else if (b[19] = 183) and (b[20] = 0) then r := 3 { aarch64 }
+
+         end else if (b[1] = 100) and (b[2] = 134) then
+            r := 2 { COFF x86-64 }
+
+      end
+
+   end;
+   objtgt := r
+
+end;
+
+{ find the target code for the current build target }
+
+function tgtcode: integer;
+
+begin
+
+   tgtcode := 1; { ELF x86-64 }
+   if fwindows then tgtcode := 2 { COFF x86-64 }
+   else if farm64sysv then tgtcode := 3 { ELF aarch64 }
+
+end;
+
+{ find a string within a string }
+
+function fndstr(view s, p: string): boolean;
+
+var i, j: integer; { indexes }
+    m: boolean;    { match flag }
+
+begin
+
+   fndstr := false;
+   if len(p) <= len(s) then
+      for i := 1 to len(s)-len(p)+1 do begin
+
+      m := true;
+      for j := 1 to len(p) do if s[i+j-1] <> p[j] then m := false;
+      if m then fndstr := true
+
+   end
+
+end;
+
+{ find the calling convention an intermediate was compiled with, from the
+  flags on its option line: 0 = none (interpreter/package modes),
+  1 = amd64_sysv, 2 = win64, 3 = arm64_sysv, -1 = cannot tell }
+
+function p6conv(view fn: string): integer;
+
+var f: text;    { intermediate file }
+    b: linbuf;  { line buffer }
+    i: integer; { line counter }
+    j: integer; { buffer index }
+    c: char;    { character holder }
+    r: integer; { result holder }
+
+begin
+
+   r := -1; { set cannot tell }
+   if exists(fn) then begin
+
+      assign(f, fn); { open the intermediate }
+      reset(f);
+      i := 1; { scan the header for the option line }
+      while (i <= 20) and not eof(f) and (r < 0) do begin
+
+         for j := 1 to maxlin do b[j] := ' '; { clear the buffer }
+         j := 1; { read the line }
+         while not eoln(f) and (j <= maxlin) do
+            begin read(f, c); b[j] := c; j := j+1 end;
+         readln(f);
+         if (b[1] = 'o') and (b[2] = ' ') then begin
+
+            { the option line carries the convention when set }
+            if fndstr(b, 'win64+') then r := 2
+            else if fndstr(b, 'arm64_sysv+') then r := 3
+            else if fndstr(b, 'amd64_sysv+') then r := 1
+            else r := 0 { no convention: interpreter or package deck }
+
+         end;
+         i := i+1
+
+      end;
+      close(f)
+
+   end;
+   p6conv := r
+
+end;
+
+{ find the convention code for the current build target }
+
+function cnvcode: integer;
+
+begin
+
+   cnvcode := 0; { no convention (interpreter/package modes) }
+   if fpgen then begin
+
+      cnvcode := 1; { amd64_sysv }
+      if fwindows then cnvcode := 2 { win64 }
+      else if farm64sysv then cnvcode := 3 { arm64_sysv }
+
+   end
+
+end;
+
 procedure regfil(fp: filept); { file head }
+
+var p, n, e: filnam; { path components }
+    fn:      filnam; { product file name }
 
 begin
 
@@ -2400,6 +2549,28 @@ begin
       if fp^.asme <> nil then { assembly exists }
          if fp^.asme^.modify > fp^.obje^.modify then
                fp^.rebld := true { old, set rebuild }
+
+   end;
+   { products of another build target are stale regardless of dates }
+   if not fp^.rebld and not fp^.excl then begin
+
+      if fp^.obje <> nil then
+         if not (fpint or fpmach or fcmach or fpack) then begin
+
+         { the object must match the target format and machine }
+         services.brknam(fp^.name, p, n, e);
+         services.maknam(fn, p, n, 'o');
+         if objtgt(fn) <> tgtcode then fp^.rebld := true
+
+      end;
+      if fp^.inte <> nil then begin
+
+         { the intermediate must match the target calling convention }
+         services.brknam(fp^.name, p, n, e);
+         services.maknam(fn, p, n, 'p6');
+         if p6conv(fn) <> cnvcode then fp^.rebld := true
+
+      end
 
    end;
    { if global rebuild is set, set this rebuild flag }
@@ -2486,6 +2657,13 @@ begin
               (ep^.modify < sp^.modify) then
          { exec date/time is older than .o or .s, execute rebuild }
          excrbl := true;
+      { an executable of another build target is stale regardless of dates }
+      if not excrbl then begin
+
+         services.maknam(fn, p, n, exeext);
+         if objtgt(fn) <> tgtcode then excrbl := true
+
+      end;
       if ep <> nil then dispose(ep); { release objects }
       if op <> nil then dispose(op);
       if sp <> nil then dispose(sp)
@@ -2933,95 +3111,6 @@ end;
 
 {******************************************************************************
 
-Check build target
-
-The intermediate products (.p6, .s, .o and the executable) carry no target
-identity: the same names are used for every build target. A target or output
-mode switch therefore invalidates all of them, or a stale product of the old
-target would be carried into the new build (for example a native object
-linked against the windows runtime). The target of the last successful build
-is kept in a stamp file beside the program; when it does not match the
-current target, everything is rebuilt as if -r was given. The stamp is
-written only after a successful build, so a failed build leaves the rebuild
-armed.
-
-******************************************************************************}
-
-{ compose the current target codes }
-
-procedure curtgt(var h, c, m: integer);
-
-begin
-
-   h := hostid; { target host }
-   c := 0; { compose calling convention code }
-   if famd64sysv then c := 1
-   else if fwindows then c := 2
-   else if farm64sysv then c := 3;
-   m := 0; { compose output mode code }
-   if fpint then m := 1
-   else if fpmach then m := 2
-   else if fcmach then m := 3
-   else if fpack then m := 4
-
-end;
-
-{ check the build target changed since the last successful build }
-
-procedure chktgt;
-
-var f:          text;   { stamp file }
-    fn:         filnam; { stamp file name }
-    p, n, e:    filnam; { path components }
-    lh, lc, lm: integer; { last target }
-    h, c, m:    integer; { current target }
-
-begin
-
-   curtgt(h, c, m); { get the current target }
-   services.brknam(prgnam, p, n, e); { break program name to components }
-   services.maknam(fn, p, n, 'tgt'); { form stamp file name }
-   lh := -1; lc := -1; lm := -1; { set no previous target }
-   if exists(fn) then begin
-
-      assign(f, fn); { open stamp file }
-      reset(f);
-      read(f, lh, lc, lm); { read last target }
-      close(f)
-
-   end;
-   if (lh <> h) or (lc <> c) or (lm <> m) then begin
-
-      if fverb then writeln('Build target changed, rebuilding');
-      frebld := true { rebuild everything }
-
-   end
-
-end;
-
-{ record the target of a successful build }
-
-procedure wrttgt;
-
-var f:       text;   { stamp file }
-    fn:      filnam; { stamp file name }
-    p, n, e: filnam; { path components }
-    h, c, m: integer; { current target }
-
-begin
-
-   curtgt(h, c, m); { get the current target }
-   services.brknam(prgnam, p, n, e); { break program name to components }
-   services.maknam(fn, p, n, 'tgt'); { form stamp file name }
-   assign(f, fn); { create stamp file }
-   rewrite(f);
-   writeln(f, h:1, ' ', c:1, ' ', m:1);
-   close(f)
-
-end;
-
-{******************************************************************************
-
 Perform hosts tree copies
 
 Executes the copy instructions collected from the instruction files. Run
@@ -3339,7 +3428,6 @@ begin
    services.maknam(tmpnam, tarpath, n, 'ins');
    services.fulnam(tmpnam); { normalize }
    if exists(tmpnam) then parinst(tmpnam);
-   chktgt; { force rebuild if the build target changed }
    logfil(prgnam, hp); { form tree from file }
    stdlib; { place standard libary }
    fndpkg; { find any included packages }
@@ -3358,8 +3446,7 @@ begin
    else begin
 
       if hp^.pgm then dolink; { perform link }
-      docopies; { place built products in the hosts tree }
-      wrttgt { record the target of the successful build }
+      docopies { place built products in the hosts tree }
 
    end;
    if fverb and (actcnt > 0) then begin
