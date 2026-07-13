@@ -912,7 +912,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         dstreg(rgrax); dstreg(rgrdx); resreg(rgrax); resreg(rgrdx);
         ep^.r1 := r1; ep^.r2 := r2;
         if ep^.r1 = rgnull then ep^.r1 := rgrax;
-        resreg(ep^.r1); 
+        resreg(ep^.r1);
+        { a scratch to hold the base across the template multiply chain, which
+          clobbers rax and rdx, when the base itself lands in one of them }
+        getreg(ep^.t2, rf);
         if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2); 
         getreg(ep^.t1, rf);
         assreg(ep^.l, rf, ep^.r1, ep^.r2);
@@ -2329,8 +2332,11 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtcps(' call psystem_errore # process error');
             wrtins('1:');
           end;
-          wrtins(' movq $0,%rax # get element size', ep^.q);
-          wrtins(' mulq %1 # find index*size', ep^.r^.r1);
+          { element size is a constant, so scale the index with a three
+            operand imul, which writes only its destination. A mul here would
+            clobber rdx, which may hold the base (ep^.l^.r1) under a register
+            allocation that lands it there (e.g. the Windows convention). }
+          wrtins(' imulq $0,%1,%rax # find index*size', ep^.q, ep^.r^.r1);
           wrtins(' addq %rax,%1 # add to base', ep^.l^.r1);
           if ep^.r1 <> ep^.l^.r1 then
             wrtins(' movq %rax,%1 # move to result', ep^.r1)
@@ -2349,6 +2355,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtcps(' call psystem_errore # process error');
             wrtins('1:        ');
           end;
+          { the multiply chain below clobbers rax and rdx; if the base is in
+            one of them, hold it in the scratch across the chain }
+          if (ep^.l^.r1 = rgrax) or (ep^.l^.r1 = rgrdx) then
+            wrtins(' movq %1,%2 # save base across multiply', ep^.l^.r1, ep^.t2);
           wrtins(' movq $0,%1 # get # levels-1', ep^.q-1, ep^.t1);
           wrtins(' movq $0,%rax # get base element size', ep^.q1);
           wrtins(' movq %1,%rdx # copy template address', ep^.l^.r2);
@@ -2356,10 +2366,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           wrtins(' addq $0,%rdx # next template location', intsize);
           wrtins(' mulq (%rdx) # add template to size');
           wrtins(' subq $0,%1 # count down levels', 1, ep^.t1);
-          wrtins(' jnz 1b # loop over templates');     
-          wrtins(' addq $0,%1 # advance template slot', intsize, ep^.l^.r2);  
+          wrtins(' jnz 1b # loop over templates');
+          wrtins(' addq $0,%1 # advance template slot', intsize, ep^.l^.r2);
           wrtins(' mulq %1 # find index*size', ep^.r^.r1);
-          wrtins(' addq %rax,%1 # add to base', ep^.l^.r1);   
+          if (ep^.l^.r1 = rgrax) or (ep^.l^.r1 = rgrdx) then begin
+            wrtins(' addq %rax,%1 # add to base', ep^.t2);
+            wrtins(' movq %1,%2 # move to result', ep^.t2, ep^.l^.r1)
+          end else
+            wrtins(' addq %rax,%1 # add to base', ep^.l^.r1);
         end;
 
         {lft} 
