@@ -130,6 +130,7 @@ SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
 LIBS=$(PASCALP6)/libs
 AMI=$(PASCALP6)/amitk/linux
+AMIWIN=$(PASCALP6)/amitk/windows
 AMIINC=$(PASCALP6)/amitk/include
 AMILIBC=$(PASCALP6)/amitk/libc
 # The amitk (Petit-Ami) submodule carries the C sources for the I/O model
@@ -183,7 +184,10 @@ default: $(HOSTTARGET)
 
 linux64: all
 
-win64: $(LIBS)/win64/psystem.a $(LIBS)/win64/main.o $(LIBS)/win64/services.a
+win64: $(LIBS)/win64/psystem.a $(LIBS)/win64/main.o $(LIBS)/win64/services.a \
+	$(LIBS)/win64/terminal.a $(LIBS)/win64/graphics.a \
+	source/graph/win64/graphics.a $(LIBS)/win64/gnome_widgets.o \
+	$(LIBS)/win64/sound.a $(LIBS)/win64/network.a
 
 arm64: $(LIBS)/arm64/psystem.a $(LIBS)/arm64/main.o $(LIBS)/arm64/services.a
 
@@ -254,10 +258,14 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 # sources are shared with the linux build; the win64 assembly defines the
 # WINDOWS symbol so that ELF only directives are skipped (see main.asm).
 #
-# The Ami stdio bypass is not yet applied to the win64 build: psystem uses
-# the C runtime stdio directly, so I/O hooking (terminal/graphics models)
-# is not available. That requires the Ami Windows implementations to be
-# cross compiled, which is a separate step.
+# psystem uses the C runtime stdio directly (no Ami stdio override), so plain
+# batch programs -- including the file-heavy conformance tests -- run under
+# Wine exactly as before. Routing psystem's stdio through the Ami Windows stdio
+# so the terminal and graphics models can hook the program's console I/O is
+# done when the windowed flavors are wired up (it needs runtime reconciliation
+# of the file model), not here. The Ami Windows model implementations
+# (amitk/windows/*.c) are cross compiled into the terminal/graphics/sound/
+# network archives below regardless.
 #
 
 #
@@ -275,6 +283,7 @@ $(LIBS)/win64/psystem.a: $(SOURCE)/pgen/psystem.c \
 	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -Wa,--defsym,WINDOWS=1 \
 		-o $(BUILD)/win64/psystem_asm.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/psystem.asm
+	rm -f $(LIBS)/win64/psystem.a
 	$(WINAR) rc $(LIBS)/win64/psystem.a $(BUILD)/win64/psystem.o \
 		$(BUILD)/win64/psystem_asm.o
 	mkdir -p $(WINCELL)/lib
@@ -300,7 +309,7 @@ $(LIBS)/win64/main.o: $(SOURCE)/pgen/amd64/main.asm
 # Build services for win64. The Ami services implementation for Windows is
 # cross compiled with mingw, along with the wrappers and support (the x86
 # name-coining wrapper assembly is convention neutral and assembles for COFF
-# as is). Built without the Ami stdio bypass, matching the win64 psystem's
+# as is). Built against the C runtime stdio, matching the win64 psystem's
 # stdio world.
 #
 WINSERVCPP=$(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source
@@ -331,6 +340,180 @@ $(LIBS)/win64/services.a: $(PASCALP6)/amitk/windows/services.c \
 		$(BUILD)/win64/services_support.o $(BUILD)/win64/support.o
 	mkdir -p $(WINCELL)/lib
 	cp $(LIBS)/win64/services.a $(WINCELL)/lib
+endif
+
+#
+# Build terminal for win64. The Ami terminal model for Windows
+# (amitk/windows/terminal.c) drives the Win32 console directly, so unlike the
+# linux build it needs no system_event or X11 support object -- the archive is
+# the wrappers, the model, its services and the shared support object. Built
+# with the stdio bypass so the model hooks the program's console I/O through
+# the same Ami stdio psystem uses. Programs that link terminal.a pull in the
+# Win32 console/multimedia import libraries (-lgdi32 -lwinmm), added by pc.
+#
+WINTERMCPP=$(CPPFLAGS64LE) -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source
+ifneq ($(AMITK),)
+$(LIBS)/win64/terminal.a: $(AMIWIN)/terminal.c \
+	$(LIBS)/source/terminal_wrapper.asm \
+	$(LIBS)/source/terminal_wrapper.c \
+	$(LIBS)/source/terminal_support.c \
+	$(LIBS)/source/support.c
+	@echo
+	@echo "Building terminal for win64..."
+	@echo
+	mkdir -p $(BUILD)/win64
+	mkdir -p $(LIBS)/win64
+	$(WINCC) $(WINCFLAGS) $(WINTERMCPP) \
+		-o $(BUILD)/win64/support.o -c $(LIBS)/source/support.c
+	$(WINCC) $(WINCFLAGS) $(WINTERMCPP) \
+		-o $(BUILD)/win64/terminal_support.o -c $(LIBS)/source/terminal_support.c
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/terminal_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/terminal_wrapper.asm
+	$(WINCC) $(WINCFLAGS) $(WINTERMCPP) \
+		-o $(BUILD)/win64/terminal_wrapper.o -c $(LIBS)/source/terminal_wrapper.c
+	$(WINCC) $(WINCFLAGS) $(WINTERMCPP) \
+		-o $(BUILD)/win64/terminal.o -c $(AMIWIN)/terminal.c
+	$(WINCC) $(WINCFLAGS) $(WINTERMCPP) \
+		-o $(BUILD)/win64/term_services.o -c $(AMIWIN)/services.c
+	rm -f $(LIBS)/win64/terminal.a
+	$(WINAR) rc $(LIBS)/win64/terminal.a $(BUILD)/win64/terminal_wrapper_asm.o \
+		$(BUILD)/win64/terminal_wrapper.o $(BUILD)/win64/terminal_support.o \
+		$(BUILD)/win64/terminal.o $(BUILD)/win64/term_services.o \
+		$(BUILD)/win64/support.o
+	mkdir -p $(WINCELL)/lib
+	cp $(LIBS)/win64/terminal.a $(WINCELL)/lib
+endif
+
+#
+# Build graphics for win64. The Ami graphics model for Windows
+# (amitk/windows/graphics.c) renders through GDI and the common controls, so
+# it needs none of the linux build's X11/FreeType/FontConfig include paths or
+# link libraries; programs that link graphics.a pull in the Win32 GDI, common
+# dialog and multimedia import libraries (-lgdi32 -lcomdlg32 -lwinmm), added by
+# pc. Built with the stdio bypass, mirroring terminal.
+#
+WINGRAPHCPP=$(CPPFLAGS64LE) -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source
+ifneq ($(AMITK),)
+$(LIBS)/win64/graphics.a: $(AMIWIN)/graphics.c \
+	$(LIBS)/source/graphics_wrapper.asm \
+	$(LIBS)/source/graphics_wrapper.c \
+	$(LIBS)/source/graphics_support.c \
+	$(LIBS)/source/support.c
+	@echo
+	@echo "Building graphics for win64..."
+	@echo
+	mkdir -p $(BUILD)/win64
+	mkdir -p $(LIBS)/win64
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
+		-o $(BUILD)/win64/support.o -c $(LIBS)/source/support.c
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
+		-o $(BUILD)/win64/graphics_support.o -c $(LIBS)/source/graphics_support.c
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/graphics_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/graphics_wrapper.asm
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
+		-o $(BUILD)/win64/graphics_wrapper.o -c $(LIBS)/source/graphics_wrapper.c
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
+		-o $(BUILD)/win64/graphics.o -c $(AMIWIN)/graphics.c
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
+		-o $(BUILD)/win64/graph_services.o -c $(AMIWIN)/services.c
+	rm -f $(LIBS)/win64/graphics.a
+	$(WINAR) rc $(LIBS)/win64/graphics.a $(BUILD)/win64/graphics_wrapper_asm.o \
+		$(BUILD)/win64/graphics_wrapper.o $(BUILD)/win64/graphics_support.o \
+		$(BUILD)/win64/graphics.o $(BUILD)/win64/graph_services.o \
+		$(BUILD)/win64/support.o
+	mkdir -p $(WINCELL)/lib
+	cp $(LIBS)/win64/graphics.a $(WINCELL)/lib
+
+#
+# The "blonde" win64 graphics archive for the graphics-hosted interpreter
+# (pintg/pmachg/cmachg): graphics.c compiled with NOSTDWIN so it does not bind
+# stdin/stdout to an automatic main window. All other members are shared with
+# the standard archive. Placed in source/graph/win64 so a win64 flavor build's
+# module path selects it ahead of libs/win64/graphics.a.
+#
+source/graph/win64/graphics.a: $(LIBS)/win64/graphics.a
+	mkdir -p source/graph/win64
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) -DNOSTDWIN \
+		-o $(BUILD)/win64/graphics_blonde.o -c $(AMIWIN)/graphics.c
+	rm -f source/graph/win64/graphics.a
+	$(WINAR) rc source/graph/win64/graphics.a $(BUILD)/win64/graphics_wrapper_asm.o \
+		$(BUILD)/win64/graphics_wrapper.o $(BUILD)/win64/graphics_support.o \
+		$(BUILD)/win64/graphics_blonde.o $(BUILD)/win64/graph_services.o \
+		$(BUILD)/win64/support.o
+
+#
+# Gnome widgets for win64, the portable widget set drawn with the graphics API.
+# Same role as the native gnome_widgets.o: pc links it as an explicit object in
+# windowed programs.
+#
+$(LIBS)/win64/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
+	mkdir -p $(LIBS)/win64
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
+		-o $(LIBS)/win64/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+	mkdir -p $(WINCELL)/lib
+	cp $(LIBS)/win64/gnome_widgets.o $(WINCELL)/lib
+endif
+
+#
+# Build sound and network for win64. Like the linux build these live in the
+# plain C runtime stdio world (no STDIO_BYPASS): the Windows sound model
+# (amitk/windows/sound.c) drives the Win32 multimedia MIDI/wave API directly
+# and carries no separate synthesizer plugins, and network's connection files
+# are bridged at the descriptor level. Programs link the Win32 multimedia and
+# Winsock import libraries (-lwinmm -lwsock32), added by pc.
+#
+WINSNDNETCPP=$(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source
+ifneq ($(AMITK),)
+$(LIBS)/win64/sound.a: $(AMIWIN)/sound.c \
+	$(LIBS)/source/sound_wrapper.asm \
+	$(LIBS)/source/sound_wrapper.c \
+	$(LIBS)/source/support.c
+	@echo
+	@echo "Building sound for win64..."
+	@echo
+	mkdir -p $(BUILD)/win64
+	mkdir -p $(LIBS)/win64
+	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
+		-o $(BUILD)/win64/snd_support.o -c $(LIBS)/source/support.c
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/sound_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/sound_wrapper.asm
+	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
+		-o $(BUILD)/win64/sound_wrapper.o -c $(LIBS)/source/sound_wrapper.c
+	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
+		-o $(BUILD)/win64/sound.o -c $(AMIWIN)/sound.c
+	rm -f $(LIBS)/win64/sound.a
+	$(WINAR) rc $(LIBS)/win64/sound.a $(BUILD)/win64/sound_wrapper_asm.o \
+		$(BUILD)/win64/sound_wrapper.o $(BUILD)/win64/sound.o \
+		$(BUILD)/win64/snd_support.o
+	mkdir -p $(WINCELL)/lib
+	cp $(LIBS)/win64/sound.a $(WINCELL)/lib
+
+$(LIBS)/win64/network.a: $(AMIWIN)/network.c \
+	$(LIBS)/source/network_wrapper.asm \
+	$(LIBS)/source/network_wrapper.c \
+	$(LIBS)/source/network_support.c \
+	$(LIBS)/source/support.c
+	@echo
+	@echo "Building network for win64..."
+	@echo
+	mkdir -p $(BUILD)/win64
+	mkdir -p $(LIBS)/win64
+	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
+		-o $(BUILD)/win64/net_support.o -c $(LIBS)/source/support.c
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/network_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/network_wrapper.asm
+	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
+		-o $(BUILD)/win64/network_wrapper.o -c $(LIBS)/source/network_wrapper.c
+	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
+		-o $(BUILD)/win64/network_support.o -c $(LIBS)/source/network_support.c
+	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
+		-o $(BUILD)/win64/network.o -c $(AMIWIN)/network.c
+	rm -f $(LIBS)/win64/network.a
+	$(WINAR) rc $(LIBS)/win64/network.a $(BUILD)/win64/network_wrapper_asm.o \
+		$(BUILD)/win64/network_wrapper.o $(BUILD)/win64/network_support.o \
+		$(BUILD)/win64/network.o $(BUILD)/win64/net_support.o
+	mkdir -p $(WINCELL)/lib
+	cp $(LIBS)/win64/network.a $(WINCELL)/lib
 endif
 
 ################################################################################

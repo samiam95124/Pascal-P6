@@ -161,7 +161,10 @@ else
     tmpd=""
 fi
 
-if [ ! -f "$obase.p6" ]; then
+# Only the interpreter backends consume the .p6 intermediate; pgen and package
+# run a native binary (or the Windows .exe) and never open it, so requiring the
+# .p6 there wrongly fails a native/windows run whose compile left no .p6.
+if [ "$pgen" != "1" ] && [ "$package" != "1" ] && [ ! -f "$obase.p6" ]; then
 
 	echo "$obase.p6 does not exist"
 	exit 1
