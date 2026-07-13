@@ -17,3 +17,12 @@
 ! CPU specific modules followed by CPU independent modules
 !
 modulepath "..:../.."
+
+!
+! Place the built product in the hosts tree
+!
+linux begin
+   amd64_sysv begin
+      copy pgen "../../../hosts/linux/x86/bit64/bin/pgen"
+   end
+end

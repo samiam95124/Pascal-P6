@@ -13,3 +13,12 @@ exclude "../libs"
 !
 ! Declare packaged libraries
 !
+
+!
+! Place the built product in the hosts tree
+!
+linux begin
+   amd64_sysv begin
+      copy pc "../hosts/linux/x86/bit64/bin/pc"
+   end
+end

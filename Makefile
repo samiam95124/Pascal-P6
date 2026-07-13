@@ -754,8 +754,8 @@ bin/spew: $(SOURCE)/spew.c
 # restorable set. The configure script performs the reverse restore. Run
 # after a clean regression, before committing.
 #
-HOSTBINS=cmach cmacht cmachg genobj pcom pgen pint pintt pintg pmach pmacht \
-	pmachg spew
+HOSTBINS=cmach cmacht cmachg genobj pc pcom pgen pint pintt pintg pmach \
+	pmacht pmachg spew
 HOSTLIBS=main.o parse.o psystem.a services.a strings.o terminal.a graphics.a \
 	sound.a network.a gnome_widgets.o
 
