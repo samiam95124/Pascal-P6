@@ -143,6 +143,29 @@ if [ ! -f "$progfile.pas" ]; then
     exit 1
 
 fi
+
+#
+# Compile the program. pc builds it and all of its modules, and for the
+# interpreter backends leaves the collected intermediate in $progfile.p6.
+# This is done before the .inp/.cmp existence checks because the compile
+# writes the $progfile.err listing as a side effect, and the rejection-test
+# harness (testprt) consumes that .err even for programs that deliberately
+# fail to compile and so have no .inp or .cmp of their own.
+#
+rm -f $(ob $progfile).lst $(ob $progfile).dif $(ob $progfile).ecd
+compile --out="$REGRESS_OUT" $listoption --noerrmsg $windowsoption $options $backend $progfile
+if [ $? -ne 0 ]; then
+
+    if [ "$noerrmsg" = "0" ]; then echo "*** Compile file $progfile failed"; fi
+    exit 1
+
+fi
+
+#
+# A successful compile is run and compared, which requires the input and the
+# golden. (A rejection test never reaches here: it fails the compile above,
+# with its .err already written for testprt to collect.)
+#
 if [ ! -f "$progfile.inp" ]; then
 
     echo "*** Error: Input file $progfile.inp does not exist"
@@ -152,19 +175,6 @@ fi
 if [ ! -f "$cmpfile.cmp" ]; then
 
     echo "*** Error: File $cmpfile.cmp does not exist"
-    exit 1
-
-fi
-
-#
-# Compile the program. pc builds it and all of its modules, and for the
-# interpreter backends leaves the collected intermediate in $progfile.p6.
-#
-rm -f $(ob $progfile).lst $(ob $progfile).dif $(ob $progfile).ecd
-compile --out="$REGRESS_OUT" $listoption --noerrmsg $windowsoption $options $backend $progfile
-if [ $? -ne 0 ]; then
-
-    if [ "$noerrmsg" = "0" ]; then echo "*** Compile file $progfile failed"; fi
     exit 1
 
 fi
