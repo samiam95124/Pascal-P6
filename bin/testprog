@@ -23,6 +23,7 @@
 # --pint           Generate mach code and run the result through pint (default).
 # --package        Generate a unified executable with mach code and interpreter.
 # --pgen           Generate assembly code via pgen for the current machine.
+# --windows        Cross compile to a Windows executable and run under wine.
 # --cmpfile <file> Use filename following option for compare file
 # --noerrmsg       Do not output failure message on compile, the .err file is
 #                  sufficient. 
@@ -44,6 +45,7 @@ cmpnext="0"
 cmpfile=""
 noerrmsg="0"
 noerrmsgoption=""
+windowsoption=""
 options=""
 
 list="0"
@@ -145,10 +147,17 @@ do
         noerrmsgoption="--noerrmsg"
 
     elif [ "$param" = "--list" ]; then
-    
+
     	list=1
         listoption="--list+"
-    	
+
+    elif [ "$param" = "--windows" ]; then
+
+        # cross compile to a Windows executable and run it through wine. The
+        # option is forwarded to both compile (which passes it to pc to build
+        # the .exe) and run (which launches it under wine).
+        windowsoption="--windows"
+
     elif [ "$param" = "--help" ]; then
 
 		echo ""
@@ -172,6 +181,7 @@ do
 		echo "--pint           Generate mach code and run the result through pint (default)."
         echo "--package        Generate a packaged application and run."
         echo "--pgen           Generate assembly code with pgen for the current machine."
+        echo "--windows        Cross compile to a Windows executable and run under wine."
 		echo "--cmpfile <file> Use filename following option for compare file."
 		echo "--noerrmsg       Do not output failure message on compile, the .err file is"
 		echo "                 sufficient."
@@ -203,7 +213,7 @@ do
     		#echo "Compiling $param..."
             # clean any previous products
             rm -f $(ob $param).lst $(ob $param).dif $(ob $param).ecd
-    		compile --out="$REGRESS_OUT" $listoption --noerrmsg $options $pintoption $pmachoption \
+    		compile --out="$REGRESS_OUT" $listoption --noerrmsg $windowsoption $options $pintoption $pmachoption \
                 $cmachoption $packageoption $pgenoption $param
     		if [ $? -ne 0 ]; then
     		
@@ -275,7 +285,7 @@ fi
 
 echo "Running $progfile..."
 # echo "run $pmachoption $cmachoption $options $progfile"
-run --nolist $pintoption $pmachoption $cmachoption $packageoption $pgenoption $options $progfile
+run --nolist $windowsoption $pintoption $pmachoption $cmachoption $packageoption $pgenoption $options $progfile
 
 #
 # The verdict is the output comparison below, not run's exit status: a program

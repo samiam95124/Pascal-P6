@@ -24,6 +24,7 @@
 # --pmach Generate mach code and run the result through pmach.
 # --cmach Generate mach code and run the result through cmach.
 # --pint  Generate mach code and run the result through pint (default).
+# --windows Run a Windows cross-compiled executable (name.exe) under wine.
 #
 
 pint=0
@@ -31,6 +32,7 @@ pmach=0
 cmach=0
 package=0
 pgen=1
+windows=0
 progfile=""
 options=""
 nolist="0"
@@ -81,9 +83,17 @@ do
         package=0
 
     elif [ "$param" = "--nolist" ]; then
-    
+
         nolist=1
-      
+
+    elif [ "$param" = "--windows" ]; then
+
+        # the program was cross compiled to a Windows executable; run it
+        # through wine rather than directly. This is a run directive, not a
+        # program argument, so it is recognized here and not collected into
+        # the option string.
+        windows=1
+
     elif [ "$param" = "--help" ]; then
 
 		echo ""  
@@ -111,6 +121,7 @@ do
 		echo "--cmach  Generate mach code and run the result through cmach."
 		echo "--pint   Generate mach code and run the result through pint."
         echo "--pgen   Run binary code {default)."
+        echo "--windows Run a Windows cross-compiled executable under wine."
 		echo "--nolist Do not output listing."
 
 		echo ""
@@ -194,9 +205,30 @@ elif [ "$package" = "1" ]; then
 
 elif [ "$pgen" = "1" ]; then
 
-    echo Running with pgen
-    ./$obase $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
-    rc=$?
+    if [ "$windows" = "1" ]; then
+
+        # Windows cross target: the product is $obase.exe, run through wine.
+        # WINEDEBUG=-all silences wine's own diagnostic channels so only the
+        # program's output reaches the listing; the program's stdout and
+        # stderr (including psystem runtime-error messages) still pass
+        # through. An arm64 cross target needs no such handling: its product
+        # is a native-named ELF that binfmt runs through qemu transparently.
+        if command -v wine64 >/dev/null 2>&1; then wine=wine64; else wine=wine; fi
+        echo "Running with pgen under wine"
+        WINEDEBUG=-all $wine ./$obase.exe $progfile.dat $obase.out $options \
+            < $progfile.inp &> $obase.lst
+        rc=$?
+        # the Windows C runtime writes text streams with CRLF line endings;
+        # normalize to LF so the listing matches the platform-neutral golden
+        sed -i 's/\r$//' $obase.lst
+
+    else
+
+        echo Running with pgen
+        ./$obase $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
+        rc=$?
+
+    fi
 
 else
 
