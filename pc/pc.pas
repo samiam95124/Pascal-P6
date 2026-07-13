@@ -2473,7 +2473,7 @@ begin
       dolist(fn, op);
       services.maknam(fn, p, n, 's');
       dolist(fn, sp);
-      services.maknam(fn, p, n, '');
+      services.maknam(fn, p, n, exeext);
       dolist(fn, ep);
       { A missing .o, .s or executable means the executable must be (re)built;
         e.g. a partial clean that removed the intermediates but left the .o and
@@ -2933,6 +2933,95 @@ end;
 
 {******************************************************************************
 
+Check build target
+
+The intermediate products (.p6, .s, .o and the executable) carry no target
+identity: the same names are used for every build target. A target or output
+mode switch therefore invalidates all of them, or a stale product of the old
+target would be carried into the new build (for example a native object
+linked against the windows runtime). The target of the last successful build
+is kept in a stamp file beside the program; when it does not match the
+current target, everything is rebuilt as if -r was given. The stamp is
+written only after a successful build, so a failed build leaves the rebuild
+armed.
+
+******************************************************************************}
+
+{ compose the current target codes }
+
+procedure curtgt(var h, c, m: integer);
+
+begin
+
+   h := hostid; { target host }
+   c := 0; { compose calling convention code }
+   if famd64sysv then c := 1
+   else if fwindows then c := 2
+   else if farm64sysv then c := 3;
+   m := 0; { compose output mode code }
+   if fpint then m := 1
+   else if fpmach then m := 2
+   else if fcmach then m := 3
+   else if fpack then m := 4
+
+end;
+
+{ check the build target changed since the last successful build }
+
+procedure chktgt;
+
+var f:          text;   { stamp file }
+    fn:         filnam; { stamp file name }
+    p, n, e:    filnam; { path components }
+    lh, lc, lm: integer; { last target }
+    h, c, m:    integer; { current target }
+
+begin
+
+   curtgt(h, c, m); { get the current target }
+   services.brknam(prgnam, p, n, e); { break program name to components }
+   services.maknam(fn, p, n, 'tgt'); { form stamp file name }
+   lh := -1; lc := -1; lm := -1; { set no previous target }
+   if exists(fn) then begin
+
+      assign(f, fn); { open stamp file }
+      reset(f);
+      read(f, lh, lc, lm); { read last target }
+      close(f)
+
+   end;
+   if (lh <> h) or (lc <> c) or (lm <> m) then begin
+
+      if fverb then writeln('Build target changed, rebuilding');
+      frebld := true { rebuild everything }
+
+   end
+
+end;
+
+{ record the target of a successful build }
+
+procedure wrttgt;
+
+var f:       text;   { stamp file }
+    fn:      filnam; { stamp file name }
+    p, n, e: filnam; { path components }
+    h, c, m: integer; { current target }
+
+begin
+
+   curtgt(h, c, m); { get the current target }
+   services.brknam(prgnam, p, n, e); { break program name to components }
+   services.maknam(fn, p, n, 'tgt'); { form stamp file name }
+   assign(f, fn); { create stamp file }
+   rewrite(f);
+   writeln(f, h:1, ' ', c:1, ' ', m:1);
+   close(f)
+
+end;
+
+{******************************************************************************
+
 Perform hosts tree copies
 
 Executes the copy instructions collected from the instruction files. Run
@@ -3250,6 +3339,7 @@ begin
    services.maknam(tmpnam, tarpath, n, 'ins');
    services.fulnam(tmpnam); { normalize }
    if exists(tmpnam) then parinst(tmpnam);
+   chktgt; { force rebuild if the build target changed }
    logfil(prgnam, hp); { form tree from file }
    stdlib; { place standard libary }
    fndpkg; { find any included packages }
@@ -3268,7 +3358,8 @@ begin
    else begin
 
       if hp^.pgm then dolink; { perform link }
-      docopies { place built products in the hosts tree }
+      docopies; { place built products in the hosts tree }
+      wrttgt { record the target of the successful build }
 
    end;
    if fverb and (actcnt > 0) then begin
