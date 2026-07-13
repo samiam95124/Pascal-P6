@@ -3189,16 +3189,29 @@ begin
    else if shwindows then hostid := 3
    else if shmac then hostid := 4
    else hostid := psystem_host;
-   { determine the default calling convention for executable builds from the
-     convention this pc was built with, unless the user selected one. This
-     must precede the instruction files, whose conditional blocks test the
-     convention. }
+   { determine the default calling convention for executable builds, unless
+     the user selected one. The target host implies the convention: a windows
+     target uses win64; otherwise the convention this pc was built with
+     applies. This must precede the instruction files, whose conditional
+     blocks test the convention. }
    if fpgen and not samd64sysv and not swindows and not sarm64sysv then begin
 
-      if psystem_callcon = 4 then begin fwindows := true; swindows := true end
-      else if psystem_callcon = 6 then begin
+      if hostid = 3 then begin fwindows := true; swindows := true end
+      else if psystem_callcon = 4 then begin
+         fwindows := true; swindows := true
+      end else if psystem_callcon = 6 then begin
          farm64sysv := true; sarm64sysv := true
       end else begin famd64sysv := true; samd64sysv := true end
+
+   end;
+   { validate the host/convention combination: the win64 convention is the
+     windows convention and the only one implemented for windows targets }
+   if fpgen then begin
+
+      if fwindows and (hostid <> 3) then
+         error('The win64 calling convention requires the windows host');
+      if (hostid = 3) and not fwindows then
+         error('The windows host requires the win64 calling convention')
 
    end;
    { find any instruction files for us }
