@@ -1,0 +1,377 @@
+Testing sample_programs/hello...
+Running sample_programs/hello...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:02 sample_programs/test_results/pmach/hello.dif
+PASS
+Testing sample_programs/roman...
+Running sample_programs/roman...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:02 sample_programs/test_results/pmach/roman.dif
+PASS
+Testing sample_programs/match...
+Running sample_programs/match...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:02 sample_programs/test_results/pmach/match.dif
+PASS
+Testing sample_programs/prime...
+Running sample_programs/prime...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:02 sample_programs/test_results/pmach/prime.dif
+PASS
+Testing sample_programs/qsort...
+Running sample_programs/qsort...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:02 sample_programs/test_results/pmach/qsort.dif
+PASS
+Testing sample_programs/fbench...
+Running sample_programs/fbench...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:02 sample_programs/test_results/pmach/fbench.dif
+PASS
+Testing sample_programs/drystone...
+Running sample_programs/drystone...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:03 sample_programs/test_results/pmach/drystone.dif
+PASS
+Testing sample_programs/startrek...
+Running sample_programs/startrek...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:03 sample_programs/test_results/pmach/startrek.dif
+PASS
+Testing sample_programs/basics...
+Running sample_programs/basics...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:03 sample_programs/test_results/pmach/basics.dif
+PASS
+Testing standard_tests/iso7185pat...
+Running standard_tests/iso7185pat...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:03 standard_tests/test_results/pmach/iso7185pat.dif
+PASS
+Testing Pascal-s...
+Compiling pascals to intermediate code
+Errors in program: 0
+Errors in program: 0
+P6 Pascal interpreter vs. 0.5.x
+
+Assembling/loading program
+
+program complete
+Comparing PAT result to reference
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:03 sample_programs/test_results/pmach/pascals.dif
+PASS
+Testing Pascal-P2...
+Compiling pcomp to intermediate code
+Errors in program: 0
+Errors in program: 0
+P6 Pascal interpreter vs. 0.5.x
+
+Assembling/loading program
+Running program
+
+
+     1        8 (*$L-
+
+program complete
+Compiling pasint to intermediate
+Errors in program: 0
+Errors in program: 0
+P6 Pascal interpreter vs. 0.5.x
+
+Assembling/loading program
+
+program complete
+Comparing PAT result to reference
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:03 p2/test_results/pmach/roman.dif
+PASS
+Testing Pascal-P4...
+Compiling pcom to intermediate code
+Errors in program: 0
+Errors in program: 0
+P6 Pascal interpreter vs. 0.5.x
+
+Assembling/loading program
+Running program
+
+
+     1        9 (*$c+,t-,d-,l-
+
+program complete
+Compiling pint to intermediate code
+Errors in program: 0
+Executing with pmach...
+P6 Pascal interpreter vs. 0.5.x
+
+Assembling/loading program
+
+program complete
+Comparing PAT result to reference
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 p4/test_results/pmach/standardp.dif
+PASS
+Testing PRT...
+Running tests
+Running standard_tests/iso7185prt1702A...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1702A.dif
+PASS
+Running standard_tests/iso7185prt1702b...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1702b.dif
+PASS
+Running standard_tests/iso7185prt1702c...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1702c.dif
+PASS
+Running standard_tests/iso7185prt1702d...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1702d.dif
+PASS
+Running standard_tests/iso7185prt1703...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1703.dif
+PASS
+Running standard_tests/iso7185prt1704...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1704.dif
+PASS
+Running standard_tests/iso7185prt1705...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1705.dif
+PASS
+Running standard_tests/iso7185prt1706a...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1706a.dif
+PASS
+Running standard_tests/iso7185prt1706b...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1706b.dif
+PASS
+Running standard_tests/iso7185prt1708...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1708.dif
+PASS
+Running standard_tests/iso7185prt1709...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1709.dif
+PASS
+Running standard_tests/iso7185prt1710...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1710.dif
+PASS
+Running standard_tests/iso7185prt1712...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1712.dif
+PASS
+Running standard_tests/iso7185prt1713...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1713.dif
+PASS
+Running standard_tests/iso7185prt1714...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1714.dif
+PASS
+Running standard_tests/iso7185prt1715...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1715.dif
+PASS
+Running standard_tests/iso7185prt1716...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1716.dif
+PASS
+Running standard_tests/iso7185prt1719...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1719.dif
+PASS
+Running standard_tests/iso7185prt1720...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1720.dif
+PASS
+Running standard_tests/iso7185prt1721...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1721.dif
+PASS
+Running standard_tests/iso7185prt1722...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1722.dif
+PASS
+Running standard_tests/iso7185prt1723...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1723.dif
+PASS
+Running standard_tests/iso7185prt1724...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1724.dif
+PASS
+Running standard_tests/iso7185prt1727...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1727.dif
+PASS
+Running standard_tests/iso7185prt1728...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1728.dif
+PASS
+Running standard_tests/iso7185prt1730...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1730.dif
+PASS
+Running standard_tests/iso7185prt1731...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1731.dif
+PASS
+Running standard_tests/iso7185prt1732...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:04 standard_tests/test_results/pmach/iso7185prt1732.dif
+PASS
+Running standard_tests/iso7185prt1733...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1733.dif
+PASS
+Running standard_tests/iso7185prt1734...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1734.dif
+PASS
+Running standard_tests/iso7185prt1735...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1735.dif
+PASS
+Running standard_tests/iso7185prt1736...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1736.dif
+PASS
+Running standard_tests/iso7185prt1737...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1737.dif
+PASS
+Running standard_tests/iso7185prt1738...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1738.dif
+PASS
+Running standard_tests/iso7185prt1739...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1739.dif
+PASS
+Running standard_tests/iso7185prt1740...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1740.dif
+PASS
+Running standard_tests/iso7185prt1741...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1741.dif
+PASS
+Running standard_tests/iso7185prt1743...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1743.dif
+PASS
+Running standard_tests/iso7185prt1744...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1744.dif
+PASS
+Running standard_tests/iso7185prt1745...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1745.dif
+PASS
+Running standard_tests/iso7185prt1746A...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1746A.dif
+PASS
+Running standard_tests/iso7185prt1746b...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1746b.dif
+PASS
+Running standard_tests/iso7185prt1750...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1750.dif
+PASS
+Running standard_tests/iso7185prt1751...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1751.dif
+PASS
+Running standard_tests/iso7185prt1754...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1754.dif
+PASS
+Running standard_tests/iso7185prt1755...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1755.dif
+PASS
+Running standard_tests/iso7185prt1756...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1756.dif
+PASS
+Running standard_tests/iso7185prt1757...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1757.dif
+PASS
+Running standard_tests/iso7185prt1758a...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1758a.dif
+PASS
+Running standard_tests/iso7185prt1758b...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1758b.dif
+PASS
+Running standard_tests/iso7185prt1800...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1800.dif
+PASS
+Running standard_tests/iso7185prt1811...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1811.dif
+PASS
+Running standard_tests/iso7185prt1828...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1828.dif
+PASS
+Running standard_tests/iso7185prt1834...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1834.dif
+PASS
+Running standard_tests/iso7185prt1839...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1839.dif
+PASS
+Running standard_tests/iso7185prt1840...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1840.dif
+PASS
+Running standard_tests/iso7185prt1850...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1850.dif
+PASS
+Running standard_tests/iso7185prt1851...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1851.dif
+PASS
+Running standard_tests/iso7185prt1852...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:05 standard_tests/test_results/pmach/iso7185prt1852.dif
+PASS
+Running standard_tests/iso7185prt1909...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:06 standard_tests/test_results/pmach/iso7185prt1909.dif
+PASS
+Running standard_tests/iso7185prt1918...
+Running with pmach
+-rw-rw-r-- 1 samiam samiam 0 Jul 12 23:06 standard_tests/test_results/pmach/iso7185prt1918.dif
+PASS
+Creating combined listing
+Creating error accounting listings
+creating compile time difference list
+creating runtime difference list
+Adding program compile and runs
+0 standard_tests/test_results/pmach/iso7185prt.dif
+Testing Pascaline...
+Errors in program: 0
+Running with pmach
+P6 Pascal interpreter vs. 0.5.x
+
+Assembling/loading program
+
+program complete
+0 pascaline.dif
+Testing strings_test...
+0 libs/tests/test_results/pmach/strings_test.dif
+Testing network_test...
+0 libs/tests/test_results/pmach/network_test.dif
+Testing services_test...
+0 libs/tests/test_results/pmach/services_test.dif

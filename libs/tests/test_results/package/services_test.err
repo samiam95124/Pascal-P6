@@ -1,0 +1,25 @@
+P6 Pascal compiler vs. 0.5.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
+
+Errors in program: 0
+P6 Pascal interpreter vs. 0.5.x
+
+Assembling/loading program
+
+program complete
+Mach program object deck to C constant table converter
+Program complete
+/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/libcrypto.a(dso_dlfcn.o): in function `dlfcn_globallookup':
+(.text+0x17): warning: Using 'dlopen' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/bin/ld: /usr/local/lib/libasound.a(pcm_direct.o): in function `snd1_pcm_direct_parse_open_conf':
+/tmp/alsa-build/alsa-lib-1.2.2/src/pcm/pcm_direct.c:1964: warning: Using 'getgrnam_r' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/libglib-2.0.a(gutils.c.o): in function `g_get_user_database_entry':
+(.text+0x277): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/bin/ld: (.text+0xe0): warning: Using 'getpwnam_r' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/bin/ld: /usr/local/lib/libasound.a(userfile.o): in function `snd_user_file':
+/tmp/alsa-build/alsa-lib-1.2.2/src/userfile.c:93: warning: Using 'getpwuid_r' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/bin/ld: /home/samiam/projects/pascal/pascal-p6/libs/network.a(network.o): in function `ami_addrnet':
+/home/samiam/projects/pascal/pascal-p6/amitk/linux/network.c:890: warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/libcrypto.a(b_sock.o): in function `BIO_gethostbyname':
+(.text+0x75): warning: Using 'gethostbyname' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking

@@ -1,0 +1,16 @@
+P6 Pascal compiler vs. 0.5.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
+
+Errors in program: 0
+P6 Pascal AMD64/gcc 64 bit code generator vs. 0.5.x
+
+Generating program
+
+Program generation complete
+/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/libcrypto.a(dso_dlfcn.o): in function `dlfcn_globallookup':
+(.text+0x17): warning: Using 'dlopen' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/bin/ld: /home/samiam/projects/pascal/pascal-p6/libs/network.a(network.o): in function `ami_addrnet':
+/home/samiam/projects/pascal/pascal-p6/amitk/linux/network.c:890: warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/libcrypto.a(b_sock.o): in function `BIO_gethostbyname':
+(.text+0x75): warning: Using 'gethostbyname' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking

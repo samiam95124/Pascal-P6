@@ -1,0 +1,27 @@
+cmach run ***************************************
+0 sample_programs/test_results/cmach/hello.dif
+0 sample_programs/test_results/cmach/roman.dif
+0 sample_programs/test_results/cmach/match.dif
+0 sample_programs/test_results/cmach/prime.dif
+0 sample_programs/test_results/cmach/qsort.dif
+0 sample_programs/test_results/cmach/fbench.dif
+0 sample_programs/test_results/cmach/drystone.dif
+0 sample_programs/test_results/cmach/startrek.dif
+0 sample_programs/test_results/cmach/basics.dif
+0 standard_tests/test_results/cmach/iso7185pat.dif
+Pascal-s run
+0 sample_programs/test_results/cmach/roman.dif
+Pascal-P2 run
+0 p2/test_results/cmach/roman.dif
+Pascal-P4 run
+0 p4/test_results/cmach/standardp.dif
+PRT run
+0 standard_tests/test_results/cmach/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/test_results/cmach/pascaline.dif
+strings_test run
+0 libs/tests/test_results/cmach/strings_test.dif
+network_test run
+0 libs/tests/test_results/cmach/network_test.dif
+services_test run
+0 libs/tests/test_results/cmach/services_test.dif

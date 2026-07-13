@@ -1,0 +1,27 @@
+pgen run ***************************************
+0 sample_programs/test_results/pgen/hello.dif
+0 sample_programs/test_results/pgen/roman.dif
+0 sample_programs/test_results/pgen/match.dif
+0 sample_programs/test_results/pgen/prime.dif
+0 sample_programs/test_results/pgen/qsort.dif
+0 sample_programs/test_results/pgen/fbench.dif
+0 sample_programs/test_results/pgen/drystone.dif
+0 sample_programs/test_results/pgen/startrek.dif
+0 sample_programs/test_results/pgen/basics.dif
+0 standard_tests/test_results/pgen/iso7185pat.dif
+Pascal-s run
+0 sample_programs/test_results/pgen/roman.dif
+Pascal-P2 run
+0 p2/test_results/pgen/roman.dif
+Pascal-P4 run
+0 p4/test_results/pgen/standardp.dif
+PRT run
+0 standard_tests/test_results/pgen/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/test_results/pgen/pascaline.dif
+strings_test run
+0 libs/tests/test_results/pgen/strings_test.dif
+network_test run
+0 libs/tests/test_results/pgen/network_test.dif
+services_test run
+0 libs/tests/test_results/pgen/services_test.dif

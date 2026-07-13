@@ -1,0 +1,4746 @@
+
+DOCUMENTATION FOR: pcom
+======================================================================
+
+                             PASCAL-P6 PORTABLE INTERPRETER
+
+     LICENSING:
+
+     Copyright (c) 2022, Scott A. Franco
+     All rights reserved.
+
+     Redistribution and use in source and binary forms, with or without
+     modification, are permitted provided that the following conditions are met:
+
+     1. Redistributions of source code must retain the above copyright notice,
+        this list of conditions and the following disclaimer.
+     2. Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+
+     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+     AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+     IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+     ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+     LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+     CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+     POSSIBILITY OF SUCH DAMAGE.
+
+     The views and conclusions contained in the software and documentation are
+     those of the authors and should not be interpreted as representing official
+     policies, either expressed or implied, of the Pascal-P6 project.
+
+                         Portable Pascal assembler/interpreter
+
+                                     Pascal P6
+
+                                     ETH May 76
+
+     Authors:
+        Urs Ammann
+        Kesav Nori
+        Christian Jacobi
+        K. Jensen
+        N. Wirth
+
+        Address:
+           Institut Fuer Informatik
+           Eidg. Technische Hochschule
+           CH-8096 Zuerich
+
+      This code is fully documented in the book
+            "Pascal Implementation"
+       by Steven Pemberton and Martin Daniels
+     published by Ellis Horwood, Chichester, UK
+             ISBN: 0-13-653-0311
+           (also available in Japanese)
+
+     Steven Pemberton, CWI/AA,
+     Kruislaan 413, 1098 SJ Amsterdam, NL
+     Steven.Pemberton@cwi.nl
+
+     Adaption from P5 to P6 by:
+
+        Scott A. Franco
+        samiam@moorecad.com
+
+        The comments marked with brackets are mine [sam]
+
+     Please see accompanying documentation concerning this software.
+
+     ----------------------------------------------------------------------------
+
+                                       LICENSE
+
+     ----------------------------------------------------------------------------
+
+     This software is based on, and represents an enhanced version, of Pascal-P5,
+     which is itself based on Pascal-P4, and was enhanced from that version
+     substantially.
+
+     Pascal-P4 is unlicensed and exists in the public domain. It has:
+
+     1. Been acknowledged as public domain by the author, Niklaus Wirth at ETH
+        Zurich.
+
+     2. Has been freely distributed since 1976 with only charges for printing and
+        shipping costs.
+
+     3. Has been used as the basis for many projects, both paid and free, by
+        other authors.
+
+     I, Scott Franco, have extensively expanded the original software. The
+     the changes made by me are held in copyright by me and released under the
+     BSD "2-clause" license, the least restrictive open source license available.
+
+MODULES
+----------------------------------------------------------------------
+    uses strings
+    uses version
+    uses mpb
+    uses endian
+    joins parse
+    joins services
+
+CONSTANTS
+----------------------------------------------------------------------
+    displimit
+    maxlevel
+    strglgth
+    fileal
+    parmal
+    parmsize
+    recal
+    maxaddr
+    maxsp
+    maxins
+    maxids
+    maxstd
+    maxres
+    reslen
+    explen
+    maxrld
+    varsqt
+    prtlln
+    minocc
+    varmax
+    cstoccmax
+    cixmax
+    fillen
+    extsrc
+    maxftl
+    parfld
+    intdeff
+    reldeff
+    chrdeff
+    boldeff
+    maxlin
+    maxopt
+    optlen
+    CommandLineTooLong
+    FunctionNotImplemented
+    FileDeleteFail
+    FileNameChangeFail
+
+TYPES
+----------------------------------------------------------------------
+    symbol
+    operatort
+    setofsys
+    chtp
+    strvsp
+    strvs
+    setty
+    cstclass
+    csp
+    constant
+    valu
+    levrange
+    addrrange
+    stkoff
+    structform
+    declkind
+    varinx
+    vartbl
+    vartpt
+    stp
+    ctp
+    structure
+    idclass
+    setofids
+    idkind
+    idstr
+    restr
+    expstr
+    csstr
+    rlstr
+    keyrng
+    filnam
+    lininx
+    linbuf
+    optinx
+    optstr
+    filptr
+    filrec
+    partyp
+    fpattr
+    identifier
+    where
+    attrkind
+    vaccess
+    attr
+    lbp
+    labl
+    disprange
+    disprec
+    extfilep
+    filerec
+    cip
+    caseinfo
+    ttp
+    tagtrk
+    wtp
+    wthtrk
+    stdrng
+    oprange
+    modtyp
+    byte
+    bytfil
+    tmpptr
+    tmpety
+    errptr
+    errlin
+    filext
+
+FIXED
+----------------------------------------------------------------------
+
+VARIABLES
+----------------------------------------------------------------------
+    prd: text
+    prr: text
+    prdval: boolean
+    prrval: boolean
+    prdopn: boolean
+    prropn: boolean
+    sy: scalar
+    op: scalar
+    val: record
+    lgth: integer
+    id: array
+    kk: subrange
+    lsy: scalar
+    lop: scalar
+    lval: record
+    llgth: integer
+    lid: array
+    lkk: subrange
+    nsy: scalar
+    nop: scalar
+    nval: record
+    nlgth: integer
+    nid: array
+    nkk: subrange
+    nvalid: boolean
+    chcnt: integer
+    ic: subrange
+    gc: subrange
+    lc: subrange
+    lcs: subrange
+    dp: boolean
+    list: boolean
+    dolineinfo: boolean
+    prcode: boolean
+    prtables: boolean
+    chkvar: boolean
+    debug: boolean
+    chkref: boolean
+    chkudtc: boolean
+    chkudtf: boolean
+    iso7185: boolean
+    dodmplex: boolean
+    doprtryc: boolean
+    doprtlab: boolean
+    dodmpdsp: boolean
+    chkvbk: boolean
+    experr: boolean
+    parmptr: pointer
+    intptr: pointer
+    crdptr: pointer
+    realptr: pointer
+    charptr: pointer
+    boolptr: pointer
+    nilptr: pointer
+    textptr: pointer
+    exceptptr: pointer
+    stringptr: pointer
+    pstringptr: pointer
+    byteptr: pointer
+    vectorptr: pointer
+    matrixptr: pointer
+    abyteptr: pointer
+    scharptr: pointer
+    utypptr: pointer
+    ucstptr: pointer
+    uvarptr: pointer
+    ufldptr: pointer
+    uprcptr: pointer
+    ufctptr: pointer
+    fwptr: pointer
+    outputptr: pointer
+    inputptr: pointer
+    prdptr: pointer
+    prrptr: pointer
+    errorptr: pointer
+    listptr: pointer
+    commandptr: pointer
+    usclrptr: pointer
+    fextfilep: pointer
+    wthstk: pointer
+    level: subrange
+    disx: subrange
+    top: subrange
+    ptop: subrange
+    display: array
+    pile: array
+    errinx: subrange
+    errlist: array
+    gattr: record
+    constbegsys: set
+    simptypebegsys: set
+    typebegsys: set
+    blockbegsys: set
+    selectsys: set
+    facbegsys: set
+    statbegsys: set
+    typedels: set
+    pfbegsys: set
+    chartp: array
+    rw: array
+    rsy: array
+    ssy: array
+    rop: array
+    sop: array
+    na: array
+    mn: array
+    sna: array
+    cdx: array
+    cdxs: array
+    pdx: array
+    ordint: array
+    intlabel: integer
+    mxint10: integer
+    maxpow10: integer
+    entname: integer
+    errtbl: array
+    errltb: array
+    toterr: integer
+    topnew: integer
+    topmin: integer
+    cstptr: array
+    cstptrix: subrange
+    curmod: scalar
+    nammod: pointer
+    incstk: pointer
+    inclst: pointer
+    tmplst: pointer
+    tmpfre: pointer
+    strcnt: integer
+    cspcnt: integer
+    stpcnt: integer
+    ctpcnt: integer
+    lbpcnt: integer
+    filcnt: integer
+    cipcnt: integer
+    ttpcnt: integer
+    wtpcnt: integer
+    ctpsnm: integer
+    stpsnm: integer
+    breakflag: boolean
+    f: boolean
+    i: subrange
+    oi: subrange
+    oni: subrange
+    ep: pointer
+    epl: pointer
+    srcfil: array
+    desfil: array
+    errfil: array
+    p: array
+    n: array
+    e: array
+    errf: text
+    errfopn: boolean
+    errfval: boolean
+    fp: pointer
+    ii: subrange
+    cmdhan: subrange
+    option: array
+    options: array
+    opts: array
+    optsl: array
+    incbuf: array
+
+PROCEDURES AND FUNCTIONS
+----------------------------------------------------------------------
+    procedure getstr
+    procedure putstrs
+    procedure getlab
+    procedure putlab
+    procedure pshcst
+    procedure putcst
+    procedure pshstc
+    procedure putstc
+    procedure ininam
+    procedure putparlst
+    procedure putnam
+    procedure putnams
+    procedure inidsp
+    procedure putdsp
+    procedure putsub
+    procedure putdsps
+    procedure putpile
+    procedure getfil
+    procedure putfil
+    procedure getcas
+    procedure putcas
+    procedure gettag
+    procedure puttag
+    procedure pshwth
+    procedure popwth
+    function strequri: (unknown)
+    procedure writev
+    function lenpv: (unknown)
+    procedure writevp
+    procedure strassvf
+    procedure strassvr
+    procedure strassve
+    procedure strassvc
+    procedure strassfv
+    function strequvv: (unknown)
+    function strltnvv: (unknown)
+    function strequvf: (unknown)
+    function strltnvf: (unknown)
+    function strchr: (unknown)
+    procedure strchrass
+    procedure getsqt
+    procedure strcatvr
+    function bnot: (unknown)
+    function bor: (unknown)
+    function band: (unknown)
+    function bxor: (unknown)
+    procedure errore
+    procedure errorv
+    procedure prtdsp
+    procedure prtlnk
+    function incact: (unknown)
+    function fileeof: (unknown)
+    function fileeoln: (unknown)
+    procedure wrtsrclin
+    procedure readline
+    function eofinp: (unknown)
+    function eol: (unknown)
+    function ch: (unknown)
+    function bufnxt: (unknown)
+    procedure readinp
+    procedure errmsg
+    procedure endofline
+    procedure outline
+    procedure markline
+    function inpriv: (unknown)
+    procedure error
+    procedure chkstd
+    procedure prtsym
+    procedure insymbol
+    procedure nextch
+    procedure options
+    procedure switch
+    function pwrten: (unknown)
+    procedure plcchr
+    procedure escchr
+    function match: (unknown)
+    procedure pushback
+    procedure prtclass
+    procedure prtform
+    procedure prtfpat
+    procedure prtlvlsym
+    procedure prtsyms
+    procedure enterid
+    procedure searchsection
+    procedure schsecidnenm
+    function inclass: (unknown)
+    procedure searchidnenm
+    procedure searchidne
+    procedure schsecidne
+    procedure searchid
+    procedure getbounds
+    function span: (unknown)
+    function spana: (unknown)
+    function isbyte: (unknown)
+    function basetype: (unknown)
+    function issub: (unknown)
+    function alignquot: (unknown)
+    procedure alignu
+    procedure alignd
+    procedure alignau
+    procedure wrtctp
+    procedure wrtstp
+    procedure prtstp
+    procedure prtctp
+    procedure printtables
+    procedure marker
+    procedure markstp
+    procedure markctp
+    procedure followstp
+    procedure followctp
+    procedure chkrefs
+    function chkext: (unknown)
+    function chkfix: (unknown)
+    function hasproc: (unknown)
+    function hasfunc: (unknown)
+    function ovrpf: (unknown)
+    procedure genlabel
+    procedure wrttypc
+    procedure wrttypsub
+    procedure nxtcti
+    procedure nxtctis
+    procedure wrtchr
+    procedure wrtint
+    procedure wrtrfd
+    procedure wrtvar
+    procedure wrtenm
+    procedure wrttyp
+    function digits: (unknown)
+    procedure prtlabelu
+    procedure prtlabel
+    function lenlabel: (unknown)
+    procedure prtlabelc
+    procedure prtflabel
+    procedure prtfxlabel
+    procedure prtfxlabelc
+    function lenflabel: (unknown)
+    procedure prtflabelc
+    procedure prtpartypc
+    procedure prtpartyp
+    procedure searchlabel
+    procedure newlabel
+    procedure prtlabels
+    procedure intmsgneol
+    procedure intmsg
+    procedure spfmsg
+    function intt: (unknown)
+    function realt: (unknown)
+    function chart: (unknown)
+    function bolt: (unknown)
+    function stringt: (unknown)
+    function arrayt: (unknown)
+    function sett: (unknown)
+    function ptrt: (unknown)
+    function simt: (unknown)
+    function ordt: (unknown)
+    function filet: (unknown)
+    function complext: (unknown)
+    procedure lftjst
+    procedure par1
+    procedure par2
+    procedure mesl
+    procedure mes
+    procedure mest
+    function mestn: (unknown)
+    procedure gen0
+    procedure gen1s
+    procedure gen1
+    procedure gen2
+    procedure gentypindicator
+    procedure gen0t
+    procedure gen1ts
+    procedure gen1t
+    procedure gen2t
+    procedure genujpxjpcal
+    procedure gencjp
+    procedure genipj
+    procedure gencupcuf
+    procedure gencipcif
+    procedure gencuvcvf
+    procedure genlpa
+    procedure gensuv
+    procedure genctaivtcvb
+    procedure gensfr
+    procedure genmst
+    procedure gensca
+    function filecomponent: (unknown)
+    function filecomponentre: (unknown)
+    function comptypes: (unknown)
+    function cmppar: (unknown)
+    function cmpparlst: (unknown)
+    procedure skip
+    procedure arrtmp
+    procedure constfactor
+    procedure constterm
+    procedure constexpr
+    procedure checkbnds
+    function containers: (unknown)
+    function containerbase: (unknown)
+    procedure load
+    procedure gettmp
+    procedure puttmp
+    procedure puttmps
+    procedure clrtmp
+    procedure loadaddress
+    procedure store
+    procedure containerop
+    function parnum: (unknown)
+    function partype: (unknown)
+    function cmptyp: (unknown)
+    function ischrcst: (unknown)
+    procedure fndopr1
+    procedure fndopr2
+    function isopr: (unknown)
+    function taggedrec: (unknown)
+    procedure selector
+    function schblk: (unknown)
+    procedure checkvrnt
+    procedure fixpar
+    procedure call
+    procedure variable
+    procedure chkhdr
+    procedure getputresetrewriteprocedure
+    procedure pageprocedure
+    procedure readprocedure
+    procedure writeprocedure
+    procedure packprocedure
+    procedure unpackprocedure
+    procedure newdisposeprocedure
+    procedure absfunction
+    procedure sqrfunction
+    procedure truncfunction
+    procedure roundfunction
+    procedure oddfunction
+    procedure ordfunction
+    procedure chrfunction
+    procedure predsuccfunction
+    procedure eofeolnfunction
+    procedure assignprocedure
+    procedure closeupdateappendprocedure
+    procedure positionprocedure
+    procedure deleteprocedure
+    procedure changeprocedure
+    procedure lengthlocationfunction
+    procedure existsfunction
+    procedure haltprocedure
+    procedure assertprocedure
+    procedure throwprocedure
+    procedure referprocedure
+    procedure seterrprocedure
+    procedure maxfunction
+    procedure callnonstandard
+    procedure nxtprc
+    function cmplst: (unknown)
+    function psize: (unknown)
+    procedure callop1
+    procedure callop2
+    function fungible: (unknown)
+    procedure expression
+    procedure simpleexpression
+    procedure term
+    procedure factor
+    procedure declare
+    procedure resolvep
+    procedure typ
+    procedure simpletype
+    procedure fieldlist
+    procedure ordertag
+    procedure labeldeclaration
+    procedure constdeclaration
+    procedure typedeclaration
+    procedure wrtsym
+    procedure vardeclaration
+    procedure fixeddeclaration
+    procedure fixeditem
+    procedure procdeclaration
+    procedure pushlvl
+    procedure parameterlist
+    procedure joinlists
+    function compparamovl: (unknown)
+    function conpar: (unknown)
+    function comp: (unknown)
+    procedure chkovlpar
+    function fndovlgrp: (unknown)
+    function parmspc: (unknown)
+    procedure parmoff
+    procedure parmrg
+    procedure body
+    procedure addlvl
+    procedure sublvl
+    procedure genfjp
+    function fndactovl: (unknown)
+    procedure statement
+    procedure assignment
+    procedure gotostatement
+    procedure compoundstatement
+    procedure ifstatement
+    procedure casestatement
+    function casecount: (unknown)
+    procedure repeatstatement
+    procedure whilestatement
+    procedure forstatement
+    procedure withstatement
+    procedure trystatement
+    procedure externalheader
+    procedure initvirt
+    procedure schvirt
+    procedure openinput
+    procedure err
+    procedure nxtinc
+    procedure insertuse
+    procedure closeinput
+    procedure putinp
+    procedure cancelfwd
+    procedure usesjoins
+    function schnam: (unknown)
+    function searchext: (unknown)
+    procedure modulep
+    procedure stdnames
+    procedure enterstdtypes
+    procedure entstdnames
+    procedure entstdprocfunc
+    procedure entstdtyp
+    procedure entstdintcst
+    procedure entstdrlcst
+    procedure entstdhdr
+    procedure entstdexp
+    procedure enterundecl
+    procedure exitundecl
+    procedure paropt
+    procedure setflg
+    procedure plcopt
+    procedure initscalars
+    procedure initsets
+    procedure inittables
+    procedure reswords
+    procedure symbols
+    procedure rators
+    procedure procmnemonics
+    procedure instrmnemonics
+    procedure chartypes
+    procedure initdx
+
+======================================================================
+DETAIL
+======================================================================
+
+displimit (constant)
+    Type: integer
+
+      end of pcom and pint common parameters
+
+maxlevel (constant)
+    Type: integer
+
+strglgth (constant)
+    Type: integer
+
+     strglgth used to define the size of all strings in pcom and pint. With the
+         string quanta system, string lengths are effectively unlimited, but there
+         it still sets the size of some buffers in pcom.
+
+fileal (constant)
+    Type: integer
+
+parmal (constant)
+    Type: integer
+
+     stackelsize = minimum size for 1 stackelement
+                      = kstackal
+          stackal     = scm(all other al-constants)
+          charmax     = scm(charsize,charal)
+                        scm = smallest common multiple
+
+parmsize (constant)
+    Type: integer
+
+recal (constant)
+    Type: integer
+
+maxaddr (constant)
+    Type: integer
+
+maxsp (constant)
+    Type: integer
+
+maxins (constant)
+    Type: integer
+
+     number of standard procedures/functions
+
+maxids (constant)
+    Type: integer
+
+     maximum number of instructions
+
+maxstd (constant)
+    Type: integer
+
+     maximum characters in id string (basically, a full line)
+
+maxres (constant)
+    Type: integer
+
+     number of standard identifiers
+
+reslen (constant)
+    Type: integer
+
+     number of reserved words
+
+explen (constant)
+    Type: integer
+
+     maximum length of reserved words
+
+maxrld (constant)
+    Type: integer
+
+     length of exception names
+
+varsqt (constant)
+    Type: integer
+
+     maximum length of real in digit form
+
+prtlln (constant)
+    Type: integer
+
+     variable string quanta
+
+minocc (constant)
+    Type: integer
+
+     number of label characters to print in dumps
+
+varmax (constant)
+    Type: integer
+
+     minimum occupancy for case tables
+
+cstoccmax (constant)
+    Type: integer
+
+     maximum number of logical variants to track
+
+cixmax (constant)
+    Type: integer
+
+fillen (constant)
+    Type: integer
+
+extsrc (constant)
+    Type: array
+
+maxftl (constant)
+    Type: integer
+
+     extention for source file
+
+parfld (constant)
+    Type: integer
+
+     maximum fatal error
+
+intdeff (constant)
+    Type: integer
+
+     default field sizes for write
+
+reldeff (constant)
+    Type: integer
+
+     default field length for integer
+
+chrdeff (constant)
+    Type: integer
+
+     default field length for real
+
+boldeff (constant)
+    Type: integer
+
+     default field length for char (usually 1)
+
+maxlin (constant)
+    Type: integer
+
+     command line parsing
+
+maxopt (constant)
+    Type: integer
+
+     size of source line buffer
+
+optlen (constant)
+    Type: integer
+
+     number of options
+
+CommandLineTooLong (constant)
+    Type: integer
+
+     standard exceptions. Used for extension routines, this is a subset.
+
+FunctionNotImplemented (constant)
+    Type: integer
+
+FileDeleteFail (constant)
+    Type: integer
+
+FileNameChangeFail (constant)
+    Type: integer
+
+symbol (type)
+    Type: scalar
+
+
+operatort (type)
+    Type: scalar
+
+setofsys (type)
+    Type: set
+
+chtp (type)
+    Type: scalar
+
+strvsp (type)
+    Type: pointer
+
+     Here is the variable length string containment to save on space. strings
+           strings are only stored in their length rounded to the nearest 10th.
+
+strvs (type)
+    Type: record
+
+     next
+
+setty (type)
+    Type: set
+
+
+cstclass (type)
+    Type: scalar
+
+csp (type)
+    Type: pointer
+
+constant (type)
+    Type: record
+
+     next entry link
+
+valu (type)
+    Type: record
+
+levrange (type)
+    Type: subrange
+
+
+addrrange (type)
+    Type: subrange
+
+stkoff (type)
+    Type: subrange
+
+structform (type)
+    Type: scalar
+
+declkind (type)
+    Type: scalar
+
+varinx (type)
+    Type: subrange
+
+vartbl (type)
+    Type: array
+
+vartpt (type)
+    Type: pointer
+
+     variant value to logical table
+
+stp (type)
+    Type: pointer
+
+ctp (type)
+    Type: pointer
+
+structure (type)
+    Type: record
+
+     packing status
+
+idclass (type)
+    Type: scalar
+
+
+setofids (type)
+    Type: set
+
+idkind (type)
+    Type: scalar
+
+idstr (type)
+    Type: array
+
+restr (type)
+    Type: array
+
+expstr (type)
+    Type: array
+
+csstr (type)
+    Type: array
+
+rlstr (type)
+    Type: array
+
+keyrng (type)
+    Type: subrange
+
+filnam (type)
+    Type: array
+
+     range of standard call keys
+
+lininx (type)
+    Type: subrange
+
+     filename strings
+
+linbuf (type)
+    Type: array
+
+     index for source line buffer
+
+optinx (type)
+    Type: subrange
+
+     buffer for source lines
+
+optstr (type)
+    Type: array
+
+     index for option name
+
+filptr (type)
+    Type: pointer
+
+     option name string
+
+filrec (type)
+    Type: record
+
+partyp (type)
+    Type: scalar
+
+fpattr (type)
+    Type: scalar
+
+     procedure function attribute
+
+identifier (type)
+    Type: record
+
+     actual id
+
+where (type)
+    Type: scalar
+
+attrkind (type)
+    Type: scalar
+
+
+vaccess (type)
+    Type: scalar
+
+attr (type)
+    Type: record
+
+lbp (type)
+    Type: pointer
+
+
+labl (type)
+    Type: record
+
+     was referred to
+
+disprange (type)
+    Type: subrange
+
+disprec (type)
+    Type: record
+
+     block id
+
+extfilep (type)
+    Type: pointer
+
+     external file tracking entries
+
+filerec (type)
+    Type: record
+
+cip (type)
+    Type: pointer
+
+     case statement tracking entries
+
+caseinfo (type)
+    Type: record
+
+ttp (type)
+    Type: pointer
+
+     tag tracking entries
+
+tagtrk (type)
+    Type: record
+
+wtp (type)
+    Type: pointer
+
+     'with' tracking entries
+
+wthtrk (type)
+    Type: record
+
+stdrng (type)
+    Type: subrange
+
+oprange (type)
+    Type: subrange
+
+     range of standard name entries
+
+modtyp (type)
+    Type: scalar
+
+byte (type)
+    Type: subrange
+
+     type of current module
+
+bytfil (type)
+    Type: file
+
+     8-bit byte
+
+tmpptr (type)
+    Type: pointer
+
+     temp entries for sets
+
+tmpety (type)
+    Type: record
+
+     length
+
+errptr (type)
+    Type: pointer
+
+errlin (type)
+    Type: record
+
+     line number
+
+filext (type)
+    Type: array
+
+prd (variable)
+    Type: text
+
+    -------------------------------------------------------------------------
+
+prr (variable)
+    Type: text
+
+     input source file
+
+prdval (variable)
+    Type: boolean
+
+     output code file
+
+prrval (variable)
+    Type: boolean
+
+     input source file parsed
+
+prdopn (variable)
+    Type: boolean
+
+     output intermediate file parsed
+
+prropn (variable)
+    Type: boolean
+
+     input source file open
+
+sy (variable)
+    Type: scalar
+
+    returned by source program scanner
+                                         insymbol:
+
+op (variable)
+    Type: scalar
+
+    last symbol
+
+val (variable)
+    Type: record
+
+    classification of last symbol
+
+lgth (variable)
+    Type: integer
+
+    value of last constant
+
+id (variable)
+    Type: array
+
+    length of last string constant
+
+kk (variable)
+    Type: subrange
+
+    last identifier (possibly truncated)
+
+lsy (variable)
+    Type: scalar
+
+     pushback system, last and next variables
+
+lop (variable)
+    Type: scalar
+
+lval (variable)
+    Type: record
+
+llgth (variable)
+    Type: integer
+
+lid (variable)
+    Type: array
+
+lkk (variable)
+    Type: subrange
+
+nsy (variable)
+    Type: scalar
+
+nop (variable)
+    Type: scalar
+
+nval (variable)
+    Type: record
+
+nlgth (variable)
+    Type: integer
+
+nid (variable)
+    Type: array
+
+nkk (variable)
+    Type: subrange
+
+nvalid (variable)
+    Type: boolean
+
+chcnt (variable)
+    Type: integer
+
+
+ic (variable)
+    Type: subrange
+
+    character counter
+
+gc (variable)
+    Type: subrange
+
+lc (variable)
+    Type: subrange
+
+    data location and instruction counter
+
+lcs (variable)
+    Type: subrange
+
+dp (variable)
+    Type: boolean
+
+
+list (variable)
+    Type: boolean
+
+    declaration part
+
+dolineinfo (variable)
+    Type: boolean
+
+     -- l: source program listing
+
+prcode (variable)
+    Type: boolean
+
+     -- z: Output line information on listing
+
+prtables (variable)
+    Type: boolean
+
+     -- c: print symbolic code
+
+chkvar (variable)
+    Type: boolean
+
+     -- t: displaying ident and struct tables
+
+debug (variable)
+    Type: boolean
+
+     -- v: check variant records
+
+chkref (variable)
+    Type: boolean
+
+     -- d: Debug checks
+
+chkudtc (variable)
+    Type: boolean
+
+     -- r: Reference checks
+
+chkudtf (variable)
+    Type: boolean
+
+iso7185 (variable)
+    Type: boolean
+
+     -- u: Check undefined tagfields, candidate
+                                             and final
+
+dodmplex (variable)
+    Type: boolean
+
+     -- s: restrict to iso7185 language
+
+doprtryc (variable)
+    Type: boolean
+
+     -- x: dump lexical
+
+doprtlab (variable)
+    Type: boolean
+
+     -- z: dump recycling tracker counts
+
+dodmpdsp (variable)
+    Type: boolean
+
+     -- b: print labels
+
+chkvbk (variable)
+    Type: boolean
+
+     -- y: dump the display
+
+experr (variable)
+    Type: boolean
+
+     -- i: check VAR block violations
+
+parmptr (variable)
+    Type: pointer
+
+
+intptr (variable)
+    Type: pointer
+
+crdptr (variable)
+    Type: pointer
+
+realptr (variable)
+    Type: pointer
+
+charptr (variable)
+    Type: pointer
+
+boolptr (variable)
+    Type: pointer
+
+nilptr (variable)
+    Type: pointer
+
+textptr (variable)
+    Type: pointer
+
+exceptptr (variable)
+    Type: pointer
+
+stringptr (variable)
+    Type: pointer
+
+pstringptr (variable)
+    Type: pointer
+
+byteptr (variable)
+    Type: pointer
+
+vectorptr (variable)
+    Type: pointer
+
+matrixptr (variable)
+    Type: pointer
+
+abyteptr (variable)
+    Type: pointer
+
+scharptr (variable)
+    Type: pointer
+
+utypptr (variable)
+    Type: pointer
+
+    pointers to entries of standard ids
+
+ucstptr (variable)
+    Type: pointer
+
+uvarptr (variable)
+    Type: pointer
+
+ufldptr (variable)
+    Type: pointer
+
+uprcptr (variable)
+    Type: pointer
+
+ufctptr (variable)
+    Type: pointer
+
+fwptr (variable)
+    Type: pointer
+
+    pointers to entries for undeclared ids
+
+outputptr (variable)
+    Type: pointer
+
+    head of chain of forw decl type ids
+
+inputptr (variable)
+    Type: pointer
+
+prdptr (variable)
+    Type: pointer
+
+prrptr (variable)
+    Type: pointer
+
+errorptr (variable)
+    Type: pointer
+
+listptr (variable)
+    Type: pointer
+
+commandptr (variable)
+    Type: pointer
+
+usclrptr (variable)
+    Type: pointer
+
+     pointers to default files
+
+fextfilep (variable)
+    Type: pointer
+
+     used to satisfy broken record tag fields
+
+wthstk (variable)
+    Type: pointer
+
+    head of chain of external files
+
+level (variable)
+    Type: subrange
+
+
+disx (variable)
+    Type: subrange
+
+    current static level
+
+top (variable)
+    Type: subrange
+
+    level of last id searched by searchid
+
+ptop (variable)
+    Type: subrange
+
+    top of display
+
+display (variable)
+    Type: array
+
+     top of pile
+
+pile (variable)
+    Type: array
+
+    where:   means:
+
+errinx (variable)
+    Type: subrange
+
+
+errlist (variable)
+    Type: array
+
+    nr of errors in current source line
+
+gattr (variable)
+    Type: record
+
+
+constbegsys (variable)
+    Type: set
+
+
+simptypebegsys (variable)
+    Type: set
+
+typebegsys (variable)
+    Type: set
+
+blockbegsys (variable)
+    Type: set
+
+selectsys (variable)
+    Type: set
+
+facbegsys (variable)
+    Type: set
+
+statbegsys (variable)
+    Type: set
+
+typedels (variable)
+    Type: set
+
+pfbegsys (variable)
+    Type: set
+
+chartp (variable)
+    Type: array
+
+rw (variable)
+    Type: array
+
+rsy (variable)
+    Type: array
+
+    nr. of res. words
+
+ssy (variable)
+    Type: array
+
+    nr. of res. words
+
+rop (variable)
+    Type: array
+
+sop (variable)
+    Type: array
+
+    nr. of res. words
+
+na (variable)
+    Type: array
+
+mn (variable)
+    Type: array
+
+sna (variable)
+    Type: array
+
+cdx (variable)
+    Type: array
+
+cdxs (variable)
+    Type: array
+
+pdx (variable)
+    Type: array
+
+ordint (variable)
+    Type: array
+
+intlabel (variable)
+    Type: integer
+
+mxint10 (variable)
+    Type: integer
+
+maxpow10 (variable)
+    Type: integer
+
+entname (variable)
+    Type: integer
+
+errtbl (variable)
+    Type: array
+
+errltb (variable)
+    Type: array
+
+     error occurence tracking
+
+toterr (variable)
+    Type: integer
+
+     error line tracking
+
+topnew (variable)
+    Type: integer
+
+     total errors in program
+
+topmin (variable)
+    Type: integer
+
+cstptr (variable)
+    Type: array
+
+cstptrix (variable)
+    Type: subrange
+
+curmod (variable)
+    Type: scalar
+
+    allows referencing of noninteger constants by an index
+          (instead of a pointer), which can be stored in the p2-field
+          of the instruction record until writeout.
+          --> procedure load, procedure writeout
+
+nammod (variable)
+    Type: pointer
+
+     type of current module
+
+incstk (variable)
+    Type: pointer
+
+     name of current module
+
+inclst (variable)
+    Type: pointer
+
+     stack of included files
+
+tmplst (variable)
+    Type: pointer
+
+     discard list for includes
+
+tmpfre (variable)
+    Type: pointer
+
+     list of active temps
+
+strcnt (variable)
+    Type: integer
+
+     Recycling tracking counters, used to check for new/dispose mismatches.
+
+cspcnt (variable)
+    Type: integer
+
+     strings
+
+stpcnt (variable)
+    Type: integer
+
+     constants
+
+ctpcnt (variable)
+    Type: integer
+
+     structures
+
+lbpcnt (variable)
+    Type: integer
+
+     identifiers
+
+filcnt (variable)
+    Type: integer
+
+     label counts
+
+cipcnt (variable)
+    Type: integer
+
+     file tracking counts
+
+ttpcnt (variable)
+    Type: integer
+
+     case entry tracking counts
+
+wtpcnt (variable)
+    Type: integer
+
+     tag tracking entry counts
+
+ctpsnm (variable)
+    Type: integer
+
+     serial numbers to label structure and identifier entries for dumps
+
+stpsnm (variable)
+    Type: integer
+
+breakflag (variable)
+    Type: boolean
+
+f (variable)
+    Type: boolean
+
+     user break signaled
+
+i (variable)
+    Type: subrange
+
+     flag for if error number list entries were printed
+
+oi (variable)
+    Type: subrange
+
+     index for error number tracking array
+
+oni (variable)
+    Type: subrange
+
+ep (variable)
+    Type: pointer
+
+epl (variable)
+    Type: pointer
+
+srcfil (variable)
+    Type: array
+
+     error line pointers
+
+desfil (variable)
+    Type: array
+
+     name of input source file
+
+errfil (variable)
+    Type: array
+
+     name of output destination file
+
+p (variable)
+    Type: array
+
+     name of error output file
+
+n (variable)
+    Type: array
+
+e (variable)
+    Type: array
+
+errf (variable)
+    Type: text
+
+     filename components
+
+errfopn (variable)
+    Type: boolean
+
+     error output file
+
+errfval (variable)
+    Type: boolean
+
+     error file is open
+
+fp (variable)
+    Type: pointer
+
+     error file was specified
+
+ii (variable)
+    Type: subrange
+
+cmdhan (variable)
+    Type: subrange
+
+     command line parsing
+
+option (variable)
+    Type: array
+
+     parse handle for command line
+
+options (variable)
+    Type: array
+
+     option array
+
+opts (variable)
+    Type: array
+
+     option was set array
+
+optsl (variable)
+    Type: array
+
+     short option names
+
+incbuf (variable)
+    Type: array
+
+     long option names
+
+getstr (procedure)
+
+     get string quanta
+
+putstrs (procedure)
+
+     recycle string quanta list
+
+getlab (procedure)
+
+     get label entry
+
+putlab (procedure)
+
+     recycle label entry
+
+pshcst (procedure)
+
+     push constant entry to list
+
+putcst (procedure)
+
+     recycle constant entry
+
+pshstc (procedure)
+
+     push structure entry to list
+
+putstc (procedure)
+
+     recycle structure entry
+
+ininam (procedure)
+
+     initialize and register identifier entry
+
+putparlst (procedure)
+
+     recycle parameter list
+
+putnam (procedure)
+
+     recycle identifier entry
+
+putnams (procedure)
+
+     recycle identifier tree
+
+inidsp (procedure)
+
+     initialize display record
+
+putdsp (procedure)
+
+     scrub display level
+
+putsub (procedure)
+
+     release substructure
+
+putdsps (procedure)
+
+     scrub all display levels until given
+
+putpile (procedure)
+
+     scrub the pile
+
+getfil (procedure)
+
+     get external file entry
+
+putfil (procedure)
+
+     recycle external file entry
+
+getcas (procedure)
+
+     get case tracking entry
+
+putcas (procedure)
+
+     recycle case tracking entry
+
+gettag (procedure)
+
+     get tag tracking entry
+
+puttag (procedure)
+
+     recycle tag tracking entry
+
+pshwth (procedure)
+
+     push to with stack
+
+popwth (procedure)
+
+     pop from with stack
+
+strequri (function)
+
+     find reserved word string equal to id string
+
+writev (procedure)
+
+     write variable length id string to file
+
+lenpv (function)
+
+     find padded length of variable length id string
+
+writevp (procedure)
+
+     write padded string to file
+
+strassvf (procedure)
+
+     assign identifier fixed to variable length string, including allocation
+
+strassvr (procedure)
+
+     assign reserved word fixed to variable length string, including allocation
+
+strassve (procedure)
+
+     assign exception word fixed to variable length string, including allocation
+
+strassvc (procedure)
+
+     assign constant string fixed to variable length string, including allocation
+
+strassfv (procedure)
+
+     assign variable length string to fixed identifier
+
+strequvv (function)
+
+     compare variable length id strings
+
+strltnvv (function)
+
+     compare variable length id strings, a < b
+
+strequvf (function)
+
+     compare variable length id string to fixed
+
+strltnvf (function)
+
+     compare variable length id string to fixed, a < b
+
+strchr (function)
+
+     get character from variable length string
+
+strchrass (procedure)
+
+     put character to variable length string
+
+getsqt (procedure)
+
+strcatvr (procedure)
+
+     concatenate reserved word fixed to variable length string, including
+        allocation
+
+bnot (function)
+
+    -------------------------------------------------------------------------
+
+bor (function)
+
+band (function)
+
+bxor (function)
+
+errore (procedure)
+
+     support I/O errors from extension library
+
+errorv (procedure)
+
+prtdsp (procedure)
+
+     dump the display
+
+prtlnk (procedure)
+
+incact (function)
+
+     this block of functions wraps source reads
+
+fileeof (function)
+
+fileeoln (function)
+
+wrtsrclin (procedure)
+
+readline (procedure)
+
+eofinp (function)
+
+eol (function)
+
+ch (function)
+
+bufnxt (function)
+
+readinp (procedure)
+
+errmsg (procedure)
+
+
+endofline (procedure)
+
+
+outline (procedure)
+
+     output lines passed to intermediate
+
+markline (procedure)
+
+     output line marker in intermediate file
+
+inpriv (function)
+
+     check in private section
+
+error (procedure)
+
+chkstd (procedure)
+
+     chkstd: called whenever a non-ISO7185 construct is being processed
+
+prtsym (procedure)
+
+insymbol (procedure)
+
+    read next basic symbol of source program and return its
+        description in the global variables sy, op, id, val and lgth
+
+nextch (procedure)
+
+options (procedure)
+
+switch (procedure)
+
+pwrten (function)
+
+    options
+
+plcchr (procedure)
+
+     find next power
+
+escchr (procedure)
+
+match (function)
+
+     escape string
+
+pushback (procedure)
+
+    insymbol
+
+prtclass (procedure)
+
+     set there is a next tolken
+
+prtform (procedure)
+
+prtfpat (procedure)
+
+prtlvlsym (procedure)
+
+prtsyms (procedure)
+
+enterid (procedure)
+
+    enter id pointed at by fcp into the name-table,
+         which on each declaration level is organised as
+         an unbalanced binary tree
+
+searchsection (procedure)
+
+    to find record fields and forward declared procedure id's
+         --> procedure proceduredeclaration
+         --> procedure selector
+
+schsecidnenm (procedure)
+
+    searchsection
+
+inclass (function)
+
+searchidnenm (procedure)
+
+    searchidnenm
+
+searchidne (procedure)
+
+    searchidnenm
+
+schsecidne (procedure)
+
+    searchidne
+
+searchid (procedure)
+
+    searchidne
+
+getbounds (procedure)
+
+    assume fsp<>intptr and fsp<>realptr
+
+span (function)
+
+     get span of type
+
+spana (function)
+
+     get span of array index
+
+isbyte (function)
+
+     check structure is byte
+
+basetype (function)
+
+     remove any subrange types
+
+issub (function)
+
+alignquot (function)
+
+     alignment for general memory placement
+
+alignu (procedure)
+
+    alignquot
+
+alignd (procedure)
+
+    align
+
+alignau (procedure)
+
+     align address, upwards
+
+wrtctp (procedure)
+
+    alignau
+
+wrtstp (procedure)
+
+prtstp (procedure)
+
+prtctp (procedure)
+
+    case
+
+printtables (procedure)
+
+    print data structure and name table
+
+marker (procedure)
+
+    mark data structure entries to avoid multiple printout
+
+markstp (procedure)
+
+    mark data structures, prevent cycles
+
+markctp (procedure)
+
+    markstp
+
+followstp (procedure)
+
+    marker
+
+followctp (procedure)
+
+    followstp
+
+chkrefs (procedure)
+
+    printtables
+
+chkext (function)
+
+     check right
+
+chkfix (function)
+
+hasproc (function)
+
+     id contains a procedure in overload list
+
+hasfunc (function)
+
+     id contains a function in overload list
+
+ovrpf (function)
+
+     return override procedure/function from list
+
+genlabel (procedure)
+
+wrttypc (procedure)
+
+     write shorthand type
+
+wrttypsub (procedure)
+
+nxtcti (procedure)
+
+nxtctis (procedure)
+
+wrtchr (procedure)
+
+wrtint (procedure)
+
+wrtrfd (procedure)
+
+wrtvar (procedure)
+
+wrtenm (procedure)
+
+     enums are backwards, so print thus
+
+wrttyp (procedure)
+
+     count characters
+
+digits (function)
+
+prtlabelu (procedure)
+
+prtlabel (procedure)
+
+lenlabel (function)
+
+prtlabelc (procedure)
+
+prtflabel (procedure)
+
+prtfxlabel (procedure)
+
+prtfxlabelc (procedure)
+
+lenflabel (function)
+
+prtflabelc (procedure)
+
+prtpartypc (procedure)
+
+prtpartyp (procedure)
+
+searchlabel (procedure)
+
+newlabel (procedure)
+
+     return found entry or nil
+
+prtlabels (procedure)
+
+     numeric type label
+
+intmsgneol (procedure)
+
+     next in list
+
+intmsg (procedure)
+
+spfmsg (procedure)
+
+intt (function)
+
+     check integer or subrange of
+
+realt (function)
+
+     check real
+
+chart (function)
+
+     the type test for character includes very broad definitions of char,
+        including packed character arrays of 1 length, and even packed character
+        array containers, because they could be length 1
+
+bolt (function)
+
+     check boolean
+
+stringt (function)
+
+arrayt (function)
+
+     check array type, fixed or container
+
+sett (function)
+
+     check set type
+
+ptrt (function)
+
+     check pointer type
+
+simt (function)
+
+     check simple type
+
+ordt (function)
+
+     check ordinal type
+
+filet (function)
+
+     check file type
+
+complext (function)
+
+     check complex pointer
+
+lftjst (procedure)
+
+par1 (procedure)
+
+par2 (procedure)
+
+mesl (procedure)
+
+mes (procedure)
+
+     stack should never go positive
+
+mest (procedure)
+
+mestn (function)
+
+gen0 (procedure)
+
+    mest
+
+gen1s (procedure)
+
+    gen0
+
+gen1 (procedure)
+
+    gen1s
+
+gen2 (procedure)
+
+gentypindicator (procedure)
+
+    gen2
+
+gen0t (procedure)
+
+    typindicator
+
+gen1ts (procedure)
+
+    gen0t
+
+gen1t (procedure)
+
+    gen1ts
+
+gen2t (procedure)
+
+genujpxjpcal (procedure)
+
+    gen2t
+
+gencjp (procedure)
+
+    genujpxjpcal
+
+genipj (procedure)
+
+    gencjp
+
+gencupcuf (procedure)
+
+    genipj
+
+gencipcif (procedure)
+
+    cuf
+
+gencuvcvf (procedure)
+
+    gen0
+
+genlpa (procedure)
+
+    cvf
+
+gensuv (procedure)
+
+    genlpa
+
+genctaivtcvb (procedure)
+
+    suv
+
+gensfr (procedure)
+
+    genctaivtcvb
+
+genmst (procedure)
+
+    sfr
+
+gensca (procedure)
+
+    mst
+
+filecomponent (function)
+
+     check structure is, or contains, a file
+
+filecomponentre (function)
+
+     tour identifier tree
+
+comptypes (function)
+
+    decide whether structures pointed at by fsp1 and fsp2 are compatible
+
+cmppar (function)
+
+     compare two parameters
+
+cmpparlst (function)
+
+     compare parameter lists
+
+skip (procedure)
+
+    skip input string until relevant symbol found
+
+arrtmp (procedure)
+
+     output fixed array template
+
+constfactor (procedure)
+
+     count levels
+
+constterm (procedure)
+
+    constfactor
+
+constexpr (procedure)
+
+    constterm
+
+checkbnds (procedure)
+
+    constexpr
+
+containers (function)
+
+     find number of containers
+
+containerbase (function)
+
+     find base size of container or array series
+
+load (procedure)
+
+gettmp (procedure)
+
+    load
+
+puttmp (procedure)
+
+        writeln; writeln('gettmp: address: ', a:1, ' occu: ', fp^.occu, ' auto: ', fp^.auto)
+
+puttmps (procedure)
+
+        writeln; writeln('puttmp: address: ', a:1);
+
+clrtmp (procedure)
+
+loadaddress (procedure)
+
+store (procedure)
+
+    loadaddress
+
+containerop (procedure)
+
+     rationalize binary container operator
+
+parnum (function)
+
+     complex compare
+
+partype (function)
+
+cmptyp (function)
+
+     compare parameter type to actual type
+
+ischrcst (function)
+
+fndopr1 (procedure)
+
+     find matching uary operator overload
+
+fndopr2 (procedure)
+
+     find matching binary operator overload
+
+isopr (function)
+
+     check any overloads exist for given operator
+
+taggedrec (function)
+
+selector (procedure)
+
+schblk (function)
+
+checkvrnt (procedure)
+
+fixpar (procedure)
+
+    selector
+
+call (procedure)
+
+    dmp
+
+variable (procedure)
+
+chkhdr (procedure)
+
+    variable
+
+getputresetrewriteprocedure (procedure)
+
+     test for file
+
+pageprocedure (procedure)
+
+    getputresetrewrite
+
+readprocedure (procedure)
+
+    page
+
+writeprocedure (procedure)
+
+    read
+
+packprocedure (procedure)
+
+    write
+
+unpackprocedure (procedure)
+
+    pack
+
+newdisposeprocedure (procedure)
+
+    unpack
+
+absfunction (procedure)
+
+    newdisposeprocedure
+
+sqrfunction (procedure)
+
+    abs
+
+truncfunction (procedure)
+
+    sqr
+
+roundfunction (procedure)
+
+    trunc
+
+oddfunction (procedure)
+
+    round
+
+ordfunction (procedure)
+
+    odd
+
+chrfunction (procedure)
+
+    ord
+
+predsuccfunction (procedure)
+
+    chr
+
+eofeolnfunction (procedure)
+
+    predsucc
+
+assignprocedure (procedure)
+
+    eof
+
+closeupdateappendprocedure (procedure)
+
+    assb
+
+positionprocedure (procedure)
+
+    appb
+
+deleteprocedure (procedure)
+
+    pos
+
+changeprocedure (procedure)
+
+    del
+
+lengthlocationfunction (procedure)
+
+    del
+
+existsfunction (procedure)
+
+    loc
+
+haltprocedure (procedure)
+
+    exs
+
+assertprocedure (procedure)
+
+    hlt
+
+throwprocedure (procedure)
+
+    ast
+
+referprocedure (procedure)
+
+    thw
+
+seterrprocedure (procedure)
+
+maxfunction (procedure)
+
+    sete
+
+callnonstandard (procedure)
+
+    max
+
+nxtprc (procedure)
+
+     This overload does not match, sequence to the next, same parameter.
+          Set sets fcp -> new proc/func, nxt -> next parameter in new list.
+          fcp = nil, nxt = nil for no next found.
+
+cmplst (function)
+
+     compare parameter lists until current
+
+psize (function)
+
+    call
+
+callop1 (procedure)
+
+     call operator type with 1 parameter
+
+callop2 (procedure)
+
+     call operator type with 2 parameters
+
+fungible (function)
+
+     check actual type can be coerced into formal
+
+expression (procedure)
+
+    cpr
+
+simpleexpression (procedure)
+
+term (procedure)
+
+factor (procedure)
+
+declare (procedure)
+
+    expression
+
+resolvep (procedure)
+
+     resolve all pointer references in the forward list
+
+typ (procedure)
+
+simpletype (procedure)
+
+fieldlist (procedure)
+
+    simpletype
+
+ordertag (procedure)
+
+labeldeclaration (procedure)
+
+    typ
+
+constdeclaration (procedure)
+
+     labeldeclaration
+
+typedeclaration (procedure)
+
+    constdeclaration
+
+wrtsym (procedure)
+
+    typedeclaration
+
+vardeclaration (procedure)
+
+     fixed address is determined at gentime
+
+fixeddeclaration (procedure)
+
+    vardeclaration
+
+fixeditem (procedure)
+
+procdeclaration (procedure)
+
+    fixeddeclaration
+
+pushlvl (procedure)
+
+parameterlist (procedure)
+
+     use the defining point status of the parent block
+
+joinlists (procedure)
+
+compparamovl (function)
+
+     for overloading, same as strict cmpparlst(), but includes read = integer
+          and string = char
+
+conpar (function)
+
+     check parameter lists converge with different modes
+
+comp (function)
+
+     find bidirectionally assignment compatible
+
+chkovlpar (procedure)
+
+     check overload proc/funcs against each other, first list is group
+
+fndovlgrp (function)
+
+     find congruent overload group
+
+parmspc (function)
+
+     find space occupied by parameter list
+
+parmoff (procedure)
+
+     offset addresses in parameter list
+
+parmrg (procedure)
+
+     merge names in parameter list with current display
+
+body (procedure)
+
+    declare
+
+addlvl (procedure)
+
+     add statement level
+
+sublvl (procedure)
+
+     remove statement level
+
+genfjp (procedure)
+
+     link next
+
+fndactovl (function)
+
+     find active overload for name entry
+
+statement (procedure)
+
+assignment (procedure)
+
+gotostatement (procedure)
+
+    assignment
+
+compoundstatement (procedure)
+
+    gotostatement
+
+ifstatement (procedure)
+
+    compoundstatemenet
+
+casestatement (procedure)
+
+    ifstatement
+
+casecount (function)
+
+     case selector temp
+
+repeatstatement (procedure)
+
+    casestatement
+
+whilestatement (procedure)
+
+    repeatstatement
+
+forstatement (procedure)
+
+    whilestatement
+
+withstatement (procedure)
+
+    forstatement
+
+trystatement (procedure)
+
+    withstatement
+
+externalheader (procedure)
+
+     validate and start external header files
+
+initvirt (procedure)
+
+    aefb
+
+schvirt (procedure)
+
+openinput (procedure)
+
+    body
+
+err (procedure)
+
+     for any error, back out the include level
+
+nxtinc (procedure)
+
+insertuse (procedure)
+
+     insert uses to joins/main level
+
+closeinput (procedure)
+
+     have not previously parsed this module
+
+putinp (procedure)
+
+     put on discard list
+
+cancelfwd (procedure)
+
+usesjoins (procedure)
+
+schnam (function)
+
+searchext (function)
+
+     put back module name
+
+modulep (procedure)
+
+stdnames (procedure)
+
+    modulep
+
+enterstdtypes (procedure)
+
+    stdnames
+
+entstdnames (procedure)
+
+    enterstdtypes
+
+entstdprocfunc (procedure)
+
+entstdtyp (procedure)
+
+entstdintcst (procedure)
+
+entstdrlcst (procedure)
+
+entstdhdr (procedure)
+
+entstdexp (procedure)
+
+     files are global now
+
+enterundecl (procedure)
+
+    entstdnames
+
+exitundecl (procedure)
+
+     tear down storage allocations from enterundecl
+
+paropt (procedure)
+
+     parse command line options
+
+setflg (procedure)
+
+     set true/false flag
+
+plcopt (procedure)
+
+     place options in flags
+
+initscalars (procedure)
+
+     these are backend options
+
+initsets (procedure)
+
+    initscalars
+
+inittables (procedure)
+
+    initsets
+
+reswords (procedure)
+
+symbols (procedure)
+
+    reswords
+
+rators (procedure)
+
+    symbols
+
+procmnemonics (procedure)
+
+    rators
+
+instrmnemonics (procedure)
+
+    procmnemonics
+
+chartypes (procedure)
+
+    instrmnemonics
+
+initdx (procedure)
+
+======================================================================
+CROSS-REFERENCE
+======================================================================
+
+displimit: 9822 9231 7976 7537 1288 380
+maxlevel: 7992 7975 7968 247
+strglgth: 2174 2172 2171 2120 1940 289 237
+fileal: 2567(alignquot)
+parmal: 2563(alignquot)
+parmsize: 10040(enterstdtypes) 4928
+recal: 2570(alignquot)
+maxaddr: 8779 8778 5061 5060 247 247 247 247
+maxsp: 587 584
+maxins: 585 583 424
+maxids: 10592(initscalars) 2028 2026 1139(strltnvf) 1137(strltnvf)
+        1124(strequvf) 1082(strassfv) 1016(strassvf) 973(strequri) 471 469 465
+        286 172
+maxstd: 423
+maxres: 10705 2039 580 578 577
+reslen: 2038 1185(strcatvr) 1033(strassvr) 973(strequri) 972(strequri) 287
+explen: 1050(strassve) 288
+maxrld: 290
+varsqt: 3672(gen1s) 1174 1166(strchrass) 1151(strchr) 1140(strltnvf)
+        1127(strequvf) 1108(strltnvv) 1095(strequvv) 1084(strassfv)
+        1076(strassvc) 1069(strassvc) 1061(strassve) 1054(strassve)
+        1044(strassvr) 1037(strassvr) 1027(strassvf) 1020(strassvf)
+        1006(writevp) 993(lenpv) 984(writev) 223
+prtlln: 7052(declare)
+minocc: 9012
+varmax: 7348 7335 7307 7250 252 251
+cstoccmax: 9482 6721(expression) 4580(loadaddress) 4476(load) 597 596
+cixmax: 9008
+fillen: 10398(paropt) 9787(usesjoins) 9785(usesjoins) 9784(usesjoins)
+        9783(usesjoins) 9781(usesjoins) 9775(usesjoins) 9726 9723 9721 9697 9693
+        9679(openinput) 633 633 633 632 631 630 292
+extsrc: 9710
+maxftl: 11209 10604(initscalars) 10603(initscalars) 627 593 592 561
+parfld: 4046(gensca) 4034(genmst) 4022(gensfr) 4009(genctaivtcvb) 3994(gensuv)
+        3979(genlpa) 3964(gencuvcvf) 3939(gencipcif) 3914(gencupcuf)
+        3880(genipj) 3868(gencjp) 3855(genujpxjpcal) 3829(gen1ts) 3815(gen0t)
+        3774(gen2) 3774(gen2) 3764(gen2) 3749(gen2) 3749(gen2) 3728(gen2)
+        3694(gen1s) 3650(gen0) 3602(par2) 3596(par1)
+intdeff: 5506
+reldeff: 5526 5523
+chrdeff: 5532
+boldeff: 5537
+maxlin: 11092 10489 10485 10484 10481 9696 9693 1340(readline) 1335(readline)
+        300 293
+maxopt: 11167 10553(initscalars) 10551(initscalars) 10527(plcopt) 10525(plcopt)
+        1881 1845 646 645 644 643 628
+optlen: 11171 1877 1864 1854 295
+CommandLineTooLong: 1257(errore)
+FunctionNotImplemented: 1258(errore)
+FileDeleteFail: 1255(errore)
+FileNameChangeFail: 1256(errore)
+symbol: 9773(usesjoins) 9771(usesjoins) 9109 7967 7033(declare) 6488(expression)
+        1776(prtsym) 579 578 470 468 460 215
+operatort: 7989 7971 6491(expression) 6488(expression) 6488(expression)
+           6483(expression) 4765(isopr) 4738(fndopr2) 4718(fndopr1)
+           4355(constexpr) 4303(constterm) 830(putdsp) 811(inidsp) 581 580 470
+           468 461 390
+setofsys: 9844(modulep) 9768(modulep) 8703 8650(body) 7988 7806 7176 7065 7060
+          7032(declare) 7030(body) 6493(expression) 6490(expression)
+          6487(expression) 6482(expression) 5141(call) 5138(call) 4784(selector)
+          4758(expression) 4354(constexpr) 4302(constterm) 4217(constfactor)
+          4215(constexpr) 4182(skip) 575
+chtp: 576
+strvsp: 9772(usesjoins) 3655(gen1s) 1183(strcatvr) 1162(strchrass)
+        1161(strchrass) 1146(strchr) 1133(strltnvf) 1120(strequvf)
+        1103(strltnvv) 1090(strequvv) 1080(strassfv) 1066(strassvc)
+        1065(strassvc) 1049(strassve) 1048(strassve) 1032(strassvr)
+        1031(strassvr) 1015(strassvf) 1014(strassvf) 1002(writevp) 989(lenpv)
+        978(writev) 664(putstrs) 663(putstrs) 656(getstr) 603 388 371 307 298
+        237 224
+strvs:
+setty: 6495(expression) 236
+cstclass: 234
+csp: 10114 9446 6494(expression) 4355(constexpr) 4303(constterm)
+     4218(constfactor) 1823(insymbol) 830(putdsp) 696(putcst) 687(pshcst) 596
+     383 242 233
+constant:
+valu: 8909 7807 7624 7179 7067 7063 5670 4355(constexpr) 4354(constexpr)
+      4303(constterm) 4302(constterm) 4218(constfactor) 4217(constfactor)
+      4215(constexpr) 470 468 462 350 312 276 266
+levrange: 4027(genmst) 543 392 372 357 334 313
+addrrange: 9772(usesjoins) 8708 8329 8305 8304 7993 7991 7804 7700 7649 7179
+           7065 7062 7060 6483(expression) 6427(callop2) 6426(callop2)
+           6395(callop1) 6395(callop1) 6382(psize) 6381(psize) 6046 6046 5979
+           5957 5922 5908 5853 5670 5412 5403 5214 4785(selector)
+           4646(containerop) 4625(store) 4572(loadaddress) 4516(gettmp)
+           3946(gencuvcvf) 3922(gencipcif) 3886(gencupcuf) 2595(alignau)
+           2595(alignau) 2576(alignu) 477 435 394 393 358 357 354 353 330 327
+           326 325 323 321 321 319 313 261
+stkoff: 9277 9221 9114 9113 8912 8653(body) 7970 4572(loadaddress) 4537(puttmp)
+        4516(gettmp) 2584(alignd) 478 434
+structform: 2287(prtform) 263
+declkind: 332 264
+varinx: 7180 274
+vartbl:
+vartpt: 273
+stp: 10113 10104 10096 10082(entstdnames) 9112 8909 8250 8229 7990 7968 7807
+     7806 7805 7804 7700 7649 7624 7178 7176 7176 7066 7065 7061 7060
+     6495(expression) 6430(callop2) 6428(callop2) 6396(callop1) 6381(psize) 6045
+     5669 5631 5594 5402 5209 5099(fixpar) 4799 4786(selector) 4773(taggedrec)
+     4706(cmptyp) 4699(partype) 4451(containerbase) 4450(containerbase)
+     4440(containers) 4422(checkbnds) 4420(checkbnds) 4355(constexpr)
+     4354(constexpr) 4303(constterm) 4302(constterm) 4218(constfactor)
+     4217(constfactor) 4215(constexpr) 4193(arrtmp) 4192(arrtmp) 4089(comptypes)
+     4087(comptypes) 4055(filecomponent) 4052(comptypes) 4000(genctaivtcvb)
+     3840(gen2t) 3835(gen1t) 3821(gen1ts) 3811(gen0t) 3785(gentypindicator)
+     3617(mest) 3615(mest) 3583(complext) 3576(filet) 3568(ordt) 3561(simt)
+     3554(ptrt) 3547(sett) 3540(arrayt) 3520(stringt) 3512(bolt) 3511(bolt)
+     3493(chart) 3492(chart) 3483(realt) 3474(intt) 3473(intt) 3052(wrttyp) 2981
+     2939(wrttypc) 2937(wrttypc) 2935(wrttypc) 2804 2765 2612(prtstp)
+     2607(wrtstp) 2584(alignd) 2576(alignu) 2552(alignquot) 2539(basetype)
+     2537(basetype) 2537(basetype) 2529(isbyte) 2518(spana) 2511(span)
+     2488(getbounds) 833(putdsp) 832(putdsp) 830(putdsp) 721(putstc) 710(pshstc)
+     529 383 352 348 319 308 275 273 272 271 271 270 269 268 267 266 259
+ctp: 10080(entstdnames) 9760(cancelfwd) 9509 9508 9446 9275 9218 8707 8706 8704
+     8694 8693 8693 8659(body) 8653(body) 8650(body) 8341 8329 8304 8290 8289
+     8289 8267 8247 8228 7995 7990 7988 7973 7968 7807 7804 7700 7674 7649 7624
+     7178 7177 7177 7066 7061 7037(declare) 7030(body) 6494(expression)
+     6491(expression) 6488(expression) 6484(expression) 6425(callop2)
+     6394(callop1) 6055 6053 6045 6044 6008 5157 5142(call) 5138(call) 4799 4798
+     4787(selector) 4785(selector) 4784(selector) 4762(callop2) 4760(callop1)
+     4739(fndopr2) 4738(fndopr2) 4719(fndopr1) 4718(fndopr1) 4699(partype)
+     4691(parnum) 4218(constfactor) 4173(cmpparlst) 4163(cmppar) 4160(cmpparlst)
+     4058(filecomponent) 3985(gensuv) 3945(gencuvcvf) 3921(gencipcif)
+     3885(gencupcuf) 3821(gen1ts) 3654(gen1s) 3150(prtpartyp) 3133(prtpartypc)
+     3132(prtpartypc) 3127(prtflabelc) 3117(lenflabel) 3110(prtfxlabelc)
+     3099(prtfxlabel) 3087(prtflabel) 2991 2967 2916(ovrpf) 2915(ovrpf)
+     2915(ovrpf) 2902(hasfunc) 2889(hasproc) 2883(chkfix) 2873(chkext)
+     2853(chkrefs) 2826 2802 2788 2763(printtables) 2658(prtctp) 2602(wrtctp)
+     2445(searchid) 2444(searchid) 2437(schsecidne) 2437(schsecidne)
+     2430(searchidne) 2417(searchidnenm) 2390(schsecidnenm) 2389(schsecidnenm)
+     2389(schsecidnenm) 2387(schsecidnenm) 2385(schsecidnenm) 2385(schsecidnenm)
+     2370(searchsection) 2370(searchsection) 2342(enterid) 2338(enterid)
+     2319(prtlvlsym) 1274(prtdsp) 798(putnams) 766(putnam) 765(putnam)
+     756(putparlst) 755(putparlst) 752(putnam) 742(ininam) 536 535 532 395 390
+     389 382 348 338 331 330 323 319 317 308 307 275 273 271 265
+structure:
+idclass: 10082(entstdnames) 2273(prtclass) 310 284
+setofids: 2444(searchid) 2437(schsecidne) 2430(searchidne) 2417(searchidnenm)
+          2385(schsecidnenm)
+idkind: 7990 6045 335 313
+idstr: 9446 7971 7037(declare) 1133(strltnvf) 1120(strequvf) 1080(strassfv)
+       1014(strassvf) 968(strequri) 471 469 464 401
+restr: 7971 1183(strcatvr) 1031(strassvr) 968(strequri) 582 577
+expstr: 10137 1048(strassve)
+csstr: 1822(insymbol) 1065(strassvc)
+rlstr:
+keyrng: 10082(entstdnames) 5139(call) 333
+filnam: 9775(usesjoins) 298
+lininx: 10401(paropt) 9678(openinput) 1332(readline) 639 300 294
+linbuf: 647 300
+optinx: 1847 1845 628 296
+optstr: 1845 646 645
+filptr: 9775(usesjoins) 9753(putinp) 9752(putinp) 9740(closeinput) 9704 9703
+        9678(openinput) 638 605 604 329 318 316 301 298 65(list) 64(list) 51
+filrec:
+partyp: 7991 315
+fpattr: 7971 2304(prtfpat) 329
+identifier:
+where: 391
+attrkind: 349
+vaccess: 356
+attr: 9275 9109 8707 6495(expression) 6491(expression) 6488(expression)
+      6483(expression) 6425(callop2) 6028 5853 5631 5594 4799 4785(selector)
+      4762(callop2) 4738(fndopr2) 4712(ischrcst) 4645(containerop) 4624(store)
+      569
+lbp: 8820 8704 8669 8654(body) 7604 3197(prtlabels) 3177(newlabel)
+     3157(searchlabel) 3156(searchlabel) 830(putdsp) 679(putlab) 672(getlab) 382
+     367
+labl:
+disprange: 9218 8820 8694 7992 7970 7066 7061 4788(selector) 4766(isopr)
+           4739(fndopr2) 4719(fndopr1) 3156(searchlabel) 2757(printtables)
+           2445(searchid) 2419(searchidnenm) 2318(prtlvlsym) 888(putpile)
+           874(putdsps) 873(putdsps) 552 549 546 545
+disprec: 829(putdsp) 810(inidsp) 552 549
+extfilep: 9845(modulep) 9837(searchext) 8655(body) 901(putfil) 894(getfil) 537
+          401
+filerec:
+cip: 8913 8909 915(putcas) 908(getcas) 405
+caseinfo:
+ttp: 7183 7182 7181 929(puttag) 922(gettag) 414
+tagtrk:
+wtp: 8821 948(popwth) 937(pshwth) 538 419
+wthtrk:
+stdrng: 10124 10113 10104 10096 10082(entstdnames) 582
+oprange: 4000(genctaivtcvb) 3945(gencuvcvf) 3921(gencipcif) 3885(gencupcuf)
+         3874(genipj) 3861(gencjp) 3849(genujpxjpcal) 3840(gen2t) 3835(gen1t)
+         3821(gen1ts) 3811(gen0t) 3707(gen2) 3702(gen1) 3654(gen1s) 3647(gen0)
+modtyp: 9773(usesjoins) 602
+byte: 427
+bytfil:
+tmpptr: 4562(clrtmp) 4551(puttmps) 4538(puttmp) 4517(gettmp) 607 606 431
+tmpety:
+errptr: 1745(error) 629 593 439
+errlin:
+filext:
+prd: 11301 11154 11117 1347(readline) 1339(readline) 1314(fileeoln)
+     1308(fileeof)
+prr: 11303 11176 11174 11173 11173 11172 11166 11163 11162 11160 11159 11155
+     11136 9967(modulep) 9965(modulep) 9960(modulep) 9959(modulep) 9955(modulep)
+     9954(modulep) 9953(modulep) 9947(modulep) 9946(modulep) 9942(modulep)
+     9877(modulep) 9871(modulep) 9869(modulep) 9867(modulep) 9866(modulep)
+     9865(modulep) 9865(modulep) 9863(modulep) 9862(modulep) 9862(modulep)
+     9860(modulep) 9668 9667 9659 9658 9545 9382 9354 9347 9338 9331 9296 9210
+     9180 9104 9096 9072 9053 9025 8996 8988 8985 8902 8897 8891 8688 8688 8608
+     8607 8582 8579 8577 8577 8576 8575 8574 8574 7956 7954 7951 7891 7884 7883
+     7882 7881 7870 7869 7867 7855 7854 7850 7849 7843 7836 7823 7822 7820 7777
+     7726 7694 7692 7691 7688 7687 7684 7684 7682 7682 7681 7679 7679 7678 7393
+     7392 7390 7388 6476 6418(callop1) 6273 4210(arrtmp) 4208(arrtmp)
+     4205(arrtmp) 4203(arrtmp) 4045(gensca) 4044(gensca) 4044(gensca)
+     4043(gensca) 4042(gensca) 4033(genmst) 4032(genmst) 4031(genmst)
+     4020(gensfr) 4007(genctaivtcvb) 4006(genctaivtcvb) 4006(genctaivtcvb)
+     4004(genctaivtcvb) 3993(gensuv) 3992(gensuv) 3989(gensuv) 3977(genlpa)
+     3961(gencuvcvf) 3959(gencuvcvf) 3958(gencuvcvf) 3957(gencuvcvf)
+     3956(gencuvcvf) 3955(gencuvcvf) 3953(gencuvcvf) 3952(gencuvcvf)
+     3949(gencuvcvf) 3935(gencipcif) 3933(gencipcif) 3932(gencipcif)
+     3931(gencipcif) 3930(gencipcif) 3929(gencipcif) 3927(gencipcif)
+     3925(gencipcif) 3913(gencupcuf) 3910(gencupcuf) 3908(gencupcuf)
+     3907(gencupcuf) 3906(gencupcuf) 3905(gencupcuf) 3904(gencupcuf)
+     3902(gencupcuf) 3897(gencupcuf) 3894(gencupcuf) 3894(gencupcuf)
+     3893(gencupcuf) 3890(gencupcuf) 3879(genipj) 3878(genipj) 3866(gencjp)
+     3865(gencjp) 3853(genujpxjpcal) 3843(gen2t) 3843(gen2t) 3828(gen1ts)
+     3825(gen1ts) 3825(gen1ts) 3814(gen0t) 3806(gentypindicator)
+     3805(gentypindicator) 3804(gentypindicator) 3800(gentypindicator)
+     3799(gentypindicator) 3798(gentypindicator) 3797(gentypindicator)
+     3794(gentypindicator) 3792(gentypindicator) 3790(gentypindicator)
+     3773(gen2) 3771(gen2) 3767(gen2) 3763(gen2) 3761(gen2) 3755(gen2)
+     3752(gen2) 3747(gen2) 3746(gen2) 3743(gen2) 3727(gen2) 3726(gen2)
+     3720(gen2) 3714(gen2) 3711(gen2) 3696(gen1s) 3689(gen1s) 3688(gen1s)
+     3686(gen1s) 3684(gen1s) 3682(gen1s) 3680(gen1s) 3680(gen1s) 3677(gen1s)
+     3671(gen1s) 3670(gen1s) 3667(gen1s) 3660(gen1s) 3658(gen1s) 3650(gen0)
+     3601(par2) 3595(par1) 3590(lftjst) 3468(spfmsg) 3467(spfmsg) 3466(spfmsg)
+     3465(spfmsg) 3464(spfmsg) 3463(spfmsg) 3462(spfmsg) 3461(spfmsg)
+     3460(spfmsg) 3459(spfmsg) 3458(spfmsg) 3457(spfmsg) 3456(spfmsg)
+     3455(spfmsg) 3454(spfmsg) 3453(spfmsg) 3452(spfmsg) 3451(spfmsg)
+     3450(spfmsg) 3449(spfmsg) 3448(spfmsg) 3447(spfmsg) 3446(spfmsg)
+     3445(spfmsg) 3444(spfmsg) 3443(spfmsg) 3442(spfmsg) 3441(spfmsg)
+     3440(spfmsg) 3439(spfmsg) 3438(spfmsg) 3437(spfmsg) 3436(spfmsg)
+     3435(spfmsg) 3434(spfmsg) 3433(spfmsg) 3432(spfmsg) 3431(spfmsg)
+     3430(spfmsg) 3429(spfmsg) 3428(spfmsg) 3427(spfmsg) 3426(spfmsg)
+     3425(spfmsg) 3424(spfmsg) 3423(spfmsg) 3422(spfmsg) 3421(spfmsg)
+     3420(spfmsg) 3419(spfmsg) 3418(spfmsg) 3417(spfmsg) 3416(spfmsg)
+     3415(spfmsg) 3414(spfmsg) 3413(spfmsg) 3412(spfmsg) 3411(spfmsg)
+     3410(spfmsg) 3409(spfmsg) 3408(spfmsg) 3407(spfmsg) 3406(spfmsg)
+     3405(spfmsg) 3404(spfmsg) 3403(spfmsg) 3402(spfmsg) 3401(spfmsg)
+     3400(spfmsg) 3399(spfmsg) 3398(spfmsg) 3397(spfmsg) 3396(spfmsg)
+     3395(spfmsg) 3394(spfmsg) 3393(spfmsg) 3392(spfmsg) 3391(spfmsg)
+     3390(spfmsg) 3389(spfmsg) 3388(spfmsg) 3387(spfmsg) 3386(spfmsg)
+     3385(spfmsg) 3384(spfmsg) 3383(spfmsg) 3382(spfmsg) 3381(spfmsg)
+     3380(spfmsg) 3379(spfmsg) 3378(spfmsg) 3377(spfmsg) 3376(spfmsg)
+     3375(spfmsg) 3374(spfmsg) 3373(spfmsg) 3372(spfmsg) 3371(spfmsg)
+     3370(spfmsg) 3369(spfmsg) 3368(spfmsg) 3367(spfmsg) 3366(spfmsg)
+     3365(spfmsg) 3364(spfmsg) 3363(spfmsg) 3362(spfmsg) 3361(spfmsg)
+     3360(spfmsg) 3359(spfmsg) 3358(spfmsg) 3352(intmsg) 3344(intmsgneol)
+     3343(intmsgneol) 3342(intmsgneol) 3341(intmsgneol) 3340(intmsgneol)
+     3339(intmsgneol) 3338(intmsgneol) 3337(intmsgneol) 3336(intmsgneol)
+     3335(intmsgneol) 3334(intmsgneol) 3333(intmsgneol) 3332(intmsgneol)
+     3331(intmsgneol) 3330(intmsgneol) 3329(intmsgneol) 3328(intmsgneol)
+     3327(intmsgneol) 3326(intmsgneol) 3325(intmsgneol) 3324(intmsgneol)
+     3323(intmsgneol) 3322(intmsgneol) 3321(intmsgneol) 3320(intmsgneol)
+     3319(intmsgneol) 3318(intmsgneol) 3317(intmsgneol) 3316(intmsgneol)
+     3315(intmsgneol) 3314(intmsgneol) 3313(intmsgneol) 3312(intmsgneol)
+     3311(intmsgneol) 3310(intmsgneol) 3309(intmsgneol) 3308(intmsgneol)
+     3307(intmsgneol) 3306(intmsgneol) 3305(intmsgneol) 3304(intmsgneol)
+     3303(intmsgneol) 3302(intmsgneol) 3301(intmsgneol) 3300(intmsgneol)
+     3299(intmsgneol) 3298(intmsgneol) 3297(intmsgneol) 3296(intmsgneol)
+     3295(intmsgneol) 3294(intmsgneol) 3293(intmsgneol) 3292(intmsgneol)
+     3291(intmsgneol) 3290(intmsgneol) 3289(intmsgneol) 3288(intmsgneol)
+     3287(intmsgneol) 3286(intmsgneol) 3285(intmsgneol) 3284(intmsgneol)
+     3283(intmsgneol) 3282(intmsgneol) 3281(intmsgneol) 3280(intmsgneol)
+     3279(intmsgneol) 3278(intmsgneol) 3277(intmsgneol) 3276(intmsgneol)
+     3275(intmsgneol) 3274(intmsgneol) 3273(intmsgneol) 3272(intmsgneol)
+     3271(intmsgneol) 3270(intmsgneol) 3269(intmsgneol) 3268(intmsgneol)
+     3267(intmsgneol) 3266(intmsgneol) 3265(intmsgneol) 3264(intmsgneol)
+     3263(intmsgneol) 3262(intmsgneol) 3261(intmsgneol) 3260(intmsgneol)
+     3259(intmsgneol) 3258(intmsgneol) 3257(intmsgneol) 3256(intmsgneol)
+     3255(intmsgneol) 3254(intmsgneol) 3253(intmsgneol) 3252(intmsgneol)
+     3251(intmsgneol) 3250(intmsgneol) 3249(intmsgneol) 3248(intmsgneol)
+     3247(intmsgneol) 3246(intmsgneol) 3245(intmsgneol) 3244(intmsgneol)
+     3243(intmsgneol) 3242(intmsgneol) 3241(intmsgneol) 3240(intmsgneol)
+     3239(intmsgneol) 3238(intmsgneol) 3237(intmsgneol) 3236(intmsgneol)
+     3235(intmsgneol) 3234(intmsgneol) 3233(intmsgneol) 3232(intmsgneol)
+     3231(intmsgneol) 3230(intmsgneol) 3229(intmsgneol) 3228(intmsgneol)
+     3227(intmsgneol) 3226(intmsgneol) 3225(intmsgneol) 3224(intmsgneol)
+     3223(intmsgneol) 3222(intmsgneol) 3221(intmsgneol) 3220(intmsgneol)
+     3219(intmsgneol) 3218(intmsgneol) 3216(intmsgneol) 3144(prtpartypc)
+     3143(prtpartypc) 3141(prtpartypc) 3141(prtpartypc) 3139(prtpartypc)
+     3139(prtpartypc) 3106(prtfxlabel) 3105(prtfxlabel) 3104(prtfxlabel)
+     3103(prtfxlabel) 3102(prtfxlabel) 3095(prtflabel) 3094(prtflabel)
+     3093(prtflabel) 3092(prtflabel) 3091(prtflabel) 3090(prtflabel)
+     3069(prtlabelu) 3069(prtlabelu) 3069(prtlabelu) 1866 1865 1863 1856 1855
+     1853 1735(markline) 1727(outline) 1354(readline) 1353(readline)
+prdval: 11110 11109 11109 11108 11106
+prrval: 11155 11139 11133 11131 11126 11126 11125 11123 1886
+prdopn: 11301 11154 11063
+prropn: 11302 11155 11064
+sy: 11181 9963(modulep) 9937(modulep) 9935(modulep) 9933(modulep) 9929(modulep)
+    9928(modulep) 9923(modulep) 9921(modulep) 9919(modulep) 9910(modulep)
+    9907(modulep) 9892(modulep) 9888(modulep) 9887(modulep) 9856(modulep)
+    9854(modulep) 9854(modulep) 9853(modulep) 9833 9831 9830 9798 9795 9620 9608
+    9607 9604 9438 9435 9404 9398 9395 9393 9390 9367 9365 9361 9361 9349 9341
+    9328 9324 9303 9300 9299 9299 9291 9290 9286 9285 9284 9259 9256 9224 9193
+    9163 9162 9148 9122 9099 9086 9084 9083 9079 9078 9077 9065 8994 8984 8981
+    8978 8971 8968 8941 8935 8931 8889 8885 8877 8874 8873 8859 8830 8825 8823
+    8823 8711 8646 8644 8642 8641 8639 8638 8636 8634 8632 8630 8628 8622 8599
+    8596 8593 8494 8493 8489 8488 8487 8487 8485 8467 8465 8377 8376 8371 8368
+    8363 8361 8361 8361 8196 8194 8190 8188 8181 8144 8142 8139 8136 8120 8115
+    8112 8112 8105 8104 8103 8094 8084 8082 8080 8056 8053 8047 8024 8021 8019
+    8017 8014 8012 7964 7964 7960 7958 7948 7942 7940 7930 7921 7917 7915 7905
+    7900 7896 7894 7889 7875 7814 7799 7799 7795 7793 7754 7747 7745 7741 7737
+    7734 7721 7707 7666 7664 7660 7653 7651 7641 7639 7635 7628 7626 7620 7617
+    7615 7612 7610 7609 7608 7608 7596 7584 7582 7561 7559 7556 7534 7508 7506
+    7503 7482 7479 7457 7449 7448 7446 7441 7439 7424 7418 7416 7414 7412 7375
+    7369 7367 7355 7354 7351 7313 7310 7300 7271 7269 7255 7245 7237 7235 7224
+    7221 7218 7204 7201 7199 7170 7148 7122 7106 7099 7097 7095 7083 7073 7071
+    7069 6907 6851 6831 6830 6753 6746(expression) 6713(expression)
+    6710(expression) 6632(expression) 6621(expression) 6600(expression)
+    6542(expression) 6539(expression) 6538(expression) 6509(expression)
+    6509(expression) 6507(expression) 6504(expression) 6503(expression)
+    6501(expression) 6497(expression) 6375 6357 6351 6326 6255 6252 6251 6159
+    6138 6111 6098 6040 6035 6030 6010 5984 5969 5959 5952 5944 5931 5900 5858
+    5834 5832 5716 5690 5653 5639 5617 5607 5581 5573 5497 5487 5483 5481 5477
+    5476 5475 5436 5434 5429 5414 5389 5382 5379 5283 5281 5279 5278 5277 5247
+    5245 5241 5236 5223 5221 5200 5195 5159 5144(call) 5094 5013 5004 5000 4999
+    4939 4937 4935 4371(constexpr) 4357(constexpr) 4306(constterm)
+    4296(constfactor) 4291(constfactor) 4288(constfactor) 4281(constfactor)
+    4273(constfactor) 4270(constfactor) 4259(constfactor) 4256(constfactor)
+    4252(constfactor) 4236(constfactor) 4228(constfactor) 4226(constfactor)
+    4224(constfactor) 4222(constfactor) 4220(constfactor) 4187(skip) 4186(skip)
+    2455(searchid) 2454(searchid) 2269(pushback) 2267(pushback) 2247 2246 2245
+    2239 2236 2218 2217 2201 2192 2189 2188 2187 2183 2182 2119 2116 2115 2114
+    2107 2070 2046 2045 2041 2037 2020 2007 2004 1778(prtsym)
+op: 11181 8444 8444 8401 8381 8378 8377 8376 7948 7660 7635 6911 6856 6831 6830
+    6758 5483 5283 4372(constexpr) 4371(constexpr) 4358(constexpr)
+    4357(constexpr) 4307(constterm) 4306(constterm) 2269(pushback)
+    2267(pushback) 2236 2219 2204 2203 2198 2197 2194 2186 2180 2119 2050 2046
+    2045 2041 2037 2020 2007 2004
+val: 6594(expression) 6575(expression) 6567(expression) 4292(constfactor)
+     4289(constfactor) 4250(constfactor) 3185(newlabel) 3160(searchlabel)
+     3160(searchlabel) 2269(pushback) 2267(pushback) 2253 2253 2252 2252 2250
+     2249 2176 2175 2166 2166 2111 2110 2069 2068 2007 2004
+lgth: 11181 6589(expression) 6583(expression) 4246(constfactor)
+      4240(constfactor) 2269(pushback) 2267(pushback) 2174 2172 2171 2168 2162
+      2119 2007 2004 1940 1940 1939 1939
+id: 9905(modulep) 9904(modulep) 9903(modulep) 9902(modulep) 9901(modulep)
+    9897(modulep) 9871(modulep) 9869(modulep) 9858(modulep) 9857(modulep)
+    9840(searchext) 9790(usesjoins) 9724 9723 9714 9504 9451 9448 8487 8366 8123
+    8061 8029 7933 7710 7656 7631 7428 7262 7208 7086 7057(declare)
+    7044(declare) 7039(declare) 4928 4928 4927 3184(newlabel) 3165(searchlabel)
+    2452(searchid) 2412 2406 2378(searchsection) 2377(searchsection)
+    2269(pushback) 2267(pushback) 2248 2040 2035 2029 2026 2007 2004
+kk: 11181 10592(initscalars) 9871(modulep) 9869(modulep) 2269(pushback)
+    2267(pushback) 2036 2035 2035 2035 2033 2033 2007 2004
+lsy: 9204 9186 9163 8639 8639 2269(pushback) 2004
+lop: 7013 7002 6972 6968 6925 6923 6912 6911 6893 6888 6883 6880 6866 6863 6862
+     6856 6816 6809 6802 6790 6765 6764 6758 4377(constexpr) 4375(constexpr)
+     4372(constexpr) 4350(constterm) 4313(constterm) 4311(constterm)
+     4310(constterm) 4307(constterm) 2269(pushback) 2004
+lval: 5734 5719 5719 5718 5717 2269(pushback) 2004
+llgth: 2269(pushback) 2004
+lid: 2269(pushback) 2004
+lkk: 2269(pushback) 2004
+nsy: 2267(pushback) 2007
+nop: 2267(pushback) 2007
+nval: 2267(pushback) 2007
+nlgth: 2267(pushback) 2007
+nid: 2267(pushback) 2007
+nkk: 2267(pushback) 2007
+nvalid: 11179 2270(pushback) 2265(pushback) 2008 2005
+chcnt: 10597(initscalars) 9630 2850 1834(insymbol) 1834(insymbol) 1765(error)
+       1717(endofline)
+ic: 10596(initscalars) 9670 8689 8689 4013(genctaivtcvb) 4013(genctaivtcvb)
+    3997(gensuv) 3997(gensuv) 3982(genlpa) 3982(genlpa) 3969(gencuvcvf)
+    3969(gencuvcvf) 3942(gencipcif) 3942(gencipcif) 3918(gencupcuf)
+    3918(gencupcuf) 3882(genipj) 3882(genipj) 3871(gencjp) 3871(gencjp)
+    3858(genujpxjpcal) 3858(genujpxjpcal) 3846(gen2t) 3846(gen2t) 3832(gen1ts)
+    3832(gen1ts) 3818(gen0t) 3818(gen0t) 3782(gen2) 3782(gen2) 3699(gen1s)
+    3699(gen1s) 3651(gen0) 3651(gen0) 1662(endofline) 1322(wrtsrclin)
+gc: 10594(initscalars) 10143 10143 10143 10130 10130 10130 9959(modulep)
+    9954(modulep) 9817 9801 8441 8441 8441 8432 7770 7770 7770 7770
+lc: 10594(initscalars) 9667 9664 9658 9656 9170 9155 8614 8590 8563 8557 8549
+    8549 8366 8366 8223 8217 8216 8215 8215 8203 8161 8160 8159 8159 8077 8075
+    8065 8059 8058 8058 8044 8043 8033 8027 8026 8026 7772 7772 7772 7772 6955
+    6906 6254 6099 4525(gettmp) 4525(gettmp) 4525(gettmp) 4208(arrtmp)
+    4208(arrtmp) 4205(arrtmp) 4201(arrtmp) 4201(arrtmp) 4199(arrtmp) 2330
+    2325(prtlvlsym) 2325(prtlvlsym) 2324(prtlvlsym) 2324(prtlvlsym)
+    1662(endofline) 1322(wrtsrclin) 998(lenpv) 994(lenpv) 991(lenpv)
+lcs: 8591 8077 8075 8044 8043 6313
+dp: 10591(initscalars) 8647 8619 1662(endofline) 1322(wrtsrclin)
+list: 10584(initscalars) 10534(plcopt) 9969(modulep) 9817 9805 9801 1896 1896
+      1658(endofline) 1349(readline)
+dolineinfo: 10590(initscalars) 10543(plcopt) 1660(endofline) 1320(wrtsrclin)
+prcode: 11176 11158 11139 10585(initscalars) 10530(plcopt) 9964(modulep)
+        9958(modulep) 9953(modulep) 9950(modulep) 9945(modulep) 9942(modulep)
+        9877(modulep) 9866(modulep) 9863(modulep) 9859(modulep) 9817 9805 9801
+        9665 9657 9638 9545 9382 9354 9347 9338 9331 9296 9210 9180 9104 9096
+        9072 9053 9025 8996 8988 8985 8902 8897 8891 8687 8606 8573 7956 7954
+        7951 7946 7891 7880 7866 7855 7853 7847 7843 7836 7818 7777 7774 7726
+        7676 6476 6418(callop1) 6273 4041(gensca) 4030(genmst) 4019(gensfr)
+        4003(genctaivtcvb) 3988(gensuv) 3975(genlpa) 3948(gencuvcvf)
+        3924(gencipcif) 3888(gencupcuf) 3877(genipj) 3864(gencjp)
+        3852(genujpxjpcal) 3842(gen2t) 3824(gen1ts) 3813(gen0t)
+        3787(gentypindicator) 3710(gen2) 3657(gen1s) 3649(gen0) 3609(mesl)
+        3595(par1) 3590(lftjst) 3357(spfmsg) 3352(intmsg) 3215(intmsgneol)
+        3137(prtpartypc) 3101(prtfxlabel) 3089(prtflabel) 3074(prtlabel) 1886
+        1862 1852 1735(markline) 1726(outline) 1352(readline)
+prtables: 10584(initscalars) 10538(plcopt) 9671 8594 1905
+chkvar: 10586(initscalars) 10540(plcopt) 4801 1907
+debug: 10585(initscalars) 10531(plcopt) 9246 9206 9176 8776 8772 8761 8754 8723
+       6203 5753 5751 5736 5357 5297 5058 4963 4825 1887
+chkref: 10586(initscalars) 10535(plcopt) 2855(chkrefs) 1903
+chkudtc: 10587(initscalars) 10539(plcopt) 9850(modulep) 1906
+chkudtf: 9850(modulep) 7287 4806 4805
+iso7185: 11073 10587(initscalars) 10536(plcopt) 9635 8864 8641 8595 8526 8514
+         8473 8362 7721 7614 7457 7449 7448 6892 6820 6610(expression) 6239 5295
+         4741(fndopr2) 4721(fndopr1) 2168 2123 2064 2063 2045 1904 1773(chkstd)
+dodmplex: 10588(initscalars) 10541(plcopt) 2242 1909
+doprtryc: 11249 10588(initscalars)
+doprtlab: 11267 10588(initscalars) 10529(plcopt) 1885
+dodmpdsp: 11268 10588(initscalars) 10542(plcopt) 1910
+chkvbk: 10589(initscalars) 10532(plcopt) 9649 9586 8758 8723 4822 1892
+experr: 10589(initscalars) 10533(plcopt) 1893 1697(endofline)
+parmptr: 10039(enterstdtypes) 10038(enterstdtypes) 10038(enterstdtypes) 9664
+         9656 9584 9562 8794 8322 8216 8160 8157 8059 8027 6986 6451
+         6406(callop1) 6388(psize) 6271 6236 6225 6218 6210 4659(containerop)
+         4635(store)
+intptr: 10260 10250 10249 10214 10213 10154 10153 10068(enterstdtypes)
+        10060(enterstdtypes) 10018(enterstdtypes) 10013(enterstdtypes)
+        10012(enterstdtypes) 10012(enterstdtypes) 9490 9462 9319 9200 9198 9185
+        9183 9175 9173 9171 9170 9157 9155 9022 9018 9014 9011 8929 8927 8744
+        7833 7733 7569 7498 7475 7466 7161 6940 6935 6913 6891 6891 6874 6869
+        6865 6865 6845 6840 6819 6819 6811 6811 6804 6804 6795 6793 6777 6772
+        6767 6767 6699(expression) 6682(expression) 6676(expression)
+        6637(expression) 6610(expression) 6566(expression) 6205 6199 6178 6041
+        6037 6023 5953 5903 5817 5811 5801 5795 5787 5779 5776 5770 5767 5693
+        5557 5505 5501 5491 5478 5296 5289 4967 4965 4964 4958 4951
+        4429(checkbnds) 4407(constexpr) 4407(constexpr) 4402(constexpr)
+        4402(constexpr) 4399(constexpr) 4397(constexpr) 4390(constexpr)
+        4390(constexpr) 4387(constexpr) 4385(constexpr) 4378(constexpr)
+        4378(constexpr) 4365(constexpr) 4363(constexpr) 4341(constterm)
+        4341(constterm) 4338(constterm) 4338(constterm) 4335(constterm)
+        4335(constterm) 4332(constterm) 4330(constterm) 4326(constterm)
+        4326(constterm) 4323(constterm) 4321(constterm) 4314(constterm)
+        4314(constterm) 4289(constfactor) 4230(constfactor)
+        3790(gentypindicator) 3623(mest) 3478(intt) 3007 2558(alignquot)
+        2502(getbounds)
+crdptr: 10216 10215 10156 10155 10017(enterstdtypes) 10016(enterstdtypes)
+        10016(enterstdtypes)
+realptr: 10220 10219 10218 10204 10196 10159 10158 10157 10022(enterstdtypes)
+         10021(enterstdtypes) 10021(enterstdtypes) 9492 9463 9142 8925 8746 8744
+         7833 7567 7495 7290 7160 7141 7115 6960 6942 6937 6879 6878 6876 6871
+         6846 6842 6798 6797 6796 6794 6782 6781 6779 6774 6657(expression)
+         6648(expression) 6574(expression) 6473 6465 6416(callop1) 6207 6204
+         6198 6177 5793 5785 5778 5769 5727 5559 5520 5502 5352 4480(load)
+         4467(load) 4430(checkbnds) 4416(constexpr) 4416(constexpr)
+         4399(constexpr) 4397(constexpr) 4395(constexpr) 4395(constexpr)
+         4387(constexpr) 4385(constexpr) 4383(constexpr) 4383(constexpr)
+         4375(constexpr) 4375(constexpr) 4366(constexpr) 4363(constexpr)
+         4350(constterm) 4350(constterm) 4332(constterm) 4330(constterm)
+         4328(constterm) 4328(constterm) 4323(constterm) 4321(constterm)
+         4319(constterm) 4319(constterm) 4310(constterm) 4310(constterm)
+         4292(constfactor) 3486(realt) 3010 2669(prtctp) 2625(prtstp)
+         2562(alignquot)
+charptr: 10217 10160 10075(enterstdtypes) 10053(enterstdtypes)
+         10044(enterstdtypes) 10026(enterstdtypes) 10025(enterstdtypes)
+         10025(enterstdtypes) 9139 7841 6964 6587(expression) 6583(expression)
+         5819 5738 5647 5602 5561 5531 5356 4714(ischrcst) 4470(load)
+         4245(constfactor) 4240(constfactor) 3794(gentypindicator) 3627(mest)
+         3535(stringt) 3533(stringt) 3497(chart) 3009 2561(alignquot)
+         2498(getbounds)
+boolptr: 10254 10182 10177 10161 10030(enterstdtypes) 10029(enterstdtypes)
+         10029(enterstdtypes) 9138 8686 7819 7024 6962 6890 6890 6818 6818
+         6609(expression) 5983 5970 5849 5803 5647 5602 5563 5536 4468(load)
+         4408(constexpr) 4408(constexpr) 4403(constexpr) 4403(constexpr)
+         4342(constterm) 4342(constterm) 4234(constfactor) 4230(constfactor)
+         3792(gentypindicator) 3625(mest) 3516(bolt) 3008 2559(alignquot)
+nilptr: 10034(enterstdtypes) 10033(enterstdtypes) 10033(enterstdtypes) 9615 9588
+        9576 9523 9249 8779 8778 8431 7356 6740(expression) 5061 5060 4911 4910
+        4905 4877 4839 4816 4599(loadaddress) 4596(loadaddress) 4474(load)
+textptr: 10163 10128 10043(enterstdtypes) 10042(enterstdtypes)
+         10042(enterstdtypes) 9494 5948 5898 5886 5883 5878 5865 5846 5844 5840
+         5423 5233 5199 5184 5176 5081
+exceptptr: 10164 10141 10047(enterstdtypes) 10046(enterstdtypes)
+           10046(enterstdtypes)
+stringptr: 10165 10057(enterstdtypes) 10052(enterstdtypes) 10051(enterstdtypes)
+           10051(enterstdtypes)
+pstringptr: 10166 10055(enterstdtypes) 10054(enterstdtypes) 10054(enterstdtypes)
+byteptr: 10167 10065(enterstdtypes) 10059(enterstdtypes) 10058(enterstdtypes)
+         10058(enterstdtypes)
+vectorptr: 10168 10072(enterstdtypes) 10067(enterstdtypes) 10066(enterstdtypes)
+           10066(enterstdtypes)
+matrixptr: 10169 10070(enterstdtypes) 10069(enterstdtypes) 10069(enterstdtypes)
+abyteptr: 10170 10064(enterstdtypes) 10063(enterstdtypes) 10063(enterstdtypes)
+scharptr: 10171 10074(enterstdtypes) 10073(enterstdtypes) 10073(enterstdtypes)
+utypptr: 10388(exitundecl) 10345(enterundecl) 10344(enterundecl)
+         10344(enterundecl) 6538(expression) 2474(searchid)
+ucstptr: 10389(exitundecl) 10348(enterundecl) 10347(enterundecl)
+         10347(enterundecl) 2480(searchid)
+uvarptr: 10390(exitundecl) 10353(enterundecl) 10352(enterundecl)
+         10352(enterundecl) 9459 9226 5146(call) 2476(searchid)
+ufldptr: 10391(exitundecl) 10361(enterundecl) 10360(enterundecl)
+         10360(enterundecl) 2478(searchid)
+uprcptr: 10392(exitundecl) 10372(enterundecl) 10368(enterundecl)
+         10367(enterundecl) 10367(enterundecl) 8451 2482(searchid)
+ufctptr: 10393(exitundecl) 10380(enterundecl) 10376(enterundecl)
+         10375(enterundecl) 10375(enterundecl) 8610 8451 2483(searchid)
+fwptr: 10552(initscalars) 7431 7429 7043(declare) 7042(declare) 7041(declare)
+outputptr: 10185 9902(modulep) 5585 5583 5460 5444 5203 5202 5162 5162
+inputptr: 10184 9901(modulep) 5839 5838 5394 5392 5268 5256 5161 5161
+prdptr: 10186 5163 5163
+prrptr: 10187 5164 5164
+errorptr: 10188 9903(modulep) 5165 5165
+listptr: 10189 9904(modulep) 5166 5166
+commandptr: 10190 9905(modulep) 5167 5167
+usclrptr: 10162 7274
+fextfilep: 10592(initscalars) 9917(modulep) 9915(modulep) 9915(modulep)
+           9915(modulep) 9914(modulep) 9898(modulep) 9897(modulep)
+           9838(searchext) 9502 9502 9502 9466 9457 9450 9449
+wthstk: 10592(initscalars) 8843 955(popwth) 954(popwth) 950(popwth) 941(pshwth)
+        940(pshwth)
+level: 11088 11084 9943(modulep) 9667 9658 9612 9596 9588 9576 9575 9571 9567
+       9549 9365 9319 9311 9298 9249 9200 9185 9175 9173 9157 9131 9119 9018
+       9014 9011 8929 8851 8851 8717 8624 8623 8614 8458 8458 8455 8415 8223
+       8203 8125 8098 8074 8063 8049 8042 8031 7975 7975 7975 7952 7947 7781
+       7780 7780 7779 7775 7769 7711 6554(expression) 6310 6310 6156 6156 6155
+       6155 5148(call) 4911 4910 4905 4877 4877 4876 4876 4631(store)
+       4631(store) 4608(loadaddress) 4604(loadaddress) 4597(loadaddress)
+       4597(loadaddress) 4501(load) 4501(load) 3202(prtlabels) 3188(newlabel)
+       3162(searchlabel)
+disx: 4890 4889 4887 4886 2462(searchid) 2425(searchidnenm) 2421(searchidnenm)
+top: 11088 11084 9858(modulep) 9826 9826 9824 9815 9814 9814 9812 9811 9810 9810
+     9809 9809 9809 9636 9621 9613 9601 9536 9270 9270 9269 9268 9266 9266 9250
+     9240 9234 9233 9232 9232 9231 8826 8696 8674 8614 8588 8571 8462 8462 8462
+     8456 8455 8444 8444 8383 8378 8359 8358 8098 8074 8049 8042 7981 7979 7978
+     7977 7977 7976 7724 7724 7610 7553 7551 7550 7547 7546 7539 7538 7538 7538
+     7537 7536 7098 7075 7075 7075 7074 4791(selector) 4768(isopr) 4742(fndopr2)
+     4722(fndopr1) 3180(newlabel) 2847 2840 2839 2798 2462(searchid)
+     2462(searchid) 2422(searchidnenm) 2346(enterid) 2344(enterid) 2331
+     880(putdsps) 876(putdsps) 714(pshstc) 713(pshstc) 691(pshcst) 690(pshcst)
+ptop: 11084 9826 9826 9825 9824 9822 2451(searchid) 2451(searchid) 890(putpile)
+      890(putpile)
+display: 11197 11196 11090 11089 11086 11085 9858(modulep) 9824 9815 9814 9814
+         9812 9811 9810 9810 9809 9636 9621 9613 9601 9536 9269 9268 9266 9266
+         9250 9240 9234 9233 8827 8699 8699 8698 8697 8674 8588 8571 8456 8444
+         8444 8383 8378 7981 7979 7978 7724 7724 7551 7550 7547 7546 7539 7538
+         7075 4890 4889 4887 4886 4794(selector) 4793(selector) 4792(selector)
+         4770(isopr) 4769(isopr) 4745(fndopr2) 4744(fndopr2) 4725(fndopr1)
+         4724(fndopr1) 3202(prtlabels) 3180(newlabel) 3162(searchlabel) 2848
+         2799 2462(searchid) 2424(searchidnenm) 2346(enterid) 2344(enterid) 2333
+         1292 1288 882(putdsps) 714(pshstc) 713(pshstc) 691(pshcst) 690(pshcst)
+pile: 9825 9824 2456(searchid) 2452(searchid) 890(putpile)
+errinx: 10591(initscalars) 9970(modulep) 1765(error) 1763(error) 1762(error)
+        1762(error) 1760(error) 1759(error) 1715(endofline) 1698(endofline)
+        1670(endofline) 1656(endofline)
+errlist: 1765(error) 1763(error) 1760(error) 1710(endofline) 1709(endofline)
+         1706(endofline) 1705(endofline) 1701(endofline) 1701(endofline)
+         1672(endofline)
+gattr: 9320 9246 9242 9241 9239 9237 9236 9235 9234 9230 9229 9228 9212 9205
+       9204 9203 9199 9198 9197 9184 9183 9182 9172 9168 9164 9154 9150 8923
+       8806 8799 8794 8793 8792 8790 8789 8786 8750 8748 8746 8744 8741 8737
+       8733 8733 8731 8730 8729 8728 8726 8726 8725 8724 8723 8722 8713 8686
+       8685 7733 7732 7024 7024 6988 6951 6945 6944 6942 6940 6934 6930 6929
+       6927 6926 6922 6920 6919 6918 6917 6915 6914 6913 6912 6911 6909 6908
+       6906 6905 6898 6894 6891 6890 6884 6882 6879 6876 6874 6865 6861 6860
+       6859 6858 6856 6855 6854 6853 6847 6846 6845 6843 6842 6840 6836 6835
+       6834 6825 6821 6819 6818 6813 6811 6806 6804 6799 6798 6794 6793 6786
+       6784 6782 6779 6777 6767 6763 6762 6761 6760 6758 6757 6756 6755
+       6739(expression) 6736(expression) 6735(expression) 6734(expression)
+       6726(expression) 6709(expression) 6707(expression) 6706(expression)
+       6700(expression) 6699(expression) 6696(expression) 6693(expression)
+       6692(expression) 6691(expression) 6681(expression) 6679(expression)
+       6679(expression) 6677(expression) 6676(expression) 6674(expression)
+       6671(expression) 6667(expression) 6666(expression) 6662(expression)
+       6651(expression) 6649(expression) 6648(expression) 6647(expression)
+       6646(expression) 6645(expression) 6644(expression) 6642(expression)
+       6642(expression) 6640(expression) 6638(expression) 6637(expression)
+       6635(expression) 6623(expression) 6612(expression) 6611(expression)
+       6610(expression) 6609(expression) 6606(expression) 6605(expression)
+       6604(expression) 6581(expression) 6573(expression) 6565(expression)
+       6559(expression) 6558(expression) 6549(expression) 6545(expression)
+       6544(expression) 6543(expression) 6524(expression) 6515(expression)
+       6506(expression) 6499(expression) 6479 6474 6473 6472 6468 6468 6467 6457
+       6457 6443 6421(callop1) 6417(callop1) 6416(callop1) 6415(callop1)
+       6411(callop1) 6411(callop1) 6410(callop1) 6401(callop1) 6317 6242 6240
+       6232 6230 6229 6228 6221 6215 6212 6207 6205 6199 6197 6197 6194 6187
+       6186 6178 6175 6175 6172 6170 6041 6037 6037 6034 6033 6032 6023 6022
+       6002 6001 5989 5988 5987 5986 5983 5982 5970 5964 5963 5962 5961 5953
+       5948 5947 5946 5936 5935 5934 5933 5928 5927 5926 5925 5914 5913 5912
+       5911 5903 5902 5898 5897 5896 5886 5883 5878 5876 5875 5864 5863 5862
+       5861 5859 5857 5856 5849 5846 5844 5843 5842 5840 5827 5826 5825 5824
+       5819 5817 5816 5811 5810 5809 5808 5803 5801 5800 5795 5793 5792 5787
+       5785 5784 5779 5778 5776 5775 5770 5769 5767 5766 5706 5705 5693 5692
+       5687 5684 5683 5682 5681 5658 5656 5655 5643 5642 5641 5636 5635 5633
+       5627 5626 5620 5619 5612 5610 5609 5599 5598 5597 5578 5501 5500 5491
+       5490 5447 5440 5421 5418 5417 5386 5386 5375 5289 5288 5280 5261 5259
+       5259 5252 5251 5231 5228 5227 5227 5199 5198 5184 5179 5178 5176 5174
+       5173 5153(call) 5088 5071 5054 5053 5037 5036 5035 5034 5032 5031 5030
+       5029 5028 5027 5026 5025 5023 5023 5006 4998 4992 4986 4985 4984 4983
+       4981 4972 4959 4958 4952 4951 4950 4949 4941 4940 4897 4896 4895 4894
+       4893 4892 4891 4890 4889 4887 4858 4851 4833 4832 4830 4810 4809
+       4750(fndopr2) 4729(fndopr1) 4673(containerop) 4668(containerop)
+       4664(containerop) 4658(containerop) 4656(containerop) 4655(containerop)
+       4650(containerop) 4575(loadaddress) 4463(load)
+constbegsys: 10624(initsets) 4222(constfactor) 4221(constfactor)
+             4220(constfactor)
+simptypebegsys: 10626(initsets) 10625(initsets) 7416 7071 7070 7069
+typebegsys: 10626(initsets) 7414 7413 7412
+blockbegsys: 11189 10630(initsets) 9813
+selectsys: 10631(initsets) 5095 5094 4937 4936 4935
+facbegsys: 10632(initsets) 6747(expression) 6509(expression) 6505(expression)
+           6504(expression) 6501(expression) 6498(expression) 6497(expression)
+statbegsys: 11189 10634(initsets) 9813 9607 9393 9390 9291 9290 9285 9284 9084
+            9083 9078 9077 8978 8873 8646
+typedels: 10627(initsets) 7964 7943 7941 7940 7916 7895 7799 7755 7746 7745 7736
+          7443 7441
+pfbegsys: 10630(initsets) 10628(initsets) 8643 8638 8600 8596
+chartp: 10841 10841 10840 10840 10839 10839 10838 10838 10837 10837 10836 10836
+        10835 10835 10834 10834 10833 10833 10832 10832 10831 10831 10830 10830
+        10829 10829 10828 10828 10827 10827 10826 10826 10825 10825 10824 10824
+        10823 10822 10821 10820 10820 10819 10819 10818 10818 10817 10817 10816
+        10816 10815 10815 10814 10814 10813 10813 10812 10812 10811 10811 10810
+        10810 10809 10809 10808 10807 10806 10806 10805 10805 10804 10804 10803
+        10803 10802 10802 10801 10801 10800 10800 10799 10799 10798 10798 10797
+        10797 10796 10796 10795 10795 10794 10793 3759(gen2) 2098 2090 2082 2079
+        2067 2066 2064 2063 2054 2054 2053 2052 2051 2032 2024 2019
+rw: 10662(inittables) 10662(inittables) 10662(inittables) 10661(inittables)
+    10661(inittables) 10661(inittables) 10660(inittables) 10660(inittables)
+    10660(inittables) 10659(inittables) 10659(inittables) 10659(inittables)
+    10658(inittables) 10658(inittables) 10658(inittables) 10657(inittables)
+    10657(inittables) 10657(inittables) 10656(inittables) 10656(inittables)
+    10656(inittables) 10655(inittables) 10655(inittables) 10655(inittables)
+    10654(inittables) 10654(inittables) 10654(inittables) 10653(inittables)
+    10653(inittables) 10653(inittables) 10652(inittables) 10652(inittables)
+    10652(inittables) 10651(inittables) 10651(inittables) 10651(inittables)
+    10650(inittables) 10650(inittables) 10650(inittables) 10649(inittables)
+    10649(inittables) 10649(inittables) 10648(inittables) 10648(inittables)
+    10648(inittables) 10647(inittables) 10647(inittables) 10647(inittables)
+    10646(inittables) 10646(inittables) 10646(inittables) 10645(inittables)
+    10645(inittables) 10645(inittables) 10644(inittables) 10644(inittables)
+    10644(inittables) 10643(inittables) 10643(inittables) 10643(inittables)
+    10642(inittables) 10642(inittables) 10642(inittables) 10641(inittables)
+    10641(inittables) 10641(inittables) 2040
+rsy: 10689 10689 10689 10688 10688 10688 10687 10687 10687 10686 10686 10686
+     10685 10685 10685 10684 10684 10684 10683 10683 10683 10682 10682 10682
+     10681 10681 10681 10680 10680 10680 10679 10679 10679 10678 10678 10678
+     10677 10677 10677 10676 10676 10676 10675 10675 10675 10674 10674 10674
+     10673 10673 10673 10672 10672 10672 10671 10671 10671 10670 10670 10670
+     10669 10669 10669 10668 10668 10668 2041
+ssy: 10699 10698 10698 10698 10697 10697 10697 10696 10696 10696 10695 10695
+     10695 10694 10694 10694 10693 10693 10693 10692 10692 10692 10691 2236
+rop: 10707 10707 10707 10706 10706 10706 10705 2041
+sop: 10710 10710 10710 10709 10709 10709 10709 10708 2236
+na: 10204 10177 10128 10119 10108 10100 10088(entstdnames) 10004(stdnames)
+    10004(stdnames) 10004(stdnames) 10003(stdnames) 10003(stdnames)
+    10003(stdnames) 10002(stdnames) 10002(stdnames) 10002(stdnames)
+    10001(stdnames) 10001(stdnames) 10001(stdnames) 10000(stdnames)
+    10000(stdnames) 10000(stdnames) 9999(stdnames) 9999(stdnames) 9999(stdnames)
+    9998(stdnames) 9998(stdnames) 9998(stdnames) 9997(stdnames) 9997(stdnames)
+    9997(stdnames) 9996(stdnames) 9996(stdnames) 9996(stdnames) 9995(stdnames)
+    9995(stdnames) 9995(stdnames) 9994(stdnames) 9994(stdnames) 9994(stdnames)
+    9993(stdnames) 9993(stdnames) 9993(stdnames) 9992(stdnames) 9992(stdnames)
+    9992(stdnames) 9991(stdnames) 9991(stdnames) 9991(stdnames) 9990(stdnames)
+    9990(stdnames) 9990(stdnames) 9989(stdnames) 9989(stdnames) 9989(stdnames)
+    9988(stdnames) 9988(stdnames) 9988(stdnames) 9987(stdnames) 9987(stdnames)
+    9987(stdnames) 9986(stdnames) 9986(stdnames) 9986(stdnames) 9985(stdnames)
+    9985(stdnames) 9985(stdnames) 9984(stdnames) 9984(stdnames) 9984(stdnames)
+    9983(stdnames) 9983(stdnames) 9983(stdnames) 9982(stdnames) 9982(stdnames)
+    9982(stdnames) 9981(stdnames) 9981(stdnames) 9981(stdnames) 9980(stdnames)
+    9980(stdnames) 9980(stdnames) 9979(stdnames) 9979(stdnames) 9979(stdnames)
+    9978(stdnames) 9978(stdnames) 9978(stdnames) 9977(stdnames) 9977(stdnames)
+    9977(stdnames)
+mn: 10786 10786 10786 10785 10785 10785 10785 10784 10784 10784 10784 10783
+    10783 10783 10783 10782 10782 10782 10782 10781 10781 10781 10781 10780
+    10780 10780 10780 10779 10779 10779 10779 10778 10778 10778 10778 10777
+    10777 10777 10777 10776 10776 10776 10776 10775 10775 10775 10775 10774
+    10774 10774 10774 10773 10773 10773 10773 10772 10772 10772 10772 10771
+    10771 10771 10771 10770 10770 10770 10770 10769 10769 10769 10769 10768
+    10768 10768 10768 10767 10767 10767 10767 10766 10766 10766 10766 10765
+    10765 10765 10765 10764 10764 10764 10764 10763 10763 10763 10763 10762
+    10762 10762 10762 10761 10761 10761 10761 10760 10760 10760 10760 10759
+    10759 10759 10759 10758 10758 10758 10758 10757 10757 10757 10757 10756
+    10756 10756 10756 10755 10755 10755 10755 10754 10754 10754 10754 9714 8688
+    4042(gensca) 4031(genmst) 4020(gensfr) 4004(genctaivtcvb) 3989(gensuv)
+    3977(genlpa) 3949(gencuvcvf) 3925(gencipcif) 3890(gencupcuf) 3878(genipj)
+    3865(gencjp) 3853(genujpxjpcal) 3843(gen2t) 3825(gen1ts) 3814(gen0t)
+    3711(gen2) 3658(gen1s) 3650(gen0)
+sna: 10748 10748 10748 10748 10747 10747 10747 10747 10746 10746 10746 10746
+     10745 10745 10745 10745 10744 10744 10744 10744 10743 10743 10743 10743
+     10742 10742 10742 10742 10741 10741 10741 10741 10740 10740 10740 10740
+     10739 10739 10739 10739 10738 10738 10738 10738 10737 10737 10737 10737
+     10736 10736 10736 10736 10735 10735 10735 10735 10734 10734 10734 10734
+     10733 10733 10733 10733 10732 10732 10732 10732 10731 10731 10731 10731
+     10730 10730 10730 10730 10729 10729 10729 10729 10728 10728 10728 10728
+     10727 10727 10727 10727 10726 10726 10726 10726 10724 10724 10724 10723
+     10723 10723 10723 10722 10722 10722 10722 10721 10721 10721 10721 10720
+     10720 10720 10720 10719 10719 10719 10719 3660(gen1s)
+cdx: 10924 10923 10923 10922 10922 10921 10921 10920 10920 10919 10919 10918
+     10918 10917 10917 10916 10916 10915 10915 10914 10914 10913 10913 10912
+     10912 10911 10911 10910 10910 10909 10909 10908 10908 10907 10907 10906
+     10906 10905 10905 10904 10904 10903 10903 10902 10902 10901 10901 10900
+     10900 10899 10899 10898 10898 10897 10897 10896 10896 10895 10895 10894
+     10894 10893 10893 10892 10892 10891 10891 10890 10890 10889 10889 10888
+     10888 10887 10887 10886 10886 10885 10885 10884 10884 10883 10883 10882
+     10882 10881 10881 10880 10880 10879 10879 10878 10878 10877 10877 10876
+     10876 10875 10875 10874 10874 10873 10873 10872 10872 10871 10871 10870
+     10870 10869 10869 10868 10868 10867 10867 10866 10866 10865 10865 10864
+     10864 10863 10863 10862 10862 10861 10861 10860 10860 10859 10859
+     3775(gen2) 3765(gen2) 3753(gen2) 3750(gen2) 3744(gen2) 3737(gen2)
+     3736(gen2) 3735(gen2) 3734(gen2) 3733(gen2) 3732(gen2) 3731(gen2)
+     3730(gen2) 3644 3643 3643 3613(mes)
+cdxs: 10980 10979 10978 10977 10976 10975 10974 10973 10970 10969 10968 10967
+      10966 10965 10964 10963 10961 10960 10959 10958 10957 10956 10955 10954
+      10952 10951 10950 10949 10948 10947 10946 10945 10943 10942 10941 10940
+      10939 10938 10937 10936 10934 10933 10932 10931 10930 10929 10928 10927
+      3775(gen2) 3765(gen2) 3753(gen2) 3750(gen2) 3744(gen2) 3737(gen2)
+      3736(gen2) 3735(gen2) 3734(gen2) 3733(gen2) 3732(gen2) 3731(gen2)
+      3730(gen2) 3644
+pdx: 11039 11038 11038 11037 11037 11036 11036 11035 11035 11034 11034 11033
+     11033 11032 11032 11031 11031 11030 11030 11029 11029 11028 11028 11027
+     11027 11026 11026 11025 11025 11024 11024 11023 11023 11022 11022 11021
+     11021 11020 11020 11019 11019 11018 11018 11017 11017 11016 11016 11015
+     11015 11014 11014 11013 11013 11012 11012 11011 11011 11010 11010 11009
+     11009 11008 11008 11007 11007 11006 11006 11005 11005 11004 11004 11003
+     11003 11002 11002 11001 11001 11000 11000 10999 10999 10998 10998 10997
+     10997 10996 10996 10995 10995 10994 10994 10993 10993 10992 10992 10991
+     10991 10990 10990 10989 10989 10988 10988 10987 10987 10986 10986 10985
+     10985 10984 10984 10983 10983 10982 10982 3661(gen1s)
+ordint: 10851 10850 10850 10850 10849 10849 10849 10848 10848 10848 10847 10847
+        10847 10846 10846 10846 10845 10845 10845 10844 10844 10844 10843 2148
+        2144 2139 2134 2094 2081 2060
+intlabel: 10592(initscalars) 2931(genlabel) 2930(genlabel) 2930(genlabel)
+mxint10: 10599(initscalars) 10598(initscalars) 2094
+maxpow10: 10599(initscalars) 10599(initscalars) 10599(initscalars)
+          10599(initscalars) 2962
+entname: 9939(modulep) 9878(modulep) 9848(modulep) 9818 9802 9544
+errtbl: 11223 11222 11209 10603(initscalars) 1755(error) 1755(error)
+errltb: 11225 11225 11225 10604(initscalars) 1758(error) 1757(error)
+toterr: 11312 11306 11206 11205 10605(initscalars) 9965(modulep) 9637 9467 9467
+        9458 9458 3608(mesl) 1766(error) 1766(error)
+topnew: 9848(modulep) 9641 9638 9541 6083 3609(mesl) 3607(mesl) 3607(mesl)
+        3606(mesl) 3606(mesl)
+topmin: 9848(modulep) 9668 9659 9541 3607(mesl) 3607(mesl)
+cstptr: 9484 6724(expression) 4583(loadaddress) 4479(load) 3768(gen2) 3747(gen2)
+        3666(gen1s)
+cstptrix: 9848(modulep) 9541 9487 9487 9485 9484 9483 9483 9482 6725(expression)
+          6724(expression) 6723(expression) 6723(expression) 6721(expression)
+          4584(loadaddress) 4583(loadaddress) 4582(loadaddress)
+          4582(loadaddress) 4580(loadaddress) 4483(load) 4481(load) 4479(load)
+          4478(load) 4478(load) 4476(load)
+curmod: 9967(modulep) 9932(modulep) 9879(modulep) 9868(modulep) 9861(modulep)
+        9853(modulep) 9852(modulep) 9818 9802
+nammod: 9971(modulep) 9865(modulep) 9862(modulep) 9857(modulep) 9848(modulep)
+        9818 9802 3114(prtfxlabelc) 3113(prtfxlabelc) 3103(prtfxlabel)
+        3079(lenlabel) 3069(prtlabelu)
+incstk: 11193 11184 11184 10597(initscalars) 9776(usesjoins) 9746(closeinput)
+        9746(closeinput) 9746(closeinput) 9744(closeinput) 9743(closeinput) 9714
+        9714 9706 9683(openinput) 9683(openinput) 8625 8434 8418 7934 7714
+        2862(chkrefs) 1953 1953 1757(error) 1741(inpriv) 1735(markline)
+        1727(outline) 1724(outline) 1724(outline) 1723(outline) 1723(outline)
+        1708(endofline) 1704(endofline) 1668(endofline) 1667(endofline)
+        1665(endofline) 1665(endofline) 1661(endofline) 1382(readinp)
+        1382(readinp) 1381(readinp) 1381(readinp) 1376(bufnxt) 1376(bufnxt)
+        1371(ch) 1371(ch) 1365(eol) 1365(eol) 1359(eofinp) 1354(readline)
+        1354(readline) 1353(readline) 1351(readline) 1351(readline)
+        1348(readline) 1348(readline) 1348(readline) 1346(readline)
+        1344(readline) 1344(readline) 1344(readline) 1344(readline)
+        1340(readline) 1339(readline) 1339(readline) 1338(readline)
+        1338(readline) 1338(readline) 1335(readline) 1335(readline)
+        1335(readline) 1326(wrtsrclin) 1325(wrtsrclin) 1325(wrtsrclin)
+        1321(wrtsrclin) 1319(wrtsrclin) 1313(fileeoln) 1308(fileeof)
+        1303(incact)
+inclst: 11193 10597(initscalars) 9748(closeinput) 9747(closeinput)
+tmplst: 10600(initscalars) 4564(clrtmp) 4558(puttmps) 4557(puttmps)
+        4554(puttmps) 4553(puttmps) 4544(puttmp) 4524(gettmp) 4524(gettmp)
+        4519(gettmp)
+tmpfre: 10601(initscalars) 4557(puttmps) 4556(puttmps) 4522(gettmp) 4522(gettmp)
+        4522(gettmp) 4522(gettmp)
+strcnt: 11274 11272 11254 10607(initscalars) 667(putstrs) 667(putstrs)
+        659(getstr) 659(getstr)
+cspcnt: 11277 11275 11255 10608(initscalars) 706(putcst) 706(putcst) 692(pshcst)
+        692(pshcst)
+stpcnt: 11280 11278 11256 10609(initscalars) 738(putstc) 738(putstc) 715(pshstc)
+        715(pshstc)
+ctpcnt: 11283 11281 11257 10610(initscalars) 794(putnam) 794(putnam) 744(ininam)
+        744(ininam)
+lbpcnt: 11286 11284 11258 10611(initscalars) 683(putlab) 683(putlab) 675(getlab)
+        675(getlab)
+filcnt: 11289 11287 11259 10612(initscalars) 904(putfil) 904(putfil) 897(getfil)
+        897(getfil)
+cipcnt: 11295 11292 11290 11260 10613(initscalars) 918(putcas) 918(putcas)
+        911(getcas) 911(getcas)
+ttpcnt: 11293 11261 10614(initscalars) 932(puttag) 932(puttag) 925(gettag)
+        925(gettag)
+wtpcnt: 11298 11296 11262 10615(initscalars) 957(popwth) 957(popwth) 943(pshwth)
+        943(pshwth)
+ctpsnm: 10618(initscalars) 749(ininam) 748(ininam) 748(ininam)
+stpsnm: 10619(initscalars) 717(pshstc) 716(pshstc) 716(pshstc)
+breakflag: 11061 11060
+f: 11244 11220 11210 11208 10423(paropt) 10422(paropt) 10421(paropt)
+   10417(paropt) 10416(paropt) 10415(paropt) 10411(paropt) 10410(paropt)
+   10409(paropt) 9841(searchext) 9840(searchext) 9838(searchext) 9733 9733 8263
+   8259 8256 8243 8242 8238 8230 4796(selector) 4795(selector) 4790(selector)
+   4084 4079 4078 4077 4076 4070 4067(filecomponent) 4065(filecomponent)
+   4064(filecomponent) 4063(filecomponent) 4061(filecomponent) 3055(wrttyp) 2995
+   2971 2963 2955 1693(endofline) 1692(endofline) 1691(endofline)
+   1690(endofline) 1689(endofline) 1688(endofline) 1649(errmsg) 1644(errmsg)
+   1642(errmsg) 1641(errmsg) 1639(errmsg) 1638(errmsg) 1637(errmsg) 1636(errmsg)
+   1635(errmsg) 1634(errmsg) 1633(errmsg) 1631(errmsg) 1630(errmsg) 1629(errmsg)
+   1628(errmsg) 1627(errmsg) 1626(errmsg) 1625(errmsg) 1624(errmsg) 1623(errmsg)
+   1622(errmsg) 1621(errmsg) 1620(errmsg) 1619(errmsg) 1618(errmsg) 1616(errmsg)
+   1615(errmsg) 1614(errmsg) 1613(errmsg) 1612(errmsg) 1611(errmsg) 1610(errmsg)
+   1609(errmsg) 1608(errmsg) 1606(errmsg) 1604(errmsg) 1603(errmsg) 1602(errmsg)
+   1601(errmsg) 1600(errmsg) 1598(errmsg) 1597(errmsg) 1596(errmsg) 1595(errmsg)
+   1594(errmsg) 1593(errmsg) 1592(errmsg) 1591(errmsg) 1590(errmsg) 1589(errmsg)
+   1588(errmsg) 1587(errmsg) 1586(errmsg) 1585(errmsg) 1584(errmsg) 1583(errmsg)
+   1582(errmsg) 1581(errmsg) 1580(errmsg) 1579(errmsg) 1578(errmsg) 1577(errmsg)
+   1576(errmsg) 1575(errmsg) 1574(errmsg) 1573(errmsg) 1572(errmsg) 1571(errmsg)
+   1570(errmsg) 1569(errmsg) 1568(errmsg) 1567(errmsg) 1566(errmsg) 1565(errmsg)
+   1564(errmsg) 1563(errmsg) 1562(errmsg) 1561(errmsg) 1560(errmsg) 1559(errmsg)
+   1558(errmsg) 1557(errmsg) 1556(errmsg) 1555(errmsg) 1554(errmsg) 1553(errmsg)
+   1552(errmsg) 1551(errmsg) 1550(errmsg) 1549(errmsg) 1548(errmsg) 1547(errmsg)
+   1546(errmsg) 1545(errmsg) 1544(errmsg) 1543(errmsg) 1542(errmsg) 1541(errmsg)
+   1540(errmsg) 1539(errmsg) 1538(errmsg) 1537(errmsg) 1536(errmsg) 1535(errmsg)
+   1534(errmsg) 1533(errmsg) 1532(errmsg) 1531(errmsg) 1530(errmsg) 1529(errmsg)
+   1528(errmsg) 1527(errmsg) 1526(errmsg) 1525(errmsg) 1524(errmsg) 1523(errmsg)
+   1522(errmsg) 1521(errmsg) 1520(errmsg) 1519(errmsg) 1518(errmsg) 1517(errmsg)
+   1516(errmsg) 1515(errmsg) 1514(errmsg) 1513(errmsg) 1512(errmsg) 1511(errmsg)
+   1510(errmsg) 1509(errmsg) 1508(errmsg) 1507(errmsg) 1506(errmsg) 1505(errmsg)
+   1504(errmsg) 1503(errmsg) 1502(errmsg) 1501(errmsg) 1500(errmsg) 1499(errmsg)
+   1498(errmsg) 1497(errmsg) 1496(errmsg) 1495(errmsg) 1494(errmsg) 1493(errmsg)
+   1492(errmsg) 1491(errmsg) 1490(errmsg) 1488(errmsg) 1487(errmsg) 1486(errmsg)
+   1485(errmsg) 1484(errmsg) 1483(errmsg) 1482(errmsg) 1481(errmsg) 1480(errmsg)
+   1479(errmsg) 1478(errmsg) 1477(errmsg) 1476(errmsg) 1475(errmsg) 1474(errmsg)
+   1473(errmsg) 1472(errmsg) 1471(errmsg) 1470(errmsg) 1469(errmsg) 1468(errmsg)
+   1467(errmsg) 1466(errmsg) 1465(errmsg) 1464(errmsg) 1463(errmsg) 1462(errmsg)
+   1461(errmsg) 1460(errmsg) 1459(errmsg) 1458(errmsg) 1457(errmsg) 1456(errmsg)
+   1455(errmsg) 1454(errmsg) 1453(errmsg) 1452(errmsg) 1451(errmsg) 1450(errmsg)
+   1449(errmsg) 1448(errmsg) 1447(errmsg) 1446(errmsg) 1445(errmsg) 1444(errmsg)
+   1443(errmsg) 1442(errmsg) 1441(errmsg) 1440(errmsg) 1439(errmsg) 1438(errmsg)
+   1437(errmsg) 1436(errmsg) 1435(errmsg) 1434(errmsg) 1433(errmsg) 1432(errmsg)
+   1431(errmsg) 1429(errmsg) 1428(errmsg) 1427(errmsg) 1426(errmsg) 1425(errmsg)
+   1424(errmsg) 1423(errmsg) 1422(errmsg) 1421(errmsg) 1420(errmsg) 1418(errmsg)
+   1417(errmsg) 1416(errmsg) 1415(errmsg) 1414(errmsg) 1413(errmsg) 1412(errmsg)
+   1411(errmsg) 1410(errmsg) 1409(errmsg) 1408(errmsg) 1407(errmsg) 1406(errmsg)
+   1405(errmsg) 1404(errmsg) 1403(errmsg) 1402(errmsg) 1401(errmsg) 1400(errmsg)
+   1399(errmsg) 1398(errmsg) 1397(errmsg) 1396(errmsg) 1395(errmsg) 1394(errmsg)
+   1393(errmsg) 1392(errmsg) 1391(errmsg) 1390(errmsg) 1389(errmsg) 1281(prtdsp)
+   1280(prtdsp) 1278(prtdsp) 1142(strltnvf) 1139(strltnvf) 1007(writevp)
+   983(writev)
+i: 11241 11239 11225 11225 11225 11223 11223 11222 11222 11209 11209 10843 10843
+   10793 10793 10708 10708 10705 10705 10691 10691 10604(initscalars)
+   10604(initscalars) 10603(initscalars) 10603(initscalars) 10206 10204 10192
+   10178 10177 10174 10109 9788(usesjoins) 9786(usesjoins) 9785(usesjoins)
+   9784(usesjoins) 9784(usesjoins) 9784(usesjoins) 9782(usesjoins)
+   9782(usesjoins) 9782(usesjoins) 9781(usesjoins) 9034 8699 8699 8698 8697 8696
+   7920 7914 7914 7906 7899 7893 7893 7889 7869 7869 7868 4794(selector)
+   4793(selector) 4792(selector) 4791(selector) 4265(constfactor)
+   4265(constfactor) 3644 3643 3643 3613(mes) 3606(mesl) 3063(digits)
+   3063(digits) 3063(digits) 3062(digits) 3061(digits) 3061(digits) 3061(digits)
+   2996 2994 2963 2962 2950 2848 2848 2847 2799 2798 2120 2120 2103 2100 2099
+   2094 2094 2094 2091 2050 2041 2041 2040 2039 2026 2026 1997 1955 1954 1954
+   1954 1953 1953 1953 1951 1335(readline) 1335(readline) 1292 1290 1288 1288
+   1278(prtdsp) 1241(bxor) 1240(bxor) 1240(bxor) 1238(bxor) 1237(bxor)
+   1229(band) 1228(band) 1228(band) 1226(band) 1225(band) 1217(bor) 1216(bor)
+   1216(bor) 1214(bor) 1213(bor) 1205(bnot) 1204(bnot) 1204(bnot) 1202(bnot)
+   1201(bnot) 1189(strcatvr) 1189(strcatvr) 1176 1176 1173 1171 1153(strchr)
+   1153(strchr) 1150(strchr) 1149(strchr) 1139(strltnvf) 1139(strltnvf)
+   1139(strltnvf) 1139(strltnvf) 1139(strltnvf) 1137(strltnvf) 1136(strltnvf)
+   1126(strequvf) 1124(strequvf) 1112(strltnvv) 1112(strltnvv) 1110(strltnvv)
+   1109(strltnvv) 1108(strltnvv) 1107(strltnvv) 1095(strequvv) 1095(strequvv)
+   1095(strequvv) 1084(strassfv) 1084(strassfv) 1084(strassfv) 1082(strassfv)
+   1082(strassfv) 1082(strassfv) 1074(strassvc) 1068(strassvc) 1059(strassve)
+   1053(strassve) 1042(strassvr) 1036(strassvr) 1025(strassvf) 1019(strassvf)
+   1007(writevp) 1006(writevp) 994(lenpv) 993(lenpv) 984(writev) 984(writev)
+   982(writev) 982(writev) 982(writev) 980(writev) 973(strequri) 973(strequri)
+   972(strequri) 972(strequri) 972(strequri)
+oi: 11173 11172 11172 11170 11169 11167 10554(initscalars) 10554(initscalars)
+    10553(initscalars) 10543(plcopt) 10542(plcopt) 10541(plcopt) 10540(plcopt)
+    10539(plcopt) 10538(plcopt) 10536(plcopt) 10535(plcopt) 10534(plcopt)
+    10533(plcopt) 10532(plcopt) 10531(plcopt) 10530(plcopt) 10529(plcopt)
+    10528(plcopt) 10527(plcopt) 10527(plcopt) 1883 1883 1883 1882 1882 1881 1881
+    1881 1880 1865 1865 1861 1855 1855 1851 869 869 868 824(inidsp) 824(inidsp)
+oni: 11172 11172 11171 1877 1877 1877 1876 1876 1873 1865 1865 1864 1855 1855
+     1854
+ep: 11233 11232 11232 11231 11230 11229 11228 11226 11226 11225 11225 2995 2995
+    2995 2994 2993 1758(error) 1757(error) 1757(error) 1757(error)
+epl: 11228 11226 11226 11224
+srcfil: 11163 11129 11117 11116 11115 11114 11108 11106
+desfil: 11306 11305 11304 11136 11135 11134 11130 11125 11123
+errfil: 11147 11146 11145 10508 10506
+p: 11305 11304 11146 11145 11135 11134 11130 11129 11115 11114 7193 7193 7192
+   7192 7191 7191 7189 7188 7188 4567(clrtmp) 4567(clrtmp) 4566(clrtmp)
+   4566(clrtmp) 4565(clrtmp) 4564(clrtmp) 4556(puttmps) 4555(puttmps)
+   4555(puttmps) 4555(puttmps) 4554(puttmps) 4545(puttmp) 4545(puttmp)
+   4545(puttmp) 4545(puttmp) 4545(puttmp) 4544(puttmp) 4520(gettmp) 4520(gettmp)
+   4520(gettmp) 4520(gettmp) 4520(gettmp) 4520(gettmp) 4519(gettmp) 3673(gen1s)
+   3673(gen1s) 3671(gen1s) 3669(gen1s) 3668(gen1s) 3666(gen1s) 2962 2962 2962
+   2962 2961 2860(chkrefs) 2860(chkrefs) 2859(chkrefs) 2859(chkrefs)
+   2858(chkrefs) 2857(chkrefs) 2856(chkrefs) 1931 1931 1929 1926 1281(prtdsp)
+   1281(prtdsp) 1280(prtdsp) 1280(prtdsp) 1279(prtdsp) 1277(prtdsp) 1241(bxor)
+   1241(bxor) 1239(bxor) 1237(bxor) 1229(band) 1229(band) 1227(band) 1225(band)
+   1217(bor) 1217(bor) 1215(bor) 1213(bor) 1205(bnot) 1205(bnot) 1203(bnot)
+   1201(bnot) 1178 1174 1174 1174 1171 1167(strchrass) 1167(strchrass)
+   1167(strchrass) 1166(strchrass) 1166(strchrass) 1166(strchrass)
+   1076(strassvc) 1076(strassvc) 1074(strassvc) 1072(strassvc) 1072(strassvc)
+   1072(strassvc) 1071(strassvc) 1071(strassvc) 1070(strassvc) 1069(strassvc)
+   1067(strassvc) 1061(strassve) 1061(strassve) 1059(strassve) 1057(strassve)
+   1057(strassve) 1057(strassve) 1056(strassve) 1056(strassve) 1055(strassve)
+   1054(strassve) 1050(strassve) 1044(strassvr) 1044(strassvr) 1042(strassvr)
+   1040(strassvr) 1040(strassvr) 1040(strassvr) 1039(strassvr) 1039(strassvr)
+   1038(strassvr) 1037(strassvr) 1033(strassvr) 1027(strassvf) 1027(strassvf)
+   1025(strassvf) 1023(strassvf) 1023(strassvf) 1023(strassvf) 1022(strassvf)
+   1022(strassvf) 1021(strassvf) 1020(strassvf) 1016(strassvf) 956(popwth)
+   955(popwth) 954(popwth) 942(pshwth) 941(pshwth) 940(pshwth) 939(pshwth)
+   931(puttag) 924(gettag) 917(putcas) 910(getcas) 903(putfil) 896(getfil)
+   849(putdsp) 847(putdsp) 847(putdsp) 845(putdsp) 844(putdsp) 843(putdsp)
+   840(putdsp) 840(putdsp) 838(putdsp) 836(putdsp) 805(putnams) 805(putnams)
+   802(putnams) 801(putnams) 800(putnams) 792(putnam) 791(putnam) 790(putnam)
+   789(putnam) 788(putnam) 788(putnam) 787(putnam) 786(putnam) 785(putnam)
+   784(putnam) 784(putnam) 783(putnam) 782(putnam) 781(putnam) 780(putnam)
+   779(putnam) 778(putnam) 776(putnam) 776(putnam) 772(putnam) 772(putnam)
+   770(putnam) 770(putnam) 770(putnam) 769(putnam) 769(putnam) 768(putnam)
+   768(putnam) 759(putparlst) 759(putparlst) 759(putparlst) 758(putparlst)
+   749(ininam) 747(ininam) 747(ininam) 747(ininam) 747(ininam) 746(ininam)
+   746(ininam) 746(ininam) 736(putstc) 735(putstc) 734(putstc) 734(putstc)
+   733(putstc) 732(putstc) 731(putstc) 730(putstc) 729(putstc) 728(putstc)
+   727(putstc) 726(putstc) 725(putstc) 725(putstc) 724(putstc) 717(pshstc)
+   714(pshstc) 713(pshstc) 704(putcst) 703(putcst) 702(putcst) 701(putcst)
+   699(putcst) 699(putcst) 691(pshcst) 690(pshcst) 682(putlab) 681(putlab)
+   674(getlab) 667(putstrs) 667(putstrs) 667(putstrs) 666(putstrs) 658(getstr)
+n: 11305 11304 11146 11145 11135 11134 11130 11129 11115 11114 10413(paropt)
+   10408(paropt)
+e: 11304 11145 11134 11129 11114 8281 8279 8276 8274 8270 6243 6241 6200 6183
+   6153 6147 6110 1932 1930 1930 1929 1254(errore)
+errf: 11308 11245 11239 11239 11239 11234 11230 11222 11214 11213 11212 11205
+      11148 11147 1706(endofline) 1706(endofline) 1705(endofline)
+      1704(endofline) 1695(endofline) 1691(endofline) 1684(endofline)
+      1681(endofline) 1675(endofline) 1667(endofline) 1665(endofline)
+      1663(endofline) 1662(endofline) 1662(endofline) 1661(endofline)
+errfopn: 11308 11149 11093
+errfval: 11245 11238 11234 11230 11222 11211 11205 11144 11093 10513
+         1703(endofline) 1695(endofline) 1691(endofline) 1684(endofline)
+         1681(endofline) 1675(endofline) 1667(endofline) 1659(endofline)
+fp: 11184 11183 11183 9840(searchext) 9840(searchext) 9840(searchext)
+    9839(searchext) 9838(searchext) 9791(usesjoins) 9791(usesjoins)
+    9788(usesjoins) 9784(usesjoins) 9782(usesjoins) 9782(usesjoins)
+    9779(usesjoins) 9778(usesjoins) 9778(usesjoins) 9777(usesjoins)
+    9777(usesjoins) 9777(usesjoins) 9776(usesjoins) 9756(putinp) 9756(putinp)
+    9756(putinp) 9748(closeinput) 9747(closeinput) 9746(closeinput) 9736 9734
+    9717 9714 9713 9712 9708 9708 9690 9502 9502 4547(puttmp) 4546(puttmp)
+    4545(puttmp) 4544(puttmp) 4530(gettmp) 4529(gettmp) 4528(gettmp)
+    4526(gettmp) 4525(gettmp) 4524(gettmp) 4524(gettmp) 4523(gettmp)
+    4522(gettmp) 4521(gettmp) 4520(gettmp) 4519(gettmp) 2830 2829 2828 2809 2807
+    2806 2791 2790 2769 2768
+ii: 11092 11092 10494 10494 10492 10489 10485 10485 10485 10485 10484 10484
+    10484 10483 10482 10482 10482 10482 10481 9720 9710 9697 9696 9696 9696 9696
+    9694 9694 9694 9693 9692 9692 9690
+cmdhan: 11125 11123 11122 11121 11120 11108 11106 11105 11101 11100 11097 11096
+        10519 10508 10506 10505 10504 10501 10500 10493 10492 10488 10487 10479
+        10476 10475 10443 10442 10441 10441 10436 10435 10434 10433 10431 10430
+option: 11173 10590(initscalars) 10589(initscalars) 10589(initscalars)
+        10587(initscalars) 10587(initscalars) 10586(initscalars)
+        10586(initscalars) 10585(initscalars) 10585(initscalars)
+        10584(initscalars) 10584(initscalars) 10554(initscalars) 10543(plcopt)
+        10542(plcopt) 10541(plcopt) 10540(plcopt) 10539(plcopt) 10538(plcopt)
+        10536(plcopt) 10535(plcopt) 10534(plcopt) 10533(plcopt) 10532(plcopt)
+        10531(plcopt) 10530(plcopt) 10529(plcopt) 10515 10470 10469 10468 10467
+        10466 10465 10464 10463 10462 10461 10460 10459 10458 10457 10456 10455
+        10454 10453 10452 10451 10450 10449 10448 10447 10446 10445 1861 1851
+options: 11170 10554(initscalars) 10527(plcopt) 10515 10470 10469 10468 10467
+         10466 10465 10464 10463 10462 10461 10460 10459 10458 10457 10456 10455
+         10454 10453 10452 10451 10450 10449 10448 10447 10446 10445 2223 2210
+opts: 10569(initscalars) 10569(initscalars) 10568(initscalars)
+      10568(initscalars) 10567(initscalars) 10567(initscalars)
+      10566(initscalars) 10566(initscalars) 10565(initscalars)
+      10565(initscalars) 10564(initscalars) 10564(initscalars)
+      10563(initscalars) 10563(initscalars) 10562(initscalars)
+      10562(initscalars) 10561(initscalars) 10561(initscalars)
+      10560(initscalars) 10560(initscalars) 10559(initscalars)
+      10559(initscalars) 10558(initscalars) 10558(initscalars)
+      10557(initscalars) 10557(initscalars) 10556(initscalars)
+      10556(initscalars) 1883 1881
+optsl: 11172 11172 10583(initscalars) 10583(initscalars) 10582(initscalars)
+       10582(initscalars) 10581(initscalars) 10581(initscalars)
+       10580(initscalars) 10580(initscalars) 10579(initscalars)
+       10579(initscalars) 10578(initscalars) 10578(initscalars)
+       10577(initscalars) 10577(initscalars) 10576(initscalars)
+       10576(initscalars) 10575(initscalars) 10575(initscalars)
+       10574(initscalars) 10574(initscalars) 10573(initscalars)
+       10573(initscalars) 10572(initscalars) 10572(initscalars)
+       10571(initscalars) 10571(initscalars) 10570(initscalars)
+       10570(initscalars) 1883 1881 1865 1865 1855 1855
+incbuf: 11092 10492 10485 10483 10482 9720 9696 9694 9692 9692 9690
+getstr: 1166(strchrass) 1071(strassvc) 1056(strassve) 1039(strassvr)
+        1022(strassvf)
+putstrs: 9971(modulep) 9828 9756(putinp) 9734 7277 867 776(putnam) 699(putcst)
+         681(putlab)
+getlab: 3181(newlabel)
+putlab: 855
+pshcst: 10116 6731(expression) 6718(expression) 4376(constexpr) 4366(constexpr)
+        4312(constterm) 4255(constfactor) 2169 2107
+putcst: 4414(constexpr) 859
+pshstc: 10073(enterstdtypes) 10069(enterstdtypes) 10066(enterstdtypes)
+        10063(enterstdtypes) 10058(enterstdtypes) 10054(enterstdtypes)
+        10051(enterstdtypes) 10046(enterstdtypes) 10042(enterstdtypes)
+        10038(enterstdtypes) 10033(enterstdtypes) 10029(enterstdtypes)
+        10025(enterstdtypes) 10021(enterstdtypes) 10016(enterstdtypes)
+        10012(enterstdtypes) 7587 7576 7555 7485 7473 7460 7452 7419 7329 7246
+        7136 7110 7076 6617(expression) 6585(expression) 4275(constfactor)
+        4243(constfactor)
+putstc: 849(putdsp)
+ininam: 10375(enterundecl) 10367(enterundecl) 10360(enterundecl)
+        10352(enterundecl) 10347(enterundecl) 10344(enterundecl) 10202 10194
+        10175 10139 10126 10116 10106 10098 10086(entstdnames) 8428 8393 8121
+        8057 8025 7931 7708 7654 7629 7426 7260 7205 7084 2464(searchid)
+putparlst: 8562 769(putnam)
+putnam: 10393(exitundecl) 10392(exitundecl) 10391(exitundecl) 10390(exitundecl)
+        10389(exitundecl) 10388(exitundecl) 8567 7055(declare) 869 847(putdsp)
+        805(putnams) 773(putnam) 760(putparlst)
+putnams: 852 843(putdsp) 802(putnams) 801(putnams)
+inidsp: 11090 11086 9809 9234 7979 7538
+putdsp: 11197 11196 9269 890(putpile) 882(putdsps)
+putsub: 864 841(putdsp)
+putdsps: 8614 8462 8098 8049 7553
+putpile: 11200
+getfil: 9895(modulep)
+putfil: 9502
+getcas: 8959
+putcas: 9061 9047 9038
+gettag: 7327
+puttag: 7405
+pshwth: 9247
+popwth: 9263
+strequri: 9905(modulep) 9904(modulep) 9903(modulep) 9902(modulep) 9901(modulep)
+          9476 9475 9474 9473 9472 8487 2040 974(strequri)
+writev: 8575 7883 7679 7052(declare) 2995 2971 2865(chkrefs) 2860(chkrefs)
+        2703(prtctp) 2678(prtctp) 2662(prtctp) 2253 1279(prtdsp)
+lenpv: 9480 8575 7679 3668(gen1s) 3123(lenflabel) 3122(lenflabel)
+       3121(lenflabel) 3120(lenflabel) 3114(prtfxlabelc) 3114(prtfxlabelc)
+       3113(prtfxlabelc) 3079(lenlabel) 2995 2995 2971 2971 2865(chkrefs)
+       2860(chkrefs) 2324(prtlvlsym) 1188(strcatvr) 1004(writevp) 998(lenpv)
+writevp: 9865(modulep) 9862(modulep) 3106(prtfxlabel) 3103(prtfxlabel)
+         3095(prtflabel) 3093(prtflabel) 3092(prtflabel) 3091(prtflabel)
+         3069(prtlabelu) 2354(enterid) 2322(prtlvlsym)
+strassvf: 9858(modulep) 9857(modulep) 9714 8430 8413 8123 8061 8029 7933 7710
+          7656 7631 7428 7262 7208 7086 3184(newlabel)
+strassvr: 10377(enterundecl) 10369(enterundecl) 10362(enterundecl)
+          10354(enterundecl) 10349(enterundecl) 10346(enterundecl) 10204 10196
+          10177 10128 10119 10108 10100 10088(entstdnames) 8412
+strassve: 10141
+strassvc: 2174
+strassfv: 7044(declare)
+strequvv: 2350(enterid) 1099(strequvv)
+strltnvv: 2361(enterid) 1116(strltnvv)
+strequvf: 3165(searchlabel) 2452(searchid) 2406 2377(searchsection)
+          1129(strequvf)
+strltnvf: 2412 2378(searchsection) 1142(strltnvf)
+strchr: 1156(strchr)
+strchrass: 1189(strcatvr)
+getsqt: 1174 1172
+strcatvr: 8430
+bnot: 4232(constfactor) 1207(bnot)
+bor: 4405(constexpr) 1219(bor)
+band: 4344(constterm) 4234(constfactor) 1231(band)
+bxor: 4410(constexpr) 1243(bxor)
+errore: 1266(errorv)
+errorv:
+prtdsp: 11268
+prtlnk: 1292 1281(prtdsp) 1280(prtdsp)
+incact: 9912(modulep) 9894(modulep) 9742(closeinput) 9628 9596 8624 8611 8434
+        8418 7934 7713 2859(chkrefs) 2352(enterid) 2210 1895 1747(error)
+        1741(inpriv) 1346(readline) 1338(readline) 1313(fileeoln) 1308(fileeof)
+        1303(incact)
+fileeof: 1359(eofinp) 1336(readline) 1308(fileeof) 1308(fileeof)
+fileeoln: 1337(readline) 1314(fileeoln) 1313(fileeoln)
+wrtsrclin: 1658(endofline) 1350(readline)
+readline: 11187 9806 1382(readinp)
+eofinp: 8646 8641 4186(skip) 4185(skip) 2227 2225 2214 2212 1832(insymbol)
+        1726(outline) 1364(eol) 1359(eofinp) 1359(eofinp)
+eol: 9801 2850 2232 2161 2160 2016 2015 1938 1831(insymbol) 1376(bufnxt)
+     1371(ch) 1366(eol) 1365(eol) 1364(eol)
+ch: 2236 2236 2227 2226 2225 2225 2223 2217 2214 2213 2212 2212 2210 2208 2202
+    2196 2193 2188 2187 2181 2159 2157 2156 2154 2148 2147 2144 2143 2142 2141
+    2139 2138 2137 2136 2134 2132 2131 2130 2125 2123 2098 2094 2090 2087 2086
+    2086 2084 2082 2081 2079 2077 2072 2071 2067 2066 2066 2064 2063 2063 2060
+    2058 2054 2054 2053 2052 2051 2032 2029 2024 2019 2015 1999 1918 1915 1875
+    1874 1856 1850 1849 1849 1371(ch) 1371(ch)
+bufnxt: 2071 2071 1376(bufnxt) 1376(bufnxt)
+readinp: 1833(insymbol)
+errmsg: 11241 11239 1710(endofline) 1706(endofline)
+endofline: 9970(modulep) 1831(insymbol)
+outline: 11191 2011 1734(markline)
+markline: 9546 9384 9355 9348 9340 9332 9297 9211 9181 9106 9097 9073 9055 8997
+          8989 8973 8904 8899 8892 6378
+inpriv: 9963(modulep) 9931(modulep) 8646 8644 8641 8627 1741(inpriv)
+        1740(inpriv)
+error: 9963(modulep) 9935(modulep) 9924(modulep) 9921(modulep) 9919(modulep)
+       9909(modulep) 9907(modulep) 9895(modulep) 9887(modulep) 9856(modulep)
+       9833 9822 9798 9742(closeinput) 9732 9726 9639 9626 9620 9604 9482 9439
+       9435 9431 9429 9413 9409 9405 9391 9385 9379 9375 9370 9329 9323 9317
+       9314 9311 9308 9307 9299 9290 9284 9259 9255 9254 9228 9226 9193 9191
+       9189 9166 9161 9158 9152 9147 9143 9135 9131 9128 9127 9099 9089 9083
+       9077 9065 9057 8971 8967 8955 8946 8931 8926 8885 8877 8864 8864 8858
+       8838 8836 8816 8812 8810 8750 8719 8718 8713 8686 8645 8623 8612 8604
+       8601 8597 8561 8541 8540 8539 8528 8526 8522 8521 8520 8518 8516 8514
+       8507 8503 8502 8495 8493 8485 8483 8479 8475 8449 8386 8380 8372 8362
+       8362 8359 8358 8280 8279 8275 8274 8199 8197 8191 8184 8182 8180 8154
+       8152 8137 8135 8110 8108 8097 8095 8093 8090 8081 8073 8054 8048 8041
+       8023 8018 8013 7985 7975 7963 7961 7957 7942 7941 7939 7923 7921 7920
+       7916 7905 7904 7900 7899 7895 7889 7886 7879 7872 7861 7856 7835 7828
+       7826 7816 7798 7796 7763 7762 7754 7746 7743 7741 7735 7733 7720 7693
+       7669 7667 7660 7652 7644 7642 7635 7627 7620 7616 7614 7614 7611 7597
+       7586 7584 7574 7570 7568 7565 7561 7556 7541 7521 7519 7514 7508 7506
+       7502 7499 7496 7470 7466 7448 7443 7434 7413 7402 7399 7372 7370 7355
+       7354 7350 7341 7325 7318 7317 7307 7300 7298 7294 7291 7290 7276 7274
+       7272 7238 7227 7224 7219 7217 7200 7171 7163 7161 7152 7148 7141 7140
+       7127 7122 7116 7114 7099 7096 7094 7070 7050(declare) 7022 6999 6995 6977
+       6972 6968 6930 6929 6894 6884 6847 6843 6821 6813 6806 6799 6786
+       6747(expression) 6721(expression) 6713(expression) 6709(expression)
+       6694(expression) 6689(expression) 6668(expression) 6658(expression)
+       6656(expression) 6649(expression) 6647(expression) 6612(expression)
+       6600(expression) 6556(expression) 6555(expression) 6546(expression)
+       6542(expression) 6539(expression) 6535(expression) 6522(expression)
+       6507(expression) 6505(expression) 6498(expression) 6375 6357 6351 6348
+       6326 6322 6299 6283 6282 6275 6275 6265 6265 6262 6262 6255 6243 6241
+       6238 6230 6229 6200 6186 6182 6182 6160 6153 6147 6139 6106 6106 6089
+       6088 6040 6037 6033 6030 6023 6011 6002 5986 5983 5969 5961 5959 5952
+       5948 5947 5944 5933 5931 5925 5911 5903 5900 5898 5897 5883 5876 5861
+       5858 5857 5844 5843 5838 5834 5825 5817 5809 5801 5793 5785 5779 5770
+       5749 5737 5727 5724 5722 5714 5697 5693 5658 5656 5653 5652 5646 5639
+       5638 5625 5623 5617 5612 5610 5607 5606 5584 5583 5581 5555 5552 5543
+       5502 5501 5491 5485 5478 5444 5435 5430 5425 5393 5392 5389 5375 5373
+       5372 5289 5285 5282 5256 5242 5237 5234 5202 5200 5199 5174 5167 5166
+       5165 5164 5163 5162 5161 5153(call) 5150(call) 5149(call) 5146(call) 5095
+       5090 5047 5041 5018 5010 5000 4971 4958 4950 4944 4936 4922 4920 4917
+       4841 4818 4640(store) 4632(store) 4600(loadaddress) 4586(loadaddress)
+       4580(loadaddress) 4546(puttmp) 4504(load) 4476(load) 4411(constexpr)
+       4409(constexpr) 4406(constexpr) 4404(constexpr) 4401(constexpr)
+       4393(constexpr) 4389(constexpr) 4381(constexpr) 4363(constexpr)
+       4345(constterm) 4343(constterm) 4340(constterm) 4337(constterm)
+       4334(constterm) 4325(constterm) 4317(constterm) 4297(constfactor)
+       4294(constfactor) 4273(constfactor) 4267(constfactor) 4264(constfactor)
+       4262(constfactor) 4258(constfactor) 4231(constfactor) 4230(constfactor)
+       4226(constfactor) 4221(constfactor) 4002(genctaivtcvb)
+       3807(gentypindicator) 3643 3637(mest) 3609(mesl) 3186(newlabel) 3002
+       2572(alignquot) 2521(spana) 2470(searchid) 2457(searchid) 2455(searchid)
+       2454(searchid) 2441(schsecidne) 2434(searchidne) 2358(enterid)
+       2358(enterid) 2265(pushback) 2172 2168 2161 2151 2142 2137 2131 2101 2095
+       2090 2079 2075 2067 2061 2030 2021 1773(chkstd)
+chkstd: 8984 8942 8825 8490 8354 7609 7313 6531(expression) 6029 6020 6009 5999
+        5980 5974 5958 5943 5923 5909 5894 5873 5854 5488 5382 5282 5247 5223
+        4372(constexpr) 4307(constterm) 4228(constfactor) 4224(constfactor) 2231
+        2053 2052 2051
+prtsym: 2245
+insymbol: 11188 9934(modulep) 9924(modulep) 9920(modulep) 9906(modulep)
+          9891(modulep) 9873(modulep) 9855(modulep) 9833 9832 9820 9806 9795
+          9620 9610 9604 9425 9424 9423 9422 9421 9420 9419 9418 9417 9400 9399
+          9368 9366 9350 9342 9328 9326 9318 9300 9287 9259 9258 9225 9193 9163
+          9149 9145 9099 9087 9080 9065 8995 8984 8983 8971 8970 8942 8931 8893
+          8885 8877 8876 8863 8730 8639 8637 8635 8633 8631 8629 8622 8594 8493
+          8492 8485 8482 8466 8448 8364 8195 8189 8179 8143 8141 8133 8116 8113
+          8092 8083 8071 8055 8040 8023 8016 7959 7949 7942 7937 7921 7919 7905
+          7900 7898 7889 7828 7794 7754 7749 7741 7739 7729 7718 7665 7660 7659
+          7640 7635 7634 7620 7619 7614 7584 7583 7561 7560 7556 7535 7508 7506
+          7505 7482 7481 7447 7440 7432 7423 7379 7368 7355 7354 7353 7314 7300
+          7271 7270 7268 7254 7236 7224 7223 7216 7148 7122 7108 7099 7093 7082
+          6916 6857 6831 6759 6744(expression) 6713(expression) 6712(expression)
+          6632(expression) 6626(expression) 6616(expression) 6603(expression)
+          6600(expression) 6599(expression) 6597(expression) 6578(expression)
+          6570(expression) 6542(expression) 6540(expression) 6512(expression)
+          6503(expression) 6375 6357 6351 6326 6255 6252 6158 6099 6040 6035
+          6030 6016 5984 5969 5959 5952 5944 5931 5900 5858 5834 5833 5717 5690
+          5653 5639 5617 5607 5581 5575 5498 5488 5484 5482 5477 5476 5475 5437
+          5415 5389 5381 5284 5282 5279 5278 5277 5246 5222 5200 5196 5145(call)
+          5091 5046 5012 5000 4947 4372(constexpr) 4360(constexpr)
+          4307(constterm) 4292(constfactor) 4289(constfactor) 4285(constfactor)
+          4273(constfactor) 4272(constfactor) 4260(constfactor)
+          4254(constfactor) 4251(constfactor) 4229(constfactor)
+          4226(constfactor) 4225(constfactor) 4188(skip) 4186(skip)
+          2454(searchid) 2454(searchid)
+nextch: 2238 2232 2228 2227 2225 2222 2217 2215 2214 2212 2209 2207 2203 2201
+        2197 2194 2192 2188 2187 2186 2182 2180 2159 2157 2155 2148 2144 2141
+        2139 2136 2134 2130 2124 2119 2098 2089 2085 2081 2078 2063 2053 2052
+        2051 2032 2022 2018 2015 1999 1998 1919 1916 1879 1871 1858
+options: 11170 10554(initscalars) 10527(plcopt) 10515 10470 10469 10468 10467
+         10466 10465 10464 10463 10462 10461 10460 10459 10458 10457 10456 10455
+         10454 10453 10452 10451 10450 10449 10448 10447 10446 10445 2223 2210
+switch: 1912 1911 1910 1909 1908 1907 1906 1905 1904 1903 1902 1901 1900 1899
+        1898 1896 1894 1893 1892 1891 1890 1889 1888 1887 1886 1885 1884
+pwrten: 2106 2106 1933
+plcchr: 2159 2157 2152 1999 1996
+escchr: 2154
+match: 6181 6180 6178 6176 6168 6129 6128 6126 6123 6113 1994 1993 1992 1991
+       1990 1989 1988 1987 1986 1985 1984 1983 1982 1981 1980 1979 1978 1977
+       1976 1975 1974 1973 1972 1971 1970 1969 1968 1967 1966 1965 1964 1963
+       1962 1961 1960 1955
+pushback: 9389
+prtclass:
+prtform:
+prtfpat:
+prtlvlsym:
+prtsyms: 2333 2327(prtlvlsym) 2326(prtlvlsym)
+enterid: 10210 10180 10147 10134 10121 10110 10101 10093(entstdnames) 8445 8437
+         8344 8131 8069 8037 7936 7716 7662 7637 7270 7214 7090 2466(searchid)
+searchsection: 8383 5016
+schsecidnenm: 2440(schsecidne) 2424(searchidnenm)
+inclass: 2408 2400(schsecidnenm)
+searchidnenm: 7258 7045(declare) 6114 5160 2433(searchidne)
+searchidne: 9452 2448(searchid)
+schsecidne: 2456(searchid)
+searchid: 9400 9304 9225 9123 8469 8145 8085 7815 7271 7107 6511(expression)
+          6144 6142 6013 5145(call) 4282(constfactor)
+getbounds: 7874 7572 7517 7306 5358 5298 4962 4433(checkbnds) 4207(arrtmp)
+           3532(stringt) 3501(chart) 2533(isbyte) 2514(span)
+span: 7522 7520 7519 7518 5120(fixpar) 2525(spana) 2514(span)
+spana: 5108(fixpar) 4678(containerop) 4668(containerop) 2525(spana) 2524(spana)
+isbyte: 7153 7128 7101 5426 5339 5327 5314 5302 2534(isbyte)
+basetype: 9654 9164 9150 8235 8234 7733 5693 5501 5491 5450 5300 5299 5289 4927
+          4846 4828 4511(load) 4094(comptypes) 4093(comptypes) 3515(bolt)
+          3496(chart) 3477(intt) 2548
+issub: 2546 2542(basetype) 2541(basetype)
+alignquot: 2587(alignd) 2579(alignu) 2571(alignquot) 2570(alignquot)
+           2569(alignquot) 2569(alignquot) 2568(alignquot) 2568(alignquot)
+           2567(alignquot) 2566(alignquot) 2565(alignquot) 2564(alignquot)
+           2564(alignquot) 2563(alignquot) 2562(alignquot) 2561(alignquot)
+           2560(alignquot) 2559(alignquot) 2558(alignquot) 2554(alignquot)
+alignu: 8794 8322 8157 7770 7356 7283 7230 6986 6451 6406(callop1) 6388(psize)
+        6271 6236 6225 6218 6210 4659(containerop) 4635(store)
+alignd: 9664 9656 9584 9562 9170 9155 8216 8160 8059 8027 7772
+alignau: 5462 4605(loadaddress) 4519(gettmp) 3960(gencuvcvf) 3934(gencipcif)
+         3909(gencupcuf)
+wrtctp: 2749(prtctp) 2735(prtctp) 2731(prtctp) 2730(prtctp) 2730(prtctp)
+        2719(prtctp) 2710(prtctp) 2708(prtctp) 2699(prtctp) 2686(prtctp)
+        2667(prtctp) 2663(prtctp) 2663(prtctp) 2650(prtstp) 2645(prtstp)
+        2641(prtstp) 2621(prtstp)
+wrtstp: 2709(prtctp) 2664(prtctp) 2649(prtstp) 2649(prtstp) 2648(prtstp)
+        2646(prtstp) 2644(prtstp) 2642(prtstp) 2642(prtstp) 2639(prtstp)
+        2638(prtstp) 2637(prtstp) 2634(prtstp) 2633(prtstp) 2624(prtstp)
+prtstp: 2809
+prtctp: 2830
+printtables: 9672 8594
+marker: 2846
+markstp: 2793 2782 2782 2781 2780 2779 2778 2777 2777 2776 2773
+markctp: 2799 2792 2792 2779
+followstp: 2832 2820 2820 2819 2818 2817 2816 2815 2815 2814 2812
+followctp: 2848 2831 2831 2817
+chkrefs: 9636 2858(chkrefs) 2857(chkrefs)
+chkext: 9513 9133 8503 4869 4487(load) 3991(gensuv) 3951(gencuvcvf)
+        3891(gencupcuf) 3826(gen1ts) 3685(gen1s) 2879(chkext) 2877(chkext)
+        2876(chkext) 2874(chkext)
+chkfix: 4594(loadaddress) 4589(loadaddress) 4496(load) 4491(load) 4487(load)
+        3827(gen1ts) 3687(gen1s) 2885(chkfix) 2884(chkfix)
+hasproc: 9401 2895(hasproc) 2890(hasproc)
+hasfunc: 9402 9401 6513(expression) 2908(hasfunc) 2903(hasfunc)
+ovrpf: 6282 2926(ovrpf)
+genlabel: 10379(enterundecl) 10371(enterundecl) 9941(modulep) 9941(modulep)
+          9875(modulep) 9849(modulep) 9849(modulep) 9848(modulep) 9548 9547 9547
+          9301 9300 9278 9278 9278 9192 9179 9098 9095 9071 9023 8985 8984 8934
+          8932 8922 8890 8884 8416 7952 7727 7725 7389 6441 6399(callop1) 6084
+          4204(arrtmp) 3187(newlabel)
+wrttypc: 3143(prtpartypc) 3141(prtpartypc) 3055(wrttyp)
+wrttypsub: 3048 3039 3032 3031 3031 3030 3028 3019 2974
+nxtcti: 2956 2951
+nxtctis: 2995 2971 2964
+wrtchr: 3042 3041 3040 3039 3038 3037 3036 3035 3033 3033 3032 3031 3030 3022
+        3018 3017 3017 3017 3014 3013 3012 3012 3010 3009 3008 3007 2996 2985
+        2985 2977 2974 2973 2972
+wrtint: 3028 3018 3017 2985 2973
+wrtrfd: 3035 3033 2985
+wrtvar: 3036
+wrtenm: 3012 2994
+wrttyp: 7692 7688 7684
+digits: 4032(genmst) 4007(genctaivtcvb) 4007(genctaivtcvb) 3993(gensuv)
+        3977(genlpa) 3962(gencuvcvf) 3962(gencuvcvf) 3953(gencuvcvf)
+        3952(gencuvcvf) 3936(gencipcif) 3936(gencipcif) 3927(gencipcif)
+        3911(gencupcuf) 3911(gencupcuf) 3902(gencupcuf) 3879(genipj)
+        3866(gencjp) 3866(gencjp) 3828(gen1ts) 3689(gen1s) 3682(gen1s)
+        3667(gen1s) 3602(par2) 3602(par2) 3596(par1) 3113(prtfxlabelc)
+        3079(lenlabel) 3064(digits) 2324(prtlvlsym)
+prtlabelu: 7389 4204(arrtmp) 3074(prtlabel)
+prtlabel: 9952(modulep) 9947(modulep) 9946(modulep) 9941(modulep) 9877(modulep)
+          9668 9667 9659 9658 9544 9544 9381 9353 9346 9337 9330 9295 9209 9179
+          9103 9095 9071 9053 9024 8996 8988 8985 8972 8901 8897 8891 8688 7777
+          7725 6476 6418(callop1) 6273 3084(prtlabelc)
+lenlabel: 3084(prtlabelc) 3079(lenlabel)
+prtlabelc: 4033(genmst) 4033(genmst) 4021(gensfr) 4008(genctaivtcvb)
+           3990(gensuv) 3978(genlpa) 3900(gencupcuf) 3879(genipj) 3867(gencjp)
+           3854(genujpxjpcal) 3684(gen1s)
+prtflabel: 3129(prtflabelc)
+prtfxlabel: 7953 3112(prtfxlabelc)
+prtfxlabelc: 3827(gen1ts) 3688(gen1s)
+lenflabel: 3129(prtflabelc) 3124(lenflabel)
+prtflabelc: 3992(gensuv) 3951(gencuvcvf) 3892(gencupcuf) 3826(gen1ts)
+            3686(gen1s)
+prtpartypc: 3898(gencupcuf) 3153(prtpartyp) 3139(prtpartypc)
+prtpartyp: 8580 7682
+searchlabel: 9365 8830 7610
+newlabel: 9386 8859 7612
+prtlabels: 11267
+intmsgneol: 3696(gen1s) 3351(intmsg)
+intmsg: 4047(gensca) 4035(genmst) 4023(gensfr) 4010(genctaivtcvb) 3995(gensuv)
+        3980(genlpa) 3965(gencuvcvf) 3940(gencipcif) 3915(gencupcuf)
+        3880(genipj) 3869(gencjp) 3856(genujpxjpcal) 3844(gen2t) 3830(gen1ts)
+        3816(gen0t) 3780(gen2) 3697(gen1s) 3650(gen0)
+spfmsg: 3696(gen1s)
+intt: 8253 8253 8237 8236 6472 6464 6433(callop2) 6415(callop1) 4709(cmptyp)
+      3500(chart) 3478(intt) 3475(intt)
+realt: 8253 8253 8237 8236 6472 6464 6433(callop2) 6415(callop1) 4709(cmptyp)
+       3956(gencuvcvf) 3930(gencipcif) 3905(gencupcuf) 3572(ordt) 3486(realt)
+       3484(realt)
+chart: 8254 8254 8238 8238 6197 6175 3505(chart) 3505(chart) 3502(chart)
+       3500(chart) 3499(chart) 3497(chart) 3494(chart)
+bolt: 3516(bolt) 3513(bolt)
+stringt: 7875 7291 7289 7139 7113 6977 6212 5986 5961 5933 5925 5911 5861 5727
+         5545 5485 5466 5451 5365 5295 5285 5259 4579(loadaddress)
+         4136(comptypes) 4136(comptypes) 3535(stringt) 3533(stringt)
+         3529(stringt) 3522(stringt)
+arrayt: 4944 4100(comptypes) 4100(comptypes) 3543(arrayt) 3542(arrayt)
+sett: 3957(gencuvcvf) 3931(gencipcif) 3906(gencupcuf) 3550(sett) 3549(sett)
+ptrt: 3557(ptrt) 3556(ptrt)
+simt: 3564(simt) 3563(simt)
+ordt: 3571(ordt) 3570(ordt)
+filet: 3579(filet) 3578(filet)
+complext: 5988 5963 5935 5927 5913 5864 5451 5259 3585(complext) 3584(complext)
+lftjst: 4046(gensca) 4034(genmst) 4022(gensfr) 4009(genctaivtcvb) 3994(gensuv)
+        3979(genlpa) 3964(gencuvcvf) 3939(gencipcif) 3914(gencupcuf)
+        3880(genipj) 3868(gencjp) 3855(genujpxjpcal) 3829(gen1ts) 3815(gen0t)
+        3774(gen2) 3764(gen2) 3749(gen2) 3728(gen2) 3694(gen1s) 3650(gen0)
+        3602(par2) 3596(par1)
+par1: 3761(gen2) 3752(gen2) 3743(gen2) 3727(gen2) 3714(gen2)
+par2: 3844(gen2t) 3720(gen2)
+mesl: 8986 7789 6315 6314 6305 5756 5701 4637(store) 4607(loadaddress)
+      3966(gencuvcvf) 3916(gencupcuf) 3775(gen2) 3765(gen2) 3756(gen2)
+      3753(gen2) 3750(gen2) 3744(gen2) 3737(gen2) 3736(gen2) 3735(gen2)
+      3734(gen2) 3733(gen2) 3732(gen2) 3731(gen2) 3730(gen2) 3722(gen2)
+      3721(gen2) 3691(gen1s) 3661(gen1s) 3644 3613(mes)
+mes: 8689 4048(gensca) 4011(genctaivtcvb) 3997(gensuv) 3982(genlpa)
+     3942(gencipcif) 3882(genipj) 3871(gencjp) 3858(genujpxjpcal) 3723(gen2)
+     3715(gen2) 3692(gen1s) 3690(gen1s) 3651(gen0)
+mest: 3846(gen2t) 3832(gen1ts) 3818(gen0t)
+mestn: 3644 3639(mest) 3631(mest)
+gen0: 9885(modulep) 9649 9616 9573 9568 9356 9345 9263 9247 9212 9051 9031 9023
+      8845 8745 7787 6941 6936 6928 6893 6893 6883 6883 6880 6880 6875 6870 6866
+      6866 6842 6840 6820 6812 6805 6798 6796 6794 6785 6782 6778 6773 6768
+      6726(expression) 6702(expression) 6701(expression) 6685(expression)
+      6684(expression) 6473 6465 6416(callop1) 6206 5818 5802 5794 5786 5778
+      5776 5769 5767 5686 5662 5660 5616 5614 5549 5128(fixpar) 5069 4994 4849
+      4844 4686(containerop) 4661(containerop) 4616(loadaddress)
+      4614(loadaddress) 4613(loadaddress)
+gen1s: 4591(loadaddress) 4590(loadaddress) 4493(load) 4492(load) 3704(gen1)
+gen1: 9589 9577 9572 9497 9495 9493 9491 9485 9477 9050 8987 8808 8801 8795 8790
+      7779 7012 7011 6979 6469 6461 6412(callop1) 6313 6278 6039 6024 6004 5995
+      5992 5975 5967 5951 5950 5939 5917 5904 5889 5887 5884 5881 5879 5868 5866
+      5848 5847 5846 5839 5759 5758 5755 5754 5695 5590 5588 5585 5570 5567 5566
+      5563 5561 5559 5557 5551 5550 5538 5533 5527 5524 5516 5515 5514 5513 5511
+      5510 5509 5508 5468 5467 5463 5460 5454 5398 5396 5394 5377 5370 5369 5367
+      5366 5364 5363 5362 5361 5354 5353 5348 5347 5346 5345 5343 5342 5341 5340
+      5336 5335 5334 5333 5331 5330 5329 5328 5323 5322 5321 5320 5318 5317 5316
+      5315 5311 5310 5309 5308 5306 5305 5304 5303 5271 5270 5268 5262 5205 5203
+      5189 5188 5186 5185 5181 5180 5176 5133(fixpar) 5132(fixpar) 5131(fixpar)
+      5129(fixpar) 5125(fixpar) 5113(fixpar) 5109(fixpar) 5085 5082 5067 4990
+      4988 4687(containerop) 4683(containerop) 4679(containerop)
+      4673(containerop) 4669(containerop) 4662(containerop) 4660(containerop)
+      4584(loadaddress)
+gen2: 9944(modulep) 9663 9652 9575 9571 9570 9567 9489 9321 9298 9201 9187 9186
+      9023 9020 9019 9016 9015 8791 8738 8736 7786 7783 7780 7019 7018 7017 7016
+      7015 7014 7009 7008 7007 7006 7005 7004 6983 6981 6956 6954
+      6725(expression) 6478 6475 6470 6462 6420(callop1) 6413(callop1) 6310 6216
+      6214 6156 6038 5990 5965 5937 5929 5915 5864 5752 5751 5741 5739 5699 5664
+      5661 5659 5627 5615 5613 5569 5537 5532 5526 5523 5506 5455 5453 5376 5360
+      5359 5263 5262 5179 5124(fixpar) 5121(fixpar) 5120(fixpar) 5110(fixpar)
+      5108(fixpar) 5084 4992 4876 4821 4680(containerop) 4678(containerop)
+      4670(containerop) 4668(containerop) 4608(loadaddress) 4606(loadaddress)
+      4604(loadaddress) 4597(loadaddress) 4483(load) 4481(load) 4474(load)
+      4472(load) 4471(load) 4468(load)
+gentypindicator: 4006(genctaivtcvb) 3843(gen2t) 3825(gen1ts) 3814(gen0t)
+                 3801(gentypindicator)
+gen0t: 9199 9184 9172 8927 8767 6915 6700(expression) 6683(expression)
+       6677(expression) 6638(expression) 6611(expression) 5810 4952 4839 4828
+       4816 4639(store)
+gen1ts: 9522 4630(store) 4498(load) 4497(load) 3837(gen1t)
+gen1t: 9655 9615 9523 9205 9204 5827 5826 5300 5299 5088 4967 4965 4910 4846
+       4599(loadaddress) 4596(loadaddress) 4503(load) 4494(load)
+gen2t: 9654 9588 9576 9319 9249 9200 9185 9175 9173 9157 9022 9018 9014 9011
+       8929 8779 8778 5061 5060 4964 4911 4905 4877 4636(store) 4631(store)
+       4501(load) 4434(checkbnds)
+genujpxjpcal: 9882(modulep) 9603 9343 9336 9327 9322 9294 9280 9209 9202 9192
+              9103 9049 9035 9030 9024 9021 9017 8993 8979 8930 8890 8849 7740
+gencjp: 9044
+genipj: 8851
+gencupcuf: 9883(modulep) 9878(modulep) 6477 6419(callop1) 6303 6301
+gencipcif: 6312 6311
+gencuvcvf: 6295 6293 6288 6286
+genlpa: 6155
+gensuv: 9525 9515
+genctaivtcvb: 8762 8759 8756 4826 4823
+gensfr: 9883(modulep) 9876(modulep) 6441 6399(callop1) 6096 6095
+genmst: 9943(modulep) 9549
+gensca: 8737 6982 6955 6215
+filecomponent: 8750 8154 7586 4084 4077 4076 4063(filecomponent)
+filecomponentre: 4078 4067(filecomponent) 4065(filecomponent)
+                 4064(filecomponent)
+comptypes: 9198 9183 9171 9168 9154 9142 8949 8927 8748 8744 8528 8252 7877 7865
+           7837 7816 7318 7317 7290 6944 6927 6913 6882 6784 6699(expression)
+           6682(expression) 6676(expression) 6660(expression) 6657(expression)
+           6651(expression) 6648(expression) 6637(expression) 6240 6204 6198
+           6194 6177 6172 6146 6126 5729 5658 5646 5623 5612 5555 5375 5356 5352
+           5296 4959 4951 4708(cmptyp) 4169(cmppar) 4168(cmppar) 4157(comptypes)
+           4156(comptypes) 4155(comptypes) 4152(comptypes) 4143(comptypes)
+           4136(comptypes) 4132(comptypes) 4132(comptypes) 4114(comptypes)
+           4114(comptypes) 4096(comptypes) 4091(comptypes)
+cmppar: 8232 6058 4176(cmpparlst) 4169(cmppar) 4168(cmppar) 4164(cmppar)
+cmpparlst: 8561 8295 6152 6125 6123 4179(cmpparlst) 4176(cmpparlst)
+           4174(cmpparlst) 4167(cmppar)
+skip: 9963(modulep) 9439 9391 9329 9323 9191 9161 9147 8645 8604 8601 8597 8495
+      8483 8373 8197 8191 8182 8137 8095 8081 8048 8018 8013 7961 7941 7916 7895
+      7796 7746 7736 7667 7652 7642 7627 7616 7597 7443 7413 7370 7298 7272 7238
+      7219 7200 7171 7096 7070 6747(expression) 6505(expression)
+      6498(expression) 6160 6139 6011 5435 5243 5095 4936 4297(constfactor)
+      4294(constfactor) 4221(constfactor)
+arrtmp: 7525 6591(expression) 4248(constfactor)
+constfactor: 4308(constterm) 4305(constterm) 4229(constfactor)
+constterm: 4373(constexpr) 4361(constexpr)
+constexpr: 8943 8937 7910 7876 7864 7831 7636 7465 7314 7312 7149 7138 7123 5717
+           4261(constfactor) 4257(constfactor) 4225(constfactor)
+checkbnds: 9207 9177 8772 6548(expression) 6203
+containers: 9570 8791 8789 8788 7763 7756 6039 5688 5117(fixpar) 5105(fixpar)
+            5069 5067 4987 4655(containerop) 4653(containerop) 4616(loadaddress)
+            4446(containers)
+containerbase: 9570 8792 8790 7786 7783 5699 4992 4458(containerbase)
+               4457(containerbase)
+load: 9203 9197 9182 9170 9155 8921 8740 8684 7731 6921 6910 6860 6855 6836 6762
+      6757 6698(expression) 6680(expression) 6675(expression) 6636(expression)
+      6606(expression) 6541(expression) 6359 6202 6036 6021 5981 5901 5691 5676
+      5654 5608 5503 5492 5449 5290 5056 4948 4843
+gettmp: 9279 9248 9116 9116 8920 4603(loadaddress)
+puttmp: 9357 9266 9214 9214 9066
+puttmps: 8616
+clrtmp: 9441
+loadaddress: 9320 9245 9212 8740 8728 6921 6910 6860 6855 6836 6762 6757
+             6606(expression) 6231 6220 6031 6000 5985 5960 5945 5932 5924 5910
+             5895 5874 5860 5855 5836 5679 5640 5632 5618 5595 5449 5428 5258
+             5235 5197 5172 5079 4946 4820
+store: 9208 9178 8806 8799 8781 8773
+containerop: 8784 6990
+parnum: 8554 8079 8046 4748(fndopr2) 4728(fndopr1) 4696(parnum)
+partype: 6440 6440 6398(callop1) 4750(fndopr2) 4749(fndopr2) 4729(fndopr1)
+         4702(partype) 4702(partype)
+cmptyp: 4750(fndopr2) 4749(fndopr2) 4729(fndopr1) 4709(cmptyp) 4708(cmptyp)
+        4707(cmptyp)
+ischrcst: 8730 6917 6905 6212 4714(ischrcst)
+fndopr1: 6837 6607(expression)
+fndopr2: 8742 6923 6888 6863 6816 6809 6802 6790 6765
+isopr: 4770(isopr) 4767(isopr)
+taggedrec: 8777 5715 5059 4781(taggedrec)
+selector: 9227 8710 6552(expression) 5152(call)
+schblk: 4922 4796(selector)
+checkvrnt: 5021
+fixpar: 6474 6466 6417(callop1) 6232 6221
+call: 9412 9411 6514(expression)
+variable: 6031 6000 5945 5895 5874 5855 5833 5677 5640 5632 5618 5595 5385 5250
+          5226 5197 5172
+chkhdr: 5943 5894 5873 5854 5415 5222 5196 5172
+getputresetrewriteprocedure: 6329
+pageprocedure: 6330
+readprocedure: 6331
+writeprocedure: 6332
+packprocedure: 6333
+unpackprocedure: 6334
+newdisposeprocedure: 6335
+absfunction: 6361
+sqrfunction: 6362
+truncfunction: 6363
+roundfunction: 6364
+oddfunction: 6365
+ordfunction: 6366
+chrfunction: 6367
+predsuccfunction: 6368
+eofeolnfunction: 6369
+assignprocedure: 6336
+closeupdateappendprocedure: 6338
+positionprocedure: 6339
+deleteprocedure: 6340
+changeprocedure: 6341
+lengthlocationfunction: 6370
+existsfunction: 6371
+haltprocedure: 6342
+assertprocedure: 6343
+throwprocedure: 6344
+referprocedure: 6345
+seterrprocedure: 6346
+maxfunction: 6372
+callnonstandard: 6378
+nxtprc: 6261 6181 6129 6103
+cmplst: 6071 6064 6057
+psize: 6446 6446 6443 6443 6403(callop1) 6401(callop1) 6390(psize)
+callop1: 6838 6608(expression)
+callop2: 8743 6924 6889 6864 6817 6810 6803 6791 6766
+fungible: 6457 6456 6436(callop2) 6433(callop2) 6431(callop2)
+expression: 9163 9149 9098 9087 8921 8883 8730 7731 6641(expression)
+            6630(expression) 6599(expression) 6540(expression) 6358 6166 6036
+            6021 5985 5981 5960 5932 5924 5910 5901 5860 5691 5674 5654 5608
+            5576 5499 5489 5438 5416 5383 5287 5248 5224 4947
+simpleexpression: 6916 6904
+term: 6857 6832
+factor: 6759 6752 6603(expression)
+declare: 9930(modulep) 8589
+resolvep: 7801 7760 7672
+typ: 9166 9165 9164 9152 9151 9150 7943 7755 7679 7661 7585 7509 7225
+simpletype: 7562 7490 7416
+fieldlist: 7543 7358
+ordertag: 7396
+labeldeclaration: 8629
+constdeclaration: 8631
+typedeclaration: 8633
+wrtsym: 8586 8438 7947 7947 7775 7775
+vardeclaration: 8637
+fixeddeclaration: 8635
+fixeditem: 7955 7911 7892 7858
+procdeclaration: 8639
+pushlvl: 8458 8455 8074 8042
+parameterlist: 8461 8460 8076 8043
+joinlists: 8184 8180
+compparamovl: 8273 8243
+conpar: 8278 8263
+comp: 8258 8254 8252 8251
+chkovlpar: 8525
+fndovlgrp: 8505 8300
+parmspc: 8555 8325
+parmoff: 8556
+parmrg: 8559 8553
+body: 9939(modulep) 9931(modulep) 8592
+addlvl: 9595 9349 9341 9333 9281 9260 9194 9100 9074 8990 8975 8894 8886 8870
+sublvl: 9619 9352 9351 9342 9335 9293 9262 9196 9102 9091 8992 8978 8896 8888
+        8879
+genfjp: 9098 9087 8884
+fndactovl: 9406 8700
+statement: 9606 9350 9342 9334 9289 9283 9261 9195 9101 9082 9076 8991 8976 8895
+           8887 8872
+assignment: 9434 9414 9410
+gotostatement: 9418
+compoundstatement: 9417
+ifstatement: 9419
+casestatement: 9420
+casecount: 9007 8918
+repeatstatement: 9422
+whilestatement: 9421
+forstatement: 9423
+withstatement: 9424
+trystatement: 9425
+externalheader: 9597
+initvirt: 9599
+schvirt: 9536 9532 9532 9530
+openinput: 9803
+err: 10510 10509 10509 10508 10506 10437 10436 9732 9726 3047 3003 3002
+nxtinc: 9722
+insertuse: 9717
+closeinput: 9816
+putinp: 11193 11193
+cancelfwd: 9815 9764(cancelfwd) 9764(cancelfwd)
+usesjoins: 9929(modulep) 9928(modulep)
+schnam: 9799 9790(usesjoins) 9776(usesjoins)
+searchext: 9895(modulep) 9841(searchext)
+modulep: 11189 9813
+stdnames: 11087
+enterstdtypes: 11087
+entstdnames: 11087
+entstdprocfunc: 10262 10261 10260 10259 10258 10257 10256 10255 10254 10253
+                10252 10251 10250 10249 10248 10247 10245 10244 10243 10242
+                10241 10240 10239 10238 10237 10236 10235 10234 10233 10232
+                10231 10230 10229 10228 10227 10226 10225 10224 10223 10222
+entstdtyp: 10171 10170 10169 10168 10167 10166 10165 10164 10163 10161 10160
+           10159 10158 10157 10156 10155 10154 10153
+entstdintcst: 10217 10216 10215 10214 10213
+entstdrlcst: 10220 10219 10218
+entstdhdr: 10190 10189 10188 10187 10186 10185 10184
+entstdexp: 10339 10338 10337 10336 10335 10334 10333 10332 10331 10330 10329
+           10328 10327 10326 10325 10324 10323 10322 10321 10320 10319 10318
+           10317 10316 10315 10314 10313 10312 10311 10310 10309 10308 10307
+           10306 10305 10304 10303 10302 10301 10300 10299 10298 10297 10296
+           10295 10294 10293 10292 10291 10290 10289 10288 10287 10286 10285
+           10284 10283 10282 10281 10280 10279 10278 10277 10276 10275 10274
+           10273 10272 10271 10270 10269 10268 10267 10266 10265
+enterundecl: 11087
+exitundecl: 11203
+paropt: 11140 11118 11098
+setflg: 10515 10470 10469 10468 10467 10466 10465 10464 10463 10462 10461 10460
+        10459 10458 10457 10456 10455 10454 10453 10452 10451 10450 10449 10448
+        10447 10446 10445
+plcopt: 11141
+initscalars: 11068
+initsets: 11068
+inittables: 11068
+reswords: 11043
+symbols: 11043
+rators: 11043
+procmnemonics: 11044
+instrmnemonics: 11044
+chartypes: 11045
+initdx: 11045
+
+======================================================================
+EXTERNAL MODULES
+======================================================================
+
+strings
+======================================================================
+    STRING HANDLING LIBRARY                             
+
+PROCEDURES AND FUNCTIONS
+----------------------------------------------------------------------
+    function lcase: (unknown)
+    function lcase: (unknown)
+    function len: (unknown)
+    function len: (unknown)
+    procedure copy
+    procedure copy
+    function copy: (unknown)
+    function copy: (unknown)
+    procedure copy
+    procedure cat
+    function cat: (unknown)
+    function cat: (unknown)
+    function cat: (unknown)
+    function cat: (unknown)
+    function comp: (unknown)
+    function comp: (unknown)
+    function comp: (unknown)
+    function comp: (unknown)
+    function compp: (unknown)
+
+
+version
+======================================================================
+    Version numbers
+
+CONSTANTS
+----------------------------------------------------------------------
+    majorver
+    minorver
+    experiment
+
+
+mpb
+======================================================================
+    64 bit Machine Parameter block (MPB)
+
+CONSTANTS
+----------------------------------------------------------------------
+    intsize
+    intal
+    intdig
+    inthex
+    realsize
+    realal
+    charsize
+    charal
+    charmax
+    boolsize
+    boolal
+    ptrsize
+    adrsize
+    adral
+    setsize
+    setal
+    filesize
+    fileidsize
+    exceptsize
+    exceptal
+    stackal
+    stackelsize
+    maxsize
+    heapal
+    sethigh
+    setlow
+    ordmaxchar
+    ordminchar
+    marksize
+    maxexp
+    nilval
+    pmmaxint
+    markep
+    marksb
+    market
+
+
+parse
+======================================================================
+    Character Level Parsing Library                      
+
+CONSTANTS
+----------------------------------------------------------------------
+    maxpar
+
+TYPES
+----------------------------------------------------------------------
+    parhan
+
+PROCEDURES AND FUNCTIONS
+----------------------------------------------------------------------
+    procedure openpar
+    procedure opencommand
+    function endlin: (unknown)
+    function chkchr: (unknown)
+    procedure getchr
+    procedure skpspc
+    procedure parlab
+    procedure parnum
+    procedure parfil
+    procedure parstr
+
+
+services
+======================================================================
+    EXTENDED FUNCTION LIBRARY                           
+
+TYPES
+----------------------------------------------------------------------
+    filptr
+
+PROCEDURES AND FUNCTIONS
+----------------------------------------------------------------------
+    procedure list
+    procedure list
+    procedure brknam
+    procedure brknam
+    procedure brknam
+    procedure maknam
+    function maknam: (unknown)
+    function maknam: (unknown)
+    function maknam: (unknown)
+    function maknam: (unknown)
+    function maknam: (unknown)
+    function maknam: (unknown)
+    function maknam: (unknown)
+    function maknam: (unknown)
+    procedure fulnam
+    function fulnam: (unknown)
+    function optchr: (unknown)
+

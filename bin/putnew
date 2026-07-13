@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Update new binaries 
+#
+cp source/pcom bin
+cp source/pint bin
+cp source/pmach bin
+cp source/pgen/amd64/pgen bin
+#cp pc/pc bin

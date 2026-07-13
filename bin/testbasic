@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+# Script to test basic interpreter
+# interpreters or compilers don't generate different output results.
+#
+
+#
+# Compile and run basic
+#
+pc basic/basic -r
+basic/basic < basic/basic.inp > basic/basic.lst
+if [ "$1" = "--pmach" ]; then
+
+    pint p2/pasint.p6 p2/pasint.p6o --machdeck
+    pmach p2/pasint.p6o temp p2/roman.p2 temp2 < p2/pasint.inp > p2/roman.lst
+
+elif [ "$1" = "--cmach" ]; then
+
+    pint p2/pasint.p6 p2/pasint.p6o --machdeck
+    cmach p2/pasint.p6o p2/roman.p2 temp < p2/pasint.inp > p2/roman.lst
+
+elif [ "$1" = "--package" ]; then
+
+    pint p2/pasint.p6 p2/pasint.p6o --machdeck
+    genobj p2/pasint.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -o p2/pasint $PASCALP6/source/cmach/cmach.c program_code.c -lm
+	p2/pasint p2/roman.p2 temp $options < p2/pasint.inp > p2/roman.lst
+
+elif [ "$1" = "--pint" ]; then
+
+    pc basic/basic -r -pint
+    pint basic/basic < basic/basic.inp > basic/basic.lst
+
+else
+
+    pc basic/basic -r
+    basic/basic < basic/basic.inp > basic/basic.lst
+
+fi
+
+#
+# Now compare with reference
+#
+echo Comparing PAT result to reference
+strip basic/basic.lst tmp1
+strip basic/basic.cmp tmp2
+dif -w tmp1 tmp2 > basic/basic.dif
+rm -f tmp1
+rm -f tmp2
+ls -l basic/basic.dif > tmp1
+grep ".dif" tmp1
+rm -f tmp1
+## pass if diff file is empty
+if test -s basic/basic.dif
+then
+    echo "*** FAIL"
+    exit 1
+else
+    echo "PASS"
+fi

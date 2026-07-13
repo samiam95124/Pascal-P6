@@ -1,0 +1,10 @@
+P6 Pascal compiler vs. 0.5.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
+
+Errors in program: 0
+P6 Pascal AMD64/gcc 64 bit code generator vs. 0.5.x
+
+Generating program
+
+Program generation complete

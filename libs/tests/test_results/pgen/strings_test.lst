@@ -1,0 +1,101 @@
+1:hj8 s/b hj8
+48: 'this is werid       '
+s/b 'this is werid       
+2: LP* s/b LP*
+47: 'THIS IS WERID       '
+s/b 'THIS IS WERID       '
+3:  '                    '
+s/b '                    '
+4: 13 s/b 13
+5: Whats up ? s/b Whats up ?
+6:  'what ho             '
+s/b 'what ho             '
+7: 'mamba mamba' s/b 'mamba mamba'
+8:  'Five dimes   make waste'
+s/b 'Five dimes   make waste'
+9:  'What did he say     '
+s/b 'What did he say     '
+10:  true s/b true
+11: false s/b false
+12: false s/b false
+13:  true s/b true
+14: false s/b false
+15:  true s/b true
+16: false s/b false
+17:  true s/b true
+18:  true s/b true
+19: false s/b false
+20:  true s/b true
+21: false s/b false
+22:  true s/b true
+23:  true s/b true
+24: false s/b false
+25:  true s/b true
+26: false s/b false
+27: false s/b false
+28:  true s/b true
+29: false s/b false
+30:  true s/b true
+31: false s/b false
+32: false s/b false
+33:  true s/b true
+34: false s/b false
+35: 6 s/b 6
+36: 0 s/b 0
+37: 6 s/b 6
+38: 0 s/b 0
+39: 6 s/b 6
+40: 0 s/b 0
+41: 6 s/b 6
+42: 0 s/b 0
+43: only s/b only
+44: 'is not              '
+s/b 'is not              '
+45: 'hi hi hi ' s/b 'hi hi hi '
+46: 'hihihi              '
+s/b 'hihihi              '
+Now is the time false s/b Now is the time false
+52: 'for all good men    ' false
+s/b 'for all good men    ' false
+53: '       123          '
+s/b '       123          '
+54: '       456'
+s/b '       456'
+55: '7864                '
+s/b '7864                '
+984 s/b 984
+56: ' 5.8900000e+001     '
+s/b ' 5.8900000e+001     '
+57: ' 5.0010000e+003'
+s/b ' 5.0010000e+003'
+58: ' 8.64e+002'
+s/b ' 8.64e+002'
+59: ' 5.89000000000000e+001                  '
+s/b ' 5.89000000000000e+001                  '
+60: ' 5.00100000000000e+003'
+s/b ' 5.00100000000000e+003'
+61: '   693.100          '
+s/b '   693.100          '
+62: '   693.100          '
+s/b '   693.100'
+63: '       567          '
+s/b '       567          
+64: '       567          '
+s/b '       567
+65: '123                 '
+s/b '123                 
+66: '832'
+s/b '832'
+67: '      8347'
+s/b '      8347'
+68: 12934 s/b 12934
+69: 193 s/b 193
+70:  1.000000000000000e+00 s/b  1.00000000000000e+000
+71:  1.234000000000000e+00 s/b  1.23400000000000e+000
+72:  1.234000000000000e+02 s/b  1.23400000000000e+002
+73:  1.234000000000000e-01 s/b  1.23400000000000e+001
+74: -1.226000000000000e-01 s/b -1.23400000000000e+001
+75: 777 s/b 777
+76: 1010 s/b 1010
+77: '1.5                      '
+s/b a left-justified real, padded to width 25

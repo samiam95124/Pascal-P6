@@ -1,0 +1,27 @@
+pmach run ***************************************
+0 sample_programs/test_results/pmach/hello.dif
+0 sample_programs/test_results/pmach/roman.dif
+0 sample_programs/test_results/pmach/match.dif
+0 sample_programs/test_results/pmach/prime.dif
+0 sample_programs/test_results/pmach/qsort.dif
+0 sample_programs/test_results/pmach/fbench.dif
+0 sample_programs/test_results/pmach/drystone.dif
+0 sample_programs/test_results/pmach/startrek.dif
+0 sample_programs/test_results/pmach/basics.dif
+0 standard_tests/test_results/pmach/iso7185pat.dif
+Pascal-s run
+0 sample_programs/test_results/pmach/roman.dif
+Pascal-P2 run
+0 p2/test_results/pmach/roman.dif
+Pascal-P4 run
+0 p4/test_results/pmach/standardp.dif
+PRT run
+0 standard_tests/test_results/pmach/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/test_results/pmach/pascaline.dif
+strings_test run
+0 libs/tests/test_results/pmach/strings_test.dif
+network_test run
+0 libs/tests/test_results/pmach/network_test.dif
+services_test run
+0 libs/tests/test_results/pmach/services_test.dif

@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+# Run spew test on pcom.pas
+#
+cd source
+spew pcom --modules=/home/samiam/projects/pascal/pascal-p6/libs  --modules=/home/samiam/projects/pascal/pascal-p6/source/lendian  --modules=/home/samiam/projects/pascal/pascal-p6/source/mpb64  -debugflt  -amd64_sysv
