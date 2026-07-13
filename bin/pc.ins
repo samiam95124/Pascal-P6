@@ -5,6 +5,35 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !
+! Cross compilation targets. Each target selects its toolchain and places the
+! prebuilt target libraries (from the hosts tree) ahead of the main library on
+! the module path: module headers (.pas) are found across all paths, but the
+! archives and runtime objects resolve to the target's own builds. These
+! toolchain commands are for a linux/x86 build machine; another build machine
+! adjusts them here.
+!
+
+! Windows x64 target (runs on Windows or under Wine)
+windows begin
+   win64 begin
+      cc "x86_64-w64-mingw32-gcc"
+      exeext "exe"
+      modulepath "../hosts/windows/x86/bit64/lib"
+      exclude "../hosts/windows/x86/bit64/lib"
+   end
+end
+
+! arm64 linux target (runs on arm64 linux or under qemu-aarch64)
+linux begin
+   arm64_sysv begin
+      cc "aarch64-linux-gnu-gcc"
+      codegen "pgen_arm64"
+      modulepath "../hosts/linux/arm/bit64/lib"
+      exclude "../hosts/linux/arm/bit64/lib"
+   end
+end
+
+!
 ! Declare the main library and protect it from recompiles
 !
 modulepath "../libs"

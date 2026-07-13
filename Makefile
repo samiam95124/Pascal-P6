@@ -183,9 +183,9 @@ default: $(HOSTTARGET)
 
 linux64: all
 
-win64: $(LIBS)/win64/psystem.a $(LIBS)/win64/main.o
+win64: $(LIBS)/win64/psystem.a $(LIBS)/win64/main.o $(LIBS)/win64/services.a
 
-arm64: $(LIBS)/arm64/psystem.a $(LIBS)/arm64/main.o
+arm64: $(LIBS)/arm64/psystem.a $(LIBS)/arm64/main.o $(LIBS)/arm64/services.a
 
 all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a \
@@ -296,6 +296,43 @@ $(LIBS)/win64/main.o: $(SOURCE)/pgen/amd64/main.asm
 	mkdir -p $(WINCELL)/lib
 	cp $(BUILD)/win64/main.o $(WINCELL)/lib
 
+#
+# Build services for win64. The Ami services implementation for Windows is
+# cross compiled with mingw, along with the wrappers and support (the x86
+# name-coining wrapper assembly is convention neutral and assembles for COFF
+# as is). Built without the Ami stdio bypass, matching the win64 psystem's
+# stdio world.
+#
+WINSERVCPP=$(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source
+ifneq ($(AMITK),)
+$(LIBS)/win64/services.a: $(PASCALP6)/amitk/windows/services.c \
+	$(LIBS)/source/services_wrapper.asm \
+	$(LIBS)/source/services_wrapper.c \
+	$(LIBS)/source/services_support.c \
+	$(LIBS)/source/support.c
+	@echo
+	@echo "Building services for win64..."
+	@echo
+	mkdir -p $(BUILD)/win64
+	mkdir -p $(LIBS)/win64
+	$(WINCC) $(WINCFLAGS) $(WINSERVCPP) \
+		-o $(BUILD)/win64/support.o -c $(LIBS)/source/support.c
+	$(WINCC) $(WINCFLAGS) $(WINSERVCPP) \
+		-o $(BUILD)/win64/services_support.o -c $(LIBS)/source/services_support.c
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/services_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/services_wrapper.asm
+	$(WINCC) $(WINCFLAGS) $(WINSERVCPP) \
+		-o $(BUILD)/win64/services_wrapper.o -c $(LIBS)/source/services_wrapper.c
+	$(WINCC) $(WINCFLAGS) $(WINSERVCPP) \
+		-o $(BUILD)/win64/services.o -c $(PASCALP6)/amitk/windows/services.c
+	rm -f $(LIBS)/win64/services.a
+	$(WINAR) rc $(LIBS)/win64/services.a $(BUILD)/win64/services_wrapper_asm.o \
+		$(BUILD)/win64/services_wrapper.o $(BUILD)/win64/services.o \
+		$(BUILD)/win64/services_support.o $(BUILD)/win64/support.o
+	mkdir -p $(WINCELL)/lib
+	cp $(LIBS)/win64/services.a $(WINCELL)/lib
+endif
+
 ################################################################################
 #
 # Build the arm64 (aarch64 linux) runtime components
@@ -340,6 +377,43 @@ $(LIBS)/arm64/main.o: $(SOURCE)/pgen/arm64/main.asm
 	cp $(BUILD)/arm64/main.o $(LIBS)/arm64
 	mkdir -p $(ARMCELL)/lib
 	cp $(BUILD)/arm64/main.o $(ARMCELL)/lib
+
+#
+# Build services for arm64. The Ami services implementation for linux is
+# cross compiled with the aarch64 toolchain, along with the wrappers and
+# support; the name-coining wrapper assembly is the aarch64 twin
+# (services_wrapper_arm64.asm). Built without the Ami stdio bypass, matching
+# the arm64 psystem's stdio world.
+#
+ARMSERVCPP=$(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source
+ifneq ($(AMITK),)
+$(LIBS)/arm64/services.a: $(AMI)/services.c \
+	$(LIBS)/source/services_wrapper_arm64.asm \
+	$(LIBS)/source/services_wrapper.c \
+	$(LIBS)/source/services_support.c \
+	$(LIBS)/source/support.c
+	@echo
+	@echo "Building services for arm64..."
+	@echo
+	mkdir -p $(BUILD)/arm64
+	mkdir -p $(LIBS)/arm64
+	$(ARMCC) $(ARMCFLAGS) $(ARMSERVCPP) \
+		-o $(BUILD)/arm64/support.o -c $(LIBS)/source/support.c
+	$(ARMCC) $(ARMCFLAGS) $(ARMSERVCPP) \
+		-o $(BUILD)/arm64/services_support.o -c $(LIBS)/source/services_support.c
+	$(ARMCC) $(ARMCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/arm64/services_wrapper_asm.o \
+		-c -x assembler $(LIBS)/source/services_wrapper_arm64.asm
+	$(ARMCC) $(ARMCFLAGS) $(ARMSERVCPP) \
+		-o $(BUILD)/arm64/services_wrapper.o -c $(LIBS)/source/services_wrapper.c
+	$(ARMCC) $(ARMCFLAGS) $(ARMSERVCPP) \
+		-o $(BUILD)/arm64/services.o -c $(AMI)/services.c
+	rm -f $(LIBS)/arm64/services.a
+	$(ARMAR) rc $(LIBS)/arm64/services.a $(BUILD)/arm64/services_wrapper_asm.o \
+		$(BUILD)/arm64/services_wrapper.o $(BUILD)/arm64/services.o \
+		$(BUILD)/arm64/services_support.o $(BUILD)/arm64/support.o
+	mkdir -p $(ARMCELL)/lib
+	cp $(LIBS)/arm64/services.a $(ARMCELL)/lib
+endif
 
 ################################################################################
 #
@@ -754,8 +828,8 @@ bin/spew: $(SOURCE)/spew.c
 # restorable set. The configure script performs the reverse restore. Run
 # after a clean regression, before committing.
 #
-HOSTBINS=cmach cmacht cmachg genobj pc pcom pgen pint pintt pintg pmach \
-	pmacht pmachg spew
+HOSTBINS=cmach cmacht cmachg genobj pc pcom pgen pgen_arm64 pint pintt \
+	pintg pmach pmacht pmachg spew
 HOSTLIBS=main.o parse.o psystem.a services.a strings.o terminal.a graphics.a \
 	sound.a network.a gnome_widgets.o
 

@@ -232,6 +232,9 @@ slistfil:    boolean;
 { packaging list }                         package: pkgptr;
 { hosts tree copy list }                   copies:  cpyptr;
 { host identifier (psystem_host code) }    hostid:  integer;
+{ C compiler/linker driver command }       ccname:  filnam;
+{ code generator command }                 cgname:  filnam;
+{ executable file extension }              exeext:  filnam;
 { a graphical window library exists }      windowed:  boolean;
 { the terminal library is the I/O library } terminaled: boolean;
 { the sound library is used }              sounded:   boolean;
@@ -1917,7 +1920,7 @@ begin
          { build pgen x x command }
          i := 1; { set 1st command filename }
          clears(cmdbuf); { clear command buffer }
-         putstr('pgen');
+         putstr(cgname);
          putchr(' ');
          services.brknam(fns, p, n, e); { remove the extention and place .p6 }
          if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
@@ -1935,7 +1938,8 @@ begin
 
          i := 1; { set 1st command filename }
          clears(cmdbuf); { clear command buffer }
-         if fstatic then putstr('gcc -static -g3') else putstr('gcc -g3');
+         putstr(ccname);
+         if fstatic then putstr(' -static -g3') else putstr(' -g3');
          putchr(' ');
          putstr('-c');
          putchr(' ');
@@ -2232,7 +2236,8 @@ begin { dolink }
             { link the prebuilt externals cmach object with the per-program deck
               (program_code.c, a plain byte array compiled here) and the external
               archives plus their dependency stack. }
-            putstr('gcc -static -g3 -o '); putstr(fns); putchr(' ');
+            putstr(ccname);
+            putstr(' -static -g3 -o '); putstr(fns); putchr(' ');
             putstr(fnc); putchr(' ');
             putstr('program_code.c'); putchr(' ');
             putstr('-Wl,-u,getparamfluid -Wl,-u,getparamdump'); putchr(' ');
@@ -2252,7 +2257,8 @@ begin { dolink }
             services.maknam(fnc, pgmpath, '../build/cmach/cmach_package_min', 'o');
             services.fulnam(fnc);
             if not exists(fnc) then error('cmach_package_min.o not found');
-            putstr('gcc -o '); putstr(fns); putchr(' ');
+            putstr(ccname);
+            putstr(' -o '); putstr(fns); putchr(' ');
             putstr(fnc); putchr(' ');
             putstr('program_code.c'); putchr(' ');
             putstr('-lm');
@@ -2264,9 +2270,10 @@ begin { dolink }
 
    end else begin { build }
 
-      { remove extention from target }
+      { remove extention from target, and place the target's executable
+        extension (windows targets set exe) }
       services.brknam(prgnam, p, n, e);
-      services.maknam(fns, p, n, '');
+      services.maknam(fns, p, n, exeext);
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
       { find main }
@@ -2299,7 +2306,8 @@ begin { dolink }
       { build gcc command }
       clears(cmdbuf); { clear command buffer }
       i := 1; { set 1st char }
-      if fstatic then putstr('gcc -static -g3') else putstr('gcc -g3');
+      putstr(ccname);
+      if fstatic then putstr(' -static -g3') else putstr(' -g3');
       putchr(' ');
       { An I/O library (terminal or graphics) installs its I/O overrides from a
         constructor in its module object. A program that does not call any of
@@ -2378,7 +2386,156 @@ pausing the linker) that could cause them to be radically different.
 
 ******************************************************************************}
 
+{ The intermediate products carry no target identity in their names: the same
+  .p6, .s, .o and executable names are used for every build target. The
+  products themselves identify their target, however: objects and executables
+  by their format magic and machine type, and intermediates by the calling
+  convention flags on their option line. These are compared against the
+  current target so that a target or mode switch treats the old target's
+  products as stale, instead of carrying them into the new build (for example
+  linking a native object against the windows runtime). }
+
+{ find the target code an object or executable file was built for:
+  0 = unknown, 1 = ELF x86-64, 2 = COFF x86-64, 3 = ELF aarch64 }
+
+function objtgt(view fn: string): integer;
+
+var f: file of char; { object file }
+    b: array [1..20] of integer; { header bytes }
+    i: integer; { index }
+    c: char;    { byte holder }
+    r: integer; { result holder }
+
+begin
+
+   r := 0; { set unknown }
+   if exists(fn) then begin
+
+      assign(f, fn); { open the file bytewise }
+      reset(f);
+      i := 1; { read the header }
+      while (i <= 20) and not eof(f) do
+         begin read(f, c); b[i] := ord(c); i := i+1 end;
+      close(f);
+      if i > 20 then begin
+
+         if (b[1] = 127) and (b[2] = 69) and (b[3] = 76) and (b[4] = 70) then
+            begin { ELF; the machine type is at offset 18 }
+
+            if (b[19] = 62) and (b[20] = 0) then r := 1 { x86-64 }
+            else if (b[19] = 183) and (b[20] = 0) then r := 3 { aarch64 }
+
+         end else if (b[1] = 100) and (b[2] = 134) then
+            r := 2 { COFF x86-64 }
+
+      end
+
+   end;
+   objtgt := r
+
+end;
+
+{ find the target code for the current build target }
+
+function tgtcode: integer;
+
+begin
+
+   tgtcode := 1; { ELF x86-64 }
+   if fwindows then tgtcode := 2 { COFF x86-64 }
+   else if farm64sysv then tgtcode := 3 { ELF aarch64 }
+
+end;
+
+{ find a string within a string }
+
+function fndstr(view s, p: string): boolean;
+
+var i, j: integer; { indexes }
+    m: boolean;    { match flag }
+
+begin
+
+   fndstr := false;
+   if len(p) <= len(s) then
+      for i := 1 to len(s)-len(p)+1 do begin
+
+      m := true;
+      for j := 1 to len(p) do if s[i+j-1] <> p[j] then m := false;
+      if m then fndstr := true
+
+   end
+
+end;
+
+{ find the calling convention an intermediate was compiled with, from the
+  flags on its option line: 0 = none (interpreter/package modes),
+  1 = amd64_sysv, 2 = win64, 3 = arm64_sysv, -1 = cannot tell }
+
+function p6conv(view fn: string): integer;
+
+var f: text;    { intermediate file }
+    b: linbuf;  { line buffer }
+    i: integer; { line counter }
+    j: integer; { buffer index }
+    c: char;    { character holder }
+    r: integer; { result holder }
+
+begin
+
+   r := -1; { set cannot tell }
+   if exists(fn) then begin
+
+      assign(f, fn); { open the intermediate }
+      reset(f);
+      i := 1; { scan the header for the option line }
+      while (i <= 20) and not eof(f) and (r < 0) do begin
+
+         for j := 1 to maxlin do b[j] := ' '; { clear the buffer }
+         j := 1; { read the line }
+         while not eoln(f) and (j <= maxlin) do
+            begin read(f, c); b[j] := c; j := j+1 end;
+         readln(f);
+         if (b[1] = 'o') and (b[2] = ' ') then begin
+
+            { the option line carries the convention when set }
+            if fndstr(b, 'win64+') then r := 2
+            else if fndstr(b, 'arm64_sysv+') then r := 3
+            else if fndstr(b, 'amd64_sysv+') then r := 1
+            else r := 0 { no convention: interpreter or package deck }
+
+         end;
+         i := i+1
+
+      end;
+      close(f)
+
+   end;
+   p6conv := r
+
+end;
+
+{ find the convention code for the current build target }
+
+function cnvcode: integer;
+
+begin
+
+   cnvcode := 0; { no convention (interpreter/package modes) }
+   if fpgen then begin
+
+      cnvcode := 1; { amd64_sysv }
+      if fwindows then cnvcode := 2 { win64 }
+      else if farm64sysv then cnvcode := 3 { arm64_sysv }
+
+   end
+
+end;
+
 procedure regfil(fp: filept); { file head }
+
+var p, n, e: filnam; { path components }
+    fn:      filnam; { product file name }
 
 begin
 
@@ -2392,6 +2549,28 @@ begin
       if fp^.asme <> nil then { assembly exists }
          if fp^.asme^.modify > fp^.obje^.modify then
                fp^.rebld := true { old, set rebuild }
+
+   end;
+   { products of another build target are stale regardless of dates }
+   if not fp^.rebld and not fp^.excl then begin
+
+      if fp^.obje <> nil then
+         if not (fpint or fpmach or fcmach or fpack) then begin
+
+         { the object must match the target format and machine }
+         services.brknam(fp^.name, p, n, e);
+         services.maknam(fn, p, n, 'o');
+         if objtgt(fn) <> tgtcode then fp^.rebld := true
+
+      end;
+      if fp^.inte <> nil then begin
+
+         { the intermediate must match the target calling convention }
+         services.brknam(fp^.name, p, n, e);
+         services.maknam(fn, p, n, 'p6');
+         if p6conv(fn) <> cnvcode then fp^.rebld := true
+
+      end
 
    end;
    { if global rebuild is set, set this rebuild flag }
@@ -2446,7 +2625,7 @@ begin
 
          services.brknam(prgnam, p, n, e); { break program name to components }
          { find the executive file }
-         services.maknam(fn, p, n, '');
+         services.maknam(fn, p, n, exeext);
          dolist(fn, ep);
          if ep = nil then excrbl := true { does not exist }
          else if ip <> nil then if ep^.modify < ip^.modify then
@@ -2465,7 +2644,7 @@ begin
       dolist(fn, op);
       services.maknam(fn, p, n, 's');
       dolist(fn, sp);
-      services.maknam(fn, p, n, '');
+      services.maknam(fn, p, n, exeext);
       dolist(fn, ep);
       { A missing .o, .s or executable means the executable must be (re)built;
         e.g. a partial clean that removed the intermediates but left the .o and
@@ -2478,6 +2657,13 @@ begin
               (ep^.modify < sp^.modify) then
          { exec date/time is older than .o or .s, execute rebuild }
          excrbl := true;
+      { an executable of another build target is stale regardless of dates }
+      if not excrbl then begin
+
+         services.maknam(fn, p, n, exeext);
+         if objtgt(fn) <> tgtcode then excrbl := true
+
+      end;
       if ep <> nil then dispose(ep); { release objects }
       if op <> nil then dispose(op);
       if sp <> nil then dispose(sp)
@@ -2545,6 +2731,21 @@ copy <source> <destination>
 Copies the source file to the destination after a successful build. Used to
 place built products into the hosts tree. Paths are relative to the
 instruction file.
+
+cc <command>
+
+Sets the C compiler/linker driver used to assemble and link (default gcc).
+A cross target sets its cross toolchain driver here.
+
+codegen <command>
+
+Sets the code generator command (default pgen). A cross target that uses a
+different code generator binary sets it here.
+
+exeext <extension>
+
+Sets the executable file extension (default none). The windows targets set
+exe here.
 
 <tag> begin
 ...
@@ -2838,7 +3039,28 @@ begin
          else
             { no generate coff symbols in binary }
             if compp(cmd, 'nosymcoff') then fsymcof := false
-         else if compp(cmd, 'copy') then begin
+         else if compp(cmd, 'cc') then begin
+
+            { set the C compiler/linker driver command }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn); { get command }
+            copy(ccname, fn)
+
+         end else if compp(cmd, 'codegen') then begin
+
+            { set the code generator command }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn); { get command }
+            copy(cgname, fn)
+
+         end else if compp(cmd, 'exeext') then begin
+
+            { set the executable file extension }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn); { get extension }
+            copy(exeext, fn)
+
+         end else if compp(cmd, 'copy') then begin
 
             { copy product to destination after a successful build }
             lskpspc(inshan); { skip spaces }
@@ -3046,6 +3268,9 @@ begin
    fhmac := false; shmac := false;
    copies := nil; { clear hosts tree copy list }
    hostid := 0; { set host unknown }
+   copy(ccname, 'gcc'); { set default C compiler/linker driver }
+   copy(cgname, 'pgen'); { set default code generator }
+   clears(exeext); { set no executable extension }
    serrfil := false;
    slistfil := false;
 
@@ -3142,16 +3367,29 @@ begin
    else if shwindows then hostid := 3
    else if shmac then hostid := 4
    else hostid := psystem_host;
-   { determine the default calling convention for executable builds from the
-     convention this pc was built with, unless the user selected one. This
-     must precede the instruction files, whose conditional blocks test the
-     convention. }
+   { determine the default calling convention for executable builds, unless
+     the user selected one. The target host implies the convention: a windows
+     target uses win64; otherwise the convention this pc was built with
+     applies. This must precede the instruction files, whose conditional
+     blocks test the convention. }
    if fpgen and not samd64sysv and not swindows and not sarm64sysv then begin
 
-      if psystem_callcon = 4 then begin fwindows := true; swindows := true end
-      else if psystem_callcon = 6 then begin
+      if hostid = 3 then begin fwindows := true; swindows := true end
+      else if psystem_callcon = 4 then begin
+         fwindows := true; swindows := true
+      end else if psystem_callcon = 6 then begin
          farm64sysv := true; sarm64sysv := true
       end else begin famd64sysv := true; samd64sysv := true end
+
+   end;
+   { validate the host/convention combination: the win64 convention is the
+     windows convention and the only one implemented for windows targets }
+   if fpgen then begin
+
+      if fwindows and (hostid <> 3) then
+         error('The win64 calling convention requires the windows host');
+      if (hostid = 3) and not fwindows then
+         error('The windows host requires the win64 calling convention')
 
    end;
    { find any instruction files for us }

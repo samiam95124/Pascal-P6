@@ -14,7 +14,11 @@
 
 #include <string.h>
 #include <stdlib.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/mman.h>
+#endif
 #include <support.h>
 
 /********************************************************************************
@@ -123,6 +127,26 @@ the code. %rbp is saved and restored so the C caller is unaffected.
 
 ********************************************************************************/
 
+#if defined(__aarch64__)
+
+/* Under arm64_sysv the display travels in the frame pointer (x29), which the
+   callee's prologue stores as its caller frame pointer and pulls the display
+   chain from, the same convention as the amd64 %rbp trick. */
+__asm__ (
+"    .text\n"
+"    .globl pacall\n"
+"pacall:\n"                 /* void pacall(code=x0, display=x1, arg=x2) */
+"    stp  x29, x30, [sp, #-16]!\n" /* preserve C frame pointer and link */
+"    mov  x9, x0\n"         /* x9 = code address */
+"    mov  x29, x1\n"        /* x29 = display (static link) */
+"    mov  x0, x2\n"         /* x0 = argument (Pascaline param 1) */
+"    blr  x9\n"             /* enter the Pascaline procedure */
+"    ldp  x29, x30, [sp], #16\n" /* restore C frame pointer and link */
+"    ret\n"
+);
+
+#else
+
 __asm__ (
 "    .text\n"
 "    .globl pacall\n"
@@ -135,6 +159,8 @@ __asm__ (
 "    pop  %rbp\n"           /* restore C frame pointer */
 "    ret\n"
 );
+
+#endif
 
 /********************************************************************************
 
@@ -162,11 +188,44 @@ static int            thunknext = 0; /* next free thunk */
 
 static unsigned char* thunkalloc(void)
 {
+#ifdef _WIN32
+    if (!thunkpool)
+        thunkpool = VirtualAlloc(NULL, THUNKSZ*NTHUNK, MEM_COMMIT|MEM_RESERVE,
+                                 PAGE_EXECUTE_READWRITE);
+#else
     if (!thunkpool)
         thunkpool = mmap(0, THUNKSZ*NTHUNK, PROT_READ|PROT_WRITE|PROT_EXEC,
                          MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+#endif
     return thunkpool+(thunknext++ % NTHUNK)*THUNKSZ;
 }
+
+#if defined(__aarch64__)
+
+/* build a thunk: void thunk(void* arg) -> dispatch(code, display, arg).
+   Five instructions and three literals: move the argument up, load the
+   captured words from the trailing literal pool, and tail call the
+   dispatcher. The instruction cache is flushed over the new code. */
+void* mkevtthunk(void* code, void* display, void* dispatch)
+{
+    unsigned char* t = thunkalloc();
+    unsigned int* i = (unsigned int*)t;
+    void** lit = (void**)(t+24);
+
+    i[0] = 0xaa0003e2;                       /* mov x2, x0     (arg -> arg3)  */
+    i[1] = 0x58000000 | (5<<5) | 0;          /* ldr x0, lit[0] (code, arg1)   */
+    i[2] = 0x58000000 | (6<<5) | 1;          /* ldr x1, lit[1] (display, arg2)*/
+    i[3] = 0x58000000 | (7<<5) | 9;          /* ldr x9, lit[2] (dispatch)     */
+    i[4] = 0xd61f0120;                       /* br  x9                        */
+    lit[0] = code;
+    lit[1] = display;
+    lit[2] = dispatch;
+    __builtin___clear_cache((char*)t, (char*)(t+THUNKSZ));
+
+    return t;
+}
+
+#else
 
 /* emit a movabs of a 64 bit immediate into a register (opcode selects reg) */
 static unsigned char* emitimm(unsigned char* p, unsigned char op, void* val)
@@ -190,3 +249,5 @@ void* mkevtthunk(void* code, void* display, void* dispatch)
 
     return t;
 }
+
+#endif
