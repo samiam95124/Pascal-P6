@@ -142,6 +142,24 @@ compprog source/pcom
 # Now regular
 #
 cp pgen.new bin/pgen
+#
+# The arm64 code generator is a cross tool: it runs on this host and generates
+# aarch64 code. It keeps its own name in bin so it can sit beside the native
+# code generator (the pc instruction file selects it for arm64_sysv targets).
+#
+echo ""
+echo "**********************************************************************"
+echo "Building source/pgen/arm64/pgen as pgen_arm64..."
+echo "**********************************************************************"
+echo ""
+pc source/pgen/arm64/pgen -r $OPTIONS
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: compile failed"
+   exit 1
+
+fi
+cp source/pgen/arm64/pgen bin/pgen_arm64
 compprog source/pint
 #
 # pintt is the same source built with the terminal module flavor first on

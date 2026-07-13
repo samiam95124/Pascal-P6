@@ -232,6 +232,9 @@ slistfil:    boolean;
 { packaging list }                         package: pkgptr;
 { hosts tree copy list }                   copies:  cpyptr;
 { host identifier (psystem_host code) }    hostid:  integer;
+{ C compiler/linker driver command }       ccname:  filnam;
+{ code generator command }                 cgname:  filnam;
+{ executable file extension }              exeext:  filnam;
 { a graphical window library exists }      windowed:  boolean;
 { the terminal library is the I/O library } terminaled: boolean;
 { the sound library is used }              sounded:   boolean;
@@ -1917,7 +1920,7 @@ begin
          { build pgen x x command }
          i := 1; { set 1st command filename }
          clears(cmdbuf); { clear command buffer }
-         putstr('pgen');
+         putstr(cgname);
          putchr(' ');
          services.brknam(fns, p, n, e); { remove the extention and place .p6 }
          if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
@@ -1935,7 +1938,8 @@ begin
 
          i := 1; { set 1st command filename }
          clears(cmdbuf); { clear command buffer }
-         if fstatic then putstr('gcc -static -g3') else putstr('gcc -g3');
+         putstr(ccname);
+         if fstatic then putstr(' -static -g3') else putstr(' -g3');
          putchr(' ');
          putstr('-c');
          putchr(' ');
@@ -2232,7 +2236,8 @@ begin { dolink }
             { link the prebuilt externals cmach object with the per-program deck
               (program_code.c, a plain byte array compiled here) and the external
               archives plus their dependency stack. }
-            putstr('gcc -static -g3 -o '); putstr(fns); putchr(' ');
+            putstr(ccname);
+            putstr(' -static -g3 -o '); putstr(fns); putchr(' ');
             putstr(fnc); putchr(' ');
             putstr('program_code.c'); putchr(' ');
             putstr('-Wl,-u,getparamfluid -Wl,-u,getparamdump'); putchr(' ');
@@ -2252,7 +2257,8 @@ begin { dolink }
             services.maknam(fnc, pgmpath, '../build/cmach/cmach_package_min', 'o');
             services.fulnam(fnc);
             if not exists(fnc) then error('cmach_package_min.o not found');
-            putstr('gcc -o '); putstr(fns); putchr(' ');
+            putstr(ccname);
+            putstr(' -o '); putstr(fns); putchr(' ');
             putstr(fnc); putchr(' ');
             putstr('program_code.c'); putchr(' ');
             putstr('-lm');
@@ -2264,9 +2270,10 @@ begin { dolink }
 
    end else begin { build }
 
-      { remove extention from target }
+      { remove extention from target, and place the target's executable
+        extension (windows targets set exe) }
       services.brknam(prgnam, p, n, e);
-      services.maknam(fns, p, n, '');
+      services.maknam(fns, p, n, exeext);
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
       { find main }
@@ -2299,7 +2306,8 @@ begin { dolink }
       { build gcc command }
       clears(cmdbuf); { clear command buffer }
       i := 1; { set 1st char }
-      if fstatic then putstr('gcc -static -g3') else putstr('gcc -g3');
+      putstr(ccname);
+      if fstatic then putstr(' -static -g3') else putstr(' -g3');
       putchr(' ');
       { An I/O library (terminal or graphics) installs its I/O overrides from a
         constructor in its module object. A program that does not call any of
@@ -2446,7 +2454,7 @@ begin
 
          services.brknam(prgnam, p, n, e); { break program name to components }
          { find the executive file }
-         services.maknam(fn, p, n, '');
+         services.maknam(fn, p, n, exeext);
          dolist(fn, ep);
          if ep = nil then excrbl := true { does not exist }
          else if ip <> nil then if ep^.modify < ip^.modify then
@@ -2545,6 +2553,21 @@ copy <source> <destination>
 Copies the source file to the destination after a successful build. Used to
 place built products into the hosts tree. Paths are relative to the
 instruction file.
+
+cc <command>
+
+Sets the C compiler/linker driver used to assemble and link (default gcc).
+A cross target sets its cross toolchain driver here.
+
+codegen <command>
+
+Sets the code generator command (default pgen). A cross target that uses a
+different code generator binary sets it here.
+
+exeext <extension>
+
+Sets the executable file extension (default none). The windows targets set
+exe here.
 
 <tag> begin
 ...
@@ -2838,7 +2861,28 @@ begin
          else
             { no generate coff symbols in binary }
             if compp(cmd, 'nosymcoff') then fsymcof := false
-         else if compp(cmd, 'copy') then begin
+         else if compp(cmd, 'cc') then begin
+
+            { set the C compiler/linker driver command }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn); { get command }
+            copy(ccname, fn)
+
+         end else if compp(cmd, 'codegen') then begin
+
+            { set the code generator command }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn); { get command }
+            copy(cgname, fn)
+
+         end else if compp(cmd, 'exeext') then begin
+
+            { set the executable file extension }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn); { get extension }
+            copy(exeext, fn)
+
+         end else if compp(cmd, 'copy') then begin
 
             { copy product to destination after a successful build }
             lskpspc(inshan); { skip spaces }
@@ -3046,6 +3090,9 @@ begin
    fhmac := false; shmac := false;
    copies := nil; { clear hosts tree copy list }
    hostid := 0; { set host unknown }
+   copy(ccname, 'gcc'); { set default C compiler/linker driver }
+   copy(cgname, 'pgen'); { set default code generator }
+   clears(exeext); { set no executable extension }
    serrfil := false;
    slistfil := false;
 
