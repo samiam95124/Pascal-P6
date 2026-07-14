@@ -72,7 +72,7 @@ echo ""
 pc libs/source/strings -r
 cp libs/source/strings.o libs
 pc libs/source/strings -windows -r
-cp libs/source/strings.o hosts/windows/x86/bit64/lib
+cp libs/source/strings.o hosts/windows/x86/bit64/libs
 pc libs/source/strings -pint -r
 cp libs/source/strings.p6 libs
 
@@ -84,7 +84,7 @@ echo ""
 pc libs/source/parse -r
 cp libs/source/parse.o libs
 pc libs/source/parse -windows -r
-cp libs/source/parse.o hosts/windows/x86/bit64/lib
+cp libs/source/parse.o hosts/windows/x86/bit64/libs
 pc libs/source/parse -pint -r
 cp libs/source/parse.p6 libs
 
