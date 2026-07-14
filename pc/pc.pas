@@ -1471,7 +1471,7 @@ end;
 
 { place filename in list }
 
-procedure plcfil(view fn: string);
+procedure plcfil(view fn: string; ispgm: boolean);
 
 var p, n, e: filnam;  { path components }
     fns:     filnam;  { save for name }
@@ -1506,6 +1506,13 @@ begin
          { place .o extension }
          services.brknam(fn, p, n, e); { break down name }
          services.maknam(fns, p, n, 'o'); { remake }
+         { allow module path override, the same as the archive above: a cross
+           target links a module's object from the host tree (which the module
+           path places ahead of the local libs), not the local host's object.
+           Only for modules -- the program's own object is always the freshly
+           built one at its own path, and must not be redirected to a same
+           named object that happens to sit in the module path. }
+         if not ispgm then fndfilmod(fns);
          { place name in link list }
          for i := 1 to len(fns) do putchr(lnklsto, loi, fns[i]);
          putchr(lnklsto, loi, ' ') { place separator }
@@ -1532,7 +1539,7 @@ begin
          services.brknam(fp^.name, dp, n, e);
          services.maknam(sp, bldpth, n, e)
       end;
-      plcfil(sp) { place name in list }
+      plcfil(sp, fp^.pgm) { place name in list }
    end;
    fp^.list := true; { set listed }
    new(p); { get list entry }
