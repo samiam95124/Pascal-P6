@@ -174,6 +174,16 @@ PSYSTEM_BYPASS=
 PSYSTEM_STDIO=
 endif
 
+# The win64 psystem is built against the Ami stdio (amitk/libc/stdio.c), the
+# same as native, so its I/O override vectors (ovr_*) are available to the
+# terminal/graphics/sound/network models the interpreters host -- the role the
+# bypass stdio object plays natively. Windows does NOT set STDIO_BYPASS: the
+# Ami stdio is linked in to override the C runtime stdio calls directly (there
+# is no libXau-style glibc backdoor to protect against), so psystem.c and the
+# stdio object are compiled against Ami's stdio.h without -DSTDIO_BYPASS.
+WIN_STDIO_INC=-I$(AMILIBC) -I$(AMIINC) -DSEEK_SET=0 -DSEEK_CUR=1 -DSEEK_END=2
+WIN_PSYSTEM_STDIO=$(BUILD)/win64/psystem_stdio.o
+
 #
 # The default build is for the current host. all is the standard native
 # build; win64 builds the Windows x64 runtime components (cross compiled via
@@ -272,20 +282,23 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 # Build psystem for win64, the Pascaline support library in C.
 #
 $(LIBS)/win64/psystem.a: $(SOURCE)/pgen/psystem.c \
-	$(SOURCE)/pgen/amd64/psystem.asm
+	$(SOURCE)/pgen/amd64/psystem.asm \
+	$(AMILIBC)/stdio.c
 	@echo
 	@echo "Building psystem for win64..."
 	@echo
 	mkdir -p $(BUILD)/win64
 	mkdir -p $(LIBS)/win64
-	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/psystem.o \
-		-c $(SOURCE)/pgen/psystem.c
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) $(WIN_STDIO_INC) \
+		-o $(BUILD)/win64/psystem.o -c $(SOURCE)/pgen/psystem.c
 	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -Wa,--defsym,WINDOWS=1 \
 		-o $(BUILD)/win64/psystem_asm.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/psystem.asm
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) $(WIN_STDIO_INC) \
+		-o $(WIN_PSYSTEM_STDIO) -c $(AMILIBC)/stdio.c
 	rm -f $(LIBS)/win64/psystem.a
 	$(WINAR) rc $(LIBS)/win64/psystem.a $(BUILD)/win64/psystem.o \
-		$(BUILD)/win64/psystem_asm.o
+		$(BUILD)/win64/psystem_asm.o $(WIN_PSYSTEM_STDIO)
 	mkdir -p $(WINCELL)/lib
 	cp $(LIBS)/win64/psystem.a $(WINCELL)/lib
 

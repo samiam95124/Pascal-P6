@@ -2351,9 +2351,22 @@ begin { dolink }
         the set below is 'pkg-config --static --libs x11 xext freetype2
         fontconfig' plus -ldl. These must follow the archives that use them. }
       if windowed then begin putchr(' ');
-         putstr('-lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lfontconfig');
-         putchr(' ');
-         putstr('-luuid -lexpat -lfreetype -lpng16 -lm -lz -ldl') end;
+         if fwindows then
+            { The Windows graphics model renders through GDI and picks files
+              and colors through the common dialogs; user32/kernel32 link
+              implicitly. No X11/FreeType/FontConfig closure. }
+            putstr('-lgdi32 -lcomdlg32')
+         else begin
+            putstr('-lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lfontconfig');
+            putchr(' ');
+            putstr('-luuid -lexpat -lfreetype -lpng16 -lm -lz -ldl')
+         end end;
+      { The Windows terminal model draws its console window through GDI, so it
+        needs gdi32 (the linux terminal is self contained). Harmless for a
+        non-terminal program: gdi32 is an import library with nothing pulled in
+        unless referenced. The graphics case already carries gdi32 above. }
+      if terminaled and fwindows and not windowed then begin putchr(' ');
+         putstr('-lgdi32') end;
       { The sound library plays through ALSA and synthesizes through
         fluidsynth (whose closure adds glib and pcre). The static libasound
         and libfluidsynth are locally built and installed in /usr/local/lib
@@ -2364,14 +2377,24 @@ begin { dolink }
         of the link, losing its registration (e.g. the virtual rawmidi
         plugin on a system with virmidi devices). }
       if sounded then begin putchr(' ');
-         putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre');
-         putchr(' ');
-         putstr('-Wl,--whole-archive -lasound -Wl,--no-whole-archive');
-         putchr(' ');
-         putstr('-lm -lpthread -ldl') end;
+         if fwindows then
+            { The Windows sound model drives the multimedia MIDI/wave API. }
+            putstr('-lwinmm')
+         else begin
+            putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre');
+            putchr(' ');
+            putstr('-Wl,--whole-archive -lasound -Wl,--no-whole-archive');
+            putchr(' ');
+            putstr('-lm -lpthread -ldl')
+         end end;
       { The network library secures connections through OpenSSL. }
       if networked then begin putchr(' ');
-         putstr('-lssl -lcrypto -lpthread -ldl') end;
+         if fwindows then
+            { The Windows network model connects through Winsock. }
+            putstr('-lwsock32')
+         else
+            putstr('-lssl -lcrypto -lpthread -ldl')
+         end;
       excact(cmdbuf) { execute command buffer action }
 
    end
