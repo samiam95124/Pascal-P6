@@ -240,8 +240,8 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	fi
 	ar rc $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
 		$(BUILD)/pgen/amd64/psystem_asm.o $(PSYSTEM_STDIO)
-	mkdir -p $(HOSTCELL)/lib
-	cp $(LIBS)/psystem.a $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/libs
+	cp $(LIBS)/psystem.a $(HOSTCELL)/libs
 endif
 
 #
@@ -256,8 +256,8 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/main.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/main.asm
 	cp $(BUILD)/pgen/amd64/main.o $(LIBS)
-	mkdir -p $(HOSTCELL)/lib
-	cp $(BUILD)/pgen/amd64/main.o $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/libs
+	cp $(BUILD)/pgen/amd64/main.o $(HOSTCELL)/libs
 
 ################################################################################
 #
@@ -299,8 +299,8 @@ $(LIBS)/win64/psystem.a: $(SOURCE)/pgen/psystem.c \
 	rm -f $(LIBS)/win64/psystem.a
 	$(WINAR) rc $(LIBS)/win64/psystem.a $(BUILD)/win64/psystem.o \
 		$(BUILD)/win64/psystem_asm.o $(WIN_PSYSTEM_STDIO)
-	mkdir -p $(WINCELL)/lib
-	cp $(LIBS)/win64/psystem.a $(WINCELL)/lib
+	mkdir -p $(WINCELL)/libs
+	cp $(LIBS)/win64/psystem.a $(WINCELL)/libs
 
 #
 # Build main for win64, the program stack startup shim.
@@ -315,8 +315,8 @@ $(LIBS)/win64/main.o: $(SOURCE)/pgen/amd64/main.asm
 		-o $(BUILD)/win64/main.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/main.asm
 	cp $(BUILD)/win64/main.o $(LIBS)/win64
-	mkdir -p $(WINCELL)/lib
-	cp $(BUILD)/win64/main.o $(WINCELL)/lib
+	mkdir -p $(WINCELL)/libs
+	cp $(BUILD)/win64/main.o $(WINCELL)/libs
 
 #
 # Build services for win64. The Ami services implementation for Windows is
@@ -351,8 +351,8 @@ $(LIBS)/win64/services.a: $(PASCALP6)/amitk/windows/services.c \
 	$(WINAR) rc $(LIBS)/win64/services.a $(BUILD)/win64/services_wrapper_asm.o \
 		$(BUILD)/win64/services_wrapper.o $(BUILD)/win64/services.o \
 		$(BUILD)/win64/services_support.o $(BUILD)/win64/support.o
-	mkdir -p $(WINCELL)/lib
-	cp $(LIBS)/win64/services.a $(WINCELL)/lib
+	mkdir -p $(WINCELL)/libs
+	cp $(LIBS)/win64/services.a $(WINCELL)/libs
 endif
 
 #
@@ -393,8 +393,8 @@ $(LIBS)/win64/terminal.a: $(AMIWIN)/terminal.c \
 		$(BUILD)/win64/terminal_wrapper.o $(BUILD)/win64/terminal_support.o \
 		$(BUILD)/win64/terminal.o $(BUILD)/win64/term_services.o \
 		$(BUILD)/win64/support.o
-	mkdir -p $(WINCELL)/lib
-	cp $(LIBS)/win64/terminal.a $(WINCELL)/lib
+	mkdir -p $(WINCELL)/libs
+	cp $(LIBS)/win64/terminal.a $(WINCELL)/libs
 endif
 
 #
@@ -434,8 +434,8 @@ $(LIBS)/win64/graphics.a: $(AMIWIN)/graphics.c \
 		$(BUILD)/win64/graphics_wrapper.o $(BUILD)/win64/graphics_support.o \
 		$(BUILD)/win64/graphics.o $(BUILD)/win64/graph_services.o \
 		$(BUILD)/win64/support.o
-	mkdir -p $(WINCELL)/lib
-	cp $(LIBS)/win64/graphics.a $(WINCELL)/lib
+	mkdir -p $(WINCELL)/libs
+	cp $(LIBS)/win64/graphics.a $(WINCELL)/libs
 
 #
 # The "blonde" win64 graphics archive for the graphics-hosted interpreter
@@ -463,8 +463,8 @@ $(LIBS)/win64/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
 	mkdir -p $(LIBS)/win64
 	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
 		-o $(LIBS)/win64/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
-	mkdir -p $(WINCELL)/lib
-	cp $(LIBS)/win64/gnome_widgets.o $(WINCELL)/lib
+	mkdir -p $(WINCELL)/libs
+	cp $(LIBS)/win64/gnome_widgets.o $(WINCELL)/libs
 endif
 
 #
@@ -498,8 +498,8 @@ $(LIBS)/win64/sound.a: $(AMIWIN)/sound.c \
 	$(WINAR) rc $(LIBS)/win64/sound.a $(BUILD)/win64/sound_wrapper_asm.o \
 		$(BUILD)/win64/sound_wrapper.o $(BUILD)/win64/sound.o \
 		$(BUILD)/win64/snd_support.o
-	mkdir -p $(WINCELL)/lib
-	cp $(LIBS)/win64/sound.a $(WINCELL)/lib
+	mkdir -p $(WINCELL)/libs
+	cp $(LIBS)/win64/sound.a $(WINCELL)/libs
 
 $(LIBS)/win64/network.a: $(AMIWIN)/network.c \
 	$(LIBS)/source/network_wrapper.asm \
@@ -525,8 +525,8 @@ $(LIBS)/win64/network.a: $(AMIWIN)/network.c \
 	$(WINAR) rc $(LIBS)/win64/network.a $(BUILD)/win64/network_wrapper_asm.o \
 		$(BUILD)/win64/network_wrapper.o $(BUILD)/win64/network_support.o \
 		$(BUILD)/win64/network.o $(BUILD)/win64/net_support.o
-	mkdir -p $(WINCELL)/lib
-	cp $(LIBS)/win64/network.a $(WINCELL)/lib
+	mkdir -p $(WINCELL)/libs
+	cp $(LIBS)/win64/network.a $(WINCELL)/libs
 endif
 
 ################################################################################
@@ -556,8 +556,8 @@ $(LIBS)/arm64/psystem.a: $(SOURCE)/pgen/psystem.c \
 		-c -x assembler $(SOURCE)/pgen/arm64/psystem.asm
 	$(ARMAR) rc $(LIBS)/arm64/psystem.a $(BUILD)/arm64/psystem.o \
 		$(BUILD)/arm64/psystem_asm.o
-	mkdir -p $(ARMCELL)/lib
-	cp $(LIBS)/arm64/psystem.a $(ARMCELL)/lib
+	mkdir -p $(ARMCELL)/libs
+	cp $(LIBS)/arm64/psystem.a $(ARMCELL)/libs
 
 #
 # Build main for arm64, the program stack startup shim.
@@ -571,8 +571,8 @@ $(LIBS)/arm64/main.o: $(SOURCE)/pgen/arm64/main.asm
 	$(ARMCC) $(ARMCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/arm64/main.o \
 		-c -x assembler $(SOURCE)/pgen/arm64/main.asm
 	cp $(BUILD)/arm64/main.o $(LIBS)/arm64
-	mkdir -p $(ARMCELL)/lib
-	cp $(BUILD)/arm64/main.o $(ARMCELL)/lib
+	mkdir -p $(ARMCELL)/libs
+	cp $(BUILD)/arm64/main.o $(ARMCELL)/libs
 
 #
 # Build services for arm64. The Ami services implementation for linux is
@@ -607,8 +607,8 @@ $(LIBS)/arm64/services.a: $(AMI)/services.c \
 	$(ARMAR) rc $(LIBS)/arm64/services.a $(BUILD)/arm64/services_wrapper_asm.o \
 		$(BUILD)/arm64/services_wrapper.o $(BUILD)/arm64/services.o \
 		$(BUILD)/arm64/services_support.o $(BUILD)/arm64/support.o
-	mkdir -p $(ARMCELL)/lib
-	cp $(LIBS)/arm64/services.a $(ARMCELL)/lib
+	mkdir -p $(ARMCELL)/libs
+	cp $(LIBS)/arm64/services.a $(ARMCELL)/libs
 endif
 
 ################################################################################
@@ -666,8 +666,8 @@ $(LIBS)/services.a: $(AMI)/services.c \
 	ar rc $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
 		$(BUILD)/libs/services_wrapper.o $(BUILD)/libs/services.o \
 		$(BUILD)/libs/services_support.o $(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/lib
-	cp $(LIBS)/services.a $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/libs
+	cp $(LIBS)/services.a $(HOSTCELL)/libs
 endif
 
 #
@@ -716,8 +716,8 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 		$(BUILD)/libs/terminal.o $(BUILD)/libs/term_services.o \
 		$(BUILD)/libs/system_event.o $(BUILD)/libs/config.o \
 		$(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/lib
-	cp $(LIBS)/terminal.a $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/libs
+	cp $(LIBS)/terminal.a $(HOSTCELL)/libs
 endif
 
 #
@@ -764,8 +764,8 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 		$(BUILD)/libs/graphics.o $(BUILD)/libs/graph_services.o \
 		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o \
 		$(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/lib
-	cp $(LIBS)/graphics.a $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/libs
+	cp $(LIBS)/graphics.a $(HOSTCELL)/libs
 
 #
 # The "blonde" graphics archive for the graphics-hosted interpreter (pintg):
@@ -797,8 +797,8 @@ source/graph/graphics.a: $(LIBS)/graphics.a
 $(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(LIBS)/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
-	mkdir -p $(HOSTCELL)/lib
-	cp $(LIBS)/gnome_widgets.o $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/libs
+	cp $(LIBS)/gnome_widgets.o $(HOSTCELL)/libs
 endif
 
 #
@@ -839,8 +839,8 @@ $(LIBS)/sound.a: $(AMI)/sound.c $(AMI)/dumpsynthplug.c $(AMI)/fluidsynthplug.c \
 		$(BUILD)/libs/sound_wrapper.o $(BUILD)/libs/sound.o \
 		$(BUILD)/libs/dumpsynthplug.o $(BUILD)/libs/fluidsynthplug.o \
 		$(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/lib
-	cp $(LIBS)/sound.a $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/libs
+	cp $(LIBS)/sound.a $(HOSTCELL)/libs
 
 $(LIBS)/network.a: $(AMI)/network.c \
 	$(LIBS)/source/network_wrapper.asm \
@@ -863,8 +863,8 @@ $(LIBS)/network.a: $(AMI)/network.c \
 	ar rc $(LIBS)/network.a $(BUILD)/libs/network_wrapper_asm.o \
 		$(BUILD)/libs/network_wrapper.o $(BUILD)/libs/network_support.o \
 		$(BUILD)/libs/network.o $(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/lib
-	cp $(LIBS)/network.a $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/libs
+	cp $(LIBS)/network.a $(HOSTCELL)/libs
 endif
 
 #
@@ -1030,9 +1030,9 @@ HOSTLIBS=main.o parse.o psystem.a services.a strings.o terminal.a graphics.a \
 	sound.a network.a gnome_widgets.o
 
 hostinstall:
-	mkdir -p $(HOSTCELL)/bin $(HOSTCELL)/lib
+	mkdir -p $(HOSTCELL)/bin $(HOSTCELL)/libs
 	for f in $(HOSTBINS); do cp bin/$$f $(HOSTCELL)/bin; done
-	for f in $(HOSTLIBS); do cp libs/$$f $(HOSTCELL)/lib; done
+	for f in $(HOSTLIBS); do cp libs/$$f $(HOSTCELL)/libs; done
 
 #
 # Report the detected host characteristics.
