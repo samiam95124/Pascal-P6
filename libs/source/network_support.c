@@ -40,9 +40,18 @@ extern void  psystem_libcatcfil(pfile f, void* fp, long wr);
 extern void* psystem_libcrdfil(pfile f);
 extern void* psystem_libcwrfil(pfile f);
 
-/* Ami-stdio world functions, by their real (bypass) names */
+/* The Ami-stdio world's fdopen/fileno, used to bridge the connection's fd into
+   a Pascaline file. On linux this is a distinct "bypass" world alongside glibc,
+   reached by the stdio_* names. On Windows there is a single stdio world -- the
+   Ami stdio overrides the C runtime calls directly -- so the standard fdopen/
+   fileno already are the Ami ones and the bypass names are absent. */
+#ifdef __MINGW32__
+#define stdio_fdopen(fd, mode) ((void*)fdopen((fd), (mode)))
+#define stdio_fileno(fp)       fileno((FILE*)(fp))
+#else
 extern void* stdio_fdopen(int fd, const char* mode);
 extern int   stdio_fileno(void* fp);
+#endif
 
 /* glibc FILE for a connection, indexed by its file descriptor, so the
    certificate calls can recover it from the Pascaline file */
