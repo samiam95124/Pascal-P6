@@ -331,7 +331,9 @@ $(LIBS)/win64/services.a: $(PASCALP6)/amitk/windows/services.c \
 	$(LIBS)/source/services_wrapper.asm \
 	$(LIBS)/source/services_wrapper.c \
 	$(LIBS)/source/services_support.c \
-	$(LIBS)/source/support.c
+	$(LIBS)/source/support.c \
+	$(LIBS)/source/services_wrapper.h \
+	$(LIBS)/source/support.h
 	@echo
 	@echo "Building services for win64..."
 	@echo
@@ -370,7 +372,8 @@ $(LIBS)/win64/terminal.a: $(AMIWIN)/terminal.c \
 	$(LIBS)/source/terminal_wrapper.asm \
 	$(LIBS)/source/terminal_wrapper.c \
 	$(LIBS)/source/terminal_support.c \
-	$(LIBS)/source/support.c
+	$(LIBS)/source/support.c \
+	$(LIBS)/source/support.h
 	@echo
 	@echo "Building terminal for win64..."
 	@echo
@@ -411,7 +414,8 @@ $(LIBS)/win64/graphics.a: $(AMIWIN)/graphics.c \
 	$(LIBS)/source/graphics_wrapper.asm \
 	$(LIBS)/source/graphics_wrapper.c \
 	$(LIBS)/source/graphics_support.c \
-	$(LIBS)/source/support.c
+	$(LIBS)/source/support.c \
+	$(LIBS)/source/support.h
 	@echo
 	@echo "Building graphics for win64..."
 	@echo
@@ -480,7 +484,8 @@ ifneq ($(AMITK),)
 $(LIBS)/win64/sound.a: $(AMIWIN)/sound.c \
 	$(LIBS)/source/sound_wrapper.asm \
 	$(LIBS)/source/sound_wrapper.c \
-	$(LIBS)/source/support.c
+	$(LIBS)/source/support.c \
+	$(LIBS)/source/support.h
 	@echo
 	@echo "Building sound for win64..."
 	@echo
@@ -505,7 +510,8 @@ $(LIBS)/win64/network.a: $(AMIWIN)/network.c \
 	$(LIBS)/source/network_wrapper.asm \
 	$(LIBS)/source/network_wrapper.c \
 	$(LIBS)/source/network_support.c \
-	$(LIBS)/source/support.c
+	$(LIBS)/source/support.c \
+	$(LIBS)/source/support.h
 	@echo
 	@echo "Building network for win64..."
 	@echo
@@ -587,7 +593,9 @@ $(LIBS)/arm64/services.a: $(AMI)/services.c \
 	$(LIBS)/source/services_wrapper_arm64.asm \
 	$(LIBS)/source/services_wrapper.c \
 	$(LIBS)/source/services_support.c \
-	$(LIBS)/source/support.c
+	$(LIBS)/source/support.c \
+	$(LIBS)/source/services_wrapper.h \
+	$(LIBS)/source/support.h
 	@echo
 	@echo "Building services for arm64..."
 	@echo
