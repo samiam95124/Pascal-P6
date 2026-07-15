@@ -28,8 +28,8 @@ typedef long set[4];
 typedef struct filrec {
 
     char*          name;    /* name of file (zero terminated) */
-    long long      size;    /* size of file */
-    long long      alloc;   /* allocation of file */
+    long           size;    /* size of file */
+    long           alloc;   /* allocation of file */
     set            attr;    /* attributes */
     long           create;  /* time of creation */
     long           modify;  /* time of last modification */

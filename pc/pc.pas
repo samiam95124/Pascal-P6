@@ -776,7 +776,7 @@ begin
       repeat { try path components }
 
          { extract a single path from the module path }
-         i := indexp(pt, ':'); { find location of path divider }
+         i := indexp(pt, ';'); { find location of path divider }
          if i = 0 then begin { only one path left, use the whole thing }
 
             copy(w, pt); { place }
@@ -848,7 +848,7 @@ begin
       repeat { try path components }
 
          { extract a single path from the module path }
-         i := indexp(pt, ':'); { find location of path divider }
+         i := indexp(pt, ';'); { find location of path divider }
          if i = 0 then begin { only one path left, use the whole thing }
 
             copy(w, pt); { place }
@@ -1996,7 +1996,7 @@ begin
          repeat { try path components }
 
             { extract a single path from the module path }
-            x := indexp(pt, ':'); { find location of path divider }
+            x := indexp(pt, ';'); { find location of path divider }
             if x = 0 then begin { only one path left, use the whole thing }
 
                copy(w, pt); { place }
@@ -2091,7 +2091,7 @@ begin
             repeat { try path components }
 
                { extract a single path from the module path }
-               x := indexp(pt, ':'); { find location of path divider }
+               x := indexp(pt, ';'); { find location of path divider }
                if x = 0 then begin { only one path left, use the whole thing }
 
                   copy(w, pt); { place }
@@ -2960,7 +2960,7 @@ begin
 
 end;
 
-{ clean ':' separated path for relative directories }
+{ clean ';' separated path for relative directories }
 
 procedure cleanpath(var pt: string);
 
@@ -2974,7 +2974,7 @@ begin
    repeat
 
       { extract a single path from the module path }
-      i := indexp(pt, ':'); { find location of path divider }
+      i := indexp(pt, ';'); { find location of path divider }
       if i = 0 then begin { only one path left, use the whole thing }
 
          copy(w, pt); { place }
@@ -2988,7 +2988,7 @@ begin
       end;
       services.fulnam(w);
       { add new path }
-      if ts[1] <> ' ' then cat(ts, ':');
+      if ts[1] <> ' ' then cat(ts, ';');
       cat(ts, w)
 
    until i = 0; { no more paths to extract }
@@ -3139,7 +3139,7 @@ begin
             if modpth[1] = ' ' then copy(modpth, fn) { just copy }
             else begin
 
-              cat(modpth, ':'); { separate paths }
+              cat(modpth, ';'); { separate paths }
               cat(modpth, fn) { add new paths }
 
             end

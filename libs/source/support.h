@@ -23,6 +23,26 @@ extern "C" {
 
 #include <stdio.h>
 
+/*
+ * Windows x64 is LLP64: long is 32 bits, unlike every other 64 bit
+ * platform. The Pascaline-facing types below use long as the machine
+ * word/Pascal integer type, which scales with the target on all other
+ * systems (64 bits on LP64 systems, 32 bits on 32 bit targets). For
+ * Windows only, long is redefined to long long (64 bits), matching
+ * psystem.c. This must appear after all system includes and after the
+ * Ami model header (services.h, terminal.h, ...) so that the C library
+ * prototypes and the Ami structures keep their true types -- every
+ * binding source includes support.h last for this reason.
+ */
+#ifdef _WIN32
+#define long long long
+#define labs llabs
+#undef LONG_MAX
+#define LONG_MAX LLONG_MAX
+#undef LONG_MIN
+#define LONG_MIN LLONG_MIN
+#endif
+
 /* Pascaline string: passed as a char* followed by an int length. */
 typedef char* string;
 

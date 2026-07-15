@@ -54,7 +54,7 @@ s/b 'is not              '
 45: 'hi hi hi ' s/b 'hi hi hi '
 46: 'hihihi              '
 s/b 'hihihi              '
-Now is the time false s/b Now is the time false
+Now is the time false s/b Now is the time false
 52: 'for all good men    ' false
 s/b 'for all good men    ' false
 53: '       123          '
