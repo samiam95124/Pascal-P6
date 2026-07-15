@@ -701,6 +701,8 @@ boolean filanamtab[MAXFIL+1]; /* name has been assigned flags */
 filsts filstate[MAXFIL+1]; /* file state holding */
 boolean filbuff[MAXFIL+1]; /* file buffer full status */
 boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
+boolean filecr[MAXFIL+1];  /* last file character read was cr */
+boolean filelf[MAXFIL+1];  /* last file character read was lf */
 boolean filbof[MAXFIL+1]; /* beginning of file */
 varptr varlst; /* active var block pushdown stack */
 varptr varfre; /* free var block entries */
@@ -1740,17 +1742,59 @@ boolean isfree(address blk)
 
 /* system routine call */
 
-boolean eoffile(FILE* fp)
-{ long c; c = fgetc(fp); if (c != EOF) ungetc(c, fp); return (c == EOF); }
-
-boolean eolnfile(FILE* fp)
-{ long c; c = fgetc(fp); if (c != EOF) ungetc(c, fp); return (c == '\n'); }
-
-char chkfile(FILE* fp)
+/* Get next character with universal line ending recognition. Recognizes any of
+   the line ending forms crlf, lfcr, cr or lf as valid (the flip.c/IP Pascal
+   algorithm). Two flags are kept per file, set on the current character being
+   cr or lf before the next character is read. A cr directly following an lf, or
+   an lf directly following a cr, is the second half of the same line ending and
+   is skipped. */
+long getcunv(FILE* fp, filnum fn)
 {
     long c;
-    c = fgetc(fp); if (c != EOF) ungetc(c, fp);
-    return ((c=='\n'||c==EOF)?' ':c);
+
+    c = fgetc(fp);
+    if ((c == '\n' && filecr[fn]) || (c == '\r' && filelf[fn])) {
+        /* second half of a split line ending, skip it */
+        filecr[fn] = FALSE; filelf[fn] = FALSE;
+        c = fgetc(fp);
+    }
+    /* set flags on the current character */
+    filecr[fn] = c == '\r';
+    filelf[fn] = c == '\n';
+
+    return (c);
+}
+
+/* Check next character with universal line ending recognition. Returns the next
+   character without moving the file forward, skipping (and consuming) the second
+   half of a split line ending first. The cr/lf flags are not set for the
+   returned character, since it is not consumed. */
+long chkcunv(FILE* fp, filnum fn)
+{
+    long c;
+
+    c = fgetc(fp);
+    if ((c == '\n' && filecr[fn]) || (c == '\r' && filelf[fn])) {
+        /* second half of a split line ending; it is gone for good */
+        filecr[fn] = FALSE; filelf[fn] = FALSE;
+        c = fgetc(fp);
+    }
+    if (c != EOF) ungetc(c, fp);
+
+    return (c);
+}
+
+boolean eoffile(FILE* fp, filnum fn)
+{ long c; c = chkcunv(fp, fn); return (c == EOF); }
+
+boolean eolnfile(FILE* fp, filnum fn)
+{ long c; c = chkcunv(fp, fn); return (c == '\n' || c == '\r'); }
+
+char chkfile(FILE* fp, filnum fn)
+{
+    long c;
+    c = chkcunv(fp, fn);
+    return ((c=='\n'||c=='\r'||c==EOF)?' ':c);
 }
 
 long lengthfile(FILE* fp)
@@ -1768,14 +1812,14 @@ char buffn(filnum fn)
     long c;
 
     if (fn <= COMMANDFN) switch(fn) {
-        case INPUTFN:   c = chkfile(stdin); break;
-        case PRDFN:     c = chkfile(filtable[PRDFN]); break;
+        case INPUTFN:   c = chkfile(stdin, INPUTFN); break;
+        case PRDFN:     c = chkfile(filtable[PRDFN], PRDFN); break;
         case OUTPUTFN: case PRRFN: case ERRORFN:
         case LISTFN:    errore(READONWRITEONLYFILE); break;
         case COMMANDFN: c = bufcommand(); break;
     } else {
         if (filstate[fn] != fsread) errore(FILEMODEINCORRECT);
-        c = chkfile(filtable[fn]);
+        c = chkfile(filtable[fn], fn);
     }
 
     return (c);
@@ -1785,9 +1829,9 @@ void getfneoln(FILE* fp, filnum fn)
 {
     long c;
 
-    c = fgetc(fp);
+    c = getcunv(fp, fn);
     if (c == EOF && !fileoln[fn]) fileoln[fn] = TRUE;
-    else fileoln[fn] = c == '\n';
+    else fileoln[fn] = c == '\n' || c == '\r';
     if (c != EOF) filbof[fn] = FALSE;
 }
 void getfn(filnum fn)
@@ -1807,13 +1851,13 @@ void getfn(filnum fn)
 boolean chkeoffn(FILE* fp, filnum fn)
 {
     if (fn == INPUTFN) {
-        if ((eoffile(fp) && fileoln[fn]) || filbof[fn]) return (TRUE);
+        if ((eoffile(fp, fn) && fileoln[fn]) || filbof[fn]) return (TRUE);
         else return (FALSE);
     } else {
         if (filstate[fn] == fswrite)
             return ftell(filtable[fn]) >= lengthfile(filtable[fn]);
         else if (filstate[fn] == fsread) {
-            if ((eoffile(filtable[fn]) && fileoln[fn]) || filbof[fn])
+            if ((eoffile(filtable[fn], fn) && fileoln[fn]) || filbof[fn])
                 return (TRUE);
             else return (FALSE);
         } else { errore(FILENOTOPEN); return (FALSE); }
@@ -1839,8 +1883,8 @@ boolean eoffn(filnum fn)
 
 boolean chkeolnfn(FILE* fp, filnum fn)
 {
-    if ((eoffile(fp) && !fileoln[fn]) && !filbof[fn]) return (TRUE);
-    else return (eolnfile(fp));
+    if ((eoffile(fp, fn) && !fileoln[fn]) && !filbof[fn]) return (TRUE);
+    else return (eolnfile(fp, fn));
 }
 
 boolean eolnfn(filnum fn)
@@ -2152,6 +2196,8 @@ void resetfn(filnum fn, boolean bin)
     filstate[fn] = fsread;
     filbuff[fn] = FALSE;
     fileoln[fn] = FALSE;
+    filecr[fn] = FALSE;
+    filelf[fn] = FALSE;
     filbof[fn] = FALSE;
 }
 
@@ -2319,7 +2365,7 @@ void callsp(void)
                  popadr(ad); valfilrm(ad); fn = store[ad];
                  if (filstate[fn] == fswrite) pshint(TRUE);
                  else if (filstate[fn] == fsread)
-                   pshint(eoffile(filtable[fn]) && !filbuff[fn]);
+                   pshint(eoffile(filtable[fn], fn) && !filbuff[fn]);
                  break;
     case 7 /*eln*/: popadr(ad); valfil(ad); fn = store[ad];
                     pshint(eolnfn(fn));
@@ -2635,7 +2681,7 @@ void callsp(void)
                        }
                      else
                        for (i = 0; i < l; i++) {
-                         if (eoffile(filtable[fn])) errore(ENDOFFILE);
+                         if (eoffile(filtable[fn], fn)) errore(ENDOFFILE);
                          store[ad1] = fgetc(filtable[fn]);
                          putdef(ad1, TRUE);
                          ad1 = ad1+1;
