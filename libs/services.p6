@@ -18,7 +18,7 @@ o prtlab- lstcod+ chk+ varblk- experror+ list- prttables- undestag+ chkvar+ prtl
 ! * Windows 95/Windows NT 4.0 or later versions.                                *
 ! *                                                                             *
 ! ******************************************************************************}
-! 
+!
 ! module services;
 :2
 :3
@@ -46,11 +46,11 @@ l services.6=0
         sfr     l services.6            ! Set function result
         cup     l services.4 0           ! Call user procedure
         ret                             ! Return code strip
-! 
+!
 ! type 
 :17
 :18
-! 
+!
 !    { attributes }
 !    attribute = (atexec,  { is an executable file type }
 :19
@@ -90,7 +90,7 @@ l services.6=0
 :37
 !    filrec = record
 :38
-! 
+!
 !       name:   pstring; { name of file }
 :39
 :40
@@ -116,7 +116,7 @@ l services.6=0
 :50
 !       next:   filptr   { next entry in list }
 :51
-! 
+!
 !    end;
 :52
 :53
@@ -126,7 +126,7 @@ l services.6=0
 :55
 !    envrec = packed record
 :56
-! 
+!
 !       name: pstring; { name of string }
 :57
 :58
@@ -134,11 +134,11 @@ l services.6=0
 :59
 !       next: envptr { next entry in list }
 :60
-! 
+!
 !    end;
 :61
 :62
-! 
+!
 ! procedure list(view f: string; var l: filptr); external;
 :63
 :64
@@ -445,7 +445,7 @@ z 0 0 services.datesep@f
 ! function currchr: char; external;
 z 0 0 services.timesep@f
 :165
-! 
+!
 ! begin
 z 0 0 services.currchr@f
 l services.3

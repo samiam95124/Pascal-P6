@@ -105,7 +105,7 @@ o prtlab- lstcod+ chk+ varblk- experror+ list- prttables- undestag+ chkvar+ prtl
 ! * 2. It has been proposed to add regular expressions to the search.           *
 ! *                                                                             *
 ! ******************************************************************************}
-! 
+!
 ! module strings(input, output, error);
 :2
 :3
@@ -220,11 +220,11 @@ l strings.6=0
         sfr     l strings.6             ! Set function result
         cup     l strings.4 0            ! Call user procedure
         ret                             ! Return code strip
-! 
+!
 ! var
 :104
 :105
-! 
+!
 ! { No string block is active }            NoStringBlock,
 :106
 :107
@@ -291,7 +291,7 @@ s       StringNil g 106 e
 s       CurrentBlockFull g 107 e
 s       OuterBlockFull g 108 e
 s       NoStringBlock g 109 e
-! 
+!
 ! function lcase(c: char): char; forward;
 :129
 :130
@@ -403,7 +403,7 @@ s       NoStringBlock g 109 e
 :183
 ! overload function extract(view s: string; l, r: integer): pstring; forward;
 :184
-! 
+!
 ! procedure insert(var d: string; view s: string; p: integer); forward;
 :185
 :186
@@ -761,11 +761,11 @@ s       NoStringBlock g 109 e
 :362
 !    forward;
 :363
-! 
+!
 ! private
 :364
 :365
-! 
+!
 ! { *** This set of caluculations, should be automated as done in pint.pas *** }
 ! const maxpwr = 1000000000; { maximum power of 10 that fits into integer }
 :366
@@ -785,24 +785,24 @@ s       NoStringBlock g 109 e
 :374
 !       maxstr = 100;        { number of strings tracked on each level }
 :375
-! 
+!
 ! type stkptr = ^strtrk; { string tracking pointer }
 :376
 :377
 !      strtrk = record { string allocation tracking entry }
 :378
-! 
+!
 !         strings: array [1..maxstr] of pstring; { string tracking table }
 :379
 :380
 t       l strings.205 1 100
 !         next: stkptr { next block }
 :381
-! 
+!
 !      end;
 :382
 :383
-! 
+!
 ! var strstk: stkptr; { string blocks tracking stack }
 :384
 :385
@@ -810,22 +810,22 @@ s       strstk g 112 pr(strings:0:ax(1,100)ipvc,next:800:p2)
 !     strfre: stkptr; { string blocks free list }
 :386
 s       strfre g 120 pr(strings:0:ax(1,100)ipvc,next:800:p2)
-! 
-! 
+!
+!
 ! {******************************************************************************
-! 
+!
 ! Process string library error
-! 
+!
 ! Outputs an error message to the error output file, and then halts. This may
 ! need to be either directed towards a custom error file or handler, since we
 ! make two assumptions here:
-! 
+!
 ! 1. That the error is output as a single line before program termination.
-! 
+!
 ! 2. That the system may add its own preamble.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure perror(view s: string);
 :387
 :388
@@ -844,7 +844,7 @@ s       strfre g 120 pr(strings:0:ax(1,100)ipvc,next:800:p2)
 :401
 :402
 :403
-! 
+!
 ! begin
 b r perror@p_vc
 s       s p 40 vc
@@ -853,7 +853,7 @@ l strings.206
 :405
 :405
         mst     1 l strings.207 l strings.208 ! Mark(frame) stack
-! 
+!
 !    { write error string to error output with preamble }
 !    writeln(error, 'Strlib: ', s);
 :406
@@ -877,19 +877,19 @@ t       l strings.210 1 1
         csp     wrs                     ! Call system procedure/function: Write string to text file
         loda    2 -24                   ! Load local value(t)
         csp     wln                     ! Call system procedure/function: Write next line to text file
-! 
+!
 ! end;
 :409
 :410
         retp    16                      ! Return from procedure/function(t)
 l strings.207=8
 l strings.208=32
-! 
+!
 ! procedure throw(ev: exception);
 e r
 :411
 :412
-! 
+!
 ! begin
 b r throw@p_e
 s       ev p -24 e
@@ -901,7 +901,7 @@ l strings.211
         lda     2 -24                   ! Load local address
         loda    2 40                    ! Load local value(t)
         mov     1                       ! Move(copy)
-! 
+!
 !     refer(ev); { unused }
 :415
 :416
@@ -918,7 +918,7 @@ t       l strings.215 1 1
         swp     16                      ! Swap tos with sos
         cpl                             ! Copy length from complex pointer
         csp     wrs                     ! Call system procedure/function: Write string to text file
-! 
+!
 ! end;
         loda    2 -32                   ! Load local value(t)
         csp     wln                     ! Call system procedure/function: Write next line to text file
@@ -927,16 +927,16 @@ t       l strings.215 1 1
         retp    8                       ! Return from procedure/function(t)
 l strings.212=16
 l strings.213=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Open new string tracking level
-! 
+!
 ! Creates or recycles a string tracking block, and places that atop the tracking
 ! stack.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure openstring;
 e r
 :420
@@ -950,7 +950,7 @@ e r
 :428
 :429
 :430
-! 
+!
 ! var sp: stkptr;    { stack block pointer }
 b r openstring@p
 :431
@@ -959,14 +959,14 @@ s       sp l -24 pr(strings:0:ax(1,100)ipvc,next:800:p2)
 !     i:  1..maxstr; { index for strings }
 :433
 s       i l -25 x(1,100)i
-! 
+!
 ! begin
 l strings.165
 :434
 :435
 :435
         mst     1 l strings.217 l strings.218 ! Mark(frame) stack
-! 
+!
 !    if strfre <> nil then begin { get free entry }
 :436
 :437
@@ -974,7 +974,7 @@ l strings.165
         ldcn ! Load constant(t)
         neqa                            ! Not equal(t)
          fjp l strings.220
-! 
+!
 !       sp := strfre; { index top entry }
 :438
 :439
@@ -985,7 +985,7 @@ l strings.165
 :440
         ldoa    120                     ! Load global value(t)
         chka    1 9223372036854775807   ! Bounds check(t)
-! 
+!
 !    end else new(sp); { get a new entry }
         inda    800                     ! Load indirect(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -1034,7 +1034,7 @@ l strings.222
         chki    1 100                   ! Bounds check(t)
         deci    1                       ! Decrement(t)
         ixa     8                       ! Scale array access
-! 
+!
 ! end;
         ldcn ! Load constant(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -1057,15 +1057,15 @@ l strings.223
         retp    0                       ! Return from procedure/function(t)
 l strings.217=32
 l strings.218=16
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Export string from tracking level
-! 
+!
 ! Removes the indicated string completely from the tracking system.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure exportstring(p: pstring);
 e r
 :448
@@ -1078,21 +1078,21 @@ e r
 :455
 :456
 :457
-! 
+!
 ! var i: 1..maxstr; { index for strings }
 b r exportstring@p_pvc
 s       p p 40 pvc
 :458
 :459
 s       i l -17 x(1,100)i
-! 
+!
 ! begin
 l strings.167
 :460
 :461
 :461
         mst     1 l strings.225 l strings.226 ! Mark(frame) stack
-! 
+!
 !    if strstk = nil then throw(NoStringBlock);
 :462
 :463
@@ -1144,7 +1144,7 @@ l strings.230
         chki    1 100                   ! Bounds check(t)
         deci    1                       ! Decrement(t)
         ixa     8                       ! Scale array access
-! 
+!
 ! end;
         ldcn ! Load constant(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -1169,16 +1169,16 @@ l strings.231
         retp    8                       ! Return from procedure/function(t)
 l strings.225=24
 l strings.226=16
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Move string to outter tracking block
-! 
+!
 ! Moves the string in the current level, up to the next surrounding level. If the
 ! outter level is nil, then the effect is the same as exportstring.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure upstring(p: pstring);
 e r
 :470
@@ -1192,7 +1192,7 @@ e r
 :478
 :479
 :480
-! 
+!
 ! var i:  1..maxstr; { index for strings }
 b r upstring@p_pvc
 s       p p 40 pvc
@@ -1202,14 +1202,14 @@ s       i l -17 x(1,100)i
 !     fs: 0..maxstr; { free string entry }
 :483
 s       fs l -18 x(0,100)i
-! 
+!
 ! begin
 l strings.168
 :484
 :485
 :485
         mst     1 l strings.234 l strings.235 ! Mark(frame) stack
-! 
+!
 !    exportstring(p); { start by removing it completely }
 :486
 :487
@@ -1232,7 +1232,7 @@ l strings.237=0
         ldcn ! Load constant(t)
         neqa                            ! Not equal(t)
          fjp l strings.239
-! 
+!
 !       fs := 0; { clear free string index }
 :490
 :491
@@ -1311,14 +1311,14 @@ l strings.243
         chki    1 100                   ! Bounds check(t)
         deci    1                       ! Decrement(t)
         ixa     8                       ! Scale array access
-! 
+!
 !    end
         loda    2 40                    ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
         stoa                            ! Store to address(t)
 :497
 :498
-! 
+!
 ! end;
 l strings.239
 :499
@@ -1329,15 +1329,15 @@ l strings.238
         retp    8                       ! Return from procedure/function(t)
 l strings.234=24
 l strings.235=16
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Close string tracking level
-! 
+!
 ! Frees all strings from the top string tracking level, and frees the block.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure closestring;
 e r
 :501
@@ -1350,7 +1350,7 @@ e r
 :508
 :509
 :510
-! 
+!
 ! var sp: stkptr;    { stack block pointer }
 b r closestring@p
 :511
@@ -1359,14 +1359,14 @@ s       sp l -24 pr(strings:0:ax(1,100)ipvc,next:800:p2)
 !     i:  1..maxstr; { index for strings }
 :513
 s       i l -25 x(1,100)i
-! 
+!
 ! begin
 l strings.166
 :514
 :515
 :515
         mst     1 l strings.246 l strings.247 ! Mark(frame) stack
-! 
+!
 !    if strstk = nil then throw(NoStringBlock);
 :516
 :517
@@ -1451,7 +1451,7 @@ l strings.252
 !    strstk := sp
 :524
 :525
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -1461,16 +1461,16 @@ l strings.252
         retp    0                       ! Return from procedure/function(t)
 l strings.246=32
 l strings.247=16
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Allocate new string
-! 
+!
 ! Allocates a dynamic string. If the string tracking system is active, then the
 ! string will be recorded in the current tracking block.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure newstr(var p: pstring; s: integer);
 e r
 :528
@@ -1484,7 +1484,7 @@ e r
 :536
 :537
 :538
-! 
+!
 ! var i:  1..maxstr; { index for strings }
 b r newstr@p_pvc_i
 s       p p 48 pvc
@@ -1495,14 +1495,14 @@ s       i l -17 x(1,100)i
 !     fs: 0..maxstr; { free string entry }
 :541
 s       fs l -18 x(0,100)i
-! 
+!
 ! begin
 l strings.254
 :542
 :543
 :543
         mst     1 l strings.255 l strings.256 ! Mark(frame) stack
-! 
+!
 !    new(p, s); { allocate new string }
 :544
 :545
@@ -1516,7 +1516,7 @@ l strings.254
         ldcn ! Load constant(t)
         neqa                            ! Not equal(t)
          fjp l strings.258
-! 
+!
 !       fs := 0; { clear free string index }
 :547
 :548
@@ -1589,7 +1589,7 @@ l strings.262
         chki    1 100                   ! Bounds check(t)
         deci    1                       ! Decrement(t)
         ixa     8                       ! Scale array access
-! 
+!
 !    end
         loda    2 48                    ! Load local value(t)
         inda    0                       ! Load indirect(t)
@@ -1597,7 +1597,7 @@ l strings.262
         stoa                            ! Store to address(t)
 :553
 :554
-! 
+!
 ! end;
 l strings.258
 :555
@@ -1606,22 +1606,22 @@ l strings.258
         retp    16                      ! Return from procedure/function(t)
 l strings.255=24
 l strings.256=16
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Find lower case
-! 
+!
 ! Finds the lower case equivalent of 'A'..'Z'.
-! 
+!
 ! Forms:
-! 
+!
 ! function lcase(char): char - Returns the lower case of the argument.
 ! procedure lcase(var char) - Changes the argument to lower case.
 ! procedure lcases(var string) - Changes the string to all lower case.
 ! function lcases(string): pstring - Returns lower case dynamic copy of argument.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function lcase(c: char): char;
 e r
 :557
@@ -1641,7 +1641,7 @@ e r
 :571
 :572
 :573
-! 
+!
 ! begin
 b f lcase@f_c
 s       c p 40 c
@@ -1650,7 +1650,7 @@ l strings.7
 :575
 :575
         mst     1 l strings.265 l strings.266 ! Mark(frame) stack
-! 
+!
 !    { convert lower case }
 !    if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
 :576
@@ -1676,7 +1676,7 @@ l strings.268
 :578
 !    lcase := c { return result }
 :579
-! 
+!
 ! end;
         lodc    2 40                    ! Load local value(t)
         chkc    0 255                   ! Bounds check(t)
@@ -1686,26 +1686,26 @@ l strings.268
         retc    8                       ! Return from procedure/function(t)
 l strings.265=0
 l strings.266=16
-! 
+!
 ! overload function lcase(view s: pstring): pstring;
 e f
 :582
 :583
-! 
+!
 ! var p: pstring;
 b f lcase@f_pvc
 s       s p 40 pvc
 :584
 :585
 s       p l -24 pvc
-! 
+!
 ! begin
 l strings.8
 :586
 :587
 :587
         mst     1 l strings.270 l strings.271 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :588
 :589
@@ -1746,7 +1746,7 @@ l strings.276=0
 !    lcase := p
 :592
 :593
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -1756,26 +1756,26 @@ l strings.276=0
         reta    8                       ! Return from procedure/function(t)
 l strings.270=8
 l strings.271=16
-! 
+!
 ! function lcases(view s: string): pstring;
 e f
 :596
 :597
-! 
+!
 ! var p: pstring;
 b f lcases@f_vc
 s       s p 40 vc
 :598
 :599
 s       p l -24 pvc
-! 
+!
 ! begin
 l strings.9
 :600
 :601
 :601
         mst     1 l strings.278 l strings.279 ! Mark(frame) stack
-! 
+!
 !    p := copy(s); { copy source to temp }
 :602
 :603
@@ -1801,7 +1801,7 @@ l strings.282=0
 !    lcases := p
 :605
 :606
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -1811,26 +1811,26 @@ l strings.282=0
         reta    16                      ! Return from procedure/function(t)
 l strings.278=8
 l strings.279=16
-! 
+!
 ! overload procedure lcases(var s: string);
 e f
 :609
 :610
-! 
+!
 ! var i: integer;
 b r lcases@p_vc
 s       s p 40 vc
 :611
 :612
 s       i l -24 i
-! 
+!
 ! begin
 l strings.10
 :613
 :614
 :614
         mst     1 l strings.284 l strings.285 ! Mark(frame) stack
-! 
+!
 !    for i := 1 to max(s) do s[i] := lcase(s[i])
 :615
 :616
@@ -1860,7 +1860,7 @@ l strings.287
         cxs     1                       ! Simple container index
         indc    0                       ! Load indirect(t)
         chkc    0 255                   ! Bounds check(t)
-! 
+!
 ! end;
 l strings.289=8
         cuf     l strings.7 1 0 1 8     ! Call user function
@@ -1884,22 +1884,22 @@ l strings.288
         retp    16                      ! Return from procedure/function(t)
 l strings.284=24
 l strings.285=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Find upper case
-! 
+!
 ! Finds the upper case equivalent of 'a'..'z'.
-! 
+!
 ! Forms:
-! 
+!
 ! function ucase(char): char - Returns the upper case of the argument.
 ! procedure ucase(var char) - Changes the argument to upper case.
 ! procedure ucases(var string) - Changes the string to all upper case.
 ! function ucases(string): pstring - Returns upper case dynamic copy of argument.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function ucase(c: char): char;
 e r
 :619
@@ -1919,7 +1919,7 @@ e r
 :633
 :634
 :635
-! 
+!
 ! begin
 b f ucase@f_c
 s       c p 40 c
@@ -1928,7 +1928,7 @@ l strings.11
 :637
 :637
         mst     1 l strings.291 l strings.292 ! Mark(frame) stack
-! 
+!
 !    { convert upper case }
 !    if c in ['a'..'z'] then c := chr(ord(c)-ord('a')+ord('A'));
 :638
@@ -1954,7 +1954,7 @@ l strings.294
 :640
 !    ucase := c { return result }
 :641
-! 
+!
 ! end;
         lodc    2 40                    ! Load local value(t)
         chkc    0 255                   ! Bounds check(t)
@@ -1964,26 +1964,26 @@ l strings.294
         retc    8                       ! Return from procedure/function(t)
 l strings.291=0
 l strings.292=16
-! 
+!
 ! overload function ucase(view s: pstring): pstring;
 e f
 :644
 :645
-! 
+!
 ! var p: pstring;
 b f ucase@f_pvc
 s       s p 40 pvc
 :646
 :647
 s       p l -24 pvc
-! 
+!
 ! begin
 l strings.12
 :648
 :649
 :649
         mst     1 l strings.296 l strings.297 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :650
 :651
@@ -2024,7 +2024,7 @@ l strings.302=0
 !    ucase := p
 :654
 :655
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -2034,26 +2034,26 @@ l strings.302=0
         reta    8                       ! Return from procedure/function(t)
 l strings.296=8
 l strings.297=16
-! 
+!
 ! function ucases(view s: string): pstring;
 e f
 :658
 :659
-! 
+!
 ! var p: pstring;
 b f ucases@f_vc
 s       s p 40 vc
 :660
 :661
 s       p l -24 pvc
-! 
+!
 ! begin
 l strings.13
 :662
 :663
 :663
         mst     1 l strings.304 l strings.305 ! Mark(frame) stack
-! 
+!
 !    p := copy(s); { copy source to temp }
 :664
 :665
@@ -2079,7 +2079,7 @@ l strings.308=0
 !    ucases := p
 :667
 :668
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -2089,26 +2089,26 @@ l strings.308=0
         reta    16                      ! Return from procedure/function(t)
 l strings.304=8
 l strings.305=16
-! 
+!
 ! overload procedure ucases(var s: string);
 e f
 :671
 :672
-! 
+!
 ! var i: integer;
 b r ucases@p_vc
 s       s p 40 vc
 :673
 :674
 s       i l -24 i
-! 
+!
 ! begin
 l strings.14
 :675
 :676
 :676
         mst     1 l strings.310 l strings.311 ! Mark(frame) stack
-! 
+!
 !    for i := 1 to max(s) do s[i] := ucase(s[i])
 :677
 :678
@@ -2138,7 +2138,7 @@ l strings.313
         cxs     1                       ! Simple container index
         indc    0                       ! Load indirect(t)
         chkc    0 255                   ! Bounds check(t)
-! 
+!
 ! end;
 l strings.315=8
         cuf     l strings.11 1 0 1 8    ! Call user function
@@ -2162,19 +2162,19 @@ l strings.314
         retp    16                      ! Return from procedure/function(t)
 l strings.310=24
 l strings.311=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Clear string
-! 
+!
 ! Clears the given string to all blanks.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure clears(var string) - Clear string to blanks.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure clears(var s: string);
 e r
 :681
@@ -2191,21 +2191,21 @@ e r
 :692
 :693
 :694
-! 
+!
 ! var i: integer; { index for string }
 b r clears@p_vc
 s       s p 40 vc
 :695
 :696
 s       i l -24 i
-! 
+!
 ! begin
 l strings.15
 :697
 :698
 :698
         mst     1 l strings.317 l strings.318 ! Mark(frame) stack
-! 
+!
 !    for i := 1 to max(s) do s[i] := ' ' { clear string }
 :699
 :700
@@ -2228,7 +2228,7 @@ l strings.320
         ldp                             ! Load complex pointer
         lodi    2 -24                   ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 ! end;
         ldcc    ' '                     ! Load constant(t)
         chkc    0 255                   ! Bounds check(t)
@@ -2250,20 +2250,20 @@ l strings.321
         retp    16                      ! Return from procedure/function(t)
 l strings.317=24
 l strings.318=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Find string length padded
-! 
+!
 ! Finds the length of the given string, which is the index of the last character
 ! in the string that is non-blank, or 0 if the string is all blanks.
-! 
+!
 ! Forms:
-! 
+!
 ! function len(string) - Returns the padded length of string.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function len(view s: string): integer;
 e r
 :703
@@ -2281,21 +2281,21 @@ e r
 :715
 :716
 :717
-! 
+!
 ! var i: integer; { index for string }
 b f len@f_vc
 s       s p 40 vc
 :718
 :719
 s       i l -24 i
-! 
+!
 ! begin
 l strings.16
 :720
 :721
 :721
         mst     1 l strings.323 l strings.324 ! Mark(frame) stack
-! 
+!
 !    i := max(s); { index last of string }
 :722
 :723
@@ -2310,7 +2310,7 @@ l strings.16
         ldci    0                       ! Load constant(t)
         neqi                            ! Not equal(t)
          fjp l strings.326
-! 
+!
 !       while (i > 1) and (s[i] = ' ') do i := i-1; { find last character }
 :725
 :726
@@ -2345,7 +2345,7 @@ l strings.328
         ldcc    ' '                     ! Load constant(t)
         equc                            ! Equal(t)
          fjp l strings.329
-! 
+!
 !    end;
         ldci    0                       ! Load constant(t)
         stri    2 -24                   ! Store local(t)
@@ -2357,7 +2357,7 @@ l strings.326
 :729
 !    len := i { return length of string }
 :730
-! 
+!
 ! end;
         lodi    2 -24                   ! Load local value(t)
         stri    2 56                    ! Store local(t)
@@ -2366,12 +2366,12 @@ l strings.326
         reti    16                      ! Return from procedure/function(t)
 l strings.323=8
 l strings.324=32
-! 
+!
 ! overload function len(view s: pstring): integer;
 e f
 :733
 :734
-! 
+!
 ! begin
 b f len@f_pvc
 s       s p 40 pvc
@@ -2380,7 +2380,7 @@ l strings.17
 :736
 :736
         mst     1 l strings.331 l strings.332 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :737
 :738
@@ -2403,7 +2403,7 @@ l strings.334
         spc                             ! Simplify complex pointer
         ldci    1                       ! Load constant(t)
         max     1                       ! Maximum dimension of array
-! 
+!
 ! end;
         stri    2 48                    ! Store local(t)
 :740
@@ -2411,22 +2411,22 @@ l strings.334
         reti    8                       ! Return from procedure/function(t)
 l strings.331=0
 l strings.332=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Copy string
-! 
+!
 ! Creates a new string at the destination, and copies the source into it.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure copy(string, string) - Copy to string result, padding right as 
 !                                  required.
 ! procedure copy(pstring, string) - Copy string to new dynamic.
 ! procedure copy(pstring, string) - Copy padded string to new dynamic.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure copy(var  d: string;  { destination }
 e f
 :742
@@ -2448,7 +2448,7 @@ e f
 :758
 !                view s: string); { source }
 :759
-! 
+!
 ! var i:  integer; { index for string }
 b r copy@p_vc_vc
 s       d p 56 vc
@@ -2459,14 +2459,14 @@ s       i l -24 i
 !     ls: integer; { length of source save }
 :762
 s       ls l -32 i
-! 
+!
 ! begin
 l strings.18
 :763
 :764
 :764
         mst     1 l strings.337 l strings.338 ! Mark(frame) stack
-! 
+!
 !    ls := len(s); { calculate this only once }
 :765
 :766
@@ -2555,7 +2555,7 @@ l strings.345
         ldp                             ! Load complex pointer
         lodi    2 -24                   ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 ! end;
         ldcc    ' '                     ! Load constant(t)
         chkc    0 255                   ! Bounds check(t)
@@ -2577,14 +2577,14 @@ l strings.346
         retp    32                      ! Return from procedure/function(t)
 l strings.337=32
 l strings.338=32
-! 
+!
 ! overload procedure copy(var  d: string;   { destination }
 e r
 :773
 :774
 !                              s: pstring); { source }
 :775
-! 
+!
 ! begin
 b r copy@p_vc_pvc
 s       d p 48 vc
@@ -2594,7 +2594,7 @@ l strings.19
 :777
 :777
         mst     1 l strings.348 l strings.349 ! Mark(frame) stack
-! 
+!
 !    copy(d, s^) { copy }
 :778
 :779
@@ -2605,7 +2605,7 @@ l strings.19
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.351=0
         cup     l strings.18 2          ! Call user procedure
@@ -2615,28 +2615,28 @@ l strings.351=0
         retp    24                      ! Return from procedure/function(t)
 l strings.348=0
 l strings.349=32
-! 
+!
 ! overload function copy(view s: string) { source }
 e r
 :782
 :783
 !                        : pstring; { result }
 :784
-! 
+!
 ! var d: pstring;
 b f copy@f_vc
 s       s p 40 vc
 :785
 :786
 s       d l -24 pvc
-! 
+!
 ! begin
 l strings.20
 :787
 :788
 :788
         mst     1 l strings.353 l strings.354 ! Mark(frame) stack
-! 
+!
 !    newstr(d, max(s)); { create destination }
 :789
 :790
@@ -2659,11 +2659,11 @@ l strings.356=0
         ldp                             ! Load complex pointer
         cps                             ! Compare simple templates
         aps     1                       ! Assign simple pointer data
-! 
+!
 !    copy := d { return result }
 :792
 :793
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -2673,14 +2673,14 @@ l strings.356=0
         reta    16                      ! Return from procedure/function(t)
 l strings.353=8
 l strings.354=32
-! 
+!
 ! overload function copy(view s: pstring) { source }
 e f
 :796
 :797
 !                        : pstring; { result }
 :798
-! 
+!
 ! begin
 b f copy@f_pvc
 s       s p 40 pvc
@@ -2689,7 +2689,7 @@ l strings.21
 :800
 :800
         mst     1 l strings.358 l strings.359 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :801
 :802
@@ -2704,7 +2704,7 @@ l strings.362=0
 :802
 l strings.361
 :802
-! 
+!
 !    copy := copy(s^) { return result }
 :803
 :804
@@ -2713,7 +2713,7 @@ l strings.361
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.363=8
         cuf     l strings.20 1 0 8 8    ! Call user function
@@ -2725,14 +2725,14 @@ l strings.363=8
         reta    8                       ! Return from procedure/function(t)
 l strings.358=0
 l strings.359=16
-! 
+!
 ! overload procedure copy(var  d: pstring; { destination }
 e f
 :807
 :808
 !                         view s: string); { source }
 :809
-! 
+!
 ! begin
 b r copy@p_pvc_vc
 s       d p 56 pvc
@@ -2742,7 +2742,7 @@ l strings.22
 :811
 :811
         mst     1 l strings.365 l strings.366 ! Mark(frame) stack
-! 
+!
 !    newstr(d, len(s)); { create destination }
 :812
 :813
@@ -2767,7 +2767,7 @@ l strings.368=0
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.370=0
         cup     l strings.18 2          ! Call user procedure
@@ -2777,25 +2777,25 @@ l strings.370=0
         retp    24                      ! Return from procedure/function(t)
 l strings.365=0
 l strings.366=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Concatenate strings
-! 
+!
 ! Creates a new string as long as the combination of the two source strings,
 ! then places the source string b to the right of the source string a in the
 ! destination. The source strings are view.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure cat(string, string) - Concatenates the padded arguments to a padded
 !                                 left result (two operand version).
 ! procedure cat(pstring, string, string) - Concatentates the strings to a left
 !                                          dynamic result (three operand version).
 ! function cat(string, string) - Concatenates the strings to a dynamic result.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure cat(var  d: string;  { destination }
 e r
 :817
@@ -2820,7 +2820,7 @@ e r
 :836
 !               view s: string); { source }
 :837
-! 
+!
 ! var i:      integer; { index for string }
 b r cat@p_vc_vc
 s       d p 56 vc
@@ -2832,14 +2832,14 @@ s       i l -24 i
 :840
 s       ld l -32 i
 s       ls l -40 i
-! 
+!
 ! begin
 l strings.23
 :841
 :842
 :842
         mst     1 l strings.372 l strings.373 ! Mark(frame) stack
-! 
+!
 !    ls := len(s); { calculate this only once }
 :843
 :844
@@ -2903,7 +2903,7 @@ l strings.379
         ldp                             ! Load complex pointer
         lodi    2 -24                   ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 ! end;
         indc    0                       ! Load indirect(t)
         chkc    0 255                   ! Bounds check(t)
@@ -2925,14 +2925,14 @@ l strings.380
         retp    32                      ! Return from procedure/function(t)
 l strings.372=40
 l strings.373=32
-! 
+!
 ! overload function cat(view sa, sb: string) { sources }
 e r
 :851
 :852
 !                      : pstring;
 :853
-! 
+!
 ! var i: integer; { index for string }
 b f cat@f_vc_vc
 s       sa p 56 vc
@@ -2943,14 +2943,14 @@ s       i l -24 i
 !     d: pstring; { temp string }
 :856
 s       d l -32 pvc
-! 
+!
 ! begin
 l strings.24
 :857
 :858
 :858
         mst     1 l strings.382 l strings.383 ! Mark(frame) stack
-! 
+!
 !    newstr(d, max(sa)+max(sb)); { create destination }
 :859
 :860
@@ -3057,11 +3057,11 @@ l strings.389
 :862
         lda     2 -24                   ! Load local address
         inv                             ! Invalidate address
-! 
+!
 !    cat := d { return result }
 :863
 :864
-! 
+!
 ! end;
         loda    2 -32                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -3071,12 +3071,12 @@ l strings.389
         reta    32                      ! Return from procedure/function(t)
 l strings.382=32
 l strings.383=40
-! 
+!
 ! overload function cat(s1, s2: pstring): pstring;
 e f
 :867
 :868
-! 
+!
 ! begin
 b f cat@f_pvc_pvc
 s       s1 p 48 pvc
@@ -3086,7 +3086,7 @@ l strings.25
 :870
 :870
         mst     1 l strings.391 l strings.392 ! Mark(frame) stack
-! 
+!
 !    if (s1 = nil) or (s2 = nil) then throw(StringNil);
 :871
 :872
@@ -3121,19 +3121,19 @@ l strings.396=8
 :873
         chka    0 9223372036854775807   ! Bounds check(t)
         stra    2 56                    ! Store local(t)
-! 
+!
 ! end;
 :874
 :875
         reta    16                      ! Return from procedure/function(t)
 l strings.391=0
 l strings.392=32
-! 
+!
 ! overload function cat(view s1: string; s2: pstring): pstring;
 e f
 :876
 :877
-! 
+!
 ! begin
 b f cat@f_vc_pvc
 s       s1 p 48 vc
@@ -3143,7 +3143,7 @@ l strings.26
 :879
 :879
         mst     1 l strings.398 l strings.399 ! Mark(frame) stack
-! 
+!
 !    if s2 = nil then throw(StringNil);
 :880
 :881
@@ -3172,19 +3172,19 @@ l strings.403=8
 :882
         chka    0 9223372036854775807   ! Bounds check(t)
         stra    2 64                    ! Store local(t)
-! 
+!
 ! end;
 :883
 :884
         reta    24                      ! Return from procedure/function(t)
 l strings.398=0
 l strings.399=32
-! 
+!
 ! overload function cat(s1: pstring; view s2: string): pstring;
 e f
 :885
 :886
-! 
+!
 ! begin
 b f cat@f_pvc_vc
 s       s1 p 56 pvc
@@ -3194,7 +3194,7 @@ l strings.27
 :888
 :888
         mst     1 l strings.405 l strings.406 ! Mark(frame) stack
-! 
+!
 !    if s1 = nil then throw(StringNil);
 :889
 :890
@@ -3223,23 +3223,23 @@ l strings.410=8
 :891
         chka    0 9223372036854775807   ! Bounds check(t)
         stra    2 64                    ! Store local(t)
-! 
+!
 ! end;
 :892
 :893
         reta    24                      ! Return from procedure/function(t)
 l strings.405=0
 l strings.406=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Compare strings
-! 
+!
 ! Compares two strings, and returns the equality of the strings. Case is
 ! observed.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function compc(view d: string;  { destination }
 e f
 :894
@@ -3257,7 +3257,7 @@ e f
 :905
 !                : boolean; { result }
 :906
-! 
+!
 ! var r: boolean; { result holder }
 b f compc@f_vc_vc
 s       d p 56 vc
@@ -3265,14 +3265,14 @@ s       s p 40 vc
 :907
 :908
 s       r l -17 b
-! 
+!
 ! begin
 l strings.28
 :909
 :910
 :910
         mst     1 l strings.412 l strings.413 ! Mark(frame) stack
-! 
+!
 !    r := false; { set not equal }
 :911
 :912
@@ -3303,7 +3303,7 @@ l strings.415
 :913
 !    compc := r
 :914
-! 
+!
 ! end;
         lodb    2 -17                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -3313,7 +3313,7 @@ l strings.415
         retb    32                      ! Return from procedure/function(t)
 l strings.412=8
 l strings.413=32
-! 
+!
 ! overload function compc(d: pstring; { destination }
 e f
 :917
@@ -3322,7 +3322,7 @@ e f
 :919
 !                         : boolean; { result }
 :920
-! 
+!
 ! begin
 b f compc@f_pvc_pvc
 s       d p 48 pvc
@@ -3332,7 +3332,7 @@ l strings.29
 :922
 :922
         mst     1 l strings.417 l strings.418 ! Mark(frame) stack
-! 
+!
 !    if (d = nil) or (s = nil) then throw(StringNil);
 :923
 :924
@@ -3351,7 +3351,7 @@ l strings.421=0
 :924
 l strings.420
 :924
-! 
+!
 !    compc := compc(d^, s^) { return result }
 :925
 :926
@@ -3364,7 +3364,7 @@ l strings.420
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.422=8
         cuf     l strings.28 2 0 1 8    ! Call user function
@@ -3376,7 +3376,7 @@ l strings.422=8
         retb    16                      ! Return from procedure/function(t)
 l strings.417=0
 l strings.418=32
-! 
+!
 ! overload function compc(view d: string; { destination }
 e f
 :929
@@ -3385,7 +3385,7 @@ e f
 :931
 !                         : boolean; { result }
 :932
-! 
+!
 ! begin
 b f compc@f_vc_pvc
 s       d p 48 vc
@@ -3395,7 +3395,7 @@ l strings.30
 :934
 :934
         mst     1 l strings.424 l strings.425 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :935
 :936
@@ -3410,7 +3410,7 @@ l strings.428=0
 :936
 l strings.427
 :936
-! 
+!
 !    compc := compc(d, s^) { return result }
 :937
 :938
@@ -3421,7 +3421,7 @@ l strings.427
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.429=8
         cuf     l strings.28 2 0 1 8    ! Call user function
@@ -3433,7 +3433,7 @@ l strings.429=8
         retb    24                      ! Return from procedure/function(t)
 l strings.424=0
 l strings.425=32
-! 
+!
 ! overload function compc(     d: pstring; { destination }
 e f
 :941
@@ -3442,7 +3442,7 @@ e f
 :943
 !                         : boolean; { result }
 :944
-! 
+!
 ! begin
 b f compc@f_pvc_vc
 s       d p 56 pvc
@@ -3452,7 +3452,7 @@ l strings.31
 :946
 :946
         mst     1 l strings.431 l strings.432 ! Mark(frame) stack
-! 
+!
 !    if d = nil then throw(StringNil);
 :947
 :948
@@ -3467,7 +3467,7 @@ l strings.435=0
 :948
 l strings.434
 :948
-! 
+!
 !    compc := compc(d^, s) { return result }
 :949
 :950
@@ -3478,7 +3478,7 @@ l strings.434
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.436=8
         cuf     l strings.28 2 0 1 8    ! Call user function
@@ -3490,16 +3490,16 @@ l strings.436=8
         retb    24                      ! Return from procedure/function(t)
 l strings.431=0
 l strings.432=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Compare strings padded
-! 
+!
 ! Compares two strings, and returns the equality of the strings. Case is
 ! observed.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function compcp(view d, s: string): boolean;
 e f
 :953
@@ -3513,7 +3513,7 @@ e f
 :961
 :962
 :963
-! 
+!
 ! var i:      integer; { index for string }
 b f compcp@f_vc_vc
 s       d p 56 vc
@@ -3528,14 +3528,14 @@ s       ls l -40 i
 !     r:      boolean; { result save }
 :967
 s       r l -41 b
-! 
+!
 ! begin
 l strings.32
 :968
 :969
 :969
         mst     1 l strings.438 l strings.439 ! Mark(frame) stack
-! 
+!
 !    ls := len(s); { calculate this only once }
 :970
 :971
@@ -3569,7 +3569,7 @@ l strings.442=8
 l strings.443
 :974
 :974
-! 
+!
 !       r := true; { set strings match }
 :975
 :976
@@ -3602,7 +3602,7 @@ l strings.445
         indc    0                       ! Load indirect(t)
         neqc                            ! Not equal(t)
          fjp l strings.447
-! 
+!
 !    end;
         ldcb    0                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -3627,7 +3627,7 @@ l strings.444
 :979
 !    compcp := r { return match status }
 :980
-! 
+!
 ! end;
         lodb    2 -41                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -3637,16 +3637,16 @@ l strings.444
         retb    32                      ! Return from procedure/function(t)
 l strings.438=48
 l strings.439=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Compare strings caseless
-! 
+!
 ! Compares two strings, and returns the equality of the strings. Case is
 ! NOT observed.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function comp(view d, s: string): boolean;
 e f
 :983
@@ -3660,7 +3660,7 @@ e f
 :991
 :992
 :993
-! 
+!
 ! var i: integer; { index for string }
 b f comp@f_vc_vc
 s       d p 56 vc
@@ -3671,14 +3671,14 @@ s       i l -24 i
 !     r: boolean; { result save }
 :996
 s       r l -25 b
-! 
+!
 ! begin
 l strings.33
 :997
 :998
 :998
         mst     1 l strings.449 l strings.450 ! Mark(frame) stack
-! 
+!
 !    if max(d) <> max(s) then r := false { strings don't match in length }
 :999
 :1000
@@ -3700,7 +3700,7 @@ l strings.33
 l strings.452
 :1001
 :1001
-! 
+!
 !       r := true; { set strings match }
 :1002
 :1003
@@ -3748,7 +3748,7 @@ l strings.457=8
          fjp l strings.458
 !          r := false { mismatch }
 :1005
-! 
+!
 !    end;
         ldcb    0                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -3773,7 +3773,7 @@ l strings.453
 :1007
 !    comp := r { return match status }
 :1008
-! 
+!
 ! end;
         lodb    2 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -3783,14 +3783,14 @@ l strings.453
         retb    32                      ! Return from procedure/function(t)
 l strings.449=32
 l strings.450=32
-! 
+!
 ! overload function comp(d, s: pstring) { destination }
 e f
 :1011
 :1012
 !                        : boolean; { result }
 :1013
-! 
+!
 ! begin
 b f comp@f_pvc_pvc
 s       d p 48 pvc
@@ -3800,7 +3800,7 @@ l strings.34
 :1015
 :1015
         mst     1 l strings.460 l strings.461 ! Mark(frame) stack
-! 
+!
 !    if (d = nil) or (s = nil) then throw(StringNil);
 :1016
 :1017
@@ -3819,7 +3819,7 @@ l strings.464=0
 :1017
 l strings.463
 :1017
-! 
+!
 !    comp := comp(d^, s^) { return result }
 :1018
 :1019
@@ -3832,7 +3832,7 @@ l strings.463
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.465=8
         cuf     l strings.33 2 0 1 8    ! Call user function
@@ -3844,7 +3844,7 @@ l strings.465=8
         retb    16                      ! Return from procedure/function(t)
 l strings.460=0
 l strings.461=32
-! 
+!
 ! overload function comp(view d: string; { destination }
 e f
 :1022
@@ -3853,7 +3853,7 @@ e f
 :1024
 !                        : boolean; { result }
 :1025
-! 
+!
 ! begin
 b f comp@f_vc_pvc
 s       d p 48 vc
@@ -3863,7 +3863,7 @@ l strings.35
 :1027
 :1027
         mst     1 l strings.467 l strings.468 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :1028
 :1029
@@ -3878,7 +3878,7 @@ l strings.471=0
 :1029
 l strings.470
 :1029
-! 
+!
 !    comp := comp(d, s^) { return result }
 :1030
 :1031
@@ -3889,7 +3889,7 @@ l strings.470
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.472=8
         cuf     l strings.33 2 0 1 8    ! Call user function
@@ -3901,7 +3901,7 @@ l strings.472=8
         retb    24                      ! Return from procedure/function(t)
 l strings.467=0
 l strings.468=32
-! 
+!
 ! overload function comp(     d: pstring; { destination }
 e f
 :1034
@@ -3910,7 +3910,7 @@ e f
 :1036
 !                        : boolean; { result }
 :1037
-! 
+!
 ! begin
 b f comp@f_pvc_vc
 s       d p 56 pvc
@@ -3920,7 +3920,7 @@ l strings.36
 :1039
 :1039
         mst     1 l strings.474 l strings.475 ! Mark(frame) stack
-! 
+!
 !    if d = nil then throw(StringNil);
 :1040
 :1041
@@ -3935,7 +3935,7 @@ l strings.478=0
 :1041
 l strings.477
 :1041
-! 
+!
 !    comp := comp(d^, s) { return result }
 :1042
 :1043
@@ -3946,7 +3946,7 @@ l strings.477
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.479=8
         cuf     l strings.33 2 0 1 8    ! Call user function
@@ -3958,16 +3958,16 @@ l strings.479=8
         retb    24                      ! Return from procedure/function(t)
 l strings.474=0
 l strings.475=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Compare strings caseless padded
-! 
+!
 ! Compares two strings, and returns the equality of the strings. Case is
 ! NOT observed.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function compp(view d, s: string): boolean;
 e f
 :1046
@@ -3981,7 +3981,7 @@ e f
 :1054
 :1055
 :1056
-! 
+!
 ! var i:      integer; { index for string }
 b f compp@f_vc_vc
 s       d p 56 vc
@@ -3996,14 +3996,14 @@ s       ls l -40 i
 !     r:      boolean; { result save }
 :1060
 s       r l -41 b
-! 
+!
 ! begin
 l strings.37
 :1061
 :1062
 :1062
         mst     1 l strings.481 l strings.482 ! Mark(frame) stack
-! 
+!
 !    ls := len(s); { calculate this only once }
 :1063
 :1064
@@ -4037,7 +4037,7 @@ l strings.485=8
 l strings.486
 :1067
 :1067
-! 
+!
 !       r := true; { set strings match }
 :1068
 :1069
@@ -4082,7 +4082,7 @@ l strings.491=8
          fjp l strings.492
 !          r := false { mismatch }
 :1071
-! 
+!
 !    end;
         ldcb    0                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -4107,7 +4107,7 @@ l strings.487
 :1073
 !    compp := r { return match status }
 :1074
-! 
+!
 ! end;
         lodb    2 -41                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -4117,16 +4117,16 @@ l strings.487
         retb    32                      ! Return from procedure/function(t)
 l strings.481=48
 l strings.482=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Compare string greater case sensitive
-! 
+!
 ! Compares two strings, and returns if the source string is greater than the
 ! destination. Case is observed.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function gtrc(view d, s: string): boolean;
 e f
 :1077
@@ -4140,7 +4140,7 @@ e f
 :1085
 :1086
 :1087
-! 
+!
 ! var i:      integer; { index for string }
 b f gtrc@f_vc_vc
 s       d p 56 vc
@@ -4154,14 +4154,14 @@ s       l l -32 i
 !     r:      boolean; { result save }
 :1091
 s       r l -33 b
-! 
+!
 ! begin
 l strings.38
 :1092
 :1093
 :1093
         mst     1 l strings.494 l strings.495 ! Mark(frame) stack
-! 
+!
 !    { check case where one string is null, and compare lengths if so }
 !    if (max(d) = 0) or (max(s) = 0) then r := max(d) < max(s)
 :1094
@@ -4197,7 +4197,7 @@ l strings.38
 l strings.497
 :1097
 :1097
-! 
+!
 !       { find the shorter of the strings }
 !       if max(s) > max(d) then l := max(d) else l := max(s);
 :1098
@@ -4309,7 +4309,7 @@ l strings.503
         ldp                             ! Load complex pointer
         ldci    1                       ! Load constant(t)
         max     1                       ! Maximum dimension of array
-! 
+!
 !    end;
         lesi                            ! Less than(t)
         chkb    0 1                     ! Bounds check(t)
@@ -4322,7 +4322,7 @@ l strings.498
 :1111
 !    gtrc := r { return match status }
 :1112
-! 
+!
 ! end;
         lodb    2 -33                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -4332,14 +4332,14 @@ l strings.498
         retb    32                      ! Return from procedure/function(t)
 l strings.494=24
 l strings.495=40
-! 
+!
 ! overload function gtrc(d, s: pstring) { destination }
 e f
 :1115
 :1116
 !                        : boolean; { result }
 :1117
-! 
+!
 ! begin
 b f gtrc@f_pvc_pvc
 s       d p 48 pvc
@@ -4349,7 +4349,7 @@ l strings.39
 :1119
 :1119
         mst     1 l strings.506 l strings.507 ! Mark(frame) stack
-! 
+!
 !    if (d = nil) or (s = nil) then throw(StringNil);
 :1120
 :1121
@@ -4368,7 +4368,7 @@ l strings.510=0
 :1121
 l strings.509
 :1121
-! 
+!
 !    gtrc := gtrc(d^, s^) { return result }
 :1122
 :1123
@@ -4381,7 +4381,7 @@ l strings.509
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.511=8
         cuf     l strings.38 2 0 1 8    ! Call user function
@@ -4393,7 +4393,7 @@ l strings.511=8
         retb    16                      ! Return from procedure/function(t)
 l strings.506=0
 l strings.507=32
-! 
+!
 ! overload function gtrc(view d: string; { destination }
 e f
 :1126
@@ -4402,7 +4402,7 @@ e f
 :1128
 !                        : boolean; { result }
 :1129
-! 
+!
 ! begin
 b f gtrc@f_vc_pvc
 s       d p 48 vc
@@ -4412,7 +4412,7 @@ l strings.40
 :1131
 :1131
         mst     1 l strings.513 l strings.514 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :1132
 :1133
@@ -4427,7 +4427,7 @@ l strings.517=0
 :1133
 l strings.516
 :1133
-! 
+!
 !    gtrc := gtrc(d, s^) { return result }
 :1134
 :1135
@@ -4438,7 +4438,7 @@ l strings.516
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.518=8
         cuf     l strings.38 2 0 1 8    ! Call user function
@@ -4450,7 +4450,7 @@ l strings.518=8
         retb    24                      ! Return from procedure/function(t)
 l strings.513=0
 l strings.514=32
-! 
+!
 ! overload function gtrc(     d: pstring; { destination }
 e f
 :1138
@@ -4459,7 +4459,7 @@ e f
 :1140
 !                        : boolean; { result }
 :1141
-! 
+!
 ! begin
 b f gtrc@f_pvc_vc
 s       d p 56 pvc
@@ -4469,7 +4469,7 @@ l strings.41
 :1143
 :1143
         mst     1 l strings.520 l strings.521 ! Mark(frame) stack
-! 
+!
 !    if d = nil then throw(StringNil);
 :1144
 :1145
@@ -4484,7 +4484,7 @@ l strings.524=0
 :1145
 l strings.523
 :1145
-! 
+!
 !    gtrc := gtrc(d^, s) { return result }
 :1146
 :1147
@@ -4495,7 +4495,7 @@ l strings.523
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.525=8
         cuf     l strings.38 2 0 1 8    ! Call user function
@@ -4507,16 +4507,16 @@ l strings.525=8
         retb    24                      ! Return from procedure/function(t)
 l strings.520=0
 l strings.521=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Compare string greater case sensitive padded
-! 
+!
 ! Compares two strings, and returns if the source string is greater than the
 ! destination. Case is observed.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function gtrcp(view d, s: string): boolean;
 e f
 :1150
@@ -4530,7 +4530,7 @@ e f
 :1158
 :1159
 :1160
-! 
+!
 ! var i:      integer; { index for string }
 b f gtrcp@f_vc_vc
 s       d p 56 vc
@@ -4548,14 +4548,14 @@ s       l l -48 i
 !     r:      boolean; { result save }
 :1165
 s       r l -49 b
-! 
+!
 ! begin
 l strings.42
 :1166
 :1167
 :1167
         mst     1 l strings.527 l strings.528 ! Mark(frame) stack
-! 
+!
 !    ls := len(s); { calculate this only once }
 :1168
 :1169
@@ -4597,7 +4597,7 @@ l strings.531=8
 l strings.532
 :1173
 :1173
-! 
+!
 !       { find the shorter of the strings }
 !       if ls > ld then l := ld else l := ls;
 :1174
@@ -4690,7 +4690,7 @@ l strings.538
 :1185
 :1185
         lodi    2 -32                   ! Load local value(t)
-! 
+!
 !    end;
         lodi    2 -40                   ! Load local value(t)
         lesi                            ! Less than(t)
@@ -4704,7 +4704,7 @@ l strings.533
 :1187
 !    gtrcp := r { return match status }
 :1188
-! 
+!
 ! end;
         lodb    2 -49                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -4714,16 +4714,16 @@ l strings.533
         retb    32                      ! Return from procedure/function(t)
 l strings.527=40
 l strings.528=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Compare string greater caseless
-! 
+!
 ! Compares two strings, and returns if the source string is greater than the
 ! destination.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function gtr(view d, s: string): boolean;
 e f
 :1191
@@ -4737,7 +4737,7 @@ e f
 :1199
 :1200
 :1201
-! 
+!
 ! var i:      integer; { index for string }
 b f gtr@f_vc_vc
 s       d p 56 vc
@@ -4751,14 +4751,14 @@ s       l l -32 i
 !     r:      boolean; { result save }
 :1205
 s       r l -33 b
-! 
+!
 ! begin
 l strings.43
 :1206
 :1207
 :1207
         mst     1 l strings.541 l strings.542 ! Mark(frame) stack
-! 
+!
 !    { check case where one string is null, and compare lengths if so }
 !    if (max(s) = 0) or (max(d) = 0) then r := max(d) < max(s)
 :1208
@@ -4794,7 +4794,7 @@ l strings.43
 l strings.544
 :1211
 :1211
-! 
+!
 !       { find the shorter of the strings }
 !       if max(s) > max(d) then l := max(d) else l := max(s);
 :1212
@@ -4936,7 +4936,7 @@ l strings.554
         ldp                             ! Load complex pointer
         ldci    1                       ! Load constant(t)
         max     1                       ! Maximum dimension of array
-! 
+!
 !    end;
         lesi                            ! Less than(t)
         chkb    0 1                     ! Bounds check(t)
@@ -4949,7 +4949,7 @@ l strings.545
 :1225
 !    gtr := r { return match status }
 :1226
-! 
+!
 ! end;
         lodb    2 -33                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -4959,14 +4959,14 @@ l strings.545
         retb    32                      ! Return from procedure/function(t)
 l strings.541=24
 l strings.542=40
-! 
+!
 ! overload function gtr(d, s: pstring) { destination }
 e f
 :1229
 :1230
 !                       : boolean; { result }
 :1231
-! 
+!
 ! begin
 b f gtr@f_pvc_pvc
 s       d p 48 pvc
@@ -4976,7 +4976,7 @@ l strings.44
 :1233
 :1233
         mst     1 l strings.559 l strings.560 ! Mark(frame) stack
-! 
+!
 !    if (d = nil) or (s = nil) then throw(StringNil);
 :1234
 :1235
@@ -4995,7 +4995,7 @@ l strings.563=0
 :1235
 l strings.562
 :1235
-! 
+!
 !    gtr := gtr(d^, s^) { return result }
 :1236
 :1237
@@ -5008,7 +5008,7 @@ l strings.562
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.564=8
         cuf     l strings.43 2 0 1 8    ! Call user function
@@ -5020,7 +5020,7 @@ l strings.564=8
         retb    16                      ! Return from procedure/function(t)
 l strings.559=0
 l strings.560=32
-! 
+!
 ! overload function gtr(view d: string; { destination }
 e f
 :1240
@@ -5029,7 +5029,7 @@ e f
 :1242
 !                        : boolean; { result }
 :1243
-! 
+!
 ! begin
 b f gtr@f_vc_pvc
 s       d p 48 vc
@@ -5039,7 +5039,7 @@ l strings.45
 :1245
 :1245
         mst     1 l strings.566 l strings.567 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :1246
 :1247
@@ -5054,7 +5054,7 @@ l strings.570=0
 :1247
 l strings.569
 :1247
-! 
+!
 !    gtr := gtr(d, s^) { return result }
 :1248
 :1249
@@ -5065,7 +5065,7 @@ l strings.569
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.571=8
         cuf     l strings.43 2 0 1 8    ! Call user function
@@ -5077,7 +5077,7 @@ l strings.571=8
         retb    24                      ! Return from procedure/function(t)
 l strings.566=0
 l strings.567=32
-! 
+!
 ! overload function gtr(     d: pstring; { destination }
 e f
 :1252
@@ -5086,7 +5086,7 @@ e f
 :1254
 !                        : boolean; { result }
 :1255
-! 
+!
 ! begin
 b f gtr@f_pvc_vc
 s       d p 56 pvc
@@ -5096,7 +5096,7 @@ l strings.46
 :1257
 :1257
         mst     1 l strings.573 l strings.574 ! Mark(frame) stack
-! 
+!
 !    if d = nil then throw(StringNil);
 :1258
 :1259
@@ -5111,7 +5111,7 @@ l strings.577=0
 :1259
 l strings.576
 :1259
-! 
+!
 !    gtr := gtr(d^, s) { return result }
 :1260
 :1261
@@ -5122,7 +5122,7 @@ l strings.576
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.578=8
         cuf     l strings.43 2 0 1 8    ! Call user function
@@ -5134,16 +5134,16 @@ l strings.578=8
         retb    24                      ! Return from procedure/function(t)
 l strings.573=0
 l strings.574=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Compare string greater caseless padded
-! 
+!
 ! Compares two strings, and returns if the source string is greater than the
 ! destination.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function gtrp(view d, s: string): boolean;
 e f
 :1264
@@ -5157,7 +5157,7 @@ e f
 :1272
 :1273
 :1274
-! 
+!
 ! var i:      integer; { index for string }
 b f gtrp@f_vc_vc
 s       d p 56 vc
@@ -5175,14 +5175,14 @@ s       l l -48 i
 !     r:      boolean; { result save }
 :1279
 s       r l -49 b
-! 
+!
 ! begin
 l strings.47
 :1280
 :1281
 :1281
         mst     1 l strings.580 l strings.581 ! Mark(frame) stack
-! 
+!
 !    ls := len(s); { calculate this only once }
 :1282
 :1283
@@ -5224,7 +5224,7 @@ l strings.584=8
 l strings.585
 :1287
 :1287
-! 
+!
 !       { find the shorter of the strings }
 !       if ls > ld then l := ld else l := ls;
 :1288
@@ -5347,7 +5347,7 @@ l strings.597=8
 l strings.595
 :1299
         lodi    2 -32                   ! Load local value(t)
-! 
+!
 !    end;
         lodi    2 -40                   ! Load local value(t)
         lesi                            ! Less than(t)
@@ -5361,7 +5361,7 @@ l strings.586
 :1301
 !    gtrp := r { return match status }
 :1302
-! 
+!
 ! end;
         lodb    2 -49                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -5371,17 +5371,17 @@ l strings.586
         retb    32                      ! Return from procedure/function(t)
 l strings.580=40
 l strings.581=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Find string index case sensitive
-! 
+!
 ! Finds the index of the source string in the destination. Case is observed.
 ! If the source string does not exist in the destination, 0 is returned. Only
 ! the first occurance in the destination is found.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function indexc(view d, s: string): integer;
 e f
 :1305
@@ -5396,7 +5396,7 @@ e f
 :1314
 :1315
 :1316
-! 
+!
 ! var i:      integer; { index for string }
 b f indexc@f_vc_vc
 s       d p 56 vc
@@ -5407,15 +5407,15 @@ s       i l -24 i
 !     r:      boolean; { result save }
 :1319
 s       r l -25 b
-! 
+!
 ! { compare substring }
-! 
+!
 ! function subcmp(b: integer): boolean;
 :1320
 :1321
 :1322
 :1323
-! 
+!
 ! var r: boolean; { result }
 b f subcmp@f_i
 s       b p 40 i
@@ -5425,14 +5425,14 @@ s       r l -25 b
 !     i: integer; { index for string }
 :1326
 s       i l -36 i
-! 
+!
 ! begin
 l strings.600
 :1327
 :1328
 :1328
         mst     2 l strings.601 l strings.602 ! Mark(frame) stack
-! 
+!
 !    r := true; { set string matches }
 :1329
 :1330
@@ -5493,7 +5493,7 @@ l strings.605
         inv                             ! Invalidate address
 !    subcmp := r { return result }
 :1333
-! 
+!
 ! end;
         lodb    3 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -5503,7 +5503,7 @@ l strings.605
         retb    8                       ! Return from procedure/function(t)
 l strings.601=32
 l strings.602=32
-! 
+!
 ! begin
 e f
 l strings.48
@@ -5511,7 +5511,7 @@ l strings.48
 :1337
 :1337
         mst     1 l strings.607 l strings.608 ! Mark(frame) stack
-! 
+!
 !    r := false;
 :1338
 :1339
@@ -5543,7 +5543,7 @@ l strings.610
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.611
-! 
+!
 !       if subcmp(i) then r := true { set found }
 :1342
 :1343
@@ -5562,7 +5562,7 @@ l strings.613
 :1344
 :1344
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -5585,7 +5585,7 @@ l strings.615
 :1347
 !    indexc := i { return result }
 :1348
-! 
+!
 ! end;
         lodi    2 -24                   ! Load local value(t)
         stri    2 72                    ! Store local(t)
@@ -5594,12 +5594,12 @@ l strings.615
         reti    32                      ! Return from procedure/function(t)
 l strings.607=16
 l strings.608=40
-! 
+!
 ! overload function indexc(d, s: pstring): integer;
 e f
 :1351
 :1352
-! 
+!
 ! begin
 b f indexc@f_pvc_pvc
 s       d p 48 pvc
@@ -5609,7 +5609,7 @@ l strings.49
 :1354
 :1354
         mst     1 l strings.617 l strings.618 ! Mark(frame) stack
-! 
+!
 !    if (d = nil) or (s = nil) then throw(StringNil);
 :1355
 :1356
@@ -5628,7 +5628,7 @@ l strings.621=0
 :1356
 l strings.620
 :1356
-! 
+!
 !    indexc := indexc(d^, s^) { return result }
 :1357
 :1358
@@ -5641,7 +5641,7 @@ l strings.620
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.622=8
         cuf     l strings.48 2 0 8 8    ! Call user function
@@ -5652,12 +5652,12 @@ l strings.622=8
         reti    16                      ! Return from procedure/function(t)
 l strings.617=0
 l strings.618=32
-! 
+!
 ! overload function indexc(view d: string; s: pstring): integer;
 e f
 :1361
 :1362
-! 
+!
 ! begin
 b f indexc@f_vc_pvc
 s       d p 48 vc
@@ -5667,7 +5667,7 @@ l strings.50
 :1364
 :1364
         mst     1 l strings.624 l strings.625 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :1365
 :1366
@@ -5682,7 +5682,7 @@ l strings.628=0
 :1366
 l strings.627
 :1366
-! 
+!
 !    indexc := indexc(d, s^) { return result }
 :1367
 :1368
@@ -5693,7 +5693,7 @@ l strings.627
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.629=8
         cuf     l strings.48 2 0 8 8    ! Call user function
@@ -5704,12 +5704,12 @@ l strings.629=8
         reti    24                      ! Return from procedure/function(t)
 l strings.624=0
 l strings.625=32
-! 
+!
 ! overload function indexc(d: pstring; view s: string): integer;
 e f
 :1371
 :1372
-! 
+!
 ! begin
 b f indexc@f_pvc_vc
 s       d p 56 pvc
@@ -5719,7 +5719,7 @@ l strings.51
 :1374
 :1374
         mst     1 l strings.631 l strings.632 ! Mark(frame) stack
-! 
+!
 !    if d = nil then throw(StringNil);
 :1375
 :1376
@@ -5734,7 +5734,7 @@ l strings.635=0
 :1376
 l strings.634
 :1376
-! 
+!
 !    indexc := indexc(d^, s) { return result }
 :1377
 :1378
@@ -5745,7 +5745,7 @@ l strings.634
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.636=8
         cuf     l strings.48 2 0 8 8    ! Call user function
@@ -5756,17 +5756,17 @@ l strings.636=8
         reti    24                      ! Return from procedure/function(t)
 l strings.631=0
 l strings.632=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Find string index padded case sensitive
-! 
+!
 ! Finds the index of the source string in the destination. Case is observed.
 ! If the source string does not exist in the destination, 0 is returned. Only
 ! the first occurance in the destination is found.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function indexcp(view d, s: string): integer;
 e f
 :1381
@@ -5781,7 +5781,7 @@ e f
 :1390
 :1391
 :1392
-! 
+!
 ! var i:      integer; { index for string }
 b f indexcp@f_vc_vc
 s       d p 56 vc
@@ -5796,15 +5796,15 @@ s       ls l -40 i
 !     r:      boolean; { result save }
 :1396
 s       r l -41 b
-! 
+!
 ! { compare substring }
-! 
+!
 ! function subcmp(b: integer): boolean;
 :1397
 :1398
 :1399
 :1400
-! 
+!
 ! var r: boolean; { result }
 b f subcmp@f_i
 s       b p 40 i
@@ -5814,14 +5814,14 @@ s       r l -25 b
 !     i: integer; { index for string }
 :1403
 s       i l -36 i
-! 
+!
 ! begin
 l strings.638
 :1404
 :1405
 :1405
         mst     2 l strings.639 l strings.640 ! Mark(frame) stack
-! 
+!
 !    r := true; { set string matches }
 :1406
 :1407
@@ -5879,7 +5879,7 @@ l strings.643
         inv                             ! Invalidate address
 !    subcmp := r { return result }
 :1410
-! 
+!
 ! end;
         lodb    3 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -5889,7 +5889,7 @@ l strings.643
         retb    8                       ! Return from procedure/function(t)
 l strings.639=32
 l strings.640=32
-! 
+!
 ! begin
 e f
 l strings.52
@@ -5897,7 +5897,7 @@ l strings.52
 :1414
 :1414
         mst     1 l strings.645 l strings.646 ! Mark(frame) stack
-! 
+!
 !    ls := len(s); { calculate this only once }
 :1415
 :1416
@@ -5941,7 +5941,7 @@ l strings.650
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.651
-! 
+!
 !       if subcmp(i) then r := true { set found }
 :1421
 :1422
@@ -5960,7 +5960,7 @@ l strings.653
 :1423
 :1423
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -5983,7 +5983,7 @@ l strings.655
 :1426
 !    indexcp := i { return result }
 :1427
-! 
+!
 ! end;
         lodi    2 -24                   ! Load local value(t)
         stri    2 72                    ! Store local(t)
@@ -5992,17 +5992,17 @@ l strings.655
         reti    32                      ! Return from procedure/function(t)
 l strings.645=32
 l strings.646=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Find string index caseless
-! 
+!
 ! Finds the index of the source string in the destination. Case is not observed.
 ! If the source string does not exist in the destination, 0 is returned. Only
 ! the first occurance in the destination is found.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function index(view d, s: string): integer;
 e f
 :1430
@@ -6017,7 +6017,7 @@ e f
 :1439
 :1440
 :1441
-! 
+!
 ! var i:      integer; { index for string }
 b f index@f_vc_vc
 s       d p 56 vc
@@ -6028,15 +6028,15 @@ s       i l -24 i
 !     r:      boolean; { result save }
 :1444
 s       r l -25 b
-! 
+!
 ! { compare substring }
-! 
+!
 ! function subcmp(b: integer): boolean;
 :1445
 :1446
 :1447
 :1448
-! 
+!
 ! var r: boolean; { result }
 b f subcmp@f_i
 s       b p 40 i
@@ -6046,14 +6046,14 @@ s       r l -25 b
 !     i: integer; { index for string }
 :1451
 s       i l -36 i
-! 
+!
 ! begin
 l strings.657
 :1452
 :1453
 :1453
         mst     2 l strings.658 l strings.659 ! Mark(frame) stack
-! 
+!
 !    r := true; { set string matches }
 :1454
 :1455
@@ -6126,7 +6126,7 @@ l strings.662
         inv                             ! Invalidate address
 !    subcmp := r { return result }
 :1459
-! 
+!
 ! end;
         lodb    3 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -6136,7 +6136,7 @@ l strings.662
         retb    8                       ! Return from procedure/function(t)
 l strings.658=32
 l strings.659=32
-! 
+!
 ! begin
 e f
 l strings.53
@@ -6144,7 +6144,7 @@ l strings.53
 :1463
 :1463
         mst     1 l strings.666 l strings.667 ! Mark(frame) stack
-! 
+!
 !    r := false;
 :1464
 :1465
@@ -6176,7 +6176,7 @@ l strings.669
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.670
-! 
+!
 !       if subcmp(i) then r := true { set found }
 :1468
 :1469
@@ -6195,7 +6195,7 @@ l strings.672
 :1470
 :1470
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -6218,7 +6218,7 @@ l strings.674
 :1473
 !    index := i { return result }
 :1474
-! 
+!
 ! end;
         lodi    2 -24                   ! Load local value(t)
         stri    2 72                    ! Store local(t)
@@ -6227,12 +6227,12 @@ l strings.674
         reti    32                      ! Return from procedure/function(t)
 l strings.666=16
 l strings.667=40
-! 
+!
 ! overload function index(d, s: pstring): integer;
 e f
 :1477
 :1478
-! 
+!
 ! begin
 b f index@f_pvc_pvc
 s       d p 48 pvc
@@ -6242,7 +6242,7 @@ l strings.54
 :1480
 :1480
         mst     1 l strings.676 l strings.677 ! Mark(frame) stack
-! 
+!
 !    if (d = nil) or (s = nil) then throw(StringNil);
 :1481
 :1482
@@ -6261,7 +6261,7 @@ l strings.680=0
 :1482
 l strings.679
 :1482
-! 
+!
 !    index := index(d^, s^) { return result }
 :1483
 :1484
@@ -6274,7 +6274,7 @@ l strings.679
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.681=8
         cuf     l strings.53 2 0 8 8    ! Call user function
@@ -6285,12 +6285,12 @@ l strings.681=8
         reti    16                      ! Return from procedure/function(t)
 l strings.676=0
 l strings.677=32
-! 
+!
 ! overload function index(view d: string; s: pstring): integer;
 e f
 :1487
 :1488
-! 
+!
 ! begin
 b f index@f_vc_pvc
 s       d p 48 vc
@@ -6300,7 +6300,7 @@ l strings.55
 :1490
 :1490
         mst     1 l strings.683 l strings.684 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :1491
 :1492
@@ -6315,7 +6315,7 @@ l strings.687=0
 :1492
 l strings.686
 :1492
-! 
+!
 !    index := index(d, s^) { return result }
 :1493
 :1494
@@ -6326,7 +6326,7 @@ l strings.686
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.688=8
         cuf     l strings.53 2 0 8 8    ! Call user function
@@ -6337,12 +6337,12 @@ l strings.688=8
         reti    24                      ! Return from procedure/function(t)
 l strings.683=0
 l strings.684=32
-! 
+!
 ! overload function index(d: pstring; view s: string): integer;
 e f
 :1497
 :1498
-! 
+!
 ! begin
 b f index@f_pvc_vc
 s       d p 56 pvc
@@ -6352,7 +6352,7 @@ l strings.56
 :1500
 :1500
         mst     1 l strings.690 l strings.691 ! Mark(frame) stack
-! 
+!
 !    if d = nil then throw(StringNil);
 :1501
 :1502
@@ -6367,7 +6367,7 @@ l strings.694=0
 :1502
 l strings.693
 :1502
-! 
+!
 !    index := index(d^, s) { return result }
 :1503
 :1504
@@ -6378,7 +6378,7 @@ l strings.693
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.695=8
         cuf     l strings.53 2 0 8 8    ! Call user function
@@ -6389,17 +6389,17 @@ l strings.695=8
         reti    24                      ! Return from procedure/function(t)
 l strings.690=0
 l strings.691=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Find string index caseless padded
-! 
+!
 ! Finds the index of the source string in the destination. Case is not observed.
 ! If the source string does not exist in the destination, 0 is returned. Only
 ! the first occurance in the destination is found.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function indexp(view d, s: string): integer;
 e f
 :1507
@@ -6414,7 +6414,7 @@ e f
 :1516
 :1517
 :1518
-! 
+!
 ! var i:      integer; { index for string }
 b f indexp@f_vc_vc
 s       d p 56 vc
@@ -6429,15 +6429,15 @@ s       ls l -40 i
 !     r:      boolean; { result save }
 :1522
 s       r l -41 b
-! 
+!
 ! { compare substring }
-! 
+!
 ! function subcmp(b: integer): boolean;
 :1523
 :1524
 :1525
 :1526
-! 
+!
 ! var r: boolean; { result }
 b f subcmp@f_i
 s       b p 40 i
@@ -6447,14 +6447,14 @@ s       r l -25 b
 !     i: integer; { index for string }
 :1529
 s       i l -36 i
-! 
+!
 ! begin
 l strings.697
 :1530
 :1531
 :1531
         mst     2 l strings.698 l strings.699 ! Mark(frame) stack
-! 
+!
 !    r := true; { set string matches }
 :1532
 :1533
@@ -6524,7 +6524,7 @@ l strings.702
         inv                             ! Invalidate address
 !    subcmp := r { return result }
 :1537
-! 
+!
 ! end;
         lodb    3 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -6534,7 +6534,7 @@ l strings.702
         retb    8                       ! Return from procedure/function(t)
 l strings.698=32
 l strings.699=32
-! 
+!
 ! begin
 e f
 l strings.57
@@ -6542,7 +6542,7 @@ l strings.57
 :1541
 :1541
         mst     1 l strings.706 l strings.707 ! Mark(frame) stack
-! 
+!
 !    ls := len(s); { calculate this only once }
 :1542
 :1543
@@ -6586,7 +6586,7 @@ l strings.711
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.712
-! 
+!
 !       if subcmp(i) then r := true { set found }
 :1548
 :1549
@@ -6605,7 +6605,7 @@ l strings.714
 :1550
 :1550
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -6628,7 +6628,7 @@ l strings.716
 :1553
 !    indexp := i { return result }
 :1554
-! 
+!
 ! end;
         lodi    2 -24                   ! Load local value(t)
         stri    2 72                    ! Store local(t)
@@ -6637,21 +6637,21 @@ l strings.716
         reti    32                      ! Return from procedure/function(t)
 l strings.706=32
 l strings.707=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Extract substring
-! 
+!
 ! Extracts the indicated range of characters from the source, and places that
 ! into the destination.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure extract(pstring, string, l, r) - Extract to dynamic result.
 ! procedure extract(string, string, l, r) - Extract to padded result.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure extract(var  d:    string;   { destination }
 e f
 :1557
@@ -6674,7 +6674,7 @@ e f
 :1573
 !                        l, r: integer); { range of characters }
 :1574
-! 
+!
 ! var ln: integer; { length of string }
 b r extract@p_vc_vc_i_i
 s       d p 72 vc
@@ -6687,14 +6687,14 @@ s       ln l -24 i
 !     i:  integer; { index for string }
 :1577
 s       i l -32 i
-! 
+!
 ! begin
 l strings.58
 :1578
 :1579
 :1579
         mst     1 l strings.718 l strings.719 ! Mark(frame) stack
-! 
+!
 !    if l > r then clears(d) { result is null, clear }
 :1580
 :1581
@@ -6713,7 +6713,7 @@ l strings.722=0
         ujp     l strings.723           ! Unconditional jump
 l strings.721
 :1582
-! 
+!
 !       ln := len(s); { find length of source }
 :1583
 :1584
@@ -6833,7 +6833,7 @@ l strings.731
         ldp                             ! Load complex pointer
         lodi    2 -32                   ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 !    end
         ldcc    ' '                     ! Load constant(t)
         chkc    0 255                   ! Bounds check(t)
@@ -6852,7 +6852,7 @@ l strings.732
 :1592
         lda     2 -32                   ! Load local address
         inv                             ! Invalidate address
-! 
+!
 ! end;
 l strings.723
 :1593
@@ -6861,7 +6861,7 @@ l strings.723
         retp    48                      ! Return from procedure/function(t)
 l strings.718=32
 l strings.719=32
-! 
+!
 ! overload function extract(view s:    string;  { source }
 e r
 :1595
@@ -6870,7 +6870,7 @@ e r
 :1597
 !                           : pstring; { result }
 :1598
-! 
+!
 ! var i: integer; { index for string }
 b f extract@f_vc_i_i
 s       s p 56 vc
@@ -6882,14 +6882,14 @@ s       i l -24 i
 !     d: pstring; { result string }
 :1601
 s       d l -32 pvc
-! 
+!
 ! begin
 l strings.60
 :1602
 :1603
 :1603
         mst     1 l strings.734 l strings.735 ! Mark(frame) stack
-! 
+!
 !    if l > r then newstr(d, 0) { null, allocate null result }
 :1604
 :1605
@@ -6908,7 +6908,7 @@ l strings.738=0
         ujp     l strings.739           ! Unconditional jump
 l strings.737
 :1606
-! 
+!
 !       newstr(d, r-l+1); { allocate destination }
 :1607
 :1608
@@ -6975,7 +6975,7 @@ l strings.743
         ldp                             ! Load complex pointer
         lodi    2 -24                   ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 !    end;
         indc    0                       ! Load indirect(t)
         chkc    0 255                   ! Bounds check(t)
@@ -6996,11 +6996,11 @@ l strings.744
         inv                             ! Invalidate address
 l strings.739
 :1613
-! 
+!
 !    extract := d { return result }
 :1614
 :1615
-! 
+!
 ! end;
         loda    2 -32                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -7010,7 +7010,7 @@ l strings.739
         reta    32                      ! Return from procedure/function(t)
 l strings.734=32
 l strings.735=40
-! 
+!
 ! overload function extract(view s:    pstring; { source }
 e f
 :1618
@@ -7019,7 +7019,7 @@ e f
 :1620
 !                           : pstring; { result }
 :1621
-! 
+!
 ! begin
 b f extract@f_pvc_i_i
 s       s p 56 pvc
@@ -7030,7 +7030,7 @@ l strings.59
 :1623
 :1623
         mst     1 l strings.746 l strings.747 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :1624
 :1625
@@ -7059,30 +7059,30 @@ l strings.751=8
 :1626
         chka    0 9223372036854775807   ! Bounds check(t)
         stra    2 64                    ! Store local(t)
-! 
+!
 ! end;
 :1627
 :1628
         reta    24                      ! Return from procedure/function(t)
 l strings.746=0
 l strings.747=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Insert string
-! 
+!
 ! Inserts the source string into the second string at the indicated position,
 ! then places that in the destination.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure insert(pstring, string, string, integer) - Insert string to find
 !                                                      dynamic result.
 ! procedure insert(string, string, integer) - Insert padded string to find
 !                                             padded result.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure insert(var d: string; view s: string; p: integer);
 e f
 :1629
@@ -7103,7 +7103,7 @@ e f
 :1644
 :1645
 :1646
-! 
+!
 ! var i:      integer; { index for strings }
 b r insert@p_vc_vc_i
 s       d p 64 vc
@@ -7116,14 +7116,14 @@ s       i l -24 i
 :1649
 s       ld l -32 i
 s       ls l -40 i
-! 
+!
 ! begin
 l strings.61
 :1650
 :1651
 :1651
         mst     1 l strings.753 l strings.754 ! Mark(frame) stack
-! 
+!
 !    ld := len(d); { find lengths }
 :1652
 :1653
@@ -7244,7 +7244,7 @@ l strings.764
         lodi    2 -56                   ! Load local value(t)
         leqi                            ! Less than or equal(t)
         fjp     l strings.765           ! False jump
-! 
+!
 !       d[p] := s[i]; { move character }
 :1663
 :1664
@@ -7262,14 +7262,14 @@ l strings.764
 !       p := p+1 { next }
 :1665
         lodi    2 40                    ! Load local value(t)
-! 
+!
 !    end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         stri    2 40                    ! Store local(t)
 :1666
 :1667
-! 
+!
 ! end;
         lodi    2 -24                   ! Load local value(t)
         lodi    2 -56                   ! Load local value(t)
@@ -7288,12 +7288,12 @@ l strings.765
         retp    40                      ! Return from procedure/function(t)
 l strings.753=40
 l strings.754=40
-! 
+!
 ! overload function insert(view sa, sb: string; p: integer): pstring;
 e r
 :1670
 :1671
-! 
+!
 ! var i: integer; { index for strings }
 b f insert@f_vc_vc_i
 s       sa p 64 vc
@@ -7305,14 +7305,14 @@ s       i l -24 i
 !     t: pstring; { temp to build destination }
 :1674
 s       t l -32 pvc
-! 
+!
 ! begin
 l strings.62
 :1675
 :1676
 :1676
         mst     1 l strings.767 l strings.768 ! Mark(frame) stack
-! 
+!
 !    newstr(t, max(sa)+max(sb)); { get the destination string }
 :1677
 :1678
@@ -7470,11 +7470,11 @@ l strings.776
 :1682
         lda     2 -24                   ! Load local address
         inv                             ! Invalidate address
-! 
+!
 !    insert := t { return result }
 :1683
 :1684
-! 
+!
 ! end;
         loda    2 -32                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -7489,7 +7489,7 @@ l strings.768=48
 e f
 :1687
 :1688
-! 
+!
 ! begin
 b f insert@f_pvc_pvc_i
 s       sa p 56 pvc
@@ -7500,7 +7500,7 @@ l strings.63
 :1690
 :1690
         mst     1 l strings.778 l strings.779 ! Mark(frame) stack
-! 
+!
 !    if (sa = nil) or (sb = nil) then throw(StringNil);
 :1691
 :1692
@@ -7536,19 +7536,19 @@ l strings.783=8
 :1693
         chka    0 9223372036854775807   ! Bounds check(t)
         stra    2 64                    ! Store local(t)
-! 
+!
 ! end; 
 :1694
 :1695
         reta    24                      ! Return from procedure/function(t)
 l strings.778=0
 l strings.779=40
-! 
+!
 ! overload function insert(view sa: string; sb: pstring; p: integer): pstring;
 e f
 :1696
 :1697
-! 
+!
 ! begin
 b f insert@f_vc_pvc_i
 s       sa p 56 vc
@@ -7559,7 +7559,7 @@ l strings.64
 :1699
 :1699
         mst     1 l strings.785 l strings.786 ! Mark(frame) stack
-! 
+!
 !    if sb = nil then throw(StringNil);
 :1700
 :1701
@@ -7589,19 +7589,19 @@ l strings.790=8
 :1702
         chka    0 9223372036854775807   ! Bounds check(t)
         stra    2 72                    ! Store local(t)
-! 
+!
 ! end; 
 :1703
 :1704
         reta    32                      ! Return from procedure/function(t)
 l strings.785=0
 l strings.786=40
-! 
+!
 ! overload function insert(sa: pstring; view sb: string; p: integer): pstring;
 e f
 :1705
 :1706
-! 
+!
 ! begin
 b f insert@f_pvc_vc_i
 s       sa p 64 pvc
@@ -7612,7 +7612,7 @@ l strings.65
 :1708
 :1708
         mst     1 l strings.792 l strings.793 ! Mark(frame) stack
-! 
+!
 !    if sa = nil then throw(StringNil);
 :1709
 :1710
@@ -7642,22 +7642,22 @@ l strings.797=8
 :1711
         chka    0 9223372036854775807   ! Bounds check(t)
         stra    2 72                    ! Store local(t)
-! 
+!
 ! end; 
 :1712
 :1713
         reta    32                      ! Return from procedure/function(t)
 l strings.792=0
 l strings.793=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Substitute string
-! 
+!
 ! Replaces one string with another.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure subst(var  s: string; { string to substitute in }
 e f
 :1714
@@ -7674,7 +7674,7 @@ e f
 :1724
 !                 view r: string); { replacement string }
 :1725
-! 
+!
 ! var i: integer; { string index }
 b r subst@p_vc_vc_vc
 s       s p 72 vc
@@ -7688,14 +7688,14 @@ s       i l -24 i
 t       l strings.799 1 200
 s       t l -224 ax(1,200)ic
 s       d l -424 ax(1,200)ic
-! 
+!
 ! begin
 l strings.169
 :1729
 :1730
 :1730
         mst     1 l strings.800 l strings.801 ! Mark(frame) stack
-! 
+!
 !    i := index(s, m); { find substring }
 :1731
 :1732
@@ -7714,7 +7714,7 @@ l strings.803=8
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.804
-! 
+!
 !       if i > 1 then begin { there is a left }
 :1734
 :1735
@@ -7722,7 +7722,7 @@ l strings.803=8
         ldci    1                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.805
-! 
+!
 !          extract(d, s, 1, i-1); { get left side }
 :1736
 :1737
@@ -7750,7 +7750,7 @@ l strings.806=0
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !       end;
 l strings.807=0
         cup     l strings.61 3          ! Call user procedure
@@ -7777,7 +7777,7 @@ l strings.809=8
 :1741
         leqi                            ! Less than or equal(t)
          fjp l strings.810
-! 
+!
 !          extract(t, s, i+len(m), len(s)); { get right side }
 :1742
 :1743
@@ -7824,7 +7824,7 @@ l strings.815=8
         cuf     l strings.16 1 0 8 8    ! Call user function
 :1744
         adi                             ! Add integers
-! 
+!
 !       end;
 l strings.814=0
         cup     l strings.61 3          ! Call user procedure
@@ -7842,14 +7842,14 @@ l strings.810
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end
 l strings.816=0
         cup     l strings.18 2          ! Call user procedure
 :1748
 :1749
 :1749
-! 
+!
 ! end;
 l strings.804
 :1750
@@ -7858,7 +7858,7 @@ l strings.804
         retp    48                      ! Return from procedure/function(t)
 l strings.800=408
 l strings.801=56
-! 
+!
 ! overload function subst(view s: string; { string to substitute in }
 e r
 :1752
@@ -7869,7 +7869,7 @@ e r
 :1755
 !                         : pstring;      { result string }
 :1756
-! 
+!
 ! var i: integer; { string index }
 b f subst@f_vc_vc_vc
 s       s p 72 vc
@@ -7881,14 +7881,14 @@ s       i l -24 i
 !     p: pstring; { result holder }
 :1759
 s       p l -32 pvc
-! 
+!
 ! begin
 l strings.170
 :1760
 :1761
 :1761
         mst     1 l strings.818 l strings.819 ! Mark(frame) stack
-! 
+!
 !    openstring; { start new level }
 :1762
 :1763
@@ -7983,11 +7983,11 @@ l strings.830=0
 l strings.831=0
         cup     l strings.166 0         ! Call user procedure
 :1770
-! 
+!
 !    subst := p { return result }
 :1771
 :1772
-! 
+!
 ! end;
         loda    2 -32                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -7997,12 +7997,12 @@ l strings.831=0
         reta    48                      ! Return from procedure/function(t)
 l strings.818=16
 l strings.819=56
-! 
+!
 ! overload function subst(view s: string; view m: string; r: pstring): pstring;
 e f
 :1775
 :1776
-! 
+!
 ! begin 
 b f subst@f_vc_vc_pvc
 s       s p 64 vc
@@ -8013,7 +8013,7 @@ l strings.171
 :1778
 :1778
         mst     1 l strings.833 l strings.834 ! Mark(frame) stack
-! 
+!
 !    if r = nil then throw(StringNil); 
 :1779
 :1780
@@ -8028,7 +8028,7 @@ l strings.837=0
 :1780
 l strings.836
 :1780
-! 
+!
 !    subst := subst(s, m, r^)
 :1781
 :1782
@@ -8041,7 +8041,7 @@ l strings.836
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.838=8
         cuf     l strings.170 3 0 8 8   ! Call user function
@@ -8053,12 +8053,12 @@ l strings.838=8
         reta    40                      ! Return from procedure/function(t)
 l strings.833=0
 l strings.834=48
-! 
+!
 ! overload function subst(view s: string; m: pstring; view r: string): pstring;
 e f
 :1785
 :1786
-! 
+!
 ! begin 
 b f subst@f_vc_pvc_vc
 s       s p 64 vc
@@ -8069,7 +8069,7 @@ l strings.172
 :1788
 :1788
         mst     1 l strings.840 l strings.841 ! Mark(frame) stack
-! 
+!
 !    if m = nil then throw(StringNil); 
 :1789
 :1790
@@ -8084,7 +8084,7 @@ l strings.844=0
 :1790
 l strings.843
 :1790
-! 
+!
 !    subst := subst(s, m^, r)
 :1791
 :1792
@@ -8097,7 +8097,7 @@ l strings.843
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.845=8
         cuf     l strings.170 3 0 8 8   ! Call user function
@@ -8109,12 +8109,12 @@ l strings.845=8
         reta    40                      ! Return from procedure/function(t)
 l strings.840=0
 l strings.841=48
-! 
+!
 ! overload function subst(view s: string; m: pstring; r: pstring): pstring;
 e f
 :1795
 :1796
-! 
+!
 ! begin 
 b f subst@f_vc_pvc_pvc
 s       s p 56 vc
@@ -8125,7 +8125,7 @@ l strings.173
 :1798
 :1798
         mst     1 l strings.847 l strings.848 ! Mark(frame) stack
-! 
+!
 !    if (m = nil) or (r = nil) then throw(StringNil); 
 :1799
 :1800
@@ -8144,7 +8144,7 @@ l strings.851=0
 :1800
 l strings.850
 :1800
-! 
+!
 !    subst := subst(s, m^, r^)
 :1801
 :1802
@@ -8159,7 +8159,7 @@ l strings.850
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.852=8
         cuf     l strings.170 3 0 8 8   ! Call user function
@@ -8171,12 +8171,12 @@ l strings.852=8
         reta    32                      ! Return from procedure/function(t)
 l strings.847=0
 l strings.848=48
-! 
+!
 ! overload function subst(s: pstring; view m: string; view r: string): pstring;
 e f
 :1805
 :1806
-! 
+!
 ! begin 
 b f subst@f_pvc_vc_vc
 s       s p 72 pvc
@@ -8187,7 +8187,7 @@ l strings.174
 :1808
 :1808
         mst     1 l strings.854 l strings.855 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil); 
 :1809
 :1810
@@ -8202,7 +8202,7 @@ l strings.858=0
 :1810
 l strings.857
 :1810
-! 
+!
 !    subst := subst(s^, m, r)
 :1811
 :1812
@@ -8215,7 +8215,7 @@ l strings.857
         ldp                             ! Load complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.859=8
         cuf     l strings.170 3 0 8 8   ! Call user function
@@ -8227,12 +8227,12 @@ l strings.859=8
         reta    40                      ! Return from procedure/function(t)
 l strings.854=0
 l strings.855=48
-! 
+!
 ! overload function subst(s: pstring; view m: string; r: pstring): pstring;
 e f
 :1815
 :1816
-! 
+!
 ! begin 
 b f subst@f_pvc_vc_pvc
 s       s p 64 pvc
@@ -8243,7 +8243,7 @@ l strings.175
 :1818
 :1818
         mst     1 l strings.861 l strings.862 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (r = nil) then throw(StringNil); 
 :1819
 :1820
@@ -8262,7 +8262,7 @@ l strings.865=0
 :1820
 l strings.864
 :1820
-! 
+!
 !    subst := subst(s^, m, r^)
 :1821
 :1822
@@ -8277,7 +8277,7 @@ l strings.864
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.866=8
         cuf     l strings.170 3 0 8 8   ! Call user function
@@ -8289,12 +8289,12 @@ l strings.866=8
         reta    32                      ! Return from procedure/function(t)
 l strings.861=0
 l strings.862=48
-! 
+!
 ! overload function subst(s: pstring; m: pstring; view r: string): pstring;
 e f
 :1825
 :1826
-! 
+!
 ! begin 
 b f subst@f_pvc_pvc_vc
 s       s p 64 pvc
@@ -8305,7 +8305,7 @@ l strings.176
 :1828
 :1828
         mst     1 l strings.868 l strings.869 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (m = nil) then throw(StringNil); 
 :1829
 :1830
@@ -8324,7 +8324,7 @@ l strings.872=0
 :1830
 l strings.871
 :1830
-! 
+!
 !    subst := subst(s^, m^, r)
 :1831
 :1832
@@ -8339,7 +8339,7 @@ l strings.871
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.873=8
         cuf     l strings.170 3 0 8 8   ! Call user function
@@ -8351,12 +8351,12 @@ l strings.873=8
         reta    32                      ! Return from procedure/function(t)
 l strings.868=0
 l strings.869=48
-! 
+!
 ! overload function subst(s: pstring; m: pstring; r: pstring): pstring;
 e f
 :1835
 :1836
-! 
+!
 ! begin 
 b f subst@f_pvc_pvc_pvc
 s       s p 56 pvc
@@ -8367,7 +8367,7 @@ l strings.177
 :1838
 :1838
         mst     1 l strings.875 l strings.876 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (m = nil) or (r = nil) then throw(StringNil); 
 :1839
 :1840
@@ -8390,7 +8390,7 @@ l strings.879=0
 :1840
 l strings.878
 :1840
-! 
+!
 !    subst := subst(s^, m^, r^)
 :1841
 :1842
@@ -8407,7 +8407,7 @@ l strings.878
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.880=8
         cuf     l strings.170 3 0 8 8   ! Call user function
@@ -8419,7 +8419,7 @@ l strings.880=8
         reta    24                      ! Return from procedure/function(t)
 l strings.875=0
 l strings.876=48
-! 
+!
 ! procedure substc(var  s: string; { string to substitute in }
 e f
 :1845
@@ -8428,7 +8428,7 @@ e f
 :1847
 !                  view r: string); { replacement string }
 :1848
-! 
+!
 ! var i: integer; { string index }
 b r substc@p_vc_vc_vc
 s       s p 72 vc
@@ -8442,14 +8442,14 @@ s       i l -24 i
 t       l strings.882 1 200
 s       t l -224 ax(1,200)ic
 s       d l -424 ax(1,200)ic
-! 
+!
 ! begin
 l strings.178
 :1852
 :1853
 :1853
         mst     1 l strings.883 l strings.884 ! Mark(frame) stack
-! 
+!
 !    i := indexc(s, m); { find substring }
 :1854
 :1855
@@ -8468,7 +8468,7 @@ l strings.886=8
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.887
-! 
+!
 !       if i > 1 then begin { there is a left }
 :1857
 :1858
@@ -8476,7 +8476,7 @@ l strings.886=8
         ldci    1                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.888
-! 
+!
 !          extract(d, s, 1, i-1); { get left side }
 :1859
 :1860
@@ -8504,7 +8504,7 @@ l strings.889=0
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !       end;
 l strings.890=0
         cup     l strings.61 3          ! Call user procedure
@@ -8531,7 +8531,7 @@ l strings.892=8
 :1864
         leqi                            ! Less than or equal(t)
          fjp l strings.893
-! 
+!
 !          extract(t, s, i+len(m), len(s)); { get right side }
 :1865
 :1866
@@ -8578,7 +8578,7 @@ l strings.898=8
         cuf     l strings.16 1 0 8 8    ! Call user function
 :1867
         adi                             ! Add integers
-! 
+!
 !       end;
 l strings.897=0
         cup     l strings.61 3          ! Call user procedure
@@ -8596,14 +8596,14 @@ l strings.893
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end
 l strings.899=0
         cup     l strings.18 2          ! Call user procedure
 :1871
 :1872
 :1872
-! 
+!
 ! end;
 l strings.887
 :1873
@@ -8612,7 +8612,7 @@ l strings.887
         retp    48                      ! Return from procedure/function(t)
 l strings.883=408
 l strings.884=56
-! 
+!
 ! overload function substc(view s: string; { string to substitute in }
 e r
 :1875
@@ -8623,7 +8623,7 @@ e r
 :1878
 !                          : pstring;      { result string }
 :1879
-! 
+!
 ! var i: integer; { string index }
 b f substc@f_vc_vc_vc
 s       s p 72 vc
@@ -8635,14 +8635,14 @@ s       i l -24 i
 !     p: pstring; { result holder }
 :1882
 s       p l -32 pvc
-! 
+!
 ! begin
 l strings.179
 :1883
 :1884
 :1884
         mst     1 l strings.901 l strings.902 ! Mark(frame) stack
-! 
+!
 !    openstring; { start new level }
 :1885
 :1886
@@ -8737,11 +8737,11 @@ l strings.913=0
 l strings.914=0
         cup     l strings.166 0         ! Call user procedure
 :1893
-! 
+!
 !    substc := p { return result }
 :1894
 :1895
-! 
+!
 ! end;
         loda    2 -32                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -8751,12 +8751,12 @@ l strings.914=0
         reta    48                      ! Return from procedure/function(t)
 l strings.901=16
 l strings.902=56
-! 
+!
 ! overload function substc(view s: string; view m: string; r: pstring): pstring;
 e f
 :1898
 :1899
-! 
+!
 ! begin 
 b f substc@f_vc_vc_pvc
 s       s p 64 vc
@@ -8767,7 +8767,7 @@ l strings.180
 :1901
 :1901
         mst     1 l strings.916 l strings.917 ! Mark(frame) stack
-! 
+!
 !    if r = nil then throw(StringNil); 
 :1902
 :1903
@@ -8782,7 +8782,7 @@ l strings.920=0
 :1903
 l strings.919
 :1903
-! 
+!
 !    substc := substc(s, m, r^)
 :1904
 :1905
@@ -8795,7 +8795,7 @@ l strings.919
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.921=8
         cuf     l strings.179 3 0 8 8   ! Call user function
@@ -8807,12 +8807,12 @@ l strings.921=8
         reta    40                      ! Return from procedure/function(t)
 l strings.916=0
 l strings.917=48
-! 
+!
 ! overload function substc(view s: string; m: pstring; view r: string): pstring;
 e f
 :1908
 :1909
-! 
+!
 ! begin 
 b f substc@f_vc_pvc_vc
 s       s p 64 vc
@@ -8823,7 +8823,7 @@ l strings.181
 :1911
 :1911
         mst     1 l strings.923 l strings.924 ! Mark(frame) stack
-! 
+!
 !    if m = nil then throw(StringNil); 
 :1912
 :1913
@@ -8838,7 +8838,7 @@ l strings.927=0
 :1913
 l strings.926
 :1913
-! 
+!
 !    substc := substc(s, m^, r)
 :1914
 :1915
@@ -8851,7 +8851,7 @@ l strings.926
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.928=8
         cuf     l strings.179 3 0 8 8   ! Call user function
@@ -8863,12 +8863,12 @@ l strings.928=8
         reta    40                      ! Return from procedure/function(t)
 l strings.923=0
 l strings.924=48
-! 
+!
 ! overload function substc(view s: string; m: pstring; r: pstring): pstring;
 e f
 :1918
 :1919
-! 
+!
 ! begin 
 b f substc@f_vc_pvc_pvc
 s       s p 56 vc
@@ -8879,7 +8879,7 @@ l strings.182
 :1921
 :1921
         mst     1 l strings.930 l strings.931 ! Mark(frame) stack
-! 
+!
 !    if (m = nil) or (r = nil) then throw(StringNil); 
 :1922
 :1923
@@ -8898,7 +8898,7 @@ l strings.934=0
 :1923
 l strings.933
 :1923
-! 
+!
 !    substc := substc(s, m^, r^)
 :1924
 :1925
@@ -8913,7 +8913,7 @@ l strings.933
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.935=8
         cuf     l strings.179 3 0 8 8   ! Call user function
@@ -8925,12 +8925,12 @@ l strings.935=8
         reta    32                      ! Return from procedure/function(t)
 l strings.930=0
 l strings.931=48
-! 
+!
 ! overload function substc(s: pstring; view m: string; view r: string): pstring;
 e f
 :1928
 :1929
-! 
+!
 ! begin 
 b f substc@f_pvc_vc_vc
 s       s p 72 pvc
@@ -8941,7 +8941,7 @@ l strings.183
 :1931
 :1931
         mst     1 l strings.937 l strings.938 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil); 
 :1932
 :1933
@@ -8956,7 +8956,7 @@ l strings.941=0
 :1933
 l strings.940
 :1933
-! 
+!
 !    substc := substc(s^, m, r)
 :1934
 :1935
@@ -8969,7 +8969,7 @@ l strings.940
         ldp                             ! Load complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.942=8
         cuf     l strings.179 3 0 8 8   ! Call user function
@@ -8981,12 +8981,12 @@ l strings.942=8
         reta    40                      ! Return from procedure/function(t)
 l strings.937=0
 l strings.938=48
-! 
+!
 ! overload function substc(s: pstring; view m: string; r: pstring): pstring;
 e f
 :1938
 :1939
-! 
+!
 ! begin 
 b f substc@f_pvc_vc_pvc
 s       s p 64 pvc
@@ -8997,7 +8997,7 @@ l strings.184
 :1941
 :1941
         mst     1 l strings.944 l strings.945 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (r = nil) then throw(StringNil); 
 :1942
 :1943
@@ -9016,7 +9016,7 @@ l strings.948=0
 :1943
 l strings.947
 :1943
-! 
+!
 !    substc := substc(s^, m, r^)
 :1944
 :1945
@@ -9031,7 +9031,7 @@ l strings.947
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.949=8
         cuf     l strings.179 3 0 8 8   ! Call user function
@@ -9043,12 +9043,12 @@ l strings.949=8
         reta    32                      ! Return from procedure/function(t)
 l strings.944=0
 l strings.945=48
-! 
+!
 ! overload function substc(s: pstring; m: pstring; view r: string): pstring;
 e f
 :1948
 :1949
-! 
+!
 ! begin 
 b f substc@f_pvc_pvc_vc
 s       s p 64 pvc
@@ -9059,7 +9059,7 @@ l strings.185
 :1951
 :1951
         mst     1 l strings.951 l strings.952 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (m = nil) then throw(StringNil); 
 :1952
 :1953
@@ -9078,7 +9078,7 @@ l strings.955=0
 :1953
 l strings.954
 :1953
-! 
+!
 !    substc := substc(s^, m^, r)
 :1954
 :1955
@@ -9093,7 +9093,7 @@ l strings.954
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.956=8
         cuf     l strings.179 3 0 8 8   ! Call user function
@@ -9105,12 +9105,12 @@ l strings.956=8
         reta    32                      ! Return from procedure/function(t)
 l strings.951=0
 l strings.952=48
-! 
+!
 ! overload function substc(s: pstring; m: pstring; r: pstring): pstring;
 e f
 :1958
 :1959
-! 
+!
 ! begin 
 b f substc@f_pvc_pvc_pvc
 s       s p 56 pvc
@@ -9121,7 +9121,7 @@ l strings.186
 :1961
 :1961
         mst     1 l strings.958 l strings.959 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (m = nil) or (r = nil) then throw(StringNil); 
 :1962
 :1963
@@ -9144,7 +9144,7 @@ l strings.962=0
 :1963
 l strings.961
 :1963
-! 
+!
 !    substc := substc(s^, m^, r^)
 :1964
 :1965
@@ -9161,7 +9161,7 @@ l strings.961
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.963=8
         cuf     l strings.179 3 0 8 8   ! Call user function
@@ -9173,7 +9173,7 @@ l strings.963=8
         reta    24                      ! Return from procedure/function(t)
 l strings.958=0
 l strings.959=48
-! 
+!
 ! procedure substall(var s: string;   { string to substitute in }
 e f
 :1968
@@ -9182,7 +9182,7 @@ e f
 :1970
 !                    view r: string); { replacement string }
 :1971
-! 
+!
 ! var i: integer; { string index }
 b r substall@p_vc_vc_vc
 s       s p 72 vc
@@ -9196,15 +9196,15 @@ s       i l -24 i
 t       l strings.965 1 200
 s       t l -224 ax(1,200)ic
 s       d l -424 ax(1,200)ic
-! 
+!
 ! { match substring at index }
-! 
+!
 ! function match(view s: string; p: integer; view m: string): boolean;
 :1975
 :1976
 :1977
 :1978
-! 
+!
 ! var f: boolean; { match flag }
 b f match@f_vc_i_vc
 s       s p 64 vc
@@ -9216,14 +9216,14 @@ s       f l -25 b
 !     i: integer; { string index }
 :1981
 s       i l -36 i
-! 
+!
 ! begin
 l strings.966
 :1982
 :1983
 :1983
         mst     2 l strings.967 l strings.968 ! Mark(frame) stack
-! 
+!
 !    if p+max(m)-1 > max(s) then f := false { does not fit }
 :1984
 :1985
@@ -9249,7 +9249,7 @@ l strings.966
 l strings.970
 :1986
 :1986
-! 
+!
 !       f := true; { assume match }
 :1987
 :1988
@@ -9301,7 +9301,7 @@ l strings.975=8
 :1990
         neqc                            ! Not equal(t)
          fjp l strings.976
-! 
+!
 !    end;
         ldcb    0                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -9324,11 +9324,11 @@ l strings.973
         inv                             ! Invalidate address
 l strings.971
 :1992
-! 
+!
 !    match := f { return match status }
 :1993
 :1994
-! 
+!
 ! end;
         lodb    3 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -9338,7 +9338,7 @@ l strings.971
         retb    40                      ! Return from procedure/function(t)
 l strings.967=32
 l strings.968=32
-! 
+!
 ! begin
 e f
 l strings.187
@@ -9346,7 +9346,7 @@ l strings.187
 :1998
 :1998
         mst     1 l strings.977 l strings.978 ! Mark(frame) stack
-! 
+!
 !    i := 1; { set 1st character of string }
 :1999
 :2000
@@ -9363,7 +9363,7 @@ l strings.980
         max     1                       ! Maximum dimension of array
         lesi                            ! Less than(t)
          fjp l strings.981
-! 
+!
 !       if match(s, i, m) then begin
 :2002
 :2003
@@ -9377,7 +9377,7 @@ l strings.982=8
         cuf     l strings.966 3 0 1 8   ! Call user function
 :2003
          fjp l strings.983
-! 
+!
 !          if i > 1 then begin { there is a left }
 :2004
 :2005
@@ -9385,7 +9385,7 @@ l strings.982=8
         ldci    1                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.984
-! 
+!
 !             extract(d, s, 1, i-1); { get left side }
 :2006
 :2007
@@ -9416,7 +9416,7 @@ l strings.985=0
 l strings.986=0
         cup     l strings.61 3          ! Call user procedure
 :2008
-! 
+!
 !          end;
 :2009
 :2010
@@ -9440,7 +9440,7 @@ l strings.988=8
 :2011
         leqi                            ! Less than or equal(t)
          fjp l strings.989
-! 
+!
 !             extract(t, s, i+len(m), len(s)); { get right side }
 :2012
 :2013
@@ -9490,7 +9490,7 @@ l strings.994=8
 l strings.993=0
         cup     l strings.61 3          ! Call user procedure
 :2014
-! 
+!
 !          end;
 :2015
 :2016
@@ -9516,7 +9516,7 @@ l strings.995=8
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !       end else i := i+1 { next character }
 l strings.996=0
         cup     l strings.18 2          ! Call user procedure
@@ -9527,7 +9527,7 @@ l strings.996=0
 l strings.983
 :2020
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -9536,7 +9536,7 @@ l strings.997
 :2021
 :2022
 :2022
-! 
+!
 ! end;
         ujp     l strings.980           ! Unconditional jump
 l strings.981
@@ -9546,7 +9546,7 @@ l strings.981
         retp    48                      ! Return from procedure/function(t)
 l strings.977=408
 l strings.978=56
-! 
+!
 ! overload function substall(view s: string; { string to substitute in }
 e r
 :2025
@@ -9557,7 +9557,7 @@ e r
 :2028
 !                            : pstring;      { result }
 :2029
-! 
+!
 ! var i: integer; { string index }
 b f substall@f_vc_vc_vc
 s       s p 72 vc
@@ -9569,15 +9569,15 @@ s       i l -24 i
 !     d: pstring; { destination holder }
 :2032
 s       d l -32 pvc
-! 
+!
 ! { match substring at index }
-! 
+!
 ! function match(view s: string; p: integer; view m: string): boolean;
 :2033
 :2034
 :2035
 :2036
-! 
+!
 ! var f: boolean; { match flag }
 b f match@f_vc_i_vc
 s       s p 64 vc
@@ -9589,14 +9589,14 @@ s       f l -25 b
 !     i: integer; { string index }
 :2039
 s       i l -36 i
-! 
+!
 ! begin
 l strings.999
 :2040
 :2041
 :2041
         mst     2 l strings.1000 l strings.1001 ! Mark(frame) stack
-! 
+!
 !    if p+max(m)-1 > max(s) then f := false { does not fit }
 :2042
 :2043
@@ -9622,7 +9622,7 @@ l strings.999
 l strings.1003
 :2044
 :2044
-! 
+!
 !       f := true; { assume match }
 :2045
 :2046
@@ -9674,7 +9674,7 @@ l strings.1008=8
 :2048
         neqc                            ! Not equal(t)
          fjp l strings.1009
-! 
+!
 !    end;
         ldcb    0                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -9697,11 +9697,11 @@ l strings.1006
         inv                             ! Invalidate address
 l strings.1004
 :2050
-! 
+!
 !    match := f { return match status }
 :2051
 :2052
-! 
+!
 ! end;
         lodb    3 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -9711,7 +9711,7 @@ l strings.1004
         retb    40                      ! Return from procedure/function(t)
 l strings.1000=32
 l strings.1001=32
-! 
+!
 ! begin
 e f
 l strings.188
@@ -9719,7 +9719,7 @@ l strings.188
 :2056
 :2056
         mst     1 l strings.1010 l strings.1011 ! Mark(frame) stack
-! 
+!
 !    openstring; { start string level }
 :2057
 :2058
@@ -9753,7 +9753,7 @@ l strings.1015
         max     1                       ! Maximum dimension of array
         lesi                            ! Less than(t)
          fjp l strings.1016
-! 
+!
 !       if match(d^, i, m) then begin
 :2062
 :2063
@@ -9769,7 +9769,7 @@ l strings.1017=8
         cuf     l strings.999 3 0 1 8   ! Call user function
 :2063
          fjp l strings.1018
-! 
+!
 !          { construct new string from left, replacement and right }
 !          d := cat(cat(extract(d, 1, i-1), r), extract(d, i+max(m), max(d^)));
 :2064
@@ -9820,7 +9820,7 @@ l strings.1019=8
         ldp                             ! Load complex pointer
         ldci    1                       ! Load constant(t)
         max     1                       ! Maximum dimension of array
-! 
+!
 !       end else i := i+1 { next character }
         adi                             ! Add integers
         stri    2 -24                   ! Store local(t)
@@ -9830,7 +9830,7 @@ l strings.1019=8
 l strings.1018
 :2069
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -9855,11 +9855,11 @@ l strings.1024=0
 l strings.1025=0
         cup     l strings.166 0         ! Call user procedure
 :2073
-! 
+!
 !    substall := d { return result }
 :2074
 :2075
-! 
+!
 ! end;
         loda    2 -32                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -9869,12 +9869,12 @@ l strings.1025=0
         reta    48                      ! Return from procedure/function(t)
 l strings.1010=16
 l strings.1011=48
-! 
+!
 ! overload function substall(view s: string; view m: string; r: pstring): pstring;
 e f
 :2078
 :2079
-! 
+!
 ! begin
 b f substall@f_vc_vc_pvc
 s       s p 64 vc
@@ -9885,7 +9885,7 @@ l strings.189
 :2081
 :2081
         mst     1 l strings.1027 l strings.1028 ! Mark(frame) stack
-! 
+!
 !    if r = nil then throw(StringNil);
 :2082
 :2083
@@ -9900,7 +9900,7 @@ l strings.1031=0
 :2083
 l strings.1030
 :2083
-! 
+!
 !    substall := substall(s, m, r^) { return result }
 :2084
 :2085
@@ -9913,7 +9913,7 @@ l strings.1030
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1032=8
         cuf     l strings.188 3 0 8 8   ! Call user function
@@ -9925,12 +9925,12 @@ l strings.1032=8
         reta    40                      ! Return from procedure/function(t)
 l strings.1027=0
 l strings.1028=48
-! 
+!
 ! overload function substall(view s: string; m: pstring; view r: string): pstring;
 e f
 :2088
 :2089
-! 
+!
 ! begin
 b f substall@f_vc_pvc_vc
 s       s p 64 vc
@@ -9941,7 +9941,7 @@ l strings.190
 :2091
 :2091
         mst     1 l strings.1034 l strings.1035 ! Mark(frame) stack
-! 
+!
 !    if m = nil then throw(StringNil);
 :2092
 :2093
@@ -9956,7 +9956,7 @@ l strings.1038=0
 :2093
 l strings.1037
 :2093
-! 
+!
 !    substall := substall(s, m^, r) { return result }
 :2094
 :2095
@@ -9969,7 +9969,7 @@ l strings.1037
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.1039=8
         cuf     l strings.188 3 0 8 8   ! Call user function
@@ -9981,12 +9981,12 @@ l strings.1039=8
         reta    40                      ! Return from procedure/function(t)
 l strings.1034=0
 l strings.1035=48
-! 
+!
 ! overload function substall(view s: string; m: pstring; r: pstring): pstring;
 e f
 :2098
 :2099
-! 
+!
 ! begin
 b f substall@f_vc_pvc_pvc
 s       s p 56 vc
@@ -9997,7 +9997,7 @@ l strings.191
 :2101
 :2101
         mst     1 l strings.1041 l strings.1042 ! Mark(frame) stack
-! 
+!
 !    if (m = nil) or (r = nil) then throw(StringNil);
 :2102
 :2103
@@ -10016,7 +10016,7 @@ l strings.1045=0
 :2103
 l strings.1044
 :2103
-! 
+!
 !    substall := substall(s, m^, r^) { return result }
 :2104
 :2105
@@ -10031,7 +10031,7 @@ l strings.1044
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1046=8
         cuf     l strings.188 3 0 8 8   ! Call user function
@@ -10043,12 +10043,12 @@ l strings.1046=8
         reta    32                      ! Return from procedure/function(t)
 l strings.1041=0
 l strings.1042=48
-! 
+!
 ! overload function substall(s: pstring; view m: string; view r: string): pstring;
 e f
 :2108
 :2109
-! 
+!
 ! begin
 b f substall@f_pvc_vc_vc
 s       s p 72 pvc
@@ -10059,7 +10059,7 @@ l strings.192
 :2111
 :2111
         mst     1 l strings.1048 l strings.1049 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :2112
 :2113
@@ -10074,7 +10074,7 @@ l strings.1052=0
 :2113
 l strings.1051
 :2113
-! 
+!
 !    substall := substall(s^, m, r) { return result }
 :2114
 :2115
@@ -10087,7 +10087,7 @@ l strings.1051
         ldp                             ! Load complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.1053=8
         cuf     l strings.188 3 0 8 8   ! Call user function
@@ -10099,12 +10099,12 @@ l strings.1053=8
         reta    40                      ! Return from procedure/function(t)
 l strings.1048=0
 l strings.1049=48
-! 
+!
 ! overload function substall(s: pstring; view m: string; r: pstring): pstring;
 e f
 :2118
 :2119
-! 
+!
 ! begin
 b f substall@f_pvc_vc_pvc
 s       s p 64 pvc
@@ -10115,7 +10115,7 @@ l strings.193
 :2121
 :2121
         mst     1 l strings.1055 l strings.1056 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (r = nil) then throw(StringNil);
 :2122
 :2123
@@ -10134,7 +10134,7 @@ l strings.1059=0
 :2123
 l strings.1058
 :2123
-! 
+!
 !    substall := substall(s^, m, r^) { return result }
 :2124
 :2125
@@ -10149,7 +10149,7 @@ l strings.1058
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1060=8
         cuf     l strings.188 3 0 8 8   ! Call user function
@@ -10161,12 +10161,12 @@ l strings.1060=8
         reta    32                      ! Return from procedure/function(t)
 l strings.1055=0
 l strings.1056=48
-! 
+!
 ! overload function substall(s: pstring; m: pstring; view r: string): pstring;
 e f
 :2128
 :2129
-! 
+!
 ! begin
 b f substall@f_pvc_pvc_vc
 s       s p 64 pvc
@@ -10177,7 +10177,7 @@ l strings.194
 :2131
 :2131
         mst     1 l strings.1062 l strings.1063 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (m = nil) then throw(StringNil);
 :2132
 :2133
@@ -10196,7 +10196,7 @@ l strings.1066=0
 :2133
 l strings.1065
 :2133
-! 
+!
 !    substall := substall(s^, m^, r) { return result }
 :2134
 :2135
@@ -10211,7 +10211,7 @@ l strings.1065
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.1067=8
         cuf     l strings.188 3 0 8 8   ! Call user function
@@ -10223,12 +10223,12 @@ l strings.1067=8
         reta    32                      ! Return from procedure/function(t)
 l strings.1062=0
 l strings.1063=48
-! 
+!
 ! overload function substall(s: pstring; m: pstring; r: pstring): pstring;
 e f
 :2138
 :2139
-! 
+!
 ! begin
 b f substall@f_pvc_pvc_pvc
 s       s p 56 pvc
@@ -10239,7 +10239,7 @@ l strings.195
 :2141
 :2141
         mst     1 l strings.1069 l strings.1070 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (m = nil) or (r = nil) then throw(StringNil);
 :2142
 :2143
@@ -10262,7 +10262,7 @@ l strings.1073=0
 :2143
 l strings.1072
 :2143
-! 
+!
 !    substall := substall(s^, m^, r^) { return result }
 :2144
 :2145
@@ -10279,7 +10279,7 @@ l strings.1072
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1074=8
         cuf     l strings.188 3 0 8 8   ! Call user function
@@ -10291,7 +10291,7 @@ l strings.1074=8
         reta    24                      ! Return from procedure/function(t)
 l strings.1069=0
 l strings.1070=48
-! 
+!
 ! procedure substcall(var s: string;   { string to substitute in }
 e f
 :2148
@@ -10300,7 +10300,7 @@ e f
 :2150
 !                     view r: string); { replacement string }
 :2151
-! 
+!
 ! var i: integer; { string index }
 b r substcall@p_vc_vc_vc
 s       s p 72 vc
@@ -10314,15 +10314,15 @@ s       i l -24 i
 t       l strings.1076 1 200
 s       t l -224 ax(1,200)ic
 s       d l -424 ax(1,200)ic
-! 
+!
 ! { match substring at index }
-! 
+!
 ! function match(view s: string; p: integer; view m: string): boolean;
 :2155
 :2156
 :2157
 :2158
-! 
+!
 ! var f: boolean; { match flag }
 b f match@f_vc_i_vc
 s       s p 64 vc
@@ -10334,14 +10334,14 @@ s       f l -25 b
 !     i: integer; { string index }
 :2161
 s       i l -36 i
-! 
+!
 ! begin
 l strings.1077
 :2162
 :2163
 :2163
         mst     2 l strings.1078 l strings.1079 ! Mark(frame) stack
-! 
+!
 !    if p+max(m)-1 > max(s) then f := false { does not fit }
 :2164
 :2165
@@ -10367,7 +10367,7 @@ l strings.1077
 l strings.1081
 :2166
 :2166
-! 
+!
 !       f := true; { assume match }
 :2167
 :2168
@@ -10409,7 +10409,7 @@ l strings.1083
         indc    0                       ! Load indirect(t)
         neqc                            ! Not equal(t)
          fjp l strings.1085
-! 
+!
 !    end;
         ldcb    0                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -10432,11 +10432,11 @@ l strings.1084
         inv                             ! Invalidate address
 l strings.1082
 :2172
-! 
+!
 !    match := f { return match status }
 :2173
 :2174
-! 
+!
 ! end;
         lodb    3 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -10446,7 +10446,7 @@ l strings.1082
         retb    40                      ! Return from procedure/function(t)
 l strings.1078=32
 l strings.1079=32
-! 
+!
 ! begin
 e f
 l strings.196
@@ -10454,7 +10454,7 @@ l strings.196
 :2178
 :2178
         mst     1 l strings.1086 l strings.1087 ! Mark(frame) stack
-! 
+!
 !    copy(d, s); { default to string as is }
 :2179
 :2180
@@ -10483,7 +10483,7 @@ l strings.1090
         max     1                       ! Maximum dimension of array
         lesi                            ! Less than(t)
          fjp l strings.1091
-! 
+!
 !       if match(s, i, m) then begin
 :2183
 :2184
@@ -10497,7 +10497,7 @@ l strings.1092=8
         cuf     l strings.1077 3 0 1 8  ! Call user function
 :2184
          fjp l strings.1093
-! 
+!
 !          if i > 1 then begin { there is a left }
 :2185
 :2186
@@ -10505,7 +10505,7 @@ l strings.1092=8
         ldci    1                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1094
-! 
+!
 !             extract(d, s, 1, i-1); { get left side }
 :2187
 :2188
@@ -10533,7 +10533,7 @@ l strings.1095=0
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !          end;
 l strings.1096=0
         cup     l strings.61 3          ! Call user procedure
@@ -10560,7 +10560,7 @@ l strings.1098=8
 :2192
         leqi                            ! Less than or equal(t)
          fjp l strings.1099
-! 
+!
 !             extract(t, s, i+len(m), len(s)); { get right side }
 :2193
 :2194
@@ -10607,7 +10607,7 @@ l strings.1104=8
         cuf     l strings.16 1 0 8 8    ! Call user function
 :2195
         adi                             ! Add integers
-! 
+!
 !          end;
 l strings.1103=0
         cup     l strings.61 3          ! Call user procedure
@@ -10636,7 +10636,7 @@ l strings.1105=8
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !       end else i := i+1 { next character }
 l strings.1106=0
         cup     l strings.18 2          ! Call user procedure
@@ -10647,7 +10647,7 @@ l strings.1106=0
 l strings.1093
 :2201
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -10656,7 +10656,7 @@ l strings.1107
 :2202
 :2203
 :2203
-! 
+!
 ! end;
         ujp     l strings.1090          ! Unconditional jump
 l strings.1091
@@ -10666,7 +10666,7 @@ l strings.1091
         retp    48                      ! Return from procedure/function(t)
 l strings.1086=408
 l strings.1087=56
-! 
+!
 ! overload function substcall(view s: string; { string to substitute in }
 e r
 :2206
@@ -10677,7 +10677,7 @@ e r
 :2209
 !                             : pstring;      { result }
 :2210
-! 
+!
 ! var i: integer; { string index }
 b f substcall@f_vc_vc_vc
 s       s p 72 vc
@@ -10689,15 +10689,15 @@ s       i l -24 i
 !     d: pstring; { destination holder }
 :2213
 s       d l -32 pvc
-! 
+!
 ! { match substring at index }
-! 
+!
 ! function match(view s: string; p: integer; view m: string): boolean;
 :2214
 :2215
 :2216
 :2217
-! 
+!
 ! var f: boolean; { match flag }
 b f match@f_vc_i_vc
 s       s p 64 vc
@@ -10709,14 +10709,14 @@ s       f l -25 b
 !     i: integer; { string index }
 :2220
 s       i l -36 i
-! 
+!
 ! begin
 l strings.1109
 :2221
 :2222
 :2222
         mst     2 l strings.1110 l strings.1111 ! Mark(frame) stack
-! 
+!
 !    if p+max(m)-1 > max(s) then f := false { does not fit }
 :2223
 :2224
@@ -10742,7 +10742,7 @@ l strings.1109
 l strings.1113
 :2225
 :2225
-! 
+!
 !       f := true; { assume match }
 :2226
 :2227
@@ -10784,7 +10784,7 @@ l strings.1115
         indc    0                       ! Load indirect(t)
         neqc                            ! Not equal(t)
          fjp l strings.1117
-! 
+!
 !    end;
         ldcb    0                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -10807,11 +10807,11 @@ l strings.1116
         inv                             ! Invalidate address
 l strings.1114
 :2231
-! 
+!
 !    match := f { return match status }
 :2232
 :2233
-! 
+!
 ! end;
         lodb    3 -25                   ! Load local value(t)
         chkb    0 1                     ! Bounds check(t)
@@ -10821,7 +10821,7 @@ l strings.1114
         retb    40                      ! Return from procedure/function(t)
 l strings.1110=32
 l strings.1111=32
-! 
+!
 ! begin
 e f
 l strings.197
@@ -10829,7 +10829,7 @@ l strings.197
 :2237
 :2237
         mst     1 l strings.1118 l strings.1119 ! Mark(frame) stack
-! 
+!
 !    openstring; { start string level }
 :2238
 :2239
@@ -10861,7 +10861,7 @@ l strings.1123
         max     1                       ! Maximum dimension of array
         lesi                            ! Less than(t)
          fjp l strings.1124
-! 
+!
 !       if match(s, i, m) then begin
 :2243
 :2244
@@ -10875,7 +10875,7 @@ l strings.1125=8
         cuf     l strings.1109 3 0 1 8  ! Call user function
 :2244
          fjp l strings.1126
-! 
+!
 !          { construct new string from left, replacement and right }
 !          d := cat(cat(extract(s, 1, i-1), r), extract(s, i+max(m), max(s)));
 :2245
@@ -10926,7 +10926,7 @@ l strings.1127=8
         ldp                             ! Load complex pointer
         ldci    1                       ! Load constant(t)
         max     1                       ! Maximum dimension of array
-! 
+!
 !       end else i := i+1 { next character }
         adi                             ! Add integers
         stri    2 -24                   ! Store local(t)
@@ -10936,7 +10936,7 @@ l strings.1127=8
 l strings.1126
 :2250
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -10961,11 +10961,11 @@ l strings.1132=0
 l strings.1133=0
         cup     l strings.166 0         ! Call user procedure
 :2254
-! 
+!
 !    substcall := d { return result }
 :2255
 :2256
-! 
+!
 ! end;
         loda    2 -32                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -10975,12 +10975,12 @@ l strings.1133=0
         reta    48                      ! Return from procedure/function(t)
 l strings.1118=16
 l strings.1119=56
-! 
+!
 ! overload function substcall(view s: string; view m: string; r: pstring): pstring;
 e f
 :2259
 :2260
-! 
+!
 ! begin
 b f substcall@f_vc_vc_pvc
 s       s p 64 vc
@@ -10991,7 +10991,7 @@ l strings.198
 :2262
 :2262
         mst     1 l strings.1135 l strings.1136 ! Mark(frame) stack
-! 
+!
 !    if r = nil then throw(StringNil);
 :2263
 :2264
@@ -11006,7 +11006,7 @@ l strings.1139=0
 :2264
 l strings.1138
 :2264
-! 
+!
 !    substcall := substcall(s, m, r^) { return result }
 :2265
 :2266
@@ -11019,7 +11019,7 @@ l strings.1138
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1140=8
         cuf     l strings.197 3 0 8 8   ! Call user function
@@ -11031,12 +11031,12 @@ l strings.1140=8
         reta    40                      ! Return from procedure/function(t)
 l strings.1135=0
 l strings.1136=48
-! 
+!
 ! overload function substcall(view s: string; m: pstring; view r: string): pstring;
 e f
 :2269
 :2270
-! 
+!
 ! begin
 b f substcall@f_vc_pvc_vc
 s       s p 64 vc
@@ -11047,7 +11047,7 @@ l strings.199
 :2272
 :2272
         mst     1 l strings.1142 l strings.1143 ! Mark(frame) stack
-! 
+!
 !    if m = nil then throw(StringNil);
 :2273
 :2274
@@ -11062,7 +11062,7 @@ l strings.1146=0
 :2274
 l strings.1145
 :2274
-! 
+!
 !    substcall := substcall(s, m^, r) { return result }
 :2275
 :2276
@@ -11075,7 +11075,7 @@ l strings.1145
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.1147=8
         cuf     l strings.197 3 0 8 8   ! Call user function
@@ -11087,12 +11087,12 @@ l strings.1147=8
         reta    40                      ! Return from procedure/function(t)
 l strings.1142=0
 l strings.1143=48
-! 
+!
 ! overload function substcall(view s: string; m: pstring; r: pstring): pstring;
 e f
 :2279
 :2280
-! 
+!
 ! begin
 b f substcall@f_vc_pvc_pvc
 s       s p 56 vc
@@ -11103,7 +11103,7 @@ l strings.200
 :2282
 :2282
         mst     1 l strings.1149 l strings.1150 ! Mark(frame) stack
-! 
+!
 !    if (m = nil) or (r = nil) then throw(StringNil);
 :2283
 :2284
@@ -11122,7 +11122,7 @@ l strings.1153=0
 :2284
 l strings.1152
 :2284
-! 
+!
 !    substcall := substcall(s, m^, r^) { return result }
 :2285
 :2286
@@ -11137,7 +11137,7 @@ l strings.1152
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1154=8
         cuf     l strings.197 3 0 8 8   ! Call user function
@@ -11149,12 +11149,12 @@ l strings.1154=8
         reta    32                      ! Return from procedure/function(t)
 l strings.1149=0
 l strings.1150=48
-! 
+!
 ! overload function substcall(s: pstring; view m: string; view r: string): pstring;
 e f
 :2289
 :2290
-! 
+!
 ! begin
 b f substcall@f_pvc_vc_vc
 s       s p 72 pvc
@@ -11165,7 +11165,7 @@ l strings.201
 :2292
 :2292
         mst     1 l strings.1156 l strings.1157 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :2293
 :2294
@@ -11180,7 +11180,7 @@ l strings.1160=0
 :2294
 l strings.1159
 :2294
-! 
+!
 !    substcall := substall(s^, m, r) { return result }
 :2295
 :2296
@@ -11193,7 +11193,7 @@ l strings.1159
         ldp                             ! Load complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.1161=8
         cuf     l strings.188 3 0 8 8   ! Call user function
@@ -11205,12 +11205,12 @@ l strings.1161=8
         reta    40                      ! Return from procedure/function(t)
 l strings.1156=0
 l strings.1157=48
-! 
+!
 ! overload function substcall(s: pstring; view m: string; r: pstring): pstring;
 e f
 :2299
 :2300
-! 
+!
 ! begin
 b f substcall@f_pvc_vc_pvc
 s       s p 64 pvc
@@ -11221,7 +11221,7 @@ l strings.202
 :2302
 :2302
         mst     1 l strings.1163 l strings.1164 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (r = nil) then throw(StringNil);
 :2303
 :2304
@@ -11240,7 +11240,7 @@ l strings.1167=0
 :2304
 l strings.1166
 :2304
-! 
+!
 !    substcall := substcall(s^, m, r^) { return result }
 :2305
 :2306
@@ -11255,7 +11255,7 @@ l strings.1166
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1168=8
         cuf     l strings.197 3 0 8 8   ! Call user function
@@ -11267,12 +11267,12 @@ l strings.1168=8
         reta    32                      ! Return from procedure/function(t)
 l strings.1163=0
 l strings.1164=48
-! 
+!
 ! overload function substcall(s: pstring; m: pstring; view r: string): pstring;
 e f
 :2309
 :2310
-! 
+!
 ! begin
 b f substcall@f_pvc_pvc_vc
 s       s p 64 pvc
@@ -11283,7 +11283,7 @@ l strings.203
 :2312
 :2312
         mst     1 l strings.1170 l strings.1171 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (m = nil) then throw(StringNil);
 :2313
 :2314
@@ -11302,7 +11302,7 @@ l strings.1174=0
 :2314
 l strings.1173
 :2314
-! 
+!
 !    substcall := substcall(s^, m^, r) { return result }
 :2315
 :2316
@@ -11317,7 +11317,7 @@ l strings.1173
         spc                             ! Simplify complex pointer
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.1175=8
         cuf     l strings.197 3 0 8 8   ! Call user function
@@ -11329,12 +11329,12 @@ l strings.1175=8
         reta    32                      ! Return from procedure/function(t)
 l strings.1170=0
 l strings.1171=48
-! 
+!
 ! overload function substcall(s: pstring; m: pstring; r: pstring): pstring;
 e f
 :2319
 :2320
-! 
+!
 ! begin
 b f substcall@f_pvc_pvc_pvc
 s       s p 56 pvc
@@ -11345,7 +11345,7 @@ l strings.204
 :2322
 :2322
         mst     1 l strings.1177 l strings.1178 ! Mark(frame) stack
-! 
+!
 !    if (s = nil) or (m = nil) or (r = nil) then throw(StringNil);
 :2323
 :2324
@@ -11368,7 +11368,7 @@ l strings.1181=0
 :2324
 l strings.1180
 :2324
-! 
+!
 !    substcall := substcall(s^, m^, r^) { return result }
 :2325
 :2326
@@ -11385,7 +11385,7 @@ l strings.1180
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1182=8
         cuf     l strings.197 3 0 8 8   ! Call user function
@@ -11397,22 +11397,22 @@ l strings.1182=8
         reta    24                      ! Return from procedure/function(t)
 l strings.1177=0
 l strings.1178=48
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Repeat string
-! 
+!
 ! Finds the source string, repeated the specified number of times, into the
 ! destination.
-! 
+!
 ! Forms: 
-! 
+!
 ! procedure rep(pstring, string, integer) - repeat source string into dynamic
 !                                           result.
 ! procedure rep(string, string, integer) - repeat source string to padded string.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function rep(view s: string;  { source string }
 e f
 :2329
@@ -11436,7 +11436,7 @@ e f
 :2346
 !              : pstring; { result }
 :2347
-! 
+!
 ! var x, i: integer; { string indexes }
 b f rep@f_vc_i
 s       s p 48 vc
@@ -11448,14 +11448,14 @@ s       x l -32 i
 !     d:    pstring; { result holder }
 :2350
 s       d l -40 pvc
-! 
+!
 ! begin
 l strings.66
 :2351
 :2352
 :2352
         mst     1 l strings.1184 l strings.1185 ! Mark(frame) stack
-! 
+!
 !    if r < 0 then throw(NegativeRepeatCount);
 :2353
 :2354
@@ -11492,7 +11492,7 @@ l strings.1189=0
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1190
-! 
+!
 !       x := 1; { set 1st character of destination }
 :2357
 :2358
@@ -11506,7 +11506,7 @@ l strings.1191
         ldci    0                       ! Load constant(t)
         neqi                            ! Not equal(t)
          fjp l strings.1192
-! 
+!
 !          for i := 1 to max(s) do begin { copy }
 :2360
 :2361
@@ -11525,7 +11525,7 @@ l strings.1193
         lodi    2 -56                   ! Load local value(t)
         leqi                            ! Less than or equal(t)
         fjp     l strings.1194          ! False jump
-! 
+!
 !             d^[x] := s[i]; { copy character }
 :2362
 :2363
@@ -11545,7 +11545,7 @@ l strings.1193
 !             x := x+1 { next character }
 :2364
         lodi    2 -32                   ! Load local value(t)
-! 
+!
 !          end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -11567,14 +11567,14 @@ l strings.1194
 !          r := r-1 { count }
 :2367
         lodi    2 40                    ! Load local value(t)
-! 
+!
 !       end
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
         stri    2 40                    ! Store local(t)
 :2368
 :2369
-! 
+!
 !    end;
         ujp     l strings.1191          ! Unconditional jump
 l strings.1192
@@ -11583,11 +11583,11 @@ l strings.1192
 :2371
 l strings.1190
 :2371
-! 
+!
 !    rep := d { return result }
 :2372
 :2373
-! 
+!
 ! end;
         loda    2 -40                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -11597,7 +11597,7 @@ l strings.1190
         reta    24                      ! Return from procedure/function(t)
 l strings.1184=40
 l strings.1185=32
-! 
+!
 ! overload function rep(s: pstring;  { source string }
 e f
 :2376
@@ -11606,7 +11606,7 @@ e f
 :2378
 !                       : pstring; { result }
 :2379
-! 
+!
 ! begin
 b f rep@f_pvc_i
 s       s p 48 pvc
@@ -11616,7 +11616,7 @@ l strings.67
 :2381
 :2381
         mst     1 l strings.1196 l strings.1197 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :2382
 :2383
@@ -11631,7 +11631,7 @@ l strings.1200=0
 :2383
 l strings.1199
 :2383
-! 
+!
 !    rep := rep(s^, r)
 :2384
 :2385
@@ -11641,7 +11641,7 @@ l strings.1199
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
         lodi    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.1201=8
         cuf     l strings.66 2 0 8 8    ! Call user function
@@ -11653,7 +11653,7 @@ l strings.1201=8
         reta    16                      ! Return from procedure/function(t)
 l strings.1196=0
 l strings.1197=24
-! 
+!
 ! overload procedure rep(var  d: string;   { destination string }
 e f
 :2388
@@ -11662,7 +11662,7 @@ e f
 :2390
 !                             r: integer); { repeat count }
 :2391
-! 
+!
 ! begin
 b r rep@p_vc_vc_i
 s       d p 64 vc
@@ -11673,7 +11673,7 @@ l strings.68
 :2393
 :2393
         mst     1 l strings.1203 l strings.1204 ! Mark(frame) stack
-! 
+!
 !    clears(d); { clear destination }
 :2394
 :2395
@@ -11691,7 +11691,7 @@ l strings.1207
         ldci    0                       ! Load constant(t)
         neqi                            ! Not equal(t)
          fjp l strings.1208
-! 
+!
 !       cat(d, s); { concatenate to accumulator }
 :2397
 :2398
@@ -11706,14 +11706,14 @@ l strings.1209=0
 !       r := r-1 { count }
 :2399
         lodi    2 40                    ! Load local value(t)
-! 
+!
 !    end
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
         stri    2 40                    ! Store local(t)
 :2400
 :2401
-! 
+!
 ! end;
         ujp     l strings.1207          ! Unconditional jump
 l strings.1208
@@ -11723,21 +11723,21 @@ l strings.1208
         retp    40                      ! Return from procedure/function(t)
 l strings.1203=0
 l strings.1204=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Trim leading and trailing spaces
-! 
+!
 ! Removes leading and trailing spaces from string. Note that "remove trailing
 ! spaces" is redundant to the idea of padded strings.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure trim(pstring, string) - trim to dynamic result.
 ! procedure trim(string, string) - trim to padded result.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function trim(view s: string): pstring;
 e r
 :2404
@@ -11756,7 +11756,7 @@ e r
 :2417
 :2418
 :2419
-! 
+!
 ! var si, ei: integer; { leading and trailing spaces }
 b f trim@f_vc
 s       s p 40 vc
@@ -11767,14 +11767,14 @@ s       si l -32 i
 !     d:      pstring; { result holder }
 :2422
 s       d l -40 pvc
-! 
+!
 ! begin
 l strings.69
 :2423
 :2424
 :2424
         mst     1 l strings.1211 l strings.1212 ! Mark(frame) stack
-! 
+!
 !    if max(s) = 0 then newstr(d, 0) { string empty, create empty result }
 :2425
 :2426
@@ -11796,7 +11796,7 @@ l strings.1215=0
         ujp     l strings.1216          ! Unconditional jump
 l strings.1214
 :2427
-! 
+!
 !       si :=1; { bracket the string }
 :2428
 :2429
@@ -11894,7 +11894,7 @@ l strings.1221
         ldp                             ! Load complex pointer
         lodi    2 -32                   ! Load local value(t)
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
 l strings.1224=8
         cuf     l strings.60 3 0 8 8    ! Call user function
@@ -11907,11 +11907,11 @@ l strings.1223
 :2439
 l strings.1216
 :2439
-! 
+!
 !    trim := d { return result }
 :2440
 :2441
-! 
+!
 ! end;
         loda    2 -40                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -11921,12 +11921,12 @@ l strings.1216
         reta    16                      ! Return from procedure/function(t)
 l strings.1211=24
 l strings.1212=40
-! 
+!
 ! overload function trim(s: pstring): pstring;
 e f
 :2444
 :2445
-! 
+!
 ! begin
 b f trim@f_pvc
 s       s p 40 pvc
@@ -11935,7 +11935,7 @@ l strings.70
 :2447
 :2447
         mst     1 l strings.1226 l strings.1227 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :2448
 :2449
@@ -11950,7 +11950,7 @@ l strings.1230=0
 :2449
 l strings.1229
 :2449
-! 
+!
 !    trim := trim(s^)  { return result }
 :2450
 :2451
@@ -11959,7 +11959,7 @@ l strings.1229
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1231=8
         cuf     l strings.69 1 0 8 8    ! Call user function
@@ -11971,12 +11971,12 @@ l strings.1231=8
         reta    8                       ! Return from procedure/function(t)
 l strings.1226=0
 l strings.1227=16
-! 
+!
 ! overload procedure trim(var d: string; view s: string);
 e f
 :2454
 :2455
-! 
+!
 ! var l:      integer; { length }
 b r trim@p_vc_vc
 s       d p 56 vc
@@ -11988,14 +11988,14 @@ s       l l -24 i
 :2458
 s       di l -32 i
 s       si l -40 i
-! 
+!
 ! begin
 l strings.71
 :2459
 :2460
 :2460
         mst     1 l strings.1233 l strings.1234 ! Mark(frame) stack
-! 
+!
 !    l := len(s); { find length }
 :2461
 :2462
@@ -12012,7 +12012,7 @@ l strings.1236=8
         ldci    0                       ! Load constant(t)
         neqi                            ! Not equal(t)
          fjp l strings.1237
-! 
+!
 !       si := 1; { find leading space }
 :2464
 :2465
@@ -12053,7 +12053,7 @@ l strings.1240
         lodi    2 -24                   ! Load local value(t)
         leqi                            ! Less than or equal(t)
          fjp l strings.1241
-! 
+!
 !          { check destination overrun }
 !          if di > max(d) then throw(StringDestinationOverflow);
 :2469
@@ -12095,7 +12095,7 @@ l strings.1242
 !          di := di+1
 :2474
         lodi    2 -32                   ! Load local value(t)
-! 
+!
 !       end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -12118,7 +12118,7 @@ l strings.1244
         max     1                       ! Maximum dimension of array
         leqi                            ! Less than or equal(t)
          fjp l strings.1245
-! 
+!
 !          d[di] := ' '; { blank out }
 :2479
 :2480
@@ -12132,14 +12132,14 @@ l strings.1244
 !          di := di+1 { next }
 :2481
         lodi    2 -32                   ! Load local value(t)
-! 
+!
 !       end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         stri    2 -32                   ! Store local(t)
 :2482
 :2483
-! 
+!
 !    end else clears(d) { input empty, clear result as well }
         ujp     l strings.1244          ! Unconditional jump
 l strings.1245
@@ -12152,7 +12152,7 @@ l strings.1237
         sfr     l strings.1247          ! Set function result
         lda     2 56                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.1247=0
         cup     l strings.15 1          ! Call user procedure
@@ -12164,16 +12164,16 @@ l strings.1246
         retp    32                      ! Return from procedure/function(t)
 l strings.1233=24
 l strings.1234=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Count number of words
-! 
+!
 ! Counts the number of words in the string, and returns that. Words are non-space
 ! character sequences divided by spaces.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function words(view s: string): integer;
 e r
 :2488
@@ -12187,7 +12187,7 @@ e r
 :2496
 :2497
 :2498
-! 
+!
 ! var si: integer; { string index }
 b f words@f_vc
 s       s p 40 vc
@@ -12200,14 +12200,14 @@ s       wc l -32 i
 !     l:  integer; { length of string }
 :2502
 s       l l -40 i
-! 
+!
 ! begin
 l strings.72
 :2503
 :2504
 :2504
         mst     1 l strings.1249 l strings.1250 ! Mark(frame) stack
-! 
+!
 !    wc := 0; { clear word count }
 :2505
 :2506
@@ -12232,11 +12232,11 @@ l strings.1252=8
         ldci    0                       ! Load constant(t)
         neqi                            ! Not equal(t)
          fjp l strings.1253
-! 
+!
 !       repeat { count words }
 :2510
 :2511
-! 
+!
 !          { skip leading spaces }
 !          while (s[si] = ' ') and (si < l) do si := si+1; 
 l strings.1254
@@ -12321,12 +12321,12 @@ l strings.1259
         ujp     l strings.1259          ! Unconditional jump
 l strings.1260
 :2519
-! 
+!
 !       until si = l { until end of string }
 :2520
 :2521
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         lodi    2 -40                   ! Load local value(t)
         equi                            ! Equal(t)
@@ -12337,7 +12337,7 @@ l strings.1253
 :2523
 !    words := wc { return word count }
 :2524
-! 
+!
 ! end;
         lodi    2 -32                   ! Load local value(t)
         stri    2 56                    ! Store local(t)
@@ -12346,12 +12346,12 @@ l strings.1253
         reti    16                      ! Return from procedure/function(t)
 l strings.1249=24
 l strings.1250=24
-! 
+!
 ! overload function words(s: pstring): integer;
 e f
 :2527
 :2528
-! 
+!
 ! begin
 b f words@f_pvc
 s       s p 40 pvc
@@ -12360,7 +12360,7 @@ l strings.73
 :2530
 :2530
         mst     1 l strings.1262 l strings.1263 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :2531
 :2532
@@ -12375,7 +12375,7 @@ l strings.1266=0
 :2532
 l strings.1265
 :2532
-! 
+!
 !    words := words(s^)
 :2533
 :2534
@@ -12384,7 +12384,7 @@ l strings.1265
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.1267=8
         cuf     l strings.72 1 0 8 8    ! Call user function
@@ -12395,29 +12395,29 @@ l strings.1267=8
         reti    8                       ! Return from procedure/function(t)
 l strings.1262=0
 l strings.1263=16
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Extract words
-! 
+!
 ! Extracts the starting word to the indicated word from the source string to
 ! the target string. The number of spaces between words are reduced to one, and
 ! leading and trailing spaces removed.
-! 
+!
 ! For the padded version, we do the fill into the same string of the substring
 ! without using a buffer by using the principle: the result will either be at the
 ! same character position as its place in the source, or the source will be after
 ! the same position in the result.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure extwords(pstring, string, integer, integer) - Extracts a string to
 !                                                         dynamic result.
 ! procedure extwords(string, string, integer, integer) - Extracts a string to
 !                                                        padded result.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function extwords(view s: string; l, r: integer): pstring;
 e f
 :2537
@@ -12444,7 +12444,7 @@ e f
 :2558
 :2559
 :2560
-! 
+!
 ! var si: integer; { index for string }
 b f extwords@f_vc_i_i
 s       s p 56 vc
@@ -12471,28 +12471,28 @@ s       d l -60 pvc
 !     i:  integer;
 :2568
 s       i l -68 i
-! 
+!
 ! { check next character }
-! 
+!
 ! function chkchr: char;
 :2569
 :2570
 :2571
 :2572
-! 
+!
 ! var c: char;
 b f chkchr@f
 :2573
 :2574
 s       c l -25 c
-! 
+!
 ! begin
 l strings.1269
 :2575
 :2576
 :2576
         mst     2 l strings.1270 l strings.1271 ! Mark(frame) stack
-! 
+!
 !    if si <= max(s) then c := s[si] { return character from string }
 :2577
 :2578
@@ -12522,7 +12522,7 @@ l strings.1274
 :2579
 !    chkchr := c { return result }
 :2580
-! 
+!
 ! end;
         lodc    3 -25                   ! Load local value(t)
         chkc    0 255                   ! Bounds check(t)
@@ -12532,16 +12532,16 @@ l strings.1274
         retc    0                       ! Return from procedure/function(t)
 l strings.1270=8
 l strings.1271=32
-! 
+!
 ! { skip spaces }
-! 
+!
 ! procedure skpspc;
 e f
 :2583
 :2584
 :2585
 :2586
-! 
+!
 ! begin
 b r skpspc@p
 l strings.1275
@@ -12549,7 +12549,7 @@ l strings.1275
 :2588
 :2588
         mst     2 l strings.1276 l strings.1277 ! Mark(frame) stack
-! 
+!
 !    while (chkchr = ' ') and (si <= max(s)) do si := si+1
 :2589
 :2590
@@ -12570,7 +12570,7 @@ l strings.1280=8
         and                             ! And booleans
          fjp l strings.1281
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 ! end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -12583,16 +12583,16 @@ l strings.1281
         retp    0                       ! Return from procedure/function(t)
 l strings.1276=0
 l strings.1277=40
-! 
+!
 ! { skip word }
-! 
+!
 ! procedure skpwrd;
 e r
 :2593
 :2594
 :2595
 :2596
-! 
+!
 ! begin
 b r skpwrd@p
 l strings.1282
@@ -12600,7 +12600,7 @@ l strings.1282
 :2598
 :2598
         mst     2 l strings.1283 l strings.1284 ! Mark(frame) stack
-! 
+!
 !    skpspc;
 :2599
 :2600
@@ -12626,7 +12626,7 @@ l strings.1288=8
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.1289
-! 
+!
 !       si := si+1; { next character }
 :2602
 :2603
@@ -12646,7 +12646,7 @@ l strings.1288=8
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.1290
-! 
+!
 !          tc := tc+1; { count }
 :2606
 :2607
@@ -12656,20 +12656,20 @@ l strings.1288=8
         stri    2 -32                   ! Store local(t)
 !          wo := true { set word output }
 :2608
-! 
+!
 !       end
         ldcb    1                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
         strb    2 -49                   ! Store local(t)
 :2609
 :2610
-! 
+!
 !    end
 l strings.1290
 :2611
 :2612
 :2612
-! 
+!
 ! end;
         ujp     l strings.1287          ! Unconditional jump
 l strings.1289
@@ -12679,16 +12679,16 @@ l strings.1289
         retp    0                       ! Return from procedure/function(t)
 l strings.1283=0
 l strings.1284=40
-! 
+!
 ! { place word }
-! 
+!
 ! procedure plcwrd;
 e r
 :2615
 :2616
 :2617
 :2618
-! 
+!
 ! begin
 b r plcwrd@p
 l strings.1291
@@ -12696,7 +12696,7 @@ l strings.1291
 :2620
 :2620
         mst     2 l strings.1292 l strings.1293 ! Mark(frame) stack
-! 
+!
 !    skpspc;
 :2621
 :2622
@@ -12722,7 +12722,7 @@ l strings.1297=8
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.1298
-! 
+!
 !       d^[di] := chkchr; { place destination character }
 :2624
 :2625
@@ -12747,14 +12747,14 @@ l strings.1299=8
 !       si := si+1 { next character }
 :2627
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         stri    2 -24                   ! Store local(t)
 :2628
 :2629
-! 
+!
 ! end;
         ujp     l strings.1296          ! Unconditional jump
 l strings.1298
@@ -12764,7 +12764,7 @@ l strings.1298
         retp    0                       ! Return from procedure/function(t)
 l strings.1292=0
 l strings.1293=40
-! 
+!
 ! begin
 e r
 l strings.74
@@ -12772,7 +12772,7 @@ l strings.74
 :2633
 :2633
         mst     1 l strings.1300 l strings.1301 ! Mark(frame) stack
-! 
+!
 !    tc := 0; { set number of result characters }
 :2634
 :2635
@@ -12810,7 +12810,7 @@ l strings.1304
         max     1                       ! Maximum dimension of array
         leqi                            ! Less than or equal(t)
          fjp l strings.1305
-! 
+!
 !       tw := tw+1; { count words }
 :2642
 :2643
@@ -12848,7 +12848,7 @@ l strings.1307=0
 :2647
 !       skpspc { skip spaces }
 :2648
-! 
+!
 !    end;
         sfr     l strings.1308          ! Set function result
 l strings.1308=0
@@ -12954,7 +12954,7 @@ l strings.1315
         lodi    2 -84                   ! Load local value(t)
         leqi                            ! Less than or equal(t)
         fjp     l strings.1316          ! False jump
-! 
+!
 !       plcwrd; { place word to result }
 :2659
 :2660
@@ -12968,7 +12968,7 @@ l strings.1317=0
         lodi    2 40                    ! Load local value(t)
         lesi                            ! Less than(t)
          fjp l strings.1318
-! 
+!
 !          d^[di] := ' '; { place separator space }
 :2662
 :2663
@@ -12991,7 +12991,7 @@ l strings.1317=0
         stri    2 -48                   ! Store local(t)
 :2665
 :2666
-! 
+!
 !    end;
 l strings.1318
 :2667
@@ -13009,11 +13009,11 @@ l strings.1316
 :2668
         lda     2 -68                   ! Load local address
         inv                             ! Invalidate address
-! 
+!
 !    extwords := d { return result }
 :2669
 :2670
-! 
+!
 ! end;
         loda    2 -60                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -13023,12 +13023,12 @@ l strings.1316
         reta    32                      ! Return from procedure/function(t)
 l strings.1300=72
 l strings.1301=32
-! 
+!
 ! overload function extwords(s: pstring; l, r: integer): pstring;
 e f
 :2673
 :2674
-! 
+!
 ! begin
 b f extwords@f_pvc_i_i
 s       s p 56 pvc
@@ -13039,7 +13039,7 @@ l strings.75
 :2676
 :2676
         mst     1 l strings.1320 l strings.1321 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :2677
 :2678
@@ -13054,7 +13054,7 @@ l strings.1324=0
 :2678
 l strings.1323
 :2678
-! 
+!
 !    extwords := extwords(s^, l, r)
 :2679
 :2680
@@ -13065,7 +13065,7 @@ l strings.1323
         spc                             ! Simplify complex pointer
         lodi    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.1325=8
         cuf     l strings.74 3 0 8 8    ! Call user function
@@ -13077,12 +13077,12 @@ l strings.1325=8
         reta    24                      ! Return from procedure/function(t)
 l strings.1320=0
 l strings.1321=32
-! 
+!
 ! overload procedure extwords(var d: string; view s: string; l, r: integer);
 e f
 :2683
 :2684
-! 
+!
 ! var si: integer; { index for string }
 b r extwords@p_vc_vc_i_i
 s       d p 72 vc
@@ -13101,28 +13101,28 @@ s       di l -40 i
 !     i:  integer;
 :2689
 s       i l -48 i
-! 
+!
 ! { check next character }
-! 
+!
 ! function chkchr: char;
 :2690
 :2691
 :2692
 :2693
-! 
+!
 ! var c: char;
 b f chkchr@f
 :2694
 :2695
 s       c l -25 c
-! 
+!
 ! begin
 l strings.1327
 :2696
 :2697
 :2697
         mst     2 l strings.1328 l strings.1329 ! Mark(frame) stack
-! 
+!
 !    if si <= max(s) then c := s[si] { return character from string }
 :2698
 :2699
@@ -13152,7 +13152,7 @@ l strings.1332
 :2700
 !    chkchr := c { return result }
 :2701
-! 
+!
 ! end;
         lodc    3 -25                   ! Load local value(t)
         chkc    0 255                   ! Bounds check(t)
@@ -13162,16 +13162,16 @@ l strings.1332
         retc    0                       ! Return from procedure/function(t)
 l strings.1328=8
 l strings.1329=32
-! 
+!
 ! { skip spaces }
-! 
+!
 ! procedure skpspc;
 e f
 :2704
 :2705
 :2706
 :2707
-! 
+!
 ! begin
 b r skpspc@p
 l strings.1333
@@ -13179,7 +13179,7 @@ l strings.1333
 :2709
 :2709
         mst     2 l strings.1334 l strings.1335 ! Mark(frame) stack
-! 
+!
 !    while (chkchr = ' ') and (si <= max(s)) do si := si+1
 :2710
 :2711
@@ -13200,7 +13200,7 @@ l strings.1338=8
         and                             ! And booleans
          fjp l strings.1339
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 ! end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -13213,16 +13213,16 @@ l strings.1339
         retp    0                       ! Return from procedure/function(t)
 l strings.1334=0
 l strings.1335=40
-! 
+!
 ! { skip word }
-! 
+!
 ! procedure skpwrd;
 e r
 :2714
 :2715
 :2716
 :2717
-! 
+!
 ! begin
 b r skpwrd@p
 l strings.1340
@@ -13230,7 +13230,7 @@ l strings.1340
 :2719
 :2719
         mst     2 l strings.1341 l strings.1342 ! Mark(frame) stack
-! 
+!
 !    skpspc;
 :2720
 :2721
@@ -13263,23 +13263,23 @@ l strings.1346=8
         ujp     l strings.1345          ! Unconditional jump
 l strings.1347
 :2722
-! 
+!
 ! end;
 :2723
 :2724
         retp    0                       ! Return from procedure/function(t)
 l strings.1341=0
 l strings.1342=40
-! 
+!
 ! { place word }
-! 
+!
 ! procedure plcwrd;
 e r
 :2725
 :2726
 :2727
 :2728
-! 
+!
 ! begin
 b r plcwrd@p
 l strings.1348
@@ -13287,7 +13287,7 @@ l strings.1348
 :2730
 :2730
         mst     2 l strings.1349 l strings.1350 ! Mark(frame) stack
-! 
+!
 !    skpspc;
 :2731
 :2732
@@ -13313,7 +13313,7 @@ l strings.1354=8
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.1355
-! 
+!
 !       d[di] := chkchr; { place destination character }
 :2734
 :2735
@@ -13336,14 +13336,14 @@ l strings.1356=8
 !       si := si+1 { next character }
 :2737
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         stri    2 -24                   ! Store local(t)
 :2738
 :2739
-! 
+!
 ! end;
         ujp     l strings.1353          ! Unconditional jump
 l strings.1355
@@ -13353,7 +13353,7 @@ l strings.1355
         retp    0                       ! Return from procedure/function(t)
 l strings.1349=0
 l strings.1350=40
-! 
+!
 ! begin
 e r
 l strings.76
@@ -13361,7 +13361,7 @@ l strings.76
 :2743
 :2743
         mst     1 l strings.1357 l strings.1358 ! Mark(frame) stack
-! 
+!
 !    tw := 0; { set number of words }
 :2744
 :2745
@@ -13390,7 +13390,7 @@ l strings.1361
         max     1                       ! Maximum dimension of array
         leqi                            ! Less than or equal(t)
          fjp l strings.1362
-! 
+!
 !       tw := tw+1; { count words }
 :2750
 :2751
@@ -13406,7 +13406,7 @@ l strings.1363=0
 :2752
 !       skpspc { skip spaces }
 :2753
-! 
+!
 !    end;
         sfr     l strings.1364          ! Set function result
 l strings.1364=0
@@ -13504,7 +13504,7 @@ l strings.1370
         lodi    2 -64                   ! Load local value(t)
         leqi                            ! Less than or equal(t)
         fjp     l strings.1371          ! False jump
-! 
+!
 !       plcwrd; { place word to result }
 :2763
 :2764
@@ -13518,7 +13518,7 @@ l strings.1372=0
         lodi    2 40                    ! Load local value(t)
         lesi                            ! Less than(t)
          fjp l strings.1373
-! 
+!
 !          d[di] := ' '; { place separator space }
 :2766
 :2767
@@ -13539,7 +13539,7 @@ l strings.1372=0
         stri    2 -40                   ! Store local(t)
 :2769
 :2770
-! 
+!
 !    end;
 l strings.1373
 :2771
@@ -13568,7 +13568,7 @@ l strings.1374
         max     1                       ! Maximum dimension of array
         leqi                            ! Less than or equal(t)
          fjp l strings.1375
-! 
+!
 !       d[di] := ' ';
 :2774
 :2775
@@ -13582,14 +13582,14 @@ l strings.1374
 !       di := di+1
 :2776
         lodi    2 -40                   ! Load local value(t)
-! 
+!
 !    end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         stri    2 -40                   ! Store local(t)
 :2777
 :2778
-! 
+!
 ! end;
         ujp     l strings.1374          ! Unconditional jump
 l strings.1375
@@ -13599,21 +13599,21 @@ l strings.1375
         retp    48                      ! Return from procedure/function(t)
 l strings.1357=48
 l strings.1358=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Read string from file
-! 
+!
 ! Reads a string from the file to the destination. For the dynamic version, 
 ! because we cant know how long the string is before we read it in, we have to
 ! use a fixed length buffer, which is 250 characters long. 
-! 
+!
 ! If the string read is too large for the destination, it is trucated, and the
 ! overflow error flag set. The rest of the input string up to eoln is then
 ! discarded. Overflow will apply even if the end of the read string is blank.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure reads(text, pstring, boolean) - Read string to dynamic result, with
 !                                           overflow indication.
 ! procedure reads(text, string, boolean) - Read string to padded result. With
@@ -13626,9 +13626,9 @@ l strings.1358=32
 !                                    indication.
 ! procedure reads(pstring) - Read string to dynamic result.
 ! procedure reads(string) - Read string to padded result.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure reads(var f:   text;     { file to read from }
 e r
 :2781
@@ -13666,7 +13666,7 @@ e r
 :2812
 !                 var ovf: boolean); { overflow flag }
 :2813
-! 
+!
 ! var i:    integer; { index for string }
 b r reads@p_fc_pvc_b
 s       f p 56 fc
@@ -13682,14 +13682,14 @@ s       c l -25 c
 :2817
 t       l strings.1377 1 200
 s       buff l -225 ax(1,200)ic
-! 
+!
 ! begin
 l strings.77
 :2818
 :2819
 :2819
         mst     1 l strings.1378 l strings.1379 ! Mark(frame) stack
-! 
+!
 !    i := 1; { set 1st string character }
 :2820
 :2821
@@ -13709,7 +13709,7 @@ l strings.1381
         csp     eln                     ! Call system procedure/function: Find eoln of text file
         notb                            ! Not(t)
          fjp l strings.1382
-! 
+!
 !       { check past string end }
 !       if i > maxlin then begin { string overflows }
 :2824
@@ -13719,7 +13719,7 @@ l strings.1381
         ldci    200                     ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1383
-! 
+!
 !          ovf := true; { flag overflow }
 :2827
 :2828
@@ -13737,14 +13737,14 @@ l strings.1381
         ldcc    0                                           ! Load constant(t)
         ldcc    255                                         ! Load constant(t)
         csp     rcb                     ! Call system procedure/function: Read character from text file with range check
-! 
+!
 !       end else begin { place string character }
 :2830
 :2831
         ujp     l strings.1384          ! Unconditional jump
 l strings.1383
 :2831
-! 
+!
 !          read(f, buff[i]); { read next character }
 :2832
 :2833
@@ -13763,14 +13763,14 @@ l strings.1383
 !          i := i+1 { next }
 :2834
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !       end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         stri    2 -24                   ! Store local(t)
 :2835
 :2836
-! 
+!
 !    end;
 l strings.1384
 :2837
@@ -13817,7 +13817,7 @@ l strings.1386
         chki    1 200                   ! Bounds check(t)
         deci    1                       ! Decrement(t)
         ixa     1                       ! Scale array access
-! 
+!
 ! end;
         indc    0                       ! Load indirect(t)
         chkc    0 255                   ! Bounds check(t)
@@ -13839,7 +13839,7 @@ l strings.1387
         retp    24                      ! Return from procedure/function(t)
 l strings.1378=232
 l strings.1379=32
-! 
+!
 ! overload procedure reads(var f:   text;     { file to read from }
 e r
 :2843
@@ -13848,7 +13848,7 @@ e r
 :2845
 !                          var ovf: boolean); { overflow flag }
 :2846
-! 
+!
 ! var i: integer; { index for string }
 b r reads@p_fc_vc_b
 s       f p 64 fc
@@ -13863,14 +13863,14 @@ s       l l -32 i
 !     c: char;    { character discard holder }
 :2850
 s       c l -33 c
-! 
+!
 ! begin
 l strings.78
 :2851
 :2852
 :2852
         mst     1 l strings.1389 l strings.1390 ! Mark(frame) stack
-! 
+!
 !    l := max(s); { find length of string }
 :2853
 :2854
@@ -13930,7 +13930,7 @@ l strings.1394
         csp     eln                     ! Call system procedure/function: Find eoln of text file
         notb                            ! Not(t)
          fjp l strings.1395
-! 
+!
 !       { check past string end }
 !       if i > l then begin { string overflows }
 :2859
@@ -13940,7 +13940,7 @@ l strings.1394
         lodi    2 -32                   ! Load local value(t)
         grti                            ! Greater than(t)
          fjp l strings.1396
-! 
+!
 !          ovf := true; { flag overflow }
 :2862
 :2863
@@ -13958,14 +13958,14 @@ l strings.1394
         ldcc    0                                           ! Load constant(t)
         ldcc    255                                         ! Load constant(t)
         csp     rcb                     ! Call system procedure/function: Read character from text file with range check
-! 
+!
 !       end else begin { place string character }
 :2865
 :2866
         ujp     l strings.1397          ! Unconditional jump
 l strings.1396
 :2866
-! 
+!
 !          read(f, s[i]); { read next character }
 :2867
 :2868
@@ -13983,20 +13983,20 @@ l strings.1396
 !          i := i+1 { next }
 :2869
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !       end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         stri    2 -24                   ! Store local(t)
 :2870
 :2871
-! 
+!
 !    end
 l strings.1397
 :2872
 :2873
 :2873
-! 
+!
 ! end;
         ujp     l strings.1394          ! Unconditional jump
 l strings.1395
@@ -14006,14 +14006,14 @@ l strings.1395
         retp    32                      ! Return from procedure/function(t)
 l strings.1389=40
 l strings.1390=32
-! 
+!
 ! overload procedure reads(var f: text;     { file to read from }
 e r
 :2876
 :2877
 !                          var s: pstring); { string to read to }
 :2878
-! 
+!
 ! var ovf: boolean;
 b r reads@p_fc_pvc
 s       f p 48 fc
@@ -14021,14 +14021,14 @@ s       s p 40 pvc
 :2879
 :2880
 s       ovf l -17 b
-! 
+!
 ! begin
 l strings.79
 :2881
 :2882
 :2882
         mst     1 l strings.1399 l strings.1400 ! Mark(frame) stack
-! 
+!
 !    reads(f, s, ovf); { read string }
 :2883
 :2884
@@ -14045,7 +14045,7 @@ l strings.1402=0
          fjp l strings.1403
         sfr     l strings.1404          ! Set function result
         lao     101                     ! Load global address
-! 
+!
 ! end;
 l strings.1404=0
         cup     l strings.211 1         ! Call user procedure
@@ -14057,14 +14057,14 @@ l strings.1403
         retp    16                      ! Return from procedure/function(t)
 l strings.1399=8
 l strings.1400=24
-! 
+!
 ! overload procedure reads(var f: text;    { file to read from }
 e r
 :2888
 :2889
 !                          var s: string); { string to read to }
 :2890
-! 
+!
 ! var ovf: boolean;
 b r reads@p_fc_vc
 s       f p 56 fc
@@ -14072,14 +14072,14 @@ s       s p 40 vc
 :2891
 :2892
 s       ovf l -17 b
-! 
+!
 ! begin
 l strings.80
 :2893
 :2894
 :2894
         mst     1 l strings.1406 l strings.1407 ! Mark(frame) stack
-! 
+!
 !    reads(f, s, ovf); { read string }
 :2895
 :2896
@@ -14097,7 +14097,7 @@ l strings.1409=0
          fjp l strings.1410
         sfr     l strings.1411          ! Set function result
         lao     101                     ! Load global address
-! 
+!
 ! end;
 l strings.1411=0
         cup     l strings.211 1         ! Call user procedure
@@ -14109,14 +14109,14 @@ l strings.1410
         retp    24                      ! Return from procedure/function(t)
 l strings.1406=8
 l strings.1407=32
-! 
+!
 ! overload procedure reads(var s:   pstring;  { string to read to }
 e r
 :2900
 :2901
 !                          var ovf: boolean); { overflow flag }
 :2902
-! 
+!
 ! begin
 b r reads@p_pvc_b
 s       s p 48 pvc
@@ -14126,7 +14126,7 @@ l strings.81
 :2904
 :2904
         mst     1 l strings.1413 l strings.1414 ! Mark(frame) stack
-! 
+!
 !    reads(input, s, ovf)
 :2905
 :2906
@@ -14134,7 +14134,7 @@ l strings.81
         lao     0                       ! Load global address
         loda    2 48                    ! Load local value(t)
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.1416=0
         cup     l strings.77 3          ! Call user procedure
@@ -14144,14 +14144,14 @@ l strings.1416=0
         retp    16                      ! Return from procedure/function(t)
 l strings.1413=0
 l strings.1414=24
-! 
+!
 ! overload procedure reads(var s:   string;   { string to read to }
 e r
 :2909
 :2910
 !                          var ovf: boolean); { overflow flag }
 :2911
-! 
+!
 ! begin
 b r reads@p_vc_b
 s       s p 48 vc
@@ -14161,7 +14161,7 @@ l strings.82
 :2913
 :2913
         mst     1 l strings.1418 l strings.1419 ! Mark(frame) stack
-! 
+!
 !    reads(input, s, ovf)
 :2914
 :2915
@@ -14170,7 +14170,7 @@ l strings.82
         lda     2 48                    ! Load local address
         ldp                             ! Load complex pointer
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.1421=0
         cup     l strings.78 3          ! Call user procedure
@@ -14180,12 +14180,12 @@ l strings.1421=0
         retp    24                      ! Return from procedure/function(t)
 l strings.1418=0
 l strings.1419=32
-! 
+!
 ! overload procedure reads(var s: pstring); { string to read to }
 e r
 :2918
 :2919
-! 
+!
 ! begin
 b r reads@p_pvc
 s       s p 40 pvc
@@ -14194,14 +14194,14 @@ l strings.83
 :2921
 :2921
         mst     1 l strings.1423 l strings.1424 ! Mark(frame) stack
-! 
+!
 !    reads(input, s)
 :2922
 :2923
         sfr     l strings.1426          ! Set function result
         lao     0                       ! Load global address
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.1426=0
         cup     l strings.79 2          ! Call user procedure
@@ -14211,12 +14211,12 @@ l strings.1426=0
         retp    8                       ! Return from procedure/function(t)
 l strings.1423=0
 l strings.1424=16
-! 
+!
 ! overload procedure reads(var s: string); { string to read to }
 e r
 :2926
 :2927
-! 
+!
 ! begin
 b r reads@p_vc
 s       s p 40 vc
@@ -14225,7 +14225,7 @@ l strings.84
 :2929
 :2929
         mst     1 l strings.1428 l strings.1429 ! Mark(frame) stack
-! 
+!
 !    reads(input, s)
 :2930
 :2931
@@ -14233,7 +14233,7 @@ l strings.84
         lao     0                       ! Load global address
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.1431=0
         cup     l strings.80 2          ! Call user procedure
@@ -14243,16 +14243,16 @@ l strings.1431=0
         retp    16                      ! Return from procedure/function(t)
 l strings.1428=0
 l strings.1429=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Place number in string
-! 
+!
 ! Places an arbitrary radix number in a string. Used to generate numbers for all
 ! of the numeric convertion routines.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure nums(var s: string;   { result string }
 e r
 :2934
@@ -14285,15 +14285,15 @@ s       sign l -25 b
 !     t:    integer; { temp }
 :2950
 s       t l -36 i
-! 
+!
 ! { place single digit }
-! 
+!
 ! procedure plcdig;
 :2951
 :2952
 :2953
 :2954
-! 
+!
 ! var v: integer; { digit value }
 b r plcdig@p
 :2955
@@ -14302,14 +14302,14 @@ s       v l -32 i
 !     c: char;    { digit character }
 :2957
 s       c l -33 c
-! 
+!
 ! begin
 l strings.1433
 :2958
 :2959
 :2959
         mst     2 l strings.1434 l strings.1435 ! Mark(frame) stack
-! 
+!
 !    v := n mod r; { extract digit }
 :2960
 :2961
@@ -14370,7 +14370,7 @@ l strings.1438
         retp    0                       ! Return from procedure/function(t)
 l strings.1434=16
 l strings.1435=24
-! 
+!
 ! begin
 e r
 l strings.1432
@@ -14378,7 +14378,7 @@ l strings.1432
 :2970
 :2970
         mst     1 l strings.1439 l strings.1440 ! Mark(frame) stack
-! 
+!
 !    clears(s); { clear result }
 :2971
 :2972
@@ -14408,7 +14408,7 @@ l strings.1442=0
         stri    2 48                    ! Store local(t)
 !       sign := true { set signed }
 :2977
-! 
+!
 !    end;
         ldcb    1                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -14441,7 +14441,7 @@ l strings.1444
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1445
-! 
+!
 !       t := t div r; { shift out lsd }
 :2985
 :2986
@@ -14452,7 +14452,7 @@ l strings.1444
 !       dc := dc+1 { count }
 :2987
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -14494,7 +14494,7 @@ l strings.1448
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1449
-! 
+!
 !       plcdig; { place digits }
 :2995
 :2996
@@ -14505,7 +14505,7 @@ l strings.1450=0
 !       dc := dc-1 { count }
 :2997
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -14523,7 +14523,7 @@ l strings.1449
         ldp                             ! Load complex pointer
         lodi    2 -24                   ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 ! end;
         ldcc    '-'                     ! Load constant(t)
         chkc    0 255                   ! Bounds check(t)
@@ -14535,7 +14535,7 @@ l strings.1451
         retp    32                      ! Return from procedure/function(t)
 l strings.1439=24
 l strings.1440=24
-! 
+!
 ! overload procedure nums(var s: string;   { result string }
 e r
 :3003
@@ -14566,15 +14566,15 @@ s       lhs l -232 i
 !     i:    integer; { index }
 :3012
 s       i l -240 i
-! 
+!
 ! { place character in output string }
-! 
+!
 ! procedure plcchr(c: char);
 :3013
 :3014
 :3015
 :3016
-! 
+!
 ! begin
 b r plcchr@p_c
 s       c p 40 c
@@ -14583,7 +14583,7 @@ l strings.1454
 :3018
 :3018
         mst     2 l strings.1455 l strings.1456 ! Mark(frame) stack
-! 
+!
 !    if si > max(s) then throw(FormatTooLarge);
 :3019
 :3020
@@ -14613,7 +14613,7 @@ l strings.1458
 !    si := si+1 { next }
 :3022
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 ! end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -14623,7 +14623,7 @@ l strings.1458
         retp    8                       ! Return from procedure/function(t)
 l strings.1455=0
 l strings.1456=32
-! 
+!
 ! begin
 e r
 l strings.1452
@@ -14631,7 +14631,7 @@ l strings.1452
 :3026
 :3026
         mst     1 l strings.1460 l strings.1461 ! Mark(frame) stack
-! 
+!
 !    clears(s); { clear result }
 :3027
 :3028
@@ -14781,14 +14781,14 @@ l strings.1475
 :3037
         lda     2 -240                  ! Load local address
         inv                             ! Invalidate address
-! 
+!
 ! end;
 :3038
 :3039
         retp    40                      ! Return from procedure/function(t)
 l strings.1460=240
 l strings.1461=32
-! 
+!
 ! overload function nums(n: integer; { number to place }
 e r
 :3040
@@ -14799,8 +14799,8 @@ e r
 :3043
 !                        : pstring;  { result }
 :3044
-! 
-! 
+!
+!
 ! var buff: packed array [1..maxlin] of char; { string buffer }
 b f nums@f_i_i_i
 s       n p 56 i
@@ -14814,14 +14814,14 @@ s       buff l -216 ax(1,200)ic
 !     s:    pstring; { result holder }
 :3048
 s       s l -224 pvc
-! 
+!
 ! begin
 l strings.1477
 :3049
 :3050
 :3050
         mst     1 l strings.1479 l strings.1480 ! Mark(frame) stack
-! 
+!
 !    if f > 0 then begin { right justify }
 :3051
 :3052
@@ -14829,7 +14829,7 @@ l strings.1477
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1482
-! 
+!
 !       nums(buff, n, f, r); { place in buffer }
 :3053
 :3054
@@ -14852,7 +14852,7 @@ l strings.1483=0
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end else begin { left justified }
 l strings.1484=0
         cup     l strings.22 2          ! Call user procedure
@@ -14862,7 +14862,7 @@ l strings.1484=0
         ujp     l strings.1485          ! Unconditional jump
 l strings.1482
 :3057
-! 
+!
 !       nums(buff, n, 1, r); { place in buffer }
 :3058
 :3059
@@ -14925,7 +14925,7 @@ l strings.1490=0
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end;
 l strings.1491=0
         cup     l strings.18 2          ! Call user procedure
@@ -14934,7 +14934,7 @@ l strings.1491=0
 :3065
 l strings.1485
 :3065
-! 
+!
 !    nums := s { return that }
 :3066
 :3067
@@ -14948,16 +14948,16 @@ l strings.1485
         reta    24                      ! Return from procedure/function(t)
 l strings.1479=208
 l strings.1480=40
-! 
+!
 ! overload procedure nums(var s: string; i: integer; view fmt: string; 
 e f
 :3070
 :3071
 !                         r: integer);
 :3072
-! 
+!
 ! { valid digits in output }
-! 
+!
 ! const digit = ['0'..'9', 'a'..'z', 'A'..'Z'];
 b r nums@p_vc_i_vc_i
 s       s p 72 vc
@@ -14968,7 +14968,7 @@ s       r p 40 i
 :3074
 :3075
 :3076
-! 
+!
 ! var buff:   packed array [1..maxlin] of char;
 :3077
 :3078
@@ -14981,14 +14981,14 @@ s       pi l -232 i
 !     dlrout: boolean; { dollar sign already output }
 :3080
 s       dlrout l -233 b
-! 
+!
 ! begin
 l strings.1492
 :3081
 :3082
 :3082
         mst     1 l strings.1494 l strings.1495 ! Mark(frame) stack
-! 
+!
 !    nums(buff, i, 1, r); { first, get number into standard form }
 :3083
 :3084
@@ -15046,7 +15046,7 @@ l strings.1501
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1502
-! 
+!
 !       if s[pf] in ['9', '0', '-', '+', ',', '$', '&', '%'] then 
 :3090
 :3091
@@ -15069,7 +15069,7 @@ l strings.1501
         ordc                            ! Ordinal(t)
         stri    2 -241                  ! Store local(t)
         ujp     l strings.1504          ! Unconditional jump
-! 
+!
 !          '9': if pi < 1 then s[pf] := ' '
 :3093
 :3094
@@ -15113,7 +15113,7 @@ l strings.1507
 l strings.1509
 :3096
 :3096
-! 
+!
 !             s[pf] := buff[pi]; { transfer digit }
 :3097
 :3098
@@ -15132,7 +15132,7 @@ l strings.1509
 !             pi := pi-1 { back up one in number }
 :3099
         lodi    2 -232                  ! Load local value(t)
-! 
+!
 !          end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -15163,7 +15163,7 @@ l strings.1511:3102
         ldcs    (  48  49  50  51  52  53  54  55  56  57  65  66  67  68  69  70  71  72  73  74  75  76  77  78  79  80  81  82  83  84  85  86  87  88  89  90  97  98  99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122) ! Load constant(t)
         inn                             ! Set inclusion
          fjp l strings.1513
-! 
+!
 !             s[pf] := buff[pi]; { transfer digit }
 :3104
 :3105
@@ -15182,7 +15182,7 @@ l strings.1511:3102
 !             pi := pi-1 { back up one in number }
 :3106
         lodi    2 -232                  ! Load local value(t)
-! 
+!
 !          end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -15251,7 +15251,7 @@ l strings.1520:3113
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1521
-! 
+!
 !             if buff[pi] in digit then 
 :3114
 :3115
@@ -15287,7 +15287,7 @@ l strings.1522
         ldcc    '-'                     ! Load constant(t)
         equc                            ! Equal(t)
          fjp l strings.1524
-! 
+!
 !                s[pf] := '-';
 :3119
 :3120
@@ -15301,14 +15301,14 @@ l strings.1522
 !                pi := pi-1 { back up over sign }
 :3121
         lodi    2 -232                  ! Load local value(t)
-! 
+!
 !             end
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
         stri    2 -232                  ! Store local(t)
 :3122
 :3123
-! 
+!
 !          end;
 l strings.1524
 :3124
@@ -15320,7 +15320,7 @@ l strings.1521
 !          ',': begin
 :3126
 l strings.1525:3126
-! 
+!
 !             if pi < 1 then begin
 :3127
 :3128
@@ -15328,7 +15328,7 @@ l strings.1525:3126
         ldci    1                       ! Load constant(t)
         lesi                            ! Less than(t)
          fjp l strings.1526
-! 
+!
 !                s[pf] := ' '; { out of digits, kill with space }
 :3129
 :3130
@@ -15362,7 +15362,7 @@ l strings.1525:3126
         lodb    2 -233                  ! Load local value(t)
         notb                            ! Not(t)
          fjp l strings.1529
-! 
+!
 !                   s[pf] := '$'; { set '$' }
 :3134
 :3135
@@ -15375,14 +15375,14 @@ l strings.1525:3126
         stoc                            ! Store to address(t)
 !                   dlrout := true { set was output }
 :3136
-! 
+!
 !                end
         ldcb    1                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
         strb    2 -233                  ! Store local(t)
 :3137
 :3138
-! 
+!
 !             end else if not (buff[pi] in digit) then begin
 l strings.1529
 :3139
@@ -15406,7 +15406,7 @@ l strings.1526
         inn                             ! Set inclusion
         notb                            ! Not(t)
          fjp l strings.1531
-! 
+!
 !                s[pf] := ' '; { out of digits, kill with space }
 :3141
 :3142
@@ -15440,7 +15440,7 @@ l strings.1526
         lodb    2 -233                  ! Load local value(t)
         notb                            ! Not(t)
          fjp l strings.1534
-! 
+!
 !                   s[pf] := '$'; { set '$' }
 :3146
 :3147
@@ -15453,14 +15453,14 @@ l strings.1526
         stoc                            ! Store to address(t)
 !                   dlrout := true { set was output }
 :3148
-! 
+!
 !                end
         ldcb    1                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
         strb    2 -233                  ! Store local(t)
 :3149
 :3150
-! 
+!
 !             end
 l strings.1534
 :3151
@@ -15470,7 +15470,7 @@ l strings.1533
 :3152
 l strings.1532
 :3152
-! 
+!
 !          end;
 l strings.1531
 :3153
@@ -15482,7 +15482,7 @@ l strings.1530
 !          '$', '&', '%': begin
 :3155
 l strings.1535:3155
-! 
+!
 !             if pi < 1 then begin { no data left in number }
 :3156
 :3157
@@ -15490,7 +15490,7 @@ l strings.1535:3155
         ldci    1                       ! Load constant(t)
         lesi                            ! Less than(t)
          fjp l strings.1536
-! 
+!
 !                if not dlrout then dlrout := true { first occurance, output }
 :3158
 :3159
@@ -15509,7 +15509,7 @@ l strings.1537
         ldp                             ! Load complex pointer
         lodi    2 -224                  ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 !             end else if (buff[pi] in digit) then begin
         ldcc    ' '                     ! Load constant(t)
         chkc    0 255                   ! Bounds check(t)
@@ -15531,7 +15531,7 @@ l strings.1536
         ldcs    (  48  49  50  51  52  53  54  55  56  57  65  66  67  68  69  70  71  72  73  74  75  76  77  78  79  80  81  82  83  84  85  86  87  88  89  90  97  98  99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122) ! Load constant(t)
         inn                             ! Set inclusion
          fjp l strings.1540
-! 
+!
 !                s[pf] := buff[pi]; { transfer digit }
 :3163
 :3164
@@ -15550,7 +15550,7 @@ l strings.1536
 !                pi := pi-1 { back up one in number }
 :3165
         lodi    2 -232                  ! Load local value(t)
-! 
+!
 !             end else begin { no digits left in number }
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -15560,7 +15560,7 @@ l strings.1536
         ujp     l strings.1541          ! Unconditional jump
 l strings.1540
 :3167
-! 
+!
 !                if not dlrout then dlrout := true { first occurance, output }
 :3168
 :3169
@@ -15579,7 +15579,7 @@ l strings.1542
         ldp                             ! Load complex pointer
         lodi    2 -224                  ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 !             end
         ldcc    ' '                     ! Load constant(t)
         chkc    0 255                   ! Bounds check(t)
@@ -15588,7 +15588,7 @@ l strings.1543
 :3171
 :3172
 :3172
-! 
+!
 !          end;
 l strings.1541
 :3173
@@ -15597,7 +15597,7 @@ l strings.1541
 l strings.1539
 :3174
         ujp     l strings.1505          ! Unconditional jump
-! 
+!
 !       end;
 l strings.1504
 :3175
@@ -15621,7 +15621,7 @@ l strings.1503
 !       pf := pf-1 { next format character }
 :3177
         lodi    2 -224                  ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -15637,7 +15637,7 @@ l strings.1502
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1545
-! 
+!
 !       if buff[pi] in ['0'..'9'] then throw(NumberOverflowsFormat);
 :3181
 :3182
@@ -15671,7 +15671,7 @@ l strings.1546
          fjp l strings.1548
         sfr     l strings.1549          ! Set function result
         lao     96                      ! Load global address
-! 
+!
 !    end
 l strings.1549=0
         cup     l strings.211 1         ! Call user procedure
@@ -15680,7 +15680,7 @@ l strings.1549=0
 :3185
 l strings.1548
 :3185
-! 
+!
 ! end;
 l strings.1545
 :3186
@@ -15689,15 +15689,15 @@ l strings.1545
         retp    48                      ! Return from procedure/function(t)
 l strings.1494=232
 l strings.1495=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Place integer in string
-! 
+!
 ! Places the given integer in a string, with the given field.
-! 
+!
 ! Forms:
-! 
+!
 ! procedure ints(string, integer, integer) - Place integer in padded string by
 !                                            field.
 ! function ints(integer, integer): pstring - Place integer in dynamic string by
@@ -15710,46 +15710,46 @@ l strings.1495=40
 !                                           using format string.
 ! function ints(integer, string): pstring - Place integer in dynamic string by
 !                                           using format string, and return.
-! 
+!
 ! The field can be positive, or negative. If negative, left alignment is
 ! specified.
-! 
+!
 ! In the format string forms, the contents of the format string is copied to
 ! the target string, then the control characters within the string are
 ! interpreted as follows:
-! 
+!
 ! 9 - A digit, is replaced with the integer power in 10's, as counted from the
 ! rightmost digit. If there is no digit > 0 above this position, a space is
 ! output.
-! 
+!
 ! 0 - Same as digit, but a leading zero is used, instead of a space.
-! 
+!
 ! - - Sign, if the number is negative, a sign appears here, otherwise a space.
 !     Note number must be completely to the right of this.
-! 
+!
 ! + - As sign, but "+" appears instead of space.
 !     Note number must be completely to the right of this.
-! 
+!
 ! , - Outputs ",", but only if digits exist to the left of this position,
 !     otherwise space. If the format character to the left of the ',' is '$',
 !     then that is output instead of space.
-! 
+!
 ! $ - If there is a significant digit left, this is placed at the position,
 !     otherwise, if a '$' has not already been output, that is placed. If it
 !     has, it is replaced with space.
-! 
+!
 ! Example:
-! 
+!
 ! "-999,990.00"
-! 
+!
 ! For values:
-! 
+!
 ! 1       "       0.01"
 ! 1000    "      10.00"
 ! -100000 "-  1,000.00"
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure ints(var s: string;   { string to place into }
 e r
 :3188
@@ -15818,7 +15818,7 @@ e r
 :3250
 !                    f: integer); { field }
 :3251
-! 
+!
 ! begin
 b r ints@p_vc_i_i
 s       s p 56 vc
@@ -15829,7 +15829,7 @@ l strings.85
 :3253
 :3253
         mst     1 l strings.1551 l strings.1552 ! Mark(frame) stack
-! 
+!
 !    nums(s, i, f, 10) { convert }
 :3254
 :3255
@@ -15839,7 +15839,7 @@ l strings.85
         lodi    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
         ldci    10                      ! Load constant(t)
-! 
+!
 ! end;
 l strings.1554=0
         cup     l strings.1452 4        ! Call user procedure
@@ -15849,7 +15849,7 @@ l strings.1554=0
         retp    32                      ! Return from procedure/function(t)
 l strings.1551=0
 l strings.1552=40
-! 
+!
 ! overload function ints(i: integer; { integer to place }
 e r
 :3258
@@ -15858,7 +15858,7 @@ e r
 :3260
 !                        : pstring;  { result }
 :3261
-! 
+!
 ! begin
 b f ints@f_i_i
 s       i p 48 i
@@ -15868,7 +15868,7 @@ l strings.86
 :3263
 :3263
         mst     1 l strings.1556 l strings.1557 ! Mark(frame) stack
-! 
+!
 !    ints := nums(i, f, 10) { return result }
 :3264
 :3265
@@ -15888,14 +15888,14 @@ l strings.1559=8
         reta    16                      ! Return from procedure/function(t)
 l strings.1556=0
 l strings.1557=24
-! 
+!
 ! overload procedure ints(var s: string;   { string to place into }
 e f
 :3268
 :3269
 !                             i: integer); { integer to place }
 :3270
-! 
+!
 ! begin
 b r ints@p_vc_i
 s       s p 48 vc
@@ -15905,7 +15905,7 @@ l strings.87
 :3272
 :3272
         mst     1 l strings.1561 l strings.1562 ! Mark(frame) stack
-! 
+!
 !    ints(s, i, 1) { place integer with 1 field }
 :3273
 :3274
@@ -15914,7 +15914,7 @@ l strings.87
         ldp                             ! Load complex pointer
         lodi    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1564=0
         cup     l strings.85 3          ! Call user procedure
@@ -15924,14 +15924,14 @@ l strings.1564=0
         retp    24                      ! Return from procedure/function(t)
 l strings.1561=0
 l strings.1562=32
-! 
+!
 ! overload function ints(i: integer) { integer to place }
 e r
 :3277
 :3278
 !                        : pstring;      { result }
 :3279
-! 
+!
 ! begin
 b f ints@f_i
 s       i p 40 i
@@ -15940,14 +15940,14 @@ l strings.88
 :3281
 :3281
         mst     1 l strings.1566 l strings.1567 ! Mark(frame) stack
-! 
+!
 !    ints := ints(i, 1) { return integer with 1 field }
 :3282
 :3283
         sfr     l strings.1569          ! Set function result
         lodi    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1569=8
         cuf     l strings.86 2 0 8 8    ! Call user function
@@ -15959,12 +15959,12 @@ l strings.1569=8
         reta    8                       ! Return from procedure/function(t)
 l strings.1566=0
 l strings.1567=16
-! 
+!
 ! overload procedure ints(var s: string; i: integer; view fmt: string);
 e f
 :3286
 :3287
-! 
+!
 ! begin
 b r ints@p_vc_i_vc
 s       s p 64 vc
@@ -15975,7 +15975,7 @@ l strings.89
 :3289
 :3289
         mst     1 l strings.1571 l strings.1572 ! Mark(frame) stack
-! 
+!
 !    nums(s, i, fmt, 10) { place result }
 :3290
 :3291
@@ -15986,7 +15986,7 @@ l strings.89
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
         ldci    10                      ! Load constant(t)
-! 
+!
 ! end;
 l strings.1574=0
         cup     l strings.1492 4        ! Call user procedure
@@ -15996,12 +15996,12 @@ l strings.1574=0
         retp    40                      ! Return from procedure/function(t)
 l strings.1571=0
 l strings.1572=48
-! 
+!
 ! overload function ints(i: integer; view fmt: string): pstring;
 e r
 :3294
 :3295
-! 
+!
 ! var s: pstring;
 b f ints@f_i_vc
 s       i p 56 i
@@ -16009,14 +16009,14 @@ s       fmt p 40 vc
 :3296
 :3297
 s       s l -24 pvc
-! 
+!
 ! begin
 l strings.90
 :3298
 :3299
 :3299
         mst     1 l strings.1576 l strings.1577 ! Mark(frame) stack
-! 
+!
 !    newstr(s, len(fmt)); { get a result string }
 :3300
 :3301
@@ -16044,11 +16044,11 @@ l strings.1579=0
 l strings.1581=0
         cup     l strings.89 3          ! Call user procedure
 :3302
-! 
+!
 !    ints := s { return result }
 :3303
 :3304
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -16058,47 +16058,47 @@ l strings.1581=0
         reta    24                      ! Return from procedure/function(t)
 l strings.1576=8
 l strings.1577=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Place real in string
-! 
+!
 ! Places a real into a target string in a number of formats;
-! 
+!
 ! procedure reals(string, real)
-! 
+!
 !    Places the real into a padded string in floating point notation, with default
 !    field.
-! 
+!
 ! Procedure reals(pstring, real)
-! 
+!
 !    Places the real into a dynamic string in floating point notation, with
 !    default field.
-! 
+!
 ! Procedure reals(string, integer, real)
-! 
+!
 !    Places the real into a padded string, in floating point notation with field.
-! 
+!
 ! Procedure reals(pstring, integer, real)
-! 
+!
 !    Places the real into a dynamic string, in floating point notation with field.
-! 
+!
 ! Procedure reals(string, integer, integer, real)
-! 
+!
 !    Places the real into a padded string, in fixed point notation with field.
-! 
+!
 ! Procedure reals(pstring, integer, integer, real)
-! 
+!
 !    Places the real into a dynamic string, in fixed point notation with field.
-! 
+!
 ! The routines are built on two basic forms, one for floating point format, and
 ! another for fixed.
-! 
+!
 ! If the format is larger than the destination will hold, an error results. This
 ! applies only to the padded output versions.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure reals(var s: string;   { result string }
 e f
 :3307
@@ -16147,7 +16147,7 @@ e f
 :3349
 !                     f: integer); { field }
 :3350
-! 
+!
 ! var e:   integer; { exponent holder }
 b r reals@p_vc_n_i
 s       s p 56 vc
@@ -16165,15 +16165,15 @@ s       p l -40 i
 !     si:  integer; { index for string }
 :3355
 s       si l -48 i
-! 
+!
 ! { place character in output string }
-! 
+!
 ! procedure plcchr(c: char);
 :3356
 :3357
 :3358
 :3359
-! 
+!
 ! begin
 b r plcchr@p_c
 s       c p 40 c
@@ -16182,7 +16182,7 @@ l strings.1583
 :3361
 :3361
         mst     2 l strings.1584 l strings.1585 ! Mark(frame) stack
-! 
+!
 !    if si > max(s) then throw(FormatTooLarge);
 :3362
 :3363
@@ -16212,7 +16212,7 @@ l strings.1587
 !    si := si+1 { next }
 :3365
         lodi    2 -48                   ! Load local value(t)
-! 
+!
 ! end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -16222,30 +16222,30 @@ l strings.1587
         retp    8                       ! Return from procedure/function(t)
 l strings.1584=0
 l strings.1585=32
-! 
+!
 ! { place string in output string }
-! 
+!
 ! procedure plcstr(view s: string);
 e r
 :3368
 :3369
 :3370
 :3371
-! 
+!
 ! var i: integer; { index for string }
 b r plcstr@p_vc
 s       s p 40 vc
 :3372
 :3373
 s       i l -32 i
-! 
+!
 ! begin
 l strings.1589
 :3374
 :3375
 :3375
         mst     2 l strings.1590 l strings.1591 ! Mark(frame) stack
-! 
+!
 !    for i := 1 to max(s) do plcchr(s[i]) { place all characters }
 :3376
 :3377
@@ -16271,7 +16271,7 @@ l strings.1593
         cxs     1                       ! Simple container index
         indc    0                       ! Load indirect(t)
         chkc    0 255                   ! Bounds check(t)
-! 
+!
 ! end;
 l strings.1595=0
         cup     l strings.1583 1        ! Call user procedure
@@ -16293,7 +16293,7 @@ l strings.1594
         retp    16                      ! Return from procedure/function(t)
 l strings.1590=24
 l strings.1591=24
-! 
+!
 ! begin
 e r
 l strings.91
@@ -16301,7 +16301,7 @@ l strings.91
 :3381
 :3381
         mst     1 l strings.1596 l strings.1597 ! Mark(frame) stack
-! 
+!
 !    clears(s); { clear result }
 :3382
 :3383
@@ -16342,7 +16342,7 @@ l strings.1600
         ldcr     0.0000000000000000e+00 ! Load constant(t)
         equr                            ! Equal(t)
          fjp l strings.1602
-! 
+!
 !       plcstr(' 0.'); { it's zero, output that }
 :3389
 :3390
@@ -16386,7 +16386,7 @@ t       l strings.1609 1 1
         ldci    5                       ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end else begin { nonzero }
 l strings.1608=0
         cup     l strings.1589 1        ! Call user procedure
@@ -16396,7 +16396,7 @@ l strings.1608=0
         ujp     l strings.1610          ! Unconditional jump
 l strings.1602
 :3395
-! 
+!
 !       e := 0; { clear exponent }
 :3396
 :3397
@@ -16560,7 +16560,7 @@ l strings.1623
         grti                            ! Greater than(t)
         and                             ! And booleans
          fjp l strings.1624
-! 
+!
 !          plcchr(chr(i div p+ord('0'))); { output digit }
 :3414
 :3415
@@ -16591,7 +16591,7 @@ l strings.1625=0
 !          f := f-1 { count spaces }
 :3418
         lodi    2 40                    ! Load local value(t)
-! 
+!
 !       end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -16672,7 +16672,7 @@ l strings.1634
         ldci    0                       ! Load constant(t)
         neqi                            ! Not equal(t)
          fjp l strings.1635
-! 
+!
 !          plcchr(chr(e div p+ord('0'))); { output digit }
 :3428
 :3429
@@ -16697,7 +16697,7 @@ l strings.1636=0
 !          p := p div 10 { find next power }
 :3431
         lodi    2 -40                   ! Load local value(t)
-! 
+!
 !       end
         ldci    10                      ! Load constant(t)
         dvi                             ! Divide integers
@@ -16711,7 +16711,7 @@ l strings.1635
 :3434
 :3435
 :3435
-! 
+!
 ! end;
 l strings.1610
 :3436
@@ -16720,7 +16720,7 @@ l strings.1610
         retp    32                      ! Return from procedure/function(t)
 l strings.1596=32
 l strings.1597=24
-! 
+!
 ! overload function reals(r: real;    { real to write }
 e r
 :3438
@@ -16729,7 +16729,7 @@ e r
 :3440
 !                         : pstring;  { result }
 :3441
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { string buffer }
 b f reals@f_n_i
 s       r p 48 n
@@ -16741,14 +16741,14 @@ s       buff l -216 ax(1,200)ic
 !     s:    pstring; { result holder }
 :3444
 s       s l -224 pvc
-! 
+!
 ! begin
 l strings.92
 :3445
 :3446
 :3446
         mst     1 l strings.1639 l strings.1640 ! Mark(frame) stack
-! 
+!
 !    reals(buff, r, f); { place in buffer }
 :3447
 :3448
@@ -16773,7 +16773,7 @@ l strings.1642=0
 l strings.1643=0
         cup     l strings.22 2          ! Call user procedure
 :3449
-! 
+!
 !    reals := s { return result }
 :3450
 :3451
@@ -16787,14 +16787,14 @@ l strings.1643=0
         reta    16                      ! Return from procedure/function(t)
 l strings.1639=208
 l strings.1640=32
-! 
+!
 ! overload procedure reals(var s: string;  { result string }
 e f
 :3454
 :3455
 !                              r: real);   { real to write }
 :3456
-! 
+!
 ! begin
 b r reals@p_vc_n
 s       s p 48 vc
@@ -16804,7 +16804,7 @@ l strings.93
 :3458
 :3458
         mst     1 l strings.1645 l strings.1646 ! Mark(frame) stack
-! 
+!
 !    reals(s, r, rlfld) { place real with default field }
 :3459
 :3460
@@ -16813,7 +16813,7 @@ l strings.93
         ldp                             ! Load complex pointer
         lodr    2 40                    ! Load local value(t)
         ldci    22                      ! Load constant(t)
-! 
+!
 ! end;
 l strings.1648=0
         cup     l strings.91 3          ! Call user procedure
@@ -16823,14 +16823,14 @@ l strings.1648=0
         retp    24                      ! Return from procedure/function(t)
 l strings.1645=0
 l strings.1646=32
-! 
+!
 ! overload function reals(r: real)   { real to write }
 e r
 :3463
 :3464
 !                         : pstring; { result }
 :3465
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { string buffer }
 b f reals@f_n
 s       r p 40 n
@@ -16841,14 +16841,14 @@ s       buff l -216 ax(1,200)ic
 !     s:    pstring; { result holder }
 :3468
 s       s l -224 pvc
-! 
+!
 ! begin
 l strings.94
 :3469
 :3470
 :3470
         mst     1 l strings.1651 l strings.1652 ! Mark(frame) stack
-! 
+!
 !    reals(buff, r); { place in buffer }
 :3471
 :3472
@@ -16872,7 +16872,7 @@ l strings.1654=0
 l strings.1655=0
         cup     l strings.22 2          ! Call user procedure
 :3473
-! 
+!
 !    reals := s { return result }
 :3474
 :3475
@@ -16886,7 +16886,7 @@ l strings.1655=0
         reta    8                       ! Return from procedure/function(t)
 l strings.1651=208
 l strings.1652=24
-! 
+!
 ! overload procedure reals(var s: string;    { destination string }
 e f
 :3478
@@ -16897,7 +16897,7 @@ e f
 :3481
 !                              fr: integer); { fraction }
 :3482
-! 
+!
 ! var i:      integer; { integer portion of number }
 b r reals@p_vc_n_i_i
 s       s p 64 vc
@@ -16929,15 +16929,15 @@ s       si l -72 i
 :3491
 t       l strings.1657 1 11
 s       ib l -83 ax(1,11)ic
-! 
+!
 ! { place character in output string }
-! 
+!
 ! procedure plcchr(c: char);
 :3492
 :3493
 :3494
 :3495
-! 
+!
 ! begin
 b r plcchr@p_c
 s       c p 40 c
@@ -16946,7 +16946,7 @@ l strings.1658
 :3497
 :3497
         mst     2 l strings.1659 l strings.1660 ! Mark(frame) stack
-! 
+!
 !    if si > max(s) then throw(FormatTooLarge);
 :3498
 :3499
@@ -16976,7 +16976,7 @@ l strings.1662
 !    si := si+1 { next }
 :3501
         lodi    2 -72                   ! Load local value(t)
-! 
+!
 ! end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -16986,30 +16986,30 @@ l strings.1662
         retp    8                       ! Return from procedure/function(t)
 l strings.1659=0
 l strings.1660=32
-! 
+!
 ! { place string in output string }
-! 
+!
 ! procedure plcstr(view s: string);
 e r
 :3504
 :3505
 :3506
 :3507
-! 
+!
 ! var i: integer; { index for string }
 b r plcstr@p_vc
 s       s p 40 vc
 :3508
 :3509
 s       i l -32 i
-! 
+!
 ! begin
 l strings.1664
 :3510
 :3511
 :3511
         mst     2 l strings.1665 l strings.1666 ! Mark(frame) stack
-! 
+!
 !    for i := 1 to len(s) do plcchr(s[i]) { place all characters }
 :3512
 :3513
@@ -17037,7 +17037,7 @@ l strings.1669
         cxs     1                       ! Simple container index
         indc    0                       ! Load indirect(t)
         chkc    0 255                   ! Bounds check(t)
-! 
+!
 ! end;
 l strings.1671=0
         cup     l strings.1658 1        ! Call user procedure
@@ -17059,7 +17059,7 @@ l strings.1670
         retp    16                      ! Return from procedure/function(t)
 l strings.1665=24
 l strings.1666=24
-! 
+!
 ! begin
 e r
 l strings.95
@@ -17067,7 +17067,7 @@ l strings.95
 :3517
 :3517
         mst     1 l strings.1672 l strings.1673 ! Mark(frame) stack
-! 
+!
 !    clears(s); { clear result }
 :3518
 :3519
@@ -17317,7 +17317,7 @@ l strings.1694
         grti                            ! Greater than(t)
         and                             ! And booleans
          fjp l strings.1695
-! 
+!
 !       plcchr(chr(i div p+ord('0'))); { output digit }
 :3549
 :3550
@@ -17348,7 +17348,7 @@ l strings.1696=0
 !       fc := fc-1 { count fractional digits }
 :3553
         lodi    2 -64                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -17378,7 +17378,7 @@ l strings.1699=0
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
         stri    2 -64                   ! Store local(t)
-! 
+!
 ! end;
         ujp     l strings.1697          ! Unconditional jump
 l strings.1698
@@ -17388,7 +17388,7 @@ l strings.1698
         retp    40                      ! Return from procedure/function(t)
 l strings.1672=88
 l strings.1673=24
-! 
+!
 ! overload function reals(r:  real;    { real to write }
 e r
 :3560
@@ -17399,7 +17399,7 @@ e r
 :3563
 !                         : pstring;   { result }
 :3564
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { string buffer }
 b f reals@f_n_i_i
 s       r p 56 n
@@ -17412,14 +17412,14 @@ s       buff l -216 ax(1,200)ic
 !     s:    pstring; { result holder }
 :3567
 s       s l -224 pvc
-! 
+!
 ! begin
 l strings.96
 :3568
 :3569
 :3569
         mst     1 l strings.1702 l strings.1703 ! Mark(frame) stack
-! 
+!
 !    if fl > 0 then begin { right justify }
 :3570
 :3571
@@ -17427,7 +17427,7 @@ l strings.96
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1705
-! 
+!
 !       reals(buff, r, fl, fr); { place in buffer }
 :3572
 :3573
@@ -17450,7 +17450,7 @@ l strings.1706=0
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end else begin { left justified }
 l strings.1707=0
         cup     l strings.22 2          ! Call user procedure
@@ -17460,7 +17460,7 @@ l strings.1707=0
         ujp     l strings.1708          ! Unconditional jump
 l strings.1705
 :3576
-! 
+!
 !       reals(buff, r, 1, fr); { place in buffer }
 :3577
 :3578
@@ -17523,7 +17523,7 @@ l strings.1713=0
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end;
 l strings.1714=0
         cup     l strings.18 2          ! Call user procedure
@@ -17532,7 +17532,7 @@ l strings.1714=0
 :3584
 l strings.1708
 :3584
-! 
+!
 !    reals := s { return result }
 :3585
 :3586
@@ -17546,14 +17546,14 @@ l strings.1708
         reta    24                      ! Return from procedure/function(t)
 l strings.1702=208
 l strings.1703=40
-! 
+!
 ! overload procedure reals(var s: string; r: real; view fmt: string);
 e f
 :3589
 :3590
-! 
+!
 ! { valid digits in output }
-! 
+!
 ! const digit = ['0'..'9'];
 b r reals@p_vc_n_vc
 s       s p 64 vc
@@ -17563,7 +17563,7 @@ s       fmt p 40 vc
 :3592
 :3593
 :3594
-! 
+!
 ! var int, frc:   packed array [1..maxlin] of char;
 :3595
 :3596
@@ -17586,9 +17586,9 @@ s       sgnout l -442 b
 !     dlrout:     boolean; { dollar sign already output }
 :3601
 s       dlrout l -443 b
-! 
+!
 ! { unpack real into constituent fields }
-! 
+!
 ! procedure unpack(    r:        real;     { real to unpack }
 :3602
 :3603
@@ -17598,7 +17598,7 @@ s       dlrout l -443 b
 :3606
 !                  var sign:     boolean); { sign }
 :3607
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { buffer for ASCII number }
 b r unpack@p_n_vc_vc_b
 s       r p 80 n
@@ -17615,14 +17615,14 @@ s       dp l -232 i
 !     e:    integer; { end of zero truncated fraction }
 :3611
 s       e l -240 i
-! 
+!
 ! begin
 l strings.1717
 :3612
 :3613
 :3613
         mst     2 l strings.1719 l strings.1720 ! Mark(frame) stack
-! 
+!
 !    reals(buff, r, 1, rlfrc); { first, get number into standard form }
 :3614
 :3615
@@ -17750,7 +17750,7 @@ l strings.1729=0
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         lodi    3 -240                  ! Load local value(t)
-! 
+!
 ! end;
 l strings.1730=0
         cup     l strings.58 4          ! Call user procedure
@@ -17760,7 +17760,7 @@ l strings.1730=0
         retp    48                      ! Return from procedure/function(t)
 l strings.1719=216
 l strings.1720=56
-! 
+!
 ! begin
 e r
 l strings.97
@@ -17768,7 +17768,7 @@ l strings.97
 :3626
 :3626
         mst     1 l strings.1731 l strings.1732 ! Mark(frame) stack
-! 
+!
 !    unpack(r, int, frc, sign); { unpack number }
 :3627
 :3628
@@ -17861,7 +17861,7 @@ l strings.1741
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1742
-! 
+!
 !       if s[fmtp] in ['9', '0', '-', '+', ',', '$'] then 
 :3637
 :3638
@@ -17884,7 +17884,7 @@ l strings.1741
         ordc                            ! Ordinal(t)
         stri    2 -451                  ! Store local(t)
         ujp     l strings.1744          ! Unconditional jump
-! 
+!
 !          '9': if intp < 1 then s[fmtp] := ' '
 :3640
 :3641
@@ -17928,7 +17928,7 @@ l strings.1747
 l strings.1749
 :3643
 :3643
-! 
+!
 !             s[fmtp] := int[intp]; { transfer digit }
 :3644
 :3645
@@ -17947,7 +17947,7 @@ l strings.1749
 !             intp := intp-1 { back up one in number }
 :3646
         lodi    2 -432                  ! Load local value(t)
-! 
+!
 !          end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -17997,7 +17997,7 @@ l strings.1751:3649
 !             intp := intp-1 { back up one in number }
 :3653
         lodi    2 -432                  ! Load local value(t)
-! 
+!
 !          end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -18012,7 +18012,7 @@ l strings.1752
 !          '-': begin
 :3656
 l strings.1754:3656
-! 
+!
 !             if not sign then s[fmtp] := ' '; { knock out sign }
 :3657
 :3658
@@ -18030,7 +18030,7 @@ l strings.1755
 :3658
 !             sgnout := true { set sign output }
 :3659
-! 
+!
 !          end;
         ldcb    1                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -18041,7 +18041,7 @@ l strings.1755
 !          '+': begin
 :3662
 l strings.1756:3662
-! 
+!
 !             if sign then s[fmtp] := '-'; { place negative sign }
 :3663
 :3664
@@ -18058,7 +18058,7 @@ l strings.1757
 :3664
 !             sgnout := true { set sign output }
 :3665
-! 
+!
 !          end;
         ldcb    1                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
@@ -18069,7 +18069,7 @@ l strings.1757
 !          ',': begin
 :3668
 l strings.1758:3668
-! 
+!
 !             if intp < 1 then begin
 :3669
 :3670
@@ -18077,7 +18077,7 @@ l strings.1758:3668
         ldci    1                       ! Load constant(t)
         lesi                            ! Less than(t)
          fjp l strings.1759
-! 
+!
 !                s[fmtp] := ' '; { out of digits, kill with space }
 :3671
 :3672
@@ -18111,7 +18111,7 @@ l strings.1758:3668
         lodb    2 -443                  ! Load local value(t)
         notb                            ! Not(t)
          fjp l strings.1762
-! 
+!
 !                   s[fmtp] := '$'; { set '$' }
 :3676
 :3677
@@ -18124,14 +18124,14 @@ l strings.1758:3668
         stoc                            ! Store to address(t)
 !                   dlrout := true { set was output }
 :3678
-! 
+!
 !                end
         ldcb    1                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
         strb    2 -443                  ! Store local(t)
 :3679
 :3680
-! 
+!
 !             end else if not (int[intp] in digit) then begin
 l strings.1762
 :3681
@@ -18155,7 +18155,7 @@ l strings.1759
         inn                             ! Set inclusion
         notb                            ! Not(t)
          fjp l strings.1764
-! 
+!
 !                s[fmtp] := ' '; { out of digits, kill with space }
 :3683
 :3684
@@ -18189,7 +18189,7 @@ l strings.1759
         lodb    2 -443                  ! Load local value(t)
         notb                            ! Not(t)
          fjp l strings.1767
-! 
+!
 !                   s[fmtp] := '$'; { set '$' }
 :3688
 :3689
@@ -18202,14 +18202,14 @@ l strings.1759
         stoc                            ! Store to address(t)
 !                   dlrout := true { set was output }
 :3690
-! 
+!
 !                end
         ldcb    1                       ! Load constant(t)
         chkb    0 1                     ! Bounds check(t)
         strb    2 -443                  ! Store local(t)
 :3691
 :3692
-! 
+!
 !             end
 l strings.1767
 :3693
@@ -18219,7 +18219,7 @@ l strings.1766
 :3694
 l strings.1765
 :3694
-! 
+!
 !          end;
 l strings.1764
 :3695
@@ -18231,7 +18231,7 @@ l strings.1763
 !          '$': begin
 :3697
 l strings.1768:3697
-! 
+!
 !             if intp < 1 then begin { no data left in number }
 :3698
 :3699
@@ -18239,7 +18239,7 @@ l strings.1768:3697
         ldci    1                       ! Load constant(t)
         lesi                            ! Less than(t)
          fjp l strings.1769
-! 
+!
 !                if not dlrout then dlrout := true { first occurance, output }
 :3700
 :3701
@@ -18258,7 +18258,7 @@ l strings.1770
         ldp                             ! Load complex pointer
         lodi    2 -440                  ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 !             end else if (int[intp] in digit) then begin
         ldcc    ' '                     ! Load constant(t)
         chkc    0 255                   ! Bounds check(t)
@@ -18280,7 +18280,7 @@ l strings.1769
         ldcs    (  48  49  50  51  52  53  54  55  56  57) ! Load constant(t)
         inn                             ! Set inclusion
          fjp l strings.1773
-! 
+!
 !                s[fmtp] := int[intp]; { transfer digit }
 :3705
 :3706
@@ -18299,7 +18299,7 @@ l strings.1769
 !                intp := intp-1 { back up one in number }
 :3707
         lodi    2 -432                  ! Load local value(t)
-! 
+!
 !             end else begin { no digits left in number }
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -18309,7 +18309,7 @@ l strings.1769
         ujp     l strings.1774          ! Unconditional jump
 l strings.1773
 :3709
-! 
+!
 !                if not dlrout then dlrout := true { first occurance, output }
 :3710
 :3711
@@ -18328,7 +18328,7 @@ l strings.1775
         ldp                             ! Load complex pointer
         lodi    2 -440                  ! Load local value(t)
         cxs     1                       ! Simple container index
-! 
+!
 !             end
         ldcc    ' '                     ! Load constant(t)
         chkc    0 255                   ! Bounds check(t)
@@ -18337,7 +18337,7 @@ l strings.1776
 :3713
 :3714
 :3714
-! 
+!
 !          end;
 l strings.1774
 :3715
@@ -18346,7 +18346,7 @@ l strings.1774
 l strings.1772
 :3716
         ujp     l strings.1745          ! Unconditional jump
-! 
+!
 !       end;
 l strings.1744
 :3717
@@ -18368,7 +18368,7 @@ l strings.1743
 !       fmtp := fmtp-1 { next format character }
 :3719
         lodi    2 -440                  ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         sbi                             ! Subtract integer
@@ -18398,7 +18398,7 @@ l strings.1778=8
         ldci    0                       ! Load constant(t)
         neqi                            ! Not equal(t)
          fjp l strings.1779
-! 
+!
 !       fmtp := fmtp+1; { set after decimal }
 :3725
 :3726
@@ -18421,7 +18421,7 @@ l strings.1780
         max     1                       ! Maximum dimension of array
         leqi                            ! Less than or equal(t)
          fjp l strings.1781
-! 
+!
 !          if s[fmtp] in ['9', '0'] then 
 :3729
 :3730
@@ -18444,7 +18444,7 @@ l strings.1780
         ordc                            ! Ordinal(t)
         stri    2 -451                  ! Store local(t)
         ujp     l strings.1783          ! Unconditional jump
-! 
+!
 !             '9': if frcp > maxlin then s[fmtp] := ' '
 :3732
 :3733
@@ -18488,7 +18488,7 @@ l strings.1786
 l strings.1788
 :3735
 :3735
-! 
+!
 !                s[fmtp] := frc[frcp]; { transfer digit }
 :3736
 :3737
@@ -18507,7 +18507,7 @@ l strings.1788
 !                frcp := frcp+1 { back up one in number }
 :3738
         lodi    2 -424                  ! Load local value(t)
-! 
+!
 !             end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -18557,7 +18557,7 @@ l strings.1790:3741
 !                frcp := frcp+1 { back up one in number }
 :3745
         lodi    2 -424                  ! Load local value(t)
-! 
+!
 !             end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -18587,14 +18587,14 @@ l strings.1782
 !          fmtp := fmtp+1 { next format character }
 :3750
         lodi    2 -440                  ! Load local value(t)
-! 
+!
 !       end
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
         stri    2 -440                  ! Store local(t)
 :3751
 :3752
-! 
+!
 !    end;
         ujp     l strings.1780          ! Unconditional jump
 l strings.1781
@@ -18629,7 +18629,7 @@ l strings.1794
          fjp l strings.1796
         sfr     l strings.1797          ! Set function result
         lao     96                      ! Load global address
-! 
+!
 ! end;
 l strings.1797=0
         cup     l strings.211 1         ! Call user procedure
@@ -18641,12 +18641,12 @@ l strings.1796
         retp    40                      ! Return from procedure/function(t)
 l strings.1731=440
 l strings.1732=48
-! 
+!
 ! overload function reals(r: real; view fmt: string): pstring;
 e r
 :3761
 :3762
-! 
+!
 ! var s: pstring;
 b f reals@f_n_vc
 s       r p 56 n
@@ -18654,14 +18654,14 @@ s       fmt p 40 vc
 :3763
 :3764
 s       s l -24 pvc
-! 
+!
 ! begin
 l strings.98
 :3765
 :3766
 :3766
         mst     1 l strings.1799 l strings.1800 ! Mark(frame) stack
-! 
+!
 !    newstr(s, len(fmt)); { get a result string }
 :3767
 :3768
@@ -18689,11 +18689,11 @@ l strings.1802=0
 l strings.1804=0
         cup     l strings.97 3          ! Call user procedure
 :3769
-! 
+!
 !    reals := s { return result }
 :3770
 :3771
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -18703,16 +18703,16 @@ l strings.1804=0
         reta    24                      ! Return from procedure/function(t)
 l strings.1799=8
 l strings.1800=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Output real "economy" format
-! 
+!
 ! Outputs a real in minium space, preferably without an exponent. The economy
 ! format is designed both to take minimum space, but still give the maximum
 ! number of significant digits, and to remove the exponent if possible, by
 ! placing it within the number.
-! 
+!
 ! To do this, the number is converted, in ascii, to the floating point buffer
 ! in a large buffer. Then, the exponent is read from the number, and blanked
 ! out. The decial point is removed, and the number normalized to decimal point
@@ -18721,9 +18721,9 @@ l strings.1800=40
 ! don't exceed the size of an exponent in ASCII. If the decimal still cannot be
 ! placed, then the number reverts to floating point format, abet with the
 ! trailing zeros removed.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure reales(var s: string;   { string to place result in }
 e f
 :3774
@@ -18752,7 +18752,7 @@ e f
 :3796
 !                      f: integer); { field }
 :3797
-! 
+!
 ! var p1, p2: pstring; { string buffer }
 b r reales@p_vc_n_i
 s       s p 56 vc
@@ -18783,15 +18783,15 @@ s       i l -76 i
 !     el:     integer; { exponent length }
 :3806
 s       el l -84 i
-! 
+!
 ! { place character in output string }
-! 
+!
 ! procedure plcchr(c: char);
 :3807
 :3808
 :3809
 :3810
-! 
+!
 ! begin
 b r plcchr@p_c
 s       c p 40 c
@@ -18800,7 +18800,7 @@ l strings.1806
 :3812
 :3812
         mst     2 l strings.1807 l strings.1808 ! Mark(frame) stack
-! 
+!
 !    if si > max(s) then throw(FormatTooLarge);
 :3813
 :3814
@@ -18830,7 +18830,7 @@ l strings.1810
 !    si := si+1 { next }
 :3816
         lodi    2 -68                   ! Load local value(t)
-! 
+!
 ! end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -18840,30 +18840,30 @@ l strings.1810
         retp    8                       ! Return from procedure/function(t)
 l strings.1807=0
 l strings.1808=32
-! 
+!
 ! { find number of decimals in integer }
-! 
+!
 ! function numlen(i: integer): integer;
 e r
 :3819
 :3820
 :3821
 :3822
-! 
+!
 ! var dc: integer;
 b f numlen@f_i
 s       i p 40 i
 :3823
 :3824
 s       dc l -32 i
-! 
+!
 ! begin
 l strings.1812
 :3825
 :3826
 :3826
         mst     2 l strings.1813 l strings.1814 ! Mark(frame) stack
-! 
+!
 !    dc := 1; { set default length }
 :3827
 :3828
@@ -18887,7 +18887,7 @@ l strings.1812
 :3832
         lodi    3 40                    ! Load local value(t)
         abi                             ! Absolute value integer
-! 
+!
 !    end;
         stri    3 40                    ! Store local(t)
 :3833
@@ -18908,7 +18908,7 @@ l strings.1817
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1818
-! 
+!
 !       i := i div 10; { reduce digit }
 :3837
 :3838
@@ -18919,7 +18919,7 @@ l strings.1817
 !       dc := dc+1 { count }
 :3839
         lodi    3 -32                   ! Load local value(t)
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         adi                             ! Add integers
@@ -18929,11 +18929,11 @@ l strings.1817
         ujp     l strings.1817          ! Unconditional jump
 l strings.1818
 :3841
-! 
+!
 !    numlen := dc { return result }
 :3842
 :3843
-! 
+!
 ! end;
         lodi    3 -32                   ! Load local value(t)
         stri    3 48                    ! Store local(t)
@@ -18942,7 +18942,7 @@ l strings.1818
         reti    8                       ! Return from procedure/function(t)
 l strings.1813=8
 l strings.1814=16
-! 
+!
 ! begin
 e f
 l strings.99
@@ -18950,7 +18950,7 @@ l strings.99
 :3847
 :3847
         mst     1 l strings.1819 l strings.1820 ! Mark(frame) stack
-! 
+!
 !    if f < 1 then { bad field }
 :3848
 :3849
@@ -19123,7 +19123,7 @@ l strings.1836=8
         leqi                            ! Less than or equal(t)
         and                             ! And booleans
          fjp l strings.1837
-! 
+!
 !       if ex < 0 then begin
 :3869
 :3870
@@ -19131,7 +19131,7 @@ l strings.1836=8
         ldci    0                       ! Load constant(t)
         lesi                            ! Less than(t)
          fjp l strings.1838
-! 
+!
 !          { decimal position is left of digits, make up leading zeros }
 !          p1 := cat(rep('0', abs(ex)), p1);
 :3871
@@ -19155,7 +19155,7 @@ l strings.1839=8
         stra    2 -32                   ! Store local(t)
 !          ex := 0 { we zeroed out the exponent }
 :3874
-! 
+!
 !       end else if ex > len(p1) then
         ldci    0                       ! Load constant(t)
         stri    2 -40                   ! Store local(t)
@@ -19215,7 +19215,7 @@ l strings.1847=8
 :3881
         lesi                            ! Less than(t)
          fjp l strings.1848
-! 
+!
 !          { place decimal point within number }
 !          p2 := cat(extract(p1, 1, ex), '.');
 :3882
@@ -19254,7 +19254,7 @@ l strings.1853=8
 l strings.1852=8
         cuf     l strings.59 3 0 8 8    ! Call user function
 :3885
-! 
+!
 !       end
 l strings.1851=8
         cuf     l strings.25 2 0 8 8    ! Call user function
@@ -19263,7 +19263,7 @@ l strings.1851=8
 :3887
         chka    0 9223372036854775807   ! Bounds check(t)
         stra    2 -32                   ! Store local(t)
-! 
+!
 !    end else begin
 l strings.1848
 :3888
@@ -19272,7 +19272,7 @@ l strings.1848
         ujp     l strings.1854          ! Unconditional jump
 l strings.1837
 :3889
-! 
+!
 !       { put decimal point back, exponent back, and place number without
 !         trailing zeros }
 !       p2 := cat(extract(p1, 1, 1), '.');
@@ -19339,7 +19339,7 @@ l strings.1860=8
 l strings.1862=8
         cuf     l strings.88 1 0 8 8    ! Call user function
 :3896
-! 
+!
 !    end;
 l strings.1861=8
         cuf     l strings.25 2 0 8 8    ! Call user function
@@ -19483,7 +19483,7 @@ l strings.1872
         inv                             ! Invalidate address
 !    closestring { close out string level }
 :3906
-! 
+!
 ! end;
         sfr     l strings.1874          ! Set function result
 l strings.1874=0
@@ -19494,7 +19494,7 @@ l strings.1874=0
         retp    32                      ! Return from procedure/function(t)
 l strings.1819=88
 l strings.1820=40
-! 
+!
 ! overload function reales(r: real;    { real to write }
 e r
 :3909
@@ -19503,7 +19503,7 @@ e r
 :3911
 !                          : pstring;  { result }
 :3912
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { string buffer }
 b f reales@f_n_i
 s       r p 48 n
@@ -19515,14 +19515,14 @@ s       buff l -216 ax(1,200)ic
 !     s:    pstring; { result holder }
 :3915
 s       s l -224 pvc
-! 
+!
 ! begin
 l strings.100
 :3916
 :3917
 :3917
         mst     1 l strings.1877 l strings.1878 ! Mark(frame) stack
-! 
+!
 !    if f > 0 then begin { right justify }
 :3918
 :3919
@@ -19530,7 +19530,7 @@ l strings.100
         ldci    0                       ! Load constant(t)
         grti                            ! Greater than(t)
          fjp l strings.1880
-! 
+!
 !       reales(buff, r, f); { place in buffer }
 :3920
 :3921
@@ -19552,7 +19552,7 @@ l strings.1881=0
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end else begin { left justified }
 l strings.1882=0
         cup     l strings.22 2          ! Call user procedure
@@ -19562,7 +19562,7 @@ l strings.1882=0
         ujp     l strings.1883          ! Unconditional jump
 l strings.1880
 :3924
-! 
+!
 !       reales(buff, r, 1); { place in buffer }
 :3925
 :3926
@@ -19624,7 +19624,7 @@ l strings.1888=0
         ldci    200                     ! Load constant(t)
         swp     8                       ! Swap tos with sos
         mpc     0 0                     ! Make fat pointer from components
-! 
+!
 !    end;
 l strings.1889=0
         cup     l strings.18 2          ! Call user procedure
@@ -19633,7 +19633,7 @@ l strings.1889=0
 :3932
 l strings.1883
 :3932
-! 
+!
 !    reales := s { return result }
 :3933
 :3934
@@ -19647,14 +19647,14 @@ l strings.1883
         reta    16                      ! Return from procedure/function(t)
 l strings.1877=208
 l strings.1878=32
-! 
+!
 ! overload procedure reales(var s: string;  { result string }
 e f
 :3937
 :3938
 !                               r: real);   { real to write }
 :3939
-! 
+!
 ! begin
 b r reales@p_vc_n
 s       s p 48 vc
@@ -19664,7 +19664,7 @@ l strings.101
 :3941
 :3941
         mst     1 l strings.1891 l strings.1892 ! Mark(frame) stack
-! 
+!
 !    reales(s, r, 1) { place real with default field }
 :3942
 :3943
@@ -19673,7 +19673,7 @@ l strings.101
         ldp                             ! Load complex pointer
         lodr    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1894=0
         cup     l strings.99 3          ! Call user procedure
@@ -19683,14 +19683,14 @@ l strings.1894=0
         retp    24                      ! Return from procedure/function(t)
 l strings.1891=0
 l strings.1892=32
-! 
+!
 ! overload function reales(r: real)   { real to write }
 e r
 :3946
 :3947
 !                          : pstring; { result }
 :3948
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { string buffer }
 b f reales@f_n
 s       r p 40 n
@@ -19701,14 +19701,14 @@ s       buff l -216 ax(1,200)ic
 !     s:    pstring; { result holder }
 :3951
 s       s l -224 pvc
-! 
+!
 ! begin
 l strings.102
 :3952
 :3953
 :3953
         mst     1 l strings.1897 l strings.1898 ! Mark(frame) stack
-! 
+!
 !    reales(buff, r); { place in buffer }
 :3954
 :3955
@@ -19732,7 +19732,7 @@ l strings.1900=0
 l strings.1901=0
         cup     l strings.22 2          ! Call user procedure
 :3956
-! 
+!
 !    reales := s { return result }
 :3957
 :3958
@@ -19746,36 +19746,36 @@ l strings.1901=0
         reta    8                       ! Return from procedure/function(t)
 l strings.1897=208
 l strings.1898=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Place hex value in string
-! 
+!
 ! Places the given integer in hex into the destination string. Has the following
 ! forms:
-! 
+!
 ! procedure hexs(string, integer)
-! 
+!
 !    Places the value into the padded string in hexadecimal format, with field of
 !    1.
-! 
+!
 ! procedure hexs(pstring, integer)
-! 
+!
 !    Places the value into the dynamic string in hexadecimal format, with field
 !    of 1.
-! 
+!
 ! procedure hexs(string, integer, integer)
-! 
+!
 !    Places the value into the padded string in hexadecimal format, with field.
-! 
+!
 ! procedure hexs(pstring, integer, integer)
-! 
+!
 !    Places the value into the dynamic string in hexadecimal format, with field.
-! 
+!
 ! Note that sign is not processed in this routine.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure hexs(var s: string;   { result string }
 e f
 :3961
@@ -19824,7 +19824,7 @@ l strings.103
 :3995
 :3995
         mst     1 l strings.1903 l strings.1904 ! Mark(frame) stack
-! 
+!
 !    nums(s, w, f, 16) { place result }
 :3996
 :3997
@@ -19834,7 +19834,7 @@ l strings.103
         lodi    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
         ldci    16                      ! Load constant(t)
-! 
+!
 ! end;
 l strings.1906=0
         cup     l strings.1452 4        ! Call user procedure
@@ -19844,7 +19844,7 @@ l strings.1906=0
         retp    32                      ! Return from procedure/function(t)
 l strings.1903=0
 l strings.1904=40
-! 
+!
 ! overload function hexs(w: integer; { integer to print }
 e r
 :4000
@@ -19853,7 +19853,7 @@ e r
 :4002
 !                        : pstring;  { result }
 :4003
-! 
+!
 ! begin
 b f hexs@f_i_i
 s       w p 48 i
@@ -19863,7 +19863,7 @@ l strings.104
 :4005
 :4005
         mst     1 l strings.1908 l strings.1909 ! Mark(frame) stack
-! 
+!
 !    hexs := nums(w, f, 16) { return result }
 :4006
 :4007
@@ -19883,14 +19883,14 @@ l strings.1911=8
         reta    16                      ! Return from procedure/function(t)
 l strings.1908=0
 l strings.1909=24
-! 
+!
 ! overload procedure hexs(var s: string;   { result string }
 e f
 :4010
 :4011
 !                             w: integer); { integer to print }
 :4012
-! 
+!
 ! begin
 b r hexs@p_vc_i
 s       s p 48 vc
@@ -19900,7 +19900,7 @@ l strings.105
 :4014
 :4014
         mst     1 l strings.1913 l strings.1914 ! Mark(frame) stack
-! 
+!
 !    hexs(s, w, 1) { place hex value }
 :4015
 :4016
@@ -19909,7 +19909,7 @@ l strings.105
         ldp                             ! Load complex pointer
         lodi    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1916=0
         cup     l strings.103 3         ! Call user procedure
@@ -19919,14 +19919,14 @@ l strings.1916=0
         retp    24                      ! Return from procedure/function(t)
 l strings.1913=0
 l strings.1914=32
-! 
+!
 ! overload function hexs(w: integer) { integer to print }
 e r
 :4019
 :4020
 !                         : pstring;     { result }
 :4021
-! 
+!
 ! begin
 b f hexs@f_i
 s       w p 40 i
@@ -19935,7 +19935,7 @@ l strings.106
 :4023
 :4023
         mst     1 l strings.1918 l strings.1919 ! Mark(frame) stack
-! 
+!
 !    hexs := hexs(w, 1) { return result }
 :4024
 :4025
@@ -19954,12 +19954,12 @@ l strings.1921=8
         reta    8                       ! Return from procedure/function(t)
 l strings.1918=0
 l strings.1919=16
-! 
+!
 ! overload procedure hexs(var s: string; i: integer; view fmt: string);
 e f
 :4028
 :4029
-! 
+!
 ! begin
 b r hexs@p_vc_i_vc
 s       s p 64 vc
@@ -19970,7 +19970,7 @@ l strings.107
 :4031
 :4031
         mst     1 l strings.1923 l strings.1924 ! Mark(frame) stack
-! 
+!
 !    nums(s, i, fmt, 16) { place result }
 :4032
 :4033
@@ -19981,7 +19981,7 @@ l strings.107
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
         ldci    16                      ! Load constant(t)
-! 
+!
 ! end;
 l strings.1926=0
         cup     l strings.1492 4        ! Call user procedure
@@ -19991,12 +19991,12 @@ l strings.1926=0
         retp    40                      ! Return from procedure/function(t)
 l strings.1923=0
 l strings.1924=48
-! 
+!
 ! overload function hexs(i: integer; view fmt: string): pstring;
 e r
 :4036
 :4037
-! 
+!
 ! var s: pstring;
 b f hexs@f_i_vc
 s       i p 56 i
@@ -20004,14 +20004,14 @@ s       fmt p 40 vc
 :4038
 :4039
 s       s l -24 pvc
-! 
+!
 ! begin
 l strings.108
 :4040
 :4041
 :4041
         mst     1 l strings.1928 l strings.1929 ! Mark(frame) stack
-! 
+!
 !    newstr(s, len(fmt)); { get a result string }
 :4042
 :4043
@@ -20039,11 +20039,11 @@ l strings.1931=0
 l strings.1933=0
         cup     l strings.107 3         ! Call user procedure
 :4044
-! 
+!
 !    hexs := s { return result }
 :4045
 :4046
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -20053,36 +20053,36 @@ l strings.1933=0
         reta    24                      ! Return from procedure/function(t)
 l strings.1928=8
 l strings.1929=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Place octal value in string
-! 
+!
 ! Places the given integer in octal into the destination string. Has the following
 ! forms:
-! 
+!
 ! procedure octs(string, integer)
-! 
+!
 !    Places the value into the padded string in hexadecimal format, with field of
 !    1.
-! 
+!
 ! procedure octs(pstring, integer)
-! 
+!
 !    Places the value into the dynamic string in hexadecimal format, with field
 !    of 1.
-! 
+!
 ! procedure octs(string, integer, integer)
-! 
+!
 !    Places the value into the padded string in hexadecimal format, with field.
-! 
+!
 ! procedure octs(pstring, integer, integer)
-! 
+!
 !    Places the value into the dynamic string in hexadecimal format, with field.
-! 
+!
 ! Note that sign is not processed in this routine.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure octs(var s: string;   { result string }
 e f
 :4049
@@ -20131,7 +20131,7 @@ l strings.109
 :4083
 :4083
         mst     1 l strings.1935 l strings.1936 ! Mark(frame) stack
-! 
+!
 !    nums(s, w, f, 8) { place result }
 :4084
 :4085
@@ -20141,7 +20141,7 @@ l strings.109
         lodi    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
         ldci    8                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1938=0
         cup     l strings.1452 4        ! Call user procedure
@@ -20151,7 +20151,7 @@ l strings.1938=0
         retp    32                      ! Return from procedure/function(t)
 l strings.1935=0
 l strings.1936=40
-! 
+!
 ! overload function octs(w: integer; { integer to print }
 e r
 :4088
@@ -20160,7 +20160,7 @@ e r
 :4090
 !                        : pstring;  { result }
 :4091
-! 
+!
 ! begin
 b f octs@f_i_i
 s       w p 48 i
@@ -20170,7 +20170,7 @@ l strings.110
 :4093
 :4093
         mst     1 l strings.1940 l strings.1941 ! Mark(frame) stack
-! 
+!
 !    octs := nums(w, f, 8) { return result }
 :4094
 :4095
@@ -20190,14 +20190,14 @@ l strings.1943=8
         reta    16                      ! Return from procedure/function(t)
 l strings.1940=0
 l strings.1941=24
-! 
+!
 ! overload procedure octs(var s: string;   { result string }
 e f
 :4098
 :4099
 !                             w: integer); { integer to print }
 :4100
-! 
+!
 ! begin
 b r octs@p_vc_i
 s       s p 48 vc
@@ -20207,7 +20207,7 @@ l strings.111
 :4102
 :4102
         mst     1 l strings.1945 l strings.1946 ! Mark(frame) stack
-! 
+!
 !    octs(s, w, 1) { place hex value }
 :4103
 :4104
@@ -20216,7 +20216,7 @@ l strings.111
         ldp                             ! Load complex pointer
         lodi    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1948=0
         cup     l strings.109 3         ! Call user procedure
@@ -20226,14 +20226,14 @@ l strings.1948=0
         retp    24                      ! Return from procedure/function(t)
 l strings.1945=0
 l strings.1946=32
-! 
+!
 ! overload function octs(w: integer) { integer to print }
 e r
 :4107
 :4108
 !                         : pstring;     { result }
 :4109
-! 
+!
 ! begin
 b f octs@f_i
 s       w p 40 i
@@ -20242,7 +20242,7 @@ l strings.112
 :4111
 :4111
         mst     1 l strings.1950 l strings.1951 ! Mark(frame) stack
-! 
+!
 !    octs := octs(w, 1) { return result }
 :4112
 :4113
@@ -20261,12 +20261,12 @@ l strings.1953=8
         reta    8                       ! Return from procedure/function(t)
 l strings.1950=0
 l strings.1951=16
-! 
+!
 ! overload procedure octs(var s: string; i: integer; view fmt: string);
 e f
 :4116
 :4117
-! 
+!
 ! begin
 b r octs@p_vc_i_vc
 s       s p 64 vc
@@ -20277,7 +20277,7 @@ l strings.113
 :4119
 :4119
         mst     1 l strings.1955 l strings.1956 ! Mark(frame) stack
-! 
+!
 !    nums(s, i, fmt, 8) { place result }
 :4120
 :4121
@@ -20288,7 +20288,7 @@ l strings.113
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
         ldci    8                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1958=0
         cup     l strings.1492 4        ! Call user procedure
@@ -20298,12 +20298,12 @@ l strings.1958=0
         retp    40                      ! Return from procedure/function(t)
 l strings.1955=0
 l strings.1956=48
-! 
+!
 ! overload function octs(i: integer; view fmt: string): pstring;
 e r
 :4124
 :4125
-! 
+!
 ! var s: pstring;
 b f octs@f_i_vc
 s       i p 56 i
@@ -20311,14 +20311,14 @@ s       fmt p 40 vc
 :4126
 :4127
 s       s l -24 pvc
-! 
+!
 ! begin
 l strings.114
 :4128
 :4129
 :4129
         mst     1 l strings.1960 l strings.1961 ! Mark(frame) stack
-! 
+!
 !    newstr(s, len(fmt)); { get a result string }
 :4130
 :4131
@@ -20346,11 +20346,11 @@ l strings.1963=0
 l strings.1965=0
         cup     l strings.113 3         ! Call user procedure
 :4132
-! 
+!
 !    octs := s { return result }
 :4133
 :4134
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -20360,36 +20360,36 @@ l strings.1965=0
         reta    24                      ! Return from procedure/function(t)
 l strings.1960=8
 l strings.1961=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Place binary value in string
-! 
+!
 ! Places the given integer in binary into the destination string. Has the following
 ! forms:
-! 
+!
 ! procedure bins(string, integer)
-! 
+!
 !    Places the value into the padded string in hexadecimal format, with field of
 !    1.
-! 
+!
 ! procedure bins(pstring, integer)
-! 
+!
 !    Places the value into the dynamic string in hexadecimal format, with field
 !    of 1.
-! 
+!
 ! procedure bins(string, integer, integer)
-! 
+!
 !    Places the value into the padded string in hexadecimal format, with field.
-! 
+!
 ! procedure bins(pstring, integer, integer)
-! 
+!
 !    Places the value into the dynamic string in hexadecimal format, with field.
-! 
+!
 ! Note that sign is not processed in this routine.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure bins(var s: string;   { result string }
 e f
 :4137
@@ -20438,7 +20438,7 @@ l strings.115
 :4171
 :4171
         mst     1 l strings.1967 l strings.1968 ! Mark(frame) stack
-! 
+!
 !    nums(s, w, f, 2) { place result }
 :4172
 :4173
@@ -20448,7 +20448,7 @@ l strings.115
         lodi    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
         ldci    2                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1970=0
         cup     l strings.1452 4        ! Call user procedure
@@ -20458,7 +20458,7 @@ l strings.1970=0
         retp    32                      ! Return from procedure/function(t)
 l strings.1967=0
 l strings.1968=40
-! 
+!
 ! overload function bins(w: integer; { integer to print }
 e r
 :4176
@@ -20467,7 +20467,7 @@ e r
 :4178
 !                        : pstring;  { result }
 :4179
-! 
+!
 ! begin
 b f bins@f_i_i
 s       w p 48 i
@@ -20477,7 +20477,7 @@ l strings.116
 :4181
 :4181
         mst     1 l strings.1972 l strings.1973 ! Mark(frame) stack
-! 
+!
 !    bins := nums(w, f, 2) { return result }
 :4182
 :4183
@@ -20497,14 +20497,14 @@ l strings.1975=8
         reta    16                      ! Return from procedure/function(t)
 l strings.1972=0
 l strings.1973=24
-! 
+!
 ! overload procedure bins(var s: string;   { result string }
 e f
 :4186
 :4187
 !                             w: integer); { integer to print }
 :4188
-! 
+!
 ! begin
 b r bins@p_vc_i
 s       s p 48 vc
@@ -20514,7 +20514,7 @@ l strings.117
 :4190
 :4190
         mst     1 l strings.1977 l strings.1978 ! Mark(frame) stack
-! 
+!
 !    bins(s, w, 1) { place hex value }
 :4191
 :4192
@@ -20523,7 +20523,7 @@ l strings.117
         ldp                             ! Load complex pointer
         lodi    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1980=0
         cup     l strings.115 3         ! Call user procedure
@@ -20533,14 +20533,14 @@ l strings.1980=0
         retp    24                      ! Return from procedure/function(t)
 l strings.1977=0
 l strings.1978=32
-! 
+!
 ! overload function bins(w: integer) { integer to print }
 e r
 :4195
 :4196
 !                         : pstring;     { result }
 :4197
-! 
+!
 ! begin
 b f bins@f_i
 s       w p 40 i
@@ -20549,7 +20549,7 @@ l strings.118
 :4199
 :4199
         mst     1 l strings.1982 l strings.1983 ! Mark(frame) stack
-! 
+!
 !    bins := bins(w, 1) { return result }
 :4200
 :4201
@@ -20568,12 +20568,12 @@ l strings.1985=8
         reta    8                       ! Return from procedure/function(t)
 l strings.1982=0
 l strings.1983=16
-! 
+!
 ! overload procedure bins(var s: string; i: integer; view fmt: string);
 e f
 :4204
 :4205
-! 
+!
 ! begin
 b r bins@p_vc_i_vc
 s       s p 64 vc
@@ -20584,7 +20584,7 @@ l strings.119
 :4207
 :4207
         mst     1 l strings.1987 l strings.1988 ! Mark(frame) stack
-! 
+!
 !    nums(s, i, fmt, 2) { place result }
 :4208
 :4209
@@ -20595,7 +20595,7 @@ l strings.119
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
         ldci    2                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.1990=0
         cup     l strings.1492 4        ! Call user procedure
@@ -20605,12 +20605,12 @@ l strings.1990=0
         retp    40                      ! Return from procedure/function(t)
 l strings.1987=0
 l strings.1988=48
-! 
+!
 ! overload function bins(i: integer; view fmt: string): pstring;
 e r
 :4212
 :4213
-! 
+!
 ! var s: pstring;
 b f bins@f_i_vc
 s       i p 56 i
@@ -20618,14 +20618,14 @@ s       fmt p 40 vc
 :4214
 :4215
 s       s l -24 pvc
-! 
+!
 ! begin
 l strings.120
 :4216
 :4217
 :4217
         mst     1 l strings.1992 l strings.1993 ! Mark(frame) stack
-! 
+!
 !    newstr(s, len(fmt)); { get a result string }
 :4218
 :4219
@@ -20653,11 +20653,11 @@ l strings.1995=0
 l strings.1997=0
         cup     l strings.119 3         ! Call user procedure
 :4220
-! 
+!
 !    bins := s { return result }
 :4221
 :4222
-! 
+!
 ! end;
         loda    2 -24                   ! Load local value(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -20667,17 +20667,17 @@ l strings.1997=0
         reta    24                      ! Return from procedure/function(t)
 l strings.1992=8
 l strings.1993=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Write decimal value
-! 
+!
 ! Decimal writes are covered well by the standard write system. However, there
 ! are a few forms that are not, namely the economy format for reals, and image
 ! formatted versions of real and integer.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure writed(var  f:   text;    { file to print }
 e f
 :4225
@@ -20696,7 +20696,7 @@ e f
 :4237
 !                  view fmt: string); { format string }
 :4238
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { output buffer }
 b r writed@p_fc_i_vc
 s       f p 64 fc
@@ -20706,14 +20706,14 @@ s       fmt p 40 vc
 :4240
 t       l strings.1999 1 200
 s       buff l -216 ax(1,200)ic
-! 
+!
 ! begin
 l strings.121
 :4241
 :4242
 :4242
         mst     1 l strings.2000 l strings.2001 ! Mark(frame) stack
-! 
+!
 !    ints(buff, i, fmt); { convert to buffer }
 :4243
 :4244
@@ -20745,21 +20745,21 @@ l strings.2004=8
         cuf     l strings.16 1 0 8 8    ! Call user function
 :4245
         csp     wrs                     ! Call system procedure/function: Write string to text file
-! 
+!
 ! end;
 :4246
 :4247
         retp    32                      ! Return from procedure/function(t)
 l strings.2000=208
 l strings.2001=40
-! 
+!
 ! overload procedure writed(     i:   integer; { integer to print }
 e r
 :4248
 :4249
 !                           view fmt: string); { format string }
 :4250
-! 
+!
 ! begin
 b r writed@p_i_vc
 s       i p 56 i
@@ -20769,7 +20769,7 @@ l strings.122
 :4252
 :4252
         mst     1 l strings.2006 l strings.2007 ! Mark(frame) stack
-! 
+!
 !    writed(output, i, fmt) { output }
 :4253
 :4254
@@ -20778,7 +20778,7 @@ l strings.122
         lodi    2 56                    ! Load local value(t)
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.2009=0
         cup     l strings.121 3         ! Call user procedure
@@ -20788,7 +20788,7 @@ l strings.2009=0
         retp    24                      ! Return from procedure/function(t)
 l strings.2006=0
 l strings.2007=32
-! 
+!
 ! procedure writer(var  f:   text;    { file to print }
 e r
 :4257
@@ -20797,7 +20797,7 @@ e r
 :4259
 !                  view fmt: string); { format string }
 :4260
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { output buffer }
 b r writer@p_fc_n_vc
 s       f p 64 fc
@@ -20807,14 +20807,14 @@ s       fmt p 40 vc
 :4262
 t       l strings.2011 1 200
 s       buff l -216 ax(1,200)ic
-! 
+!
 ! begin
 l strings.123
 :4263
 :4264
 :4264
         mst     1 l strings.2012 l strings.2013 ! Mark(frame) stack
-! 
+!
 !    reals(buff, r, fmt); { convert to buffer }
 :4265
 :4266
@@ -20846,21 +20846,21 @@ l strings.2016=8
         cuf     l strings.16 1 0 8 8    ! Call user function
 :4267
         csp     wrs                     ! Call system procedure/function: Write string to text file
-! 
+!
 ! end;
 :4268
 :4269
         retp    32                      ! Return from procedure/function(t)
 l strings.2012=208
 l strings.2013=40
-! 
+!
 ! overload procedure writer(     r:   real;    { real to print }
 e r
 :4270
 :4271
 !                           view fmt: string); { format string }
 :4272
-! 
+!
 ! begin
 b r writer@p_n_vc
 s       r p 56 n
@@ -20870,7 +20870,7 @@ l strings.124
 :4274
 :4274
         mst     1 l strings.2018 l strings.2019 ! Mark(frame) stack
-! 
+!
 !    writer(output, r, fmt) { output }
 :4275
 :4276
@@ -20889,7 +20889,7 @@ l strings.2021=0
         retp    24                      ! Return from procedure/function(t)
 l strings.2018=0
 l strings.2019=32
-! 
+!
 ! procedure writere(var  f:   text;     { file to print }
 e r
 :4279
@@ -20898,7 +20898,7 @@ e r
 :4281
 !                        fl:  integer); { field }
 :4282
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { output buffer }
 b r writere@p_fc_n_i
 s       f p 56 fc
@@ -20911,14 +20911,14 @@ s       buff l -216 ax(1,200)ic
 !     i:    integer; { index for string }
 :4285
 s       i l -224 i
-! 
+!
 ! begin
 l strings.125
 :4286
 :4287
 :4287
         mst     1 l strings.2024 l strings.2025 ! Mark(frame) stack
-! 
+!
 !    if fl > 0 then begin { right justify }
 :4288
 :4289
@@ -20951,14 +20951,14 @@ l strings.2028=0
         loda    2 -232                  ! Load local value(t)
         swp     16                      ! Swap tos with sos
         csp     wrsp                    ! Call system procedure/function: Write passed string to text file
-! 
+!
 !    end else begin { left justified }
 :4293
 :4294
         ujp     l strings.2029          ! Unconditional jump
 l strings.2027
 :4294
-! 
+!
 !       reales(buff, r, 1); { place in buffer }
 :4295
 :4296
@@ -21042,7 +21042,7 @@ l strings.2035
         swp     8                       ! Swap tos with sos
         ldci    1                       ! Load constant(t)
         csp     wrc                     ! Call system procedure/function: Write character to text file
-! 
+!
 !    end
         lodi    2 -224                  ! Load local value(t)
         lodi    2 -240                  ! Load local value(t)
@@ -21058,7 +21058,7 @@ l strings.2036
 :4302
         lda     2 -224                  ! Load local address
         inv                             ! Invalidate address
-! 
+!
 ! end;
 l strings.2029
 :4303
@@ -21067,14 +21067,14 @@ l strings.2029
         retp    24                      ! Return from procedure/function(t)
 l strings.2024=232
 l strings.2025=32
-! 
+!
 ! overload procedure writere(r:  real;     { real to print }
 e r
 :4305
 :4306
 !                            fl: integer); { field }
 :4307
-! 
+!
 ! begin
 b r writere@p_n_i
 s       r p 48 n
@@ -21084,7 +21084,7 @@ l strings.126
 :4309
 :4309
         mst     1 l strings.2038 l strings.2039 ! Mark(frame) stack
-! 
+!
 !    writere(output, r, fl) { output }
 :4310
 :4311
@@ -21092,7 +21092,7 @@ l strings.126
         lao     2                       ! Load global address
         lodr    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2041=0
         cup     l strings.125 3         ! Call user procedure
@@ -21102,14 +21102,14 @@ l strings.2041=0
         retp    16                      ! Return from procedure/function(t)
 l strings.2038=0
 l strings.2039=24
-! 
+!
 ! overload procedure writere(var f: text;  { file to print }
 e r
 :4314
 :4315
 !                                r: real); { real to print }
 :4316
-! 
+!
 ! begin
 b r writere@p_fc_n
 s       f p 48 fc
@@ -21119,7 +21119,7 @@ l strings.127
 :4318
 :4318
         mst     1 l strings.2043 l strings.2044 ! Mark(frame) stack
-! 
+!
 !    writere(f, r, 1) { output }
 :4319
 :4320
@@ -21127,7 +21127,7 @@ l strings.127
         loda    2 48                    ! Load local value(t)
         lodr    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.2046=0
         cup     l strings.125 3         ! Call user procedure
@@ -21137,12 +21137,12 @@ l strings.2046=0
         retp    16                      ! Return from procedure/function(t)
 l strings.2043=0
 l strings.2044=24
-! 
+!
 ! overload procedure writere(r: real); { real to print }
 e r
 :4323
 :4324
-! 
+!
 ! begin
 b r writere@p_n
 s       r p 40 n
@@ -21151,7 +21151,7 @@ l strings.128
 :4326
 :4326
         mst     1 l strings.2048 l strings.2049 ! Mark(frame) stack
-! 
+!
 !    writere(output, r, 1)
 :4327
 :4328
@@ -21159,7 +21159,7 @@ l strings.128
         lao     2                       ! Load global address
         lodr    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.2051=0
         cup     l strings.125 3         ! Call user procedure
@@ -21169,23 +21169,23 @@ l strings.2051=0
         retp    8                       ! Return from procedure/function(t)
 l strings.2048=0
 l strings.2049=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Write hex value
-! 
+!
 ! Writes the hex value to the given text file. Has the following forms:
-! 
+!
 ! procedure writeh(text, integer)
-! 
+!
 !    Writes the value in hex, with field of 1.
-! 
+!
 ! procedure writeh(text, integer, integer)
-! 
+!
 !    Writes the value in hex, with the given field.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure writeh(var f:    text;     { file to print }
 e r
 :4331
@@ -21210,7 +21210,7 @@ e r
 :4349
 !                      fl:   integer); { field }
 :4350
-! 
+!
 ! var os: packed array [1..maxhdg] of char; { output save }
 b r writeh@p_fc_i_i
 s       f p 56 fc
@@ -21226,14 +21226,14 @@ s       l l -32 i
 !     fi: integer; { fill index }
 :4354
 s       fi l -40 i
-! 
+!
 ! begin
 l strings.129
 :4355
 :4356
 :4356
         mst     1 l strings.2054 l strings.2055 ! Mark(frame) stack
-! 
+!
 !    hexs(os, i); { place output in buffer }
 :4357
 :4358
@@ -21337,7 +21337,7 @@ l strings.2063
         swp     8                       ! Swap tos with sos
         ldci    1                       ! Load constant(t)
         csp     wrc                     ! Call system procedure/function: Write character to text file
-! 
+!
 ! end;
         lodi    2 -40                   ! Load local value(t)
         lodi    2 -56                   ! Load local value(t)
@@ -21358,14 +21358,14 @@ l strings.2062
         retp    24                      ! Return from procedure/function(t)
 l strings.2054=48
 l strings.2055=24
-! 
+!
 ! overload procedure writeh(i:    integer;  { integer to print }
 e r
 :4365
 :4366
 !                           fl:   integer); { field }
 :4367
-! 
+!
 ! begin
 b r writeh@p_i_i
 s       i p 48 i
@@ -21375,7 +21375,7 @@ l strings.130
 :4369
 :4369
         mst     1 l strings.2066 l strings.2067 ! Mark(frame) stack
-! 
+!
 !    writeh(output, i, fl)
 :4370
 :4371
@@ -21383,7 +21383,7 @@ l strings.130
         lao     2                       ! Load global address
         lodi    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2069=0
         cup     l strings.129 3         ! Call user procedure
@@ -21393,14 +21393,14 @@ l strings.2069=0
         retp    16                      ! Return from procedure/function(t)
 l strings.2066=0
 l strings.2067=24
-! 
+!
 ! overload procedure writeh(var f: text;     { file to print }
 e r
 :4374
 :4375
 !                               i: integer); { integer to print }
 :4376
-! 
+!
 ! var os: packed array [1..maxhdg] of char; { output save }
 b r writeh@p_fc_i
 s       f p 48 fc
@@ -21409,14 +21409,14 @@ s       i p 40 i
 :4378
 t       l strings.2071 1 8
 s       os l -24 ax(1,8)ic
-! 
+!
 ! begin
 l strings.131
 :4379
 :4380
 :4380
         mst     1 l strings.2072 l strings.2073 ! Mark(frame) stack
-! 
+!
 !    hexs(os, i); { place output in buffer }
 :4381
 :4382
@@ -21440,19 +21440,19 @@ l strings.2075=0
         loda    2 -32                   ! Load local value(t)
         swp     16                      ! Swap tos with sos
         csp     wrsp                    ! Call system procedure/function: Write passed string to text file
-! 
+!
 ! end;
 :4384
 :4385
         retp    16                      ! Return from procedure/function(t)
 l strings.2072=16
 l strings.2073=24
-! 
+!
 ! overload procedure writeh(i: integer); { integer to print }
 e r
 :4386
 :4387
-! 
+!
 ! begin
 b r writeh@p_i
 s       i p 40 i
@@ -21461,14 +21461,14 @@ l strings.132
 :4389
 :4389
         mst     1 l strings.2077 l strings.2078 ! Mark(frame) stack
-! 
+!
 !    writeh(i, 1)
 :4390
 :4391
         sfr     l strings.2080          ! Set function result
         lodi    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.2080=0
         cup     l strings.130 2         ! Call user procedure
@@ -21478,7 +21478,7 @@ l strings.2080=0
         retp    8                       ! Return from procedure/function(t)
 l strings.2077=0
 l strings.2078=16
-! 
+!
 ! overload procedure writeh(var  f:   text;    { file to print }
 e r
 :4394
@@ -21487,7 +21487,7 @@ e r
 :4396
 !                           view fmt: string); { format string }
 :4397
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { output buffer }
 b r writeh@p_fc_i_vc
 s       f p 64 fc
@@ -21497,14 +21497,14 @@ s       fmt p 40 vc
 :4399
 t       l strings.2082 1 200
 s       buff l -216 ax(1,200)ic
-! 
+!
 ! begin
 l strings.133
 :4400
 :4401
 :4401
         mst     1 l strings.2083 l strings.2084 ! Mark(frame) stack
-! 
+!
 !    hexs(buff, i, fmt); { convert to buffer }
 :4402
 :4403
@@ -21536,21 +21536,21 @@ l strings.2087=8
         cuf     l strings.16 1 0 8 8    ! Call user function
 :4404
         csp     wrs                     ! Call system procedure/function: Write string to text file
-! 
+!
 ! end;
 :4405
 :4406
         retp    32                      ! Return from procedure/function(t)
 l strings.2083=208
 l strings.2084=40
-! 
+!
 ! overload procedure writeh(     i:   integer; { integer to print }
 e r
 :4407
 :4408
 !                           view fmt: string); { format string }
 :4409
-! 
+!
 ! begin
 b r writeh@p_i_vc
 s       i p 56 i
@@ -21560,7 +21560,7 @@ l strings.134
 :4411
 :4411
         mst     1 l strings.2089 l strings.2090 ! Mark(frame) stack
-! 
+!
 !    writeh(output, i, fmt) { output }
 :4412
 :4413
@@ -21569,7 +21569,7 @@ l strings.134
         lodi    2 56                    ! Load local value(t)
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.2092=0
         cup     l strings.133 3         ! Call user procedure
@@ -21579,23 +21579,23 @@ l strings.2092=0
         retp    24                      ! Return from procedure/function(t)
 l strings.2089=0
 l strings.2090=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Write octal value
-! 
+!
 ! Writes the octal value to the given text file. Has the following forms:
-! 
+!
 ! procedure writeo(text, integer)
-! 
+!
 !    Writes the value in octal, with field of 1.
-! 
+!
 ! procedure writeo(text, integer, integer)
-! 
+!
 !    Writes the value in octal, with the given field.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure writeo(var f:    text;     { result string }
 e r
 :4416
@@ -21620,7 +21620,7 @@ e r
 :4434
 !                      fl:   integer); { field }
 :4435
-! 
+!
 ! var os: packed array [1..maxlin] of char; { output save }
 b r writeo@p_fc_i_i
 s       f p 56 fc
@@ -21636,14 +21636,14 @@ s       l l -224 i
 !     fi: integer; { fill index }
 :4439
 s       fi l -232 i
-! 
+!
 ! begin
 l strings.135
 :4440
 :4441
 :4441
         mst     1 l strings.2095 l strings.2096 ! Mark(frame) stack
-! 
+!
 !    octs(os, i); { place output in buffer }
 :4442
 :4443
@@ -21747,7 +21747,7 @@ l strings.2104
         swp     8                       ! Swap tos with sos
         ldci    1                       ! Load constant(t)
         csp     wrc                     ! Call system procedure/function: Write character to text file
-! 
+!
 ! end;
         lodi    2 -232                  ! Load local value(t)
         lodi    2 -248                  ! Load local value(t)
@@ -21768,14 +21768,14 @@ l strings.2103
         retp    24                      ! Return from procedure/function(t)
 l strings.2095=240
 l strings.2096=24
-! 
+!
 ! overload procedure writeo(i:    integer;  { integer to print }
 e r
 :4450
 :4451
 !                           fl:   integer); { field }
 :4452
-! 
+!
 ! begin
 b r writeo@p_i_i
 s       i p 48 i
@@ -21785,7 +21785,7 @@ l strings.136
 :4454
 :4454
         mst     1 l strings.2107 l strings.2108 ! Mark(frame) stack
-! 
+!
 !    writeo(output, i, fl)
 :4455
 :4456
@@ -21793,7 +21793,7 @@ l strings.136
         lao     2                       ! Load global address
         lodi    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2110=0
         cup     l strings.135 3         ! Call user procedure
@@ -21803,14 +21803,14 @@ l strings.2110=0
         retp    16                      ! Return from procedure/function(t)
 l strings.2107=0
 l strings.2108=24
-! 
+!
 ! overload procedure writeo(var f: text;     { file to print }
 e r
 :4459
 :4460
 !                               i: integer); { integer to print }
 :4461
-! 
+!
 ! var os: packed array [1..maxlin] of char; { output save }
 b r writeo@p_fc_i
 s       f p 48 fc
@@ -21819,14 +21819,14 @@ s       i p 40 i
 :4463
 t       l strings.2112 1 200
 s       os l -216 ax(1,200)ic
-! 
+!
 ! begin
 l strings.137
 :4464
 :4465
 :4465
         mst     1 l strings.2113 l strings.2114 ! Mark(frame) stack
-! 
+!
 !    octs(os, i); { place output in buffer }
 :4466
 :4467
@@ -21850,19 +21850,19 @@ l strings.2116=0
         loda    2 -224                  ! Load local value(t)
         swp     16                      ! Swap tos with sos
         csp     wrsp                    ! Call system procedure/function: Write passed string to text file
-! 
+!
 ! end;
 :4469
 :4470
         retp    16                      ! Return from procedure/function(t)
 l strings.2113=208
 l strings.2114=24
-! 
+!
 ! overload procedure writeo(i: integer); { integer to print }
 e r
 :4471
 :4472
-! 
+!
 ! begin
 b r writeo@p_i
 s       i p 40 i
@@ -21871,14 +21871,14 @@ l strings.138
 :4474
 :4474
         mst     1 l strings.2118 l strings.2119 ! Mark(frame) stack
-! 
+!
 !    writeo(i, 1)
 :4475
 :4476
         sfr     l strings.2121          ! Set function result
         lodi    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.2121=0
         cup     l strings.136 2         ! Call user procedure
@@ -21888,7 +21888,7 @@ l strings.2121=0
         retp    8                       ! Return from procedure/function(t)
 l strings.2118=0
 l strings.2119=16
-! 
+!
 ! overload procedure writeo(var  f:   text;    { file to print }
 e r
 :4479
@@ -21897,7 +21897,7 @@ e r
 :4481
 !                           view fmt: string); { format string }
 :4482
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { output buffer }
 b r writeo@p_fc_i_vc
 s       f p 64 fc
@@ -21907,14 +21907,14 @@ s       fmt p 40 vc
 :4484
 t       l strings.2123 1 200
 s       buff l -216 ax(1,200)ic
-! 
+!
 ! begin
 l strings.139
 :4485
 :4486
 :4486
         mst     1 l strings.2124 l strings.2125 ! Mark(frame) stack
-! 
+!
 !    octs(buff, i, fmt); { convert to buffer }
 :4487
 :4488
@@ -21946,21 +21946,21 @@ l strings.2128=8
         cuf     l strings.16 1 0 8 8    ! Call user function
 :4489
         csp     wrs                     ! Call system procedure/function: Write string to text file
-! 
+!
 ! end;
 :4490
 :4491
         retp    32                      ! Return from procedure/function(t)
 l strings.2124=208
 l strings.2125=40
-! 
+!
 ! overload procedure writeo(     i:   integer; { integer to print }
 e r
 :4492
 :4493
 !                           view fmt: string); { format string }
 :4494
-! 
+!
 ! begin
 b r writeo@p_i_vc
 s       i p 56 i
@@ -21970,7 +21970,7 @@ l strings.140
 :4496
 :4496
         mst     1 l strings.2130 l strings.2131 ! Mark(frame) stack
-! 
+!
 !    writeo(output, i, fmt) { output }
 :4497
 :4498
@@ -21979,7 +21979,7 @@ l strings.140
         lodi    2 56                    ! Load local value(t)
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.2133=0
         cup     l strings.139 3         ! Call user procedure
@@ -21989,23 +21989,23 @@ l strings.2133=0
         retp    24                      ! Return from procedure/function(t)
 l strings.2130=0
 l strings.2131=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Write binary value
-! 
+!
 ! Writes the binary value to the given text file. Has the following forms:
-! 
+!
 ! procedure writeb(text, integer)
-! 
+!
 !    Writes the value in binary, with field of 1.
-! 
+!
 ! procedure writeb(text, integer, integer)
-! 
+!
 !    Writes the value in binary, with the given field.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! procedure writeb(var f:    text;     { result string }
 e r
 :4501
@@ -22030,7 +22030,7 @@ e r
 :4519
 !                      fl:   integer); { field }
 :4520
-! 
+!
 ! var os: packed array [1..maxlin] of char; { output save }
 b r writeb@p_fc_i_i
 s       f p 56 fc
@@ -22046,14 +22046,14 @@ s       l l -224 i
 !     fi: integer; { fill index }
 :4524
 s       fi l -232 i
-! 
+!
 ! begin
 l strings.141
 :4525
 :4526
 :4526
         mst     1 l strings.2136 l strings.2137 ! Mark(frame) stack
-! 
+!
 !    bins(os, i); { place output in buffer }
 :4527
 :4528
@@ -22157,7 +22157,7 @@ l strings.2145
         swp     8                       ! Swap tos with sos
         ldci    1                       ! Load constant(t)
         csp     wrc                     ! Call system procedure/function: Write character to text file
-! 
+!
 ! end;
         lodi    2 -232                  ! Load local value(t)
         lodi    2 -248                  ! Load local value(t)
@@ -22178,14 +22178,14 @@ l strings.2144
         retp    24                      ! Return from procedure/function(t)
 l strings.2136=240
 l strings.2137=24
-! 
+!
 ! overload procedure writeb(i:    integer;  { integer to print }
 e r
 :4535
 :4536
 !                           fl:   integer); { field }
 :4537
-! 
+!
 ! begin
 b r writeb@p_i_i
 s       i p 48 i
@@ -22195,7 +22195,7 @@ l strings.142
 :4539
 :4539
         mst     1 l strings.2148 l strings.2149 ! Mark(frame) stack
-! 
+!
 !    writeb(output, i, fl)
 :4540
 :4541
@@ -22203,7 +22203,7 @@ l strings.142
         lao     2                       ! Load global address
         lodi    2 48                    ! Load local value(t)
         lodi    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2151=0
         cup     l strings.141 3         ! Call user procedure
@@ -22213,14 +22213,14 @@ l strings.2151=0
         retp    16                      ! Return from procedure/function(t)
 l strings.2148=0
 l strings.2149=24
-! 
+!
 ! overload procedure writeb(var f: text;     { result string }
 e r
 :4544
 :4545
 !                               i: integer); { integer to print }
 :4546
-! 
+!
 ! var os: packed array [1..maxlin] of char; { output save }
 b r writeb@p_fc_i
 s       f p 48 fc
@@ -22229,14 +22229,14 @@ s       i p 40 i
 :4548
 t       l strings.2153 1 200
 s       os l -216 ax(1,200)ic
-! 
+!
 ! begin
 l strings.143
 :4549
 :4550
 :4550
         mst     1 l strings.2154 l strings.2155 ! Mark(frame) stack
-! 
+!
 !    bins(os, i); { place output in buffer }
 :4551
 :4552
@@ -22260,19 +22260,19 @@ l strings.2157=0
         loda    2 -224                  ! Load local value(t)
         swp     16                      ! Swap tos with sos
         csp     wrsp                    ! Call system procedure/function: Write passed string to text file
-! 
+!
 ! end;
 :4554
 :4555
         retp    16                      ! Return from procedure/function(t)
 l strings.2154=208
 l strings.2155=24
-! 
+!
 ! overload procedure writeb(i: integer); { integer to print }
 e r
 :4556
 :4557
-! 
+!
 ! begin
 b r writeb@p_i
 s       i p 40 i
@@ -22281,14 +22281,14 @@ l strings.144
 :4559
 :4559
         mst     1 l strings.2159 l strings.2160 ! Mark(frame) stack
-! 
+!
 !    writeb(i, 1)
 :4560
 :4561
         sfr     l strings.2162          ! Set function result
         lodi    2 40                    ! Load local value(t)
         ldci    1                       ! Load constant(t)
-! 
+!
 ! end;
 l strings.2162=0
         cup     l strings.142 2         ! Call user procedure
@@ -22298,7 +22298,7 @@ l strings.2162=0
         retp    8                       ! Return from procedure/function(t)
 l strings.2159=0
 l strings.2160=16
-! 
+!
 ! overload procedure writeb(var  f:   text;    { file to print }
 e r
 :4564
@@ -22307,7 +22307,7 @@ e r
 :4566
 !                           view fmt: string); { format string }
 :4567
-! 
+!
 ! var buff: packed array [1..maxlin] of char; { output buffer }
 b r writeb@p_fc_i_vc
 s       f p 64 fc
@@ -22317,14 +22317,14 @@ s       fmt p 40 vc
 :4569
 t       l strings.2164 1 200
 s       buff l -216 ax(1,200)ic
-! 
+!
 ! begin
 l strings.145
 :4570
 :4571
 :4571
         mst     1 l strings.2165 l strings.2166 ! Mark(frame) stack
-! 
+!
 !    bins(buff, i, fmt); { convert to buffer }
 :4572
 :4573
@@ -22356,21 +22356,21 @@ l strings.2169=8
         cuf     l strings.16 1 0 8 8    ! Call user function
 :4574
         csp     wrs                     ! Call system procedure/function: Write string to text file
-! 
+!
 ! end;
 :4575
 :4576
         retp    32                      ! Return from procedure/function(t)
 l strings.2165=208
 l strings.2166=40
-! 
+!
 ! overload procedure writeb(     i:   integer; { integer to print }
 e r
 :4577
 :4578
 !                           view fmt: string); { format string }
 :4579
-! 
+!
 ! begin
 b r writeb@p_i_vc
 s       i p 56 i
@@ -22380,7 +22380,7 @@ l strings.146
 :4581
 :4581
         mst     1 l strings.2171 l strings.2172 ! Mark(frame) stack
-! 
+!
 !    writeb(output, i, fmt) { output }
 :4582
 :4583
@@ -22389,7 +22389,7 @@ l strings.146
         lodi    2 56                    ! Load local value(t)
         lda     2 40                    ! Load local address
         ldp                             ! Load complex pointer
-! 
+!
 ! end;
 l strings.2174=0
         cup     l strings.145 3         ! Call user procedure
@@ -22399,16 +22399,16 @@ l strings.2174=0
         retp    24                      ! Return from procedure/function(t)
 l strings.2171=0
 l strings.2172=32
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Get number from string
-! 
+!
 ! Parses a number from the given string. Takes a radix for the number, but also
 ! allows the number to override this with a radix marker.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function numv(view s: string;   { string containing integer }
 e r
 :4586
@@ -22428,7 +22428,7 @@ e r
 :4598
 !               : integer;        { result }
 :4599
-! 
+!
 ! var sgn:   integer; { sign of result }
 b f numv@f_vc_i_b
 s       s p 56 vc
@@ -22449,9 +22449,9 @@ s       i l -48 i
 !     digit: set of char; { digit set }
 :4605
 s       digit l -80 sc
-! 
+!
 ! { check end of string }
-! 
+!
 ! function endstr: boolean; begin endstr := si > max(s) end;
 :4606
 :4607
@@ -22472,16 +22472,16 @@ l strings.2176
         retb    0                       ! Return from procedure/function(t)
 l strings.2177=0
 l strings.2178=32
-! 
+!
 ! { check next character in string }
-! 
+!
 ! function chkchr: char; 
 e f
 :4610
 :4611
 :4612
 :4613
-! 
+!
 ! begin if endstr then chkchr := ' ' else chkchr := s[si] end;
 b f chkchr@f
 l strings.2180
@@ -22512,9 +22512,9 @@ l strings.2186
         retc    0                       ! Return from procedure/function(t)
 l strings.2181=0
 l strings.2182=24
-! 
+!
 ! { get next character in string }
-! 
+!
 ! procedure getchr; begin if not endstr then si := si+1 end;
 e f
 :4616
@@ -22540,9 +22540,9 @@ l strings.2192
         retp    0                       ! Return from procedure/function(t)
 l strings.2188=0
 l strings.2189=16
-! 
+!
 ! { skip spaces }
-! 
+!
 ! procedure skpspc; begin while (chkchr = ' ') and not endstr do getchr end;
 e r
 :4620
@@ -22578,7 +22578,7 @@ l strings.2200
         retp    0                       ! Return from procedure/function(t)
 l strings.2194=0
 l strings.2195=16
-! 
+!
 ! begin
 e r
 l strings.2175
@@ -22586,7 +22586,7 @@ l strings.2175
 :4625
 :4625
         mst     1 l strings.2202 l strings.2203 ! Mark(frame) stack
-! 
+!
 !    si := 1; { set 1st string character }
 :4626
 :4627
@@ -22613,7 +22613,7 @@ l strings.2206=8
         ldcc    '$'                     ! Load constant(t)
         equc                            ! Equal(t)
          fjp l strings.2207
-! 
+!
 !       getchr; { skip '$' }
 :4632
 :4633
@@ -22623,7 +22623,7 @@ l strings.2208=0
 :4633
 !       r := 16 { set radix }
 :4634
-! 
+!
 !    end else if chkchr = '&' then begin { octal }
         ldci    16                      ! Load constant(t)
         stri    2 48                    ! Store local(t)
@@ -22639,7 +22639,7 @@ l strings.2210=8
         ldcc    '&'                     ! Load constant(t)
         equc                            ! Equal(t)
          fjp l strings.2211
-! 
+!
 !       getchr; { skip '&' }
 :4637
 :4638
@@ -22649,7 +22649,7 @@ l strings.2212=0
 :4638
 !       r := 8 { set radix }
 :4639
-! 
+!
 !    end else if chkchr = '%' then begin { binary }
         ldci    8                       ! Load constant(t)
         stri    2 48                    ! Store local(t)
@@ -22665,7 +22665,7 @@ l strings.2214=8
         ldcc    '%'                     ! Load constant(t)
         equc                            ! Equal(t)
          fjp l strings.2215
-! 
+!
 !       getchr; { skip '%' }
 :4642
 :4643
@@ -22675,7 +22675,7 @@ l strings.2216=0
 :4643
 !       r := 2 { set radix }
 :4644
-! 
+!
 !    end;
         ldci    2                       ! Load constant(t)
         stri    2 48                    ! Store local(t)
@@ -22693,7 +22693,7 @@ l strings.2209
         ldci    10                      ! Load constant(t)
         equi                            ! Equal(t)
          fjp l strings.2217
-! 
+!
 !       { check sign appears }
 !       if chkchr = '+' then getchr { skip '+' }
 :4648
@@ -22739,7 +22739,7 @@ l strings.2224=0
         stri    2 -24                   ! Store local(t)
 :4655
 :4656
-! 
+!
 !    end;
 l strings.2223
 :4657
@@ -22860,7 +22860,7 @@ l strings.2238=8
         lda     2 -80                   ! Load local address
         inn                             ! Set inclusion
          fjp l strings.2239
-! 
+!
 !       v := ord(chkchr)-ord('0'); { find the value of the new digit }
 :4670
 :4671
@@ -22916,7 +22916,7 @@ l strings.2242
 :4675
 !       getchr { next digit }
 :4676
-! 
+!
 !    end;
         sfr     l strings.2243          ! Set function result
 l strings.2243=0
@@ -22956,11 +22956,11 @@ l strings.2247=0
 :4682
 l strings.2246
 :4682
-! 
+!
 !    numv := i { return result }
 :4683
 :4684
-! 
+!
 ! end;
         lodi    2 -48                   ! Load local value(t)
         stri    2 72                    ! Store local(t)
@@ -22969,15 +22969,15 @@ l strings.2246
         reti    32                      ! Return from procedure/function(t)
 l strings.2202=64
 l strings.2203=40
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Get decimal integer from string
-! 
+!
 ! Parses an integer from the given string.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function intv(view s: string) { string containing integer }
 e f
 :4687
@@ -22992,21 +22992,21 @@ e f
 :4696
 !               : integer;      { result }
 :4697
-! 
+!
 ! var ovf: boolean; { overflow flag }
 b f intv@f_vc
 s       s p 40 vc
 :4698
 :4699
 s       ovf l -17 b
-! 
+!
 ! begin
 l strings.147
 :4700
 :4701
 :4701
         mst     1 l strings.2249 l strings.2250 ! Mark(frame) stack
-! 
+!
 !    intv := numv(s, 10, ovf); { return result }
 :4702
 :4703
@@ -23025,7 +23025,7 @@ l strings.2252=8
          fjp l strings.2253
         sfr     l strings.2254          ! Set function result
         lao     91                      ! Load global address
-! 
+!
 ! end;
 l strings.2254=0
         cup     l strings.211 1         ! Call user procedure
@@ -23037,7 +23037,7 @@ l strings.2253
         reti    16                      ! Return from procedure/function(t)
 l strings.2249=8
 l strings.2250=32
-! 
+!
 ! overload function intv(view s: string;    { string containing integer }
 e f
 :4707
@@ -23046,7 +23046,7 @@ e f
 :4709
 !                        : integer;         { result }
 :4710
-! 
+!
 ! begin
 b f intv@f_vc_b
 s       s p 48 vc
@@ -23056,7 +23056,7 @@ l strings.149
 :4712
 :4712
         mst     1 l strings.2256 l strings.2257 ! Mark(frame) stack
-! 
+!
 !    intv := numv(s, 10, ovf) { return result }
 :4713
 :4714
@@ -23065,7 +23065,7 @@ l strings.149
         ldp                             ! Load complex pointer
         ldci    10                      ! Load constant(t)
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2259=8
         cuf     l strings.2175 3 0 8 8  ! Call user function
@@ -23076,14 +23076,14 @@ l strings.2259=8
         reti    24                      ! Return from procedure/function(t)
 l strings.2256=0
 l strings.2257=32
-! 
+!
 ! overload function intv(s: pstring) { string containing integer }
 e f
 :4717
 :4718
 !                        : integer;  { result }
 :4719
-! 
+!
 ! begin
 b f intv@f_pvc
 s       s p 40 pvc
@@ -23092,7 +23092,7 @@ l strings.148
 :4721
 :4721
         mst     1 l strings.2261 l strings.2262 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :4722
 :4723
@@ -23107,7 +23107,7 @@ l strings.2265=0
 :4723
 l strings.2264
 :4723
-! 
+!
 !    intv := intv(s^) { return result }
 :4724
 :4725
@@ -23116,7 +23116,7 @@ l strings.2264
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.2266=8
         cuf     l strings.147 1 0 8 8   ! Call user function
@@ -23127,7 +23127,7 @@ l strings.2266=8
         reti    8                       ! Return from procedure/function(t)
 l strings.2261=0
 l strings.2262=16
-! 
+!
 ! overload function intv(    s:   pstring; { string containing integer }
 e f
 :4728
@@ -23136,7 +23136,7 @@ e f
 :4730
 !                        : integer;  { result }
 :4731
-! 
+!
 ! begin
 b f intv@f_pvc_b
 s       s p 48 pvc
@@ -23146,7 +23146,7 @@ l strings.150
 :4733
 :4733
         mst     1 l strings.2268 l strings.2269 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :4734
 :4735
@@ -23161,7 +23161,7 @@ l strings.2272=0
 :4735
 l strings.2271
 :4735
-! 
+!
 !    intv := intv(s^, ovf) { return result }
 :4736
 :4737
@@ -23171,7 +23171,7 @@ l strings.2271
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2273=8
         cuf     l strings.149 2 0 8 8   ! Call user function
@@ -23182,15 +23182,15 @@ l strings.2273=8
         reti    16                      ! Return from procedure/function(t)
 l strings.2268=0
 l strings.2269=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Get hexadecimal from string
-! 
+!
 ! Parses an hexadecimal from the given string.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function hexv(view s: string) { string containing integer }
 e f
 :4740
@@ -23205,21 +23205,21 @@ e f
 :4749
 !               : integer;      { result }
 :4750
-! 
+!
 ! var ovf: boolean; { overflow flag }
 b f hexv@f_vc
 s       s p 40 vc
 :4751
 :4752
 s       ovf l -17 b
-! 
+!
 ! begin
 l strings.151
 :4753
 :4754
 :4754
         mst     1 l strings.2275 l strings.2276 ! Mark(frame) stack
-! 
+!
 !    hexv := numv(s, 16, ovf); { return result }
 :4755
 :4756
@@ -23238,7 +23238,7 @@ l strings.2278=8
          fjp l strings.2279
         sfr     l strings.2280          ! Set function result
         lao     91                      ! Load global address
-! 
+!
 ! end;
 l strings.2280=0
         cup     l strings.211 1         ! Call user procedure
@@ -23250,7 +23250,7 @@ l strings.2279
         reti    16                      ! Return from procedure/function(t)
 l strings.2275=8
 l strings.2276=32
-! 
+!
 ! overload function hexv(view s: string;    { string containing integer }
 e f
 :4760
@@ -23259,7 +23259,7 @@ e f
 :4762
 !                        : integer;         { result }
 :4763
-! 
+!
 ! begin
 b f hexv@f_vc_b
 s       s p 48 vc
@@ -23269,7 +23269,7 @@ l strings.153
 :4765
 :4765
         mst     1 l strings.2282 l strings.2283 ! Mark(frame) stack
-! 
+!
 !    hexv := numv(s, 16, ovf) { return result }
 :4766
 :4767
@@ -23278,7 +23278,7 @@ l strings.153
         ldp                             ! Load complex pointer
         ldci    16                      ! Load constant(t)
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2285=8
         cuf     l strings.2175 3 0 8 8  ! Call user function
@@ -23289,14 +23289,14 @@ l strings.2285=8
         reti    24                      ! Return from procedure/function(t)
 l strings.2282=0
 l strings.2283=32
-! 
+!
 ! overload function hexv(s: pstring) { string containing integer }
 e f
 :4770
 :4771
 !                        : integer;  { result }
 :4772
-! 
+!
 ! begin
 b f hexv@f_pvc
 s       s p 40 pvc
@@ -23305,7 +23305,7 @@ l strings.152
 :4774
 :4774
         mst     1 l strings.2287 l strings.2288 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :4775
 :4776
@@ -23320,7 +23320,7 @@ l strings.2291=0
 :4776
 l strings.2290
 :4776
-! 
+!
 !    hexv := hexv(s^) { return result }
 :4777
 :4778
@@ -23329,7 +23329,7 @@ l strings.2290
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.2292=8
         cuf     l strings.151 1 0 8 8   ! Call user function
@@ -23340,7 +23340,7 @@ l strings.2292=8
         reti    8                       ! Return from procedure/function(t)
 l strings.2287=0
 l strings.2288=16
-! 
+!
 ! overload function hexv(    s:   pstring; { string containing integer }
 e f
 :4781
@@ -23349,7 +23349,7 @@ e f
 :4783
 !                        : integer;  { result }
 :4784
-! 
+!
 ! begin
 b f hexv@f_pvc_b
 s       s p 48 pvc
@@ -23359,7 +23359,7 @@ l strings.154
 :4786
 :4786
         mst     1 l strings.2294 l strings.2295 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :4787
 :4788
@@ -23374,7 +23374,7 @@ l strings.2298=0
 :4788
 l strings.2297
 :4788
-! 
+!
 !    hexv := hexv(s^, ovf) { return result }
 :4789
 :4790
@@ -23384,7 +23384,7 @@ l strings.2297
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2299=8
         cuf     l strings.153 2 0 8 8   ! Call user function
@@ -23395,15 +23395,15 @@ l strings.2299=8
         reti    16                      ! Return from procedure/function(t)
 l strings.2294=0
 l strings.2295=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Get octal from string
-! 
+!
 ! Parses an octal from the given string.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function octv(view s: string) { string containing integer }
 e f
 :4793
@@ -23418,21 +23418,21 @@ e f
 :4802
 !               : integer;      { result }
 :4803
-! 
+!
 ! var ovf: boolean; { overflow flag }
 b f octv@f_vc
 s       s p 40 vc
 :4804
 :4805
 s       ovf l -17 b
-! 
+!
 ! begin
 l strings.155
 :4806
 :4807
 :4807
         mst     1 l strings.2301 l strings.2302 ! Mark(frame) stack
-! 
+!
 !    octv := numv(s, 8, ovf); { return result }
 :4808
 :4809
@@ -23451,7 +23451,7 @@ l strings.2304=8
          fjp l strings.2305
         sfr     l strings.2306          ! Set function result
         lao     91                      ! Load global address
-! 
+!
 ! end;
 l strings.2306=0
         cup     l strings.211 1         ! Call user procedure
@@ -23463,7 +23463,7 @@ l strings.2305
         reti    16                      ! Return from procedure/function(t)
 l strings.2301=8
 l strings.2302=32
-! 
+!
 ! overload function octv(view s: string;    { string containing integer }
 e f
 :4813
@@ -23472,7 +23472,7 @@ e f
 :4815
 !                        : integer;         { result }
 :4816
-! 
+!
 ! begin
 b f octv@f_vc_b
 s       s p 48 vc
@@ -23482,7 +23482,7 @@ l strings.157
 :4818
 :4818
         mst     1 l strings.2308 l strings.2309 ! Mark(frame) stack
-! 
+!
 !    octv := numv(s, 8, ovf) { return result }
 :4819
 :4820
@@ -23491,7 +23491,7 @@ l strings.157
         ldp                             ! Load complex pointer
         ldci    8                       ! Load constant(t)
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2311=8
         cuf     l strings.2175 3 0 8 8  ! Call user function
@@ -23502,14 +23502,14 @@ l strings.2311=8
         reti    24                      ! Return from procedure/function(t)
 l strings.2308=0
 l strings.2309=32
-! 
+!
 ! overload function octv(s: pstring) { string containing integer }
 e f
 :4823
 :4824
 !                        : integer;  { result }
 :4825
-! 
+!
 ! begin
 b f octv@f_pvc
 s       s p 40 pvc
@@ -23518,7 +23518,7 @@ l strings.156
 :4827
 :4827
         mst     1 l strings.2313 l strings.2314 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :4828
 :4829
@@ -23533,7 +23533,7 @@ l strings.2317=0
 :4829
 l strings.2316
 :4829
-! 
+!
 !    octv := octv(s^) { return result }
 :4830
 :4831
@@ -23542,7 +23542,7 @@ l strings.2316
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.2318=8
         cuf     l strings.155 1 0 8 8   ! Call user function
@@ -23553,7 +23553,7 @@ l strings.2318=8
         reti    8                       ! Return from procedure/function(t)
 l strings.2313=0
 l strings.2314=16
-! 
+!
 ! overload function octv(    s:   pstring; { string containing integer }
 e f
 :4834
@@ -23562,7 +23562,7 @@ e f
 :4836
 !                        : integer;  { result }
 :4837
-! 
+!
 ! begin
 b f octv@f_pvc_b
 s       s p 48 pvc
@@ -23572,7 +23572,7 @@ l strings.158
 :4839
 :4839
         mst     1 l strings.2320 l strings.2321 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :4840
 :4841
@@ -23587,7 +23587,7 @@ l strings.2324=0
 :4841
 l strings.2323
 :4841
-! 
+!
 !    octv := octv(s^, ovf) { return result }
 :4842
 :4843
@@ -23597,7 +23597,7 @@ l strings.2323
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2325=8
         cuf     l strings.157 2 0 8 8   ! Call user function
@@ -23608,15 +23608,15 @@ l strings.2325=8
         reti    16                      ! Return from procedure/function(t)
 l strings.2320=0
 l strings.2321=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Get binary from string
-! 
+!
 ! Parses a binary number from the given string.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function binv(view s: string) { string containing integer }
 e f
 :4846
@@ -23631,21 +23631,21 @@ e f
 :4855
 !               : integer;      { result }
 :4856
-! 
+!
 ! var ovf: boolean; { overflow flag }
 b f binv@f_vc
 s       s p 40 vc
 :4857
 :4858
 s       ovf l -17 b
-! 
+!
 ! begin
 l strings.159
 :4859
 :4860
 :4860
         mst     1 l strings.2327 l strings.2328 ! Mark(frame) stack
-! 
+!
 !    binv := numv(s, 2, ovf); { return result }
 :4861
 :4862
@@ -23664,7 +23664,7 @@ l strings.2330=8
          fjp l strings.2331
         sfr     l strings.2332          ! Set function result
         lao     91                      ! Load global address
-! 
+!
 ! end;
 l strings.2332=0
         cup     l strings.211 1         ! Call user procedure
@@ -23676,7 +23676,7 @@ l strings.2331
         reti    16                      ! Return from procedure/function(t)
 l strings.2327=8
 l strings.2328=32
-! 
+!
 ! overload function binv(view s: string;    { string containing integer }
 e f
 :4866
@@ -23685,7 +23685,7 @@ e f
 :4868
 !                        : integer;         { result }
 :4869
-! 
+!
 ! begin
 b f binv@f_vc_b
 s       s p 48 vc
@@ -23695,7 +23695,7 @@ l strings.161
 :4871
 :4871
         mst     1 l strings.2334 l strings.2335 ! Mark(frame) stack
-! 
+!
 !    binv := numv(s, 2, ovf) { return result }
 :4872
 :4873
@@ -23704,7 +23704,7 @@ l strings.161
         ldp                             ! Load complex pointer
         ldci    2                       ! Load constant(t)
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2337=8
         cuf     l strings.2175 3 0 8 8  ! Call user function
@@ -23715,14 +23715,14 @@ l strings.2337=8
         reti    24                      ! Return from procedure/function(t)
 l strings.2334=0
 l strings.2335=32
-! 
+!
 ! overload function binv(s: pstring) { string containing integer }
 e f
 :4876
 :4877
 !                        : integer;  { result }
 :4878
-! 
+!
 ! begin
 b f binv@f_pvc
 s       s p 40 pvc
@@ -23731,7 +23731,7 @@ l strings.160
 :4880
 :4880
         mst     1 l strings.2339 l strings.2340 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :4881
 :4882
@@ -23746,7 +23746,7 @@ l strings.2343=0
 :4882
 l strings.2342
 :4882
-! 
+!
 !    binv := binv(s^) { return result }
 :4883
 :4884
@@ -23755,7 +23755,7 @@ l strings.2342
         chka    1 9223372036854775807   ! Bounds check(t)
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
-! 
+!
 ! end;
 l strings.2344=8
         cuf     l strings.159 1 0 8 8   ! Call user function
@@ -23766,7 +23766,7 @@ l strings.2344=8
         reti    8                       ! Return from procedure/function(t)
 l strings.2339=0
 l strings.2340=16
-! 
+!
 ! overload function binv(    s:   pstring; { string containing integer }
 e f
 :4887
@@ -23775,7 +23775,7 @@ e f
 :4889
 !                        : integer;  { result }
 :4890
-! 
+!
 ! begin
 b f binv@f_pvc_b
 s       s p 48 pvc
@@ -23785,7 +23785,7 @@ l strings.162
 :4892
 :4892
         mst     1 l strings.2346 l strings.2347 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :4893
 :4894
@@ -23800,7 +23800,7 @@ l strings.2350=0
 :4894
 l strings.2349
 :4894
-! 
+!
 !    binv := binv(s^, ovf) { return result }
 :4895
 :4896
@@ -23810,7 +23810,7 @@ l strings.2349
         mdc     8                       ! Make dynamic complex pointer
         spc                             ! Simplify complex pointer
         loda    2 40                    ! Load local value(t)
-! 
+!
 ! end;
 l strings.2351=8
         cuf     l strings.161 2 0 8 8   ! Call user function
@@ -23821,15 +23821,15 @@ l strings.2351=8
         reti    16                      ! Return from procedure/function(t)
 l strings.2346=0
 l strings.2347=24
-! 
+!
 ! {******************************************************************************
-! 
+!
 ! Get real from string
-! 
+!
 ! Parses a real from the given string.
-! 
+!
 ! ******************************************************************************}
-! 
+!
 ! function realv(view s: string) { string to parse from }
 e f
 :4899
@@ -23844,7 +23844,7 @@ e f
 :4908
 !                : real;         { return real }
 :4909
-! 
+!
 ! var i:   integer; { integer portion }
 b f realv@f_vc
 s       s p 40 vc
@@ -23860,9 +23860,9 @@ s       si l -40 i
 !     r:   real;    { real to read }
 :4914
 s       r l -48 n
-! 
+!
 ! { check end of string }
-! 
+!
 ! function endstr: boolean; begin endstr := si > max(s) end;
 :4915
 :4916
@@ -23883,16 +23883,16 @@ l strings.2353
         retb    0                       ! Return from procedure/function(t)
 l strings.2354=0
 l strings.2355=32
-! 
+!
 ! { check next character in string }
-! 
+!
 ! function chkchr: char; 
 e f
 :4919
 :4920
 :4921
 :4922
-! 
+!
 ! begin if endstr then chkchr := ' ' else chkchr := s[si] end;
 b f chkchr@f
 l strings.2357
@@ -23923,9 +23923,9 @@ l strings.2363
         retc    0                       ! Return from procedure/function(t)
 l strings.2358=0
 l strings.2359=24
-! 
+!
 ! { get next character in string }
-! 
+!
 ! procedure getchr; begin if not endstr then si := si+1 end;
 e f
 :4925
@@ -23951,9 +23951,9 @@ l strings.2369
         retp    0                       ! Return from procedure/function(t)
 l strings.2365=0
 l strings.2366=16
-! 
+!
 ! { skip spaces }
-! 
+!
 ! procedure skpspc; begin while (chkchr = ' ') and not endstr do getchr end;
 e r
 :4929
@@ -23989,10 +23989,10 @@ l strings.2377
         retp    0                       ! Return from procedure/function(t)
 l strings.2371=0
 l strings.2372=16
-! 
-! 
+!
+!
 ! { find power of ten effciently }
-! 
+!
 ! function pwrten(e: integer): real;
 e r
 :4933
@@ -24000,7 +24000,7 @@ e r
 :4935
 :4936
 :4937
-! 
+!
 ! var t: real; { accumulator }
 b f pwrten@f_i
 s       e p 40 i
@@ -24010,14 +24010,14 @@ s       t l -32 n
 !     p: real; { current power }
 :4940
 s       p l -40 n
-! 
+!
 ! begin
 l strings.2379
 :4941
 :4942
 :4942
         mst     2 l strings.2380 l strings.2381 ! Mark(frame) stack
-! 
+!
 !    p := 1.0e+1; { set 1st power }
 :4943
 :4944
@@ -24029,7 +24029,7 @@ l strings.2379
         strr    3 -32                   ! Store local(t)
 !    repeat 
 :4946
-! 
+!
 !       if odd(e) then t := t*p; { if bit set, add this power }
 l strings.2383
 :4947
@@ -24054,7 +24054,7 @@ l strings.2384
 :4950
         lodr    3 -40                   ! Load local value(t)
         sqr                             ! Square of real
-! 
+!
 !    until e = 0;
         strr    3 -40                   ! Store local(t)
 :4951
@@ -24065,7 +24065,7 @@ l strings.2384
          fjp l strings.2383
 !    pwrten := t
 :4953
-! 
+!
 ! end;
         lodr    3 -32                   ! Load local value(t)
         strr    3 48                    ! Store local(t)
@@ -24074,16 +24074,16 @@ l strings.2384
         retr    8                       ! Return from procedure/function(t)
 l strings.2380=16
 l strings.2381=16
-! 
+!
 ! { parse integer }
-! 
+!
 ! procedure getint(var i: integer);
 e f
 :4956
 :4957
 :4958
 :4959
-! 
+!
 ! var sgn: integer; { sign of result }
 b r getint@p_i
 s       i p 40 i
@@ -24093,14 +24093,14 @@ s       sgn l -32 i
 !     v:   integer; { incoming digit value }
 :4962
 s       v l -40 i
-! 
+!
 ! begin
 l strings.2385
 :4963
 :4964
 :4964
         mst     2 l strings.2386 l strings.2387 ! Mark(frame) stack
-! 
+!
 !    sgn := 1; { set sign is positive }
 :4965
 :4966
@@ -24133,7 +24133,7 @@ l strings.2393=8
         ldcc    '-'                     ! Load constant(t)
         equc                            ! Equal(t)
          fjp l strings.2394
-! 
+!
 !       getchr; { skip '-' }
 :4970
 :4971
@@ -24143,7 +24143,7 @@ l strings.2395=0
 :4971
 !       sgn := -1 { set sign negative }
 :4972
-! 
+!
 !    end;
         ldci    1                       ! Load constant(t)
         ngi                             ! Negate integer
@@ -24191,7 +24191,7 @@ l strings.2400=8
         ldcs    (  48  49  50  51  52  53  54  55  56  57) ! Load constant(t)
         inn                             ! Set inclusion
          fjp l strings.2401
-! 
+!
 !       v := ord(chkchr)-ord('0'); { find the value of the new digit }
 :4979
 :4980
@@ -24251,7 +24251,7 @@ l strings.2403
         stoi                            ! Store to address(t)
 !       getchr { next digit }
 :4986
-! 
+!
 !    end;
         sfr     l strings.2405          ! Set function result
 l strings.2405=0
@@ -24267,7 +24267,7 @@ l strings.2401
         loda    3 40                    ! Load local value(t)
         loda    3 40                    ! Load local value(t)
         indi    0                       ! Load indirect(t)
-! 
+!
 ! end;
         lodi    3 -32                   ! Load local value(t)
         mpi                             ! Multiply integers
@@ -24277,7 +24277,7 @@ l strings.2401
         retp    8                       ! Return from procedure/function(t)
 l strings.2386=16
 l strings.2387=40
-! 
+!
 ! begin
 e r
 l strings.163
@@ -24285,7 +24285,7 @@ l strings.163
 :4993
 :4993
         mst     1 l strings.2406 l strings.2407 ! Mark(frame) stack
-! 
+!
 !    si := 1; { set 1st string character }
 :4994
 :4995
@@ -24319,7 +24319,7 @@ l strings.2411=8
         ldcs    (  46  69 101)          ! Load constant(t)
         inn                             ! Set inclusion
          fjp l strings.2412
-! 
+!
 !       if chkchr = '.' then begin { decimal point }
 :5000
 :5001
@@ -24330,7 +24330,7 @@ l strings.2413=8
         ldcc    '.'                     ! Load constant(t)
         equc                            ! Equal(t)
          fjp l strings.2414
-! 
+!
 !          getchr; { skip '.' }
 :5002
 :5003
@@ -24374,7 +24374,7 @@ l strings.2420=8
         ldcs    (  48  49  50  51  52  53  54  55  56  57) ! Load constant(t)
         inn                             ! Set inclusion
          fjp l strings.2421
-! 
+!
 !             p := p/10.0; { find next scale }
 :5008
 :5009
@@ -24402,7 +24402,7 @@ l strings.2422=8
         strr    2 -48                   ! Store local(t)
 !             getchr { next }
 :5012
-! 
+!
 !          end
         sfr     l strings.2423          ! Set function result
 l strings.2423=0
@@ -24410,7 +24410,7 @@ l strings.2423=0
 :5013
 :5014
 :5014
-! 
+!
 !       end;
         ujp     l strings.2419          ! Unconditional jump
 l strings.2421
@@ -24429,7 +24429,7 @@ l strings.2424=8
         ldcs    (  69 101)              ! Load constant(t)
         inn                             ! Set inclusion
          fjp l strings.2425
-! 
+!
 !          getchr; { skip 'e' }
 :5018
 :5019
@@ -24486,7 +24486,7 @@ l strings.2431
         lodr    2 -48                   ! Load local value(t)
         sfr     l strings.2434          ! Set function result
         lodi    2 -24                   ! Load local value(t)
-! 
+!
 !       end
 l strings.2434=8
         cuf     l strings.2379 1 1 8 8  ! Call user function
@@ -24497,7 +24497,7 @@ l strings.2434=8
         strr    2 -48                   ! Store local(t)
 l strings.2433
 :5026
-! 
+!
 !    end;
 l strings.2425
 :5027
@@ -24528,11 +24528,11 @@ l strings.2438=0
 :5031
 l strings.2437
 :5031
-! 
+!
 !    realv := r { return result }
 :5032
 :5033
-! 
+!
 ! end;
         lodr    2 -48                   ! Load local value(t)
         strr    2 56                    ! Store local(t)
@@ -24541,14 +24541,14 @@ l strings.2437
         retr    16                      ! Return from procedure/function(t)
 l strings.2406=32
 l strings.2407=32
-! 
+!
 ! overload function realv(s: pstring) { string containing integer }
 e f
 :5036
 :5037
 !                        : real;  { result }
 :5038
-! 
+!
 ! begin
 b f realv@f_pvc
 s       s p 40 pvc
@@ -24557,7 +24557,7 @@ l strings.164
 :5040
 :5040
         mst     1 l strings.2440 l strings.2441 ! Mark(frame) stack
-! 
+!
 !    if s = nil then throw(StringNil);
 :5041
 :5042
@@ -24572,7 +24572,7 @@ l strings.2444=0
 :5042
 l strings.2443
 :5042
-! 
+!
 !    realv := realv(s^); { return result }
 :5043
 :5044
@@ -24589,14 +24589,14 @@ l strings.2445=8
 :5045
         loda    2 40                    ! Load local value(t)
         vdd                             ! Vector dispose array
-! 
+!
 ! end;
 :5046
 :5047
         retr    8                       ! Return from procedure/function(t)
 l strings.2440=0
 l strings.2441=16
-! 
+!
 ! begin { init }
 e f
 l strings.3
@@ -24604,7 +24604,7 @@ l strings.3
 :5049
 :5049
         mst     0 l strings.2446 l strings.2447 ! Mark(frame) stack
-! 
+!
 !    strstk := nil; { clear string block tracking stack }
 :5050
 :5051
@@ -24613,7 +24613,7 @@ l strings.3
         sroa    112                     ! Store global value(t)
 !    strfre := nil { clear string block free stack }
 :5052
-! 
+!
 ! end;
         ldcn ! Load constant(t)
         chka    0 9223372036854775807   ! Bounds check(t)
@@ -24623,14 +24623,14 @@ l strings.3
         retp    0                       ! Return from procedure/function(t)
 l strings.2446=0
 l strings.2447=8
-! 
+!
 ! begin { deinit }
 l strings.4
 :5055
 :5056
 :5056
         mst     0 l strings.2449 l strings.2450 ! Mark(frame) stack
-! 
+!
 !    { handle exceptions in modules }
 ! {
 !    on NoStringBlock except                perror('No string block is active')          
@@ -24662,7 +24662,7 @@ l strings.4
 !    on IntegerTooLarge except              perror('Integer too large')                    
 !    on InvalidRealFormat except            perror('Invalid real format')                  
 ! }
-! 
+!
 ! end.
 :5057
 :5058
