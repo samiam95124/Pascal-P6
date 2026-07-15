@@ -11520,10 +11520,14 @@ end;
 
   begin
     parse.skpspc(cmdhan);
-    while parse.chkchr(cmdhan) = services.optchr do begin
+    { options lead with '-' on every platform, matching the parcmd convention
+      used by the rest of the toolchain. The windows option character '/'
+      would collide with unix style paths when the windows tools are driven
+      under an exe emulator, and would reject the '-' options pc passes. }
+    while parse.chkchr(cmdhan) = '-' do begin
       optfnd := false; setpos := false; setneg := false;
       parse.getchr(cmdhan); { skip option char }
-      if parse.chkchr(cmdhan) = services.optchr then
+      if parse.chkchr(cmdhan) = '-' then
         parse.getchr(cmdhan); { skip optional double dash }
       parse.parlab(cmdhan, w, err);
       if err then begin

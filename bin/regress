@@ -29,6 +29,7 @@ cmach="0"
 package=0
 pgen=0
 full="0"
+windowsexe=0
 option=""
 
 diftot=0
@@ -303,8 +304,13 @@ do
         package=1
 
     elif [ "$param" = "--pgen" ]; then
-    
+
         pgen=1
+
+    elif [ "$param" = "--windowsexe" ]; then
+
+        # run the toolchain from the windows host cell executables
+        windowsexe=1
 
     elif [ "$param" = "--help" ]; then
 
@@ -327,6 +333,7 @@ do
         echo "--cmach   Run only cmach mode."
         echo "--package Run in package mode."
         echo "--pgen    Run in pgen mode."
+        echo "--windowsexe Run the toolchain from the windows host executables."
         echo ""
 		exit 0
 		
@@ -371,6 +378,30 @@ elif [ "$cmach" = "1" ]; then models="cmach"
 elif [ "$package" = "1" ]; then models="package"
 elif [ "$pgen" = "1" ]; then models="pgen"
 else models="pint pmach cmach package pgen"; fi
+
+#
+# The windows tool set: compile and run pick up REGRESS_WINDOWSEXE (the same
+# way they pick up REGRESS_OUT) and use the windows host cell executables
+# (pcom.exe, pgen.exe, pint.exe, pmach.exe, genobj.exe) through the exe
+# emulation. cmach has no windows build, so it drops from the default model
+# list and cannot be selected explicitly.
+#
+if [ "$windowsexe" = "1" ]; then
+
+    if [ "$cmach" = "1" ]; then
+
+        echo "*** Error: cmach has no windows executable; --cmach cannot combine with --windowsexe"
+        exit 1
+
+    fi
+    if [ "$models" = "pint pmach cmach package pgen" ]; then
+
+        models="pint pmach package pgen"
+
+    fi
+    export REGRESS_WINDOWSEXE=1
+
+fi
 
 #
 # Launch each model concurrently (each in its own subshell). Each model's

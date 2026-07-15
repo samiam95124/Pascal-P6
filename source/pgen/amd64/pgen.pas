@@ -3648,7 +3648,12 @@ begin { assemble }
 
     61 {ujc}: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtcps(' call psystem_caseerror');
+      { A case table entry must be exactly as long as a plain jump (5 bytes)
+        for the xjp table math to work out. psystem_caseerror is an assembly
+        intermediate that exists for exactly this: it aligns its own stack,
+        arranges the convention's arguments and never returns, so the call is
+        NOT shadow-space wrapped (wrtcps would stretch the entry). }
+      wrtins(' call psystem_caseerror');
       botstk
     end;
 

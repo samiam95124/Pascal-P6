@@ -29,6 +29,36 @@ function compprog {
 
 }
 
+#
+# Cross compile a program for windows and install the executable in the
+# windows host tree. All build products go to a scratch build path (-bp), not
+# the source tree: a win64 build recompiles the program and its modules to
+# win64 decks, and if those landed next to the native decks a later native
+# build (pc without -r reuses an existing .p6 deck) would pick them up and
+# pgen would reject the win64 option they carry. The build path is cleared for
+# each program and the executable copied from it.
+#
+function compwin {
+
+   echo ""
+   echo "**********************************************************************"
+   echo "Building $1 for windows..."
+   echo "**********************************************************************"
+   echo ""
+   local bp="build/win64/exe"
+   rm -rf "$bp"; mkdir -p "$bp"
+   pc $1 --windows -bp="$bp" -r $OPTIONS
+   if [ $? -ne 0 ]; then
+
+      echo "*** Error: compile failed"
+      exit 1
+
+   fi
+   cp "$bp/$(basename $1).exe" hosts/windows/x86/bit64/bin
+   rm -rf "$bp"
+
+}
+
 OPTIONS=$2
 
 make clean
@@ -276,3 +306,40 @@ echo "**********************************************************************"
 echo ""
 make bin/cmachg
 if [ $? -ne 0 ]; then echo "*** Error: cmachg build failed"; exit 1; fi
+
+#
+# Windows host runtime libraries: (re)build the win64 psystem/services/etc.
+# archives and install them in the windows host tree. These embed the Ami
+# runtime sources (amitk services.c, libc/stdio.c), so they must be rebuilt
+# here rather than trusted from the committed products -- otherwise a change to
+# the Ami runtime (e.g. an amitk submodule advance) leaves the host tree libs,
+# and every executable the compwin phase links against them, stale.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building win64 host runtime libraries..."
+echo "**********************************************************************"
+echo ""
+make win64
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: win64 runtime library build failed"
+   exit 1
+
+fi
+
+#
+# Windows host executables: cross compile the toolchain programs to win64 and
+# install them in the windows host tree, next to the win64 runtime libraries
+# built just above. The windows pgen is the amd64 code generator, the same
+# source as the native bin/pgen. The Ami flavored interpreters
+# (pintt/pintg/pmacht/pmachg) await a win64 build of the petit-ami toolkit and
+# are not yet cross built.
+#
+mkdir -p hosts/windows/x86/bit64/bin
+compwin source/pcom
+compwin source/pgen/amd64/pgen
+compwin pc/pc
+compwin source/genobj
+compwin source/pint
+compwin source/pmach

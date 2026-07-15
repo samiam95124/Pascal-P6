@@ -36,6 +36,7 @@ listing=0
 outdir=""
 prog=""
 pcflags=""
+wexe=0
 
 for param in "$@"
 do
@@ -52,6 +53,7 @@ do
         --list+|--list) listing=1 ;;  # listing on; redirected via --list= below
         --list-)    listing=0 ;;       # listing off; errors-only via -ef= below
         --out=*)    outdir="${param#--out=}" ;;  # output/build directory
+        --windowsexe) wexe=1 ;;        # build with the windows host executables
         -*)         pcflags="$pcflags $param" ;;  # pass other options through
         *)          prog="$param" ;;
 
@@ -63,6 +65,23 @@ if [ -z "$prog" ]; then
 
     echo "*** Error: No compile file specified"
     exit 1
+
+fi
+
+#
+# The windows tool set: an explicit --windowsexe, or REGRESS_WINDOWSEXE
+# exported by the regression (the same pattern as REGRESS_OUT), builds with
+# the windows host cell executables. pc gets its -windowsexe selection, and
+# the deviance fallback below switches to the windows pcom, since pcom itself
+# knows nothing of the selection option.
+#
+if [ "$REGRESS_WINDOWSEXE" = "1" ]; then wexe=1; fi
+wexeflag=""
+pcomcmd=pcom
+if [ "$wexe" = "1" ]; then
+
+    wexeflag="--windowsexe"
+    pcomcmd="$(cd "$(dirname "$0")/.." && pwd)/hosts/windows/x86/bit64/bin/pcom.exe"
 
 fi
 
@@ -98,7 +117,7 @@ fi
 rm -f "$err" # clear any prior .err so a build that emits nothing is detectable
 # pc's driver chatter (signon, "Build has errors") goes to the terminal; the
 # real compiler output is in the .err, so silence it for a clean batch run.
-pc -$mode $buildpath "$errflag" $pcflags "$prog" >/dev/null 2>&1
+pc -$mode $buildpath "$errflag" $wexeflag $pcflags "$prog" >/dev/null 2>&1
 status=$?
 
 #
@@ -116,7 +135,7 @@ if [ ! -f "$err" ]; then
     else
         p6out="$prog.p6"
     fi
-    pcom "$prog.pas" "$p6out" "$errflag" $pcflags >/dev/null 2>&1
+    $pcomcmd "$prog.pas" "$p6out" "$errflag" $pcflags >/dev/null 2>&1
     status=$?
 
 fi
