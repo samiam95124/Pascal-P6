@@ -79,6 +79,12 @@ const
 { maximum length of command line } cmdmax = 250;
 { maximum length of filename }     filmax = 1000;
 { maximum size of input line }     maxlin = 2000;
+{ default windows executable stack reserve in bytes. The PE default is 2mb,
+  a quarter of the linux 8mb default, too small for the recursive descent
+  compiler on a large source. Set to the linux default so deep recursion that
+  fits on linux also fits on windows. Overridable with -stacksize= or the
+  'stacksize' instruction file command. }
+                                   stacksizedef = 8388608;
 
 type
 
@@ -210,6 +216,12 @@ fhlinux,     shlinux:     boolean;
 fhbsd,       shbsd:       boolean;
 fhwindows,   shwindows:   boolean;
 fhmac,       shmac:       boolean;
+{ tool executable selection: run the toolchain programs from a host cell's
+  bin directory in the hosts tree instead of the regular bin directory }
+flinuxexe,   slinuxexe:   boolean;
+fbsdexe,     sbsdexe:     boolean;
+fwindowsexe, swindowsexe: boolean;
+fmacexe,     smacexe:     boolean;
 { error file passthrough }
 errfil:      filnam;
 serrfil:     boolean;
@@ -235,6 +247,8 @@ slistfil:    boolean;
 { C compiler/linker driver command }       ccname:  filnam;
 { code generator command }                 cgname:  filnam;
 { executable file extension }              exeext:  filnam;
+{ windows executable stack reserve, bytes } stksiz:  integer;
+{ stack reserve was set on the command line } sstksiz: boolean;
 { a graphical window library exists }      windowed:  boolean;
 { the terminal library is the I/O library } terminaled: boolean;
 { the sound library is used }              sounded:   boolean;
@@ -400,12 +414,16 @@ end;
 begin
 
    parse.skpspc(cmdhan); { skip spaces }
-   while parse.chkchr(cmdhan) = services.optchr do begin { parse option }
+   { options lead with '-' on every platform, matching the parcmd convention
+     used by the rest of the toolchain. The windows option character '/'
+     would collide with unix style paths when the windows tools are driven
+     under an exe emulator. }
+   while parse.chkchr(cmdhan) = '-' do begin { parse option }
 
       optfnd := false; { set no option found }
       parse.getchr(cmdhan); { skip option marker }
       { allow double option character }
-      if parse.chkchr(cmdhan) = services.optchr then parse.getchr(cmdhan);
+      if parse.chkchr(cmdhan) = '-' then parse.getchr(cmdhan);
       parse.parlab(cmdhan, w, err); { parse option label }
       if err then error('Invalid option "%"', w);
       { allow +/- suffix on option, honoring its polarity }
@@ -486,6 +504,27 @@ begin
       setflg('bsd',             fhbsd,       shbsd);
       setflg('windows',         fhwindows,   shwindows);
       setflg('mac',             fhmac,       shmac);
+      { tool executable selection: run the toolchain programs (pcom, pgen,
+        genobj, pint) from the given host cell's bin directory in the hosts
+        tree instead of the regular bin directory. Independent of the host
+        and target selections: a linux pcom can build with cross compiled
+        libraries, and the windows executables (under an exe emulator) can
+        deliver linux products. }
+      slinuxexe := false; sbsdexe := false; swindowsexe := false;
+      smacexe := false;
+      setflg('linuxexe',        flinuxexe,   slinuxexe);
+      setflg('bsdexe',          fbsdexe,     sbsdexe);
+      setflg('windowsexe',      fwindowsexe, swindowsexe);
+      setflg('macexe',          fmacexe,     smacexe);
+      { the executable selections are exclusive }
+      if slinuxexe then begin flinuxexe := true; fbsdexe := false;
+                              fwindowsexe := false; fmacexe := false end;
+      if sbsdexe then begin flinuxexe := false; fbsdexe := true;
+                            fwindowsexe := false; fmacexe := false end;
+      if swindowsexe then begin flinuxexe := false; fbsdexe := false;
+                                fwindowsexe := true; fmacexe := false end;
+      if smacexe then begin flinuxexe := false; fbsdexe := false;
+                            fwindowsexe := false; fmacexe := true end;
       { non-flag options }
       if compp(w, 'modulepath') or
          compp(w, 'mp') then begin
@@ -510,6 +549,20 @@ begin
          parse.getchr(cmdhan); { skip '=' }
          parse.parwrd(cmdhan, bldpth, err); { get path }
          if err then error('Invalid build path "%"', bldpth)
+
+      end;
+      { stack size: the windows executable stack reserve in bytes (accepts a
+        decimal, or a $/&/% radix prefixed, number) }
+      if compp(w, 'stacksize') then begin
+
+         optfnd := true;
+         parse.skpspc(cmdhan); { skip spaces }
+         if parse.chkchr(cmdhan) <> '=' then { should have '=' }
+            error('missing "="');
+         parse.getchr(cmdhan); { skip '=' }
+         parse.parnum(cmdhan, stksiz, 10, err); { get size }
+         if err then error('Invalid stack size');
+         sstksiz := true { a command line size wins over an instruction file }
 
       end;
       { error file: passthrough to pcom only }
@@ -1471,7 +1524,7 @@ end;
 
 { place filename in list }
 
-procedure plcfil(view fn: string; ispgm: boolean);
+procedure plcfil(view fn: string; ispgm, excl: boolean);
 
 var p, n, e: filnam;  { path components }
     fns:     filnam;  { save for name }
@@ -1507,12 +1560,16 @@ begin
          services.brknam(fn, p, n, e); { break down name }
          services.maknam(fns, p, n, 'o'); { remake }
          { allow module path override, the same as the archive above: a cross
-           target links a module's object from the host tree (which the module
-           path places ahead of the local libs), not the local host's object.
-           Only for modules -- the program's own object is always the freshly
-           built one at its own path, and must not be redirected to a same
-           named object that happens to sit in the module path. }
-         if not ispgm then fndfilmod(fns);
+           target links a prebuilt module's object from the host tree (which
+           the module path places ahead of the local libs), not the local
+           host's object. Only for a PREBUILT (excluded) module: the program's
+           own object, and any module built from source in this run, is the
+           freshly built object (already redirected to the build path by
+           plcety) and must not be overridden to a same named object that
+           happens to sit in the module path -- that is exactly how a cross
+           built module (e.g. pgen's independent) would otherwise pick up the
+           local host's object and fail to link against the target's. }
+         if not ispgm and excl then fndfilmod(fns);
          { place name in link list }
          for i := 1 to len(fns) do putchr(lnklsto, loi, fns[i]);
          putchr(lnklsto, loi, ' ') { place separator }
@@ -1539,7 +1596,7 @@ begin
          services.brknam(fp^.name, dp, n, e);
          services.maknam(sp, bldpth, n, e)
       end;
-      plcfil(sp, fp^.pgm) { place name in list }
+      plcfil(sp, fp^.pgm, fp^.excl) { place name in list }
    end;
    fp^.list := true; { set listed }
    new(p); { get list entry }
@@ -1746,6 +1803,46 @@ end;
 
 {******************************************************************************
 
+Form toolchain command name
+
+Forms the command name for a toolchain program (pcom, pgen, genobj, pint).
+The tools normally come from the regular bin directory, resolved through the
+search path. A tool executable selection (-linuxexe, -bsdexe, -windowsexe,
+-macexe) runs them from that host cell's bin directory in the hosts tree
+instead, located relative to this pc's own directory. The windows tools carry
+their .exe extension and run through the system's exe emulation (e.g. wine).
+Independent of the host and target selections: the tool set only determines
+what machine the tools themselves run on, not what they build.
+
+******************************************************************************}
+
+procedure toolnam(out fn: string; view tool: string);
+
+var nm: filnam; { relative tool name holder }
+
+begin
+
+   if not (flinuxexe or fbsdexe or fwindowsexe or fmacexe) then
+      copy(fn, tool) { no selection, tool resolves through the search path }
+   else begin
+
+      copy(nm, '../hosts/');
+      if flinuxexe then cat(nm, 'linux')
+      else if fbsdexe then cat(nm, 'bsd')
+      else if fwindowsexe then cat(nm, 'windows')
+      else cat(nm, 'mac');
+      cat(nm, '/x86/bit64/bin/');
+      cat(nm, tool);
+      if fwindowsexe then services.maknam(fn, pgmpath, nm, 'exe')
+      else services.maknam(fn, pgmpath, nm, '');
+      services.fulnam(fn) { normalize }
+
+   end
+
+end;
+
+{******************************************************************************
+
 Perform file action
 
 Performs the required action on each file entry. We check if the rebuild flag
@@ -1877,7 +1974,8 @@ begin
       { build pcom x x command }
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
-      putstr('pcom');
+      toolnam(w, 'pcom'); { form compiler command }
+      putstr(w);
       putchr(' ');
       putstr(fns);
       putchr(' ');
@@ -1927,7 +2025,8 @@ begin
          { build pgen x x command }
          i := 1; { set 1st command filename }
          clears(cmdbuf); { clear command buffer }
-         putstr(cgname);
+         toolnam(w, cgname); { form code generator command }
+         putstr(w);
          putchr(' ');
          services.brknam(fns, p, n, e); { remove the extention and place .p6 }
          if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
@@ -2076,6 +2175,8 @@ var p, n, e: filnam;  { path components }
     sndarch: filnam;  { sound archive (package externals) }
     netarch: filnam;  { network archive (package externals) }
     psstdio: filnam;  { psystem bypass stdio object (package externals) }
+    toolfn:  filnam;  { toolchain command holder }
+    numstr:  filnam;  { number to string conversion holder }
 
 { place output character }
 
@@ -2193,7 +2294,9 @@ begin { dolink }
          { prepare machine binary }
          clears(cmdbuf); { clear command buffer }
          i := 1; { set 1st char }
-         putstr('pint --machdeck');
+         toolnam(toolfn, 'pint'); { form interpreter command }
+         putstr(toolfn);
+         putstr(' --machdeck');
          putchr(' ');
          putstr(fns);
          putstr('.p6');
@@ -2213,7 +2316,8 @@ begin { dolink }
            minimal glibc build (cmach_package_min.o), both under build/cmach. }
          clears(cmdbuf); { clear command buffer }
          i := 1; { set 1st char }
-         putstr('genobj');
+         toolnam(toolfn, 'genobj'); { form deck-to-C command }
+         putstr(toolfn);
          putchr(' ');
          putstr(fns);
          putstr('.p6o program_code.c');
@@ -2316,6 +2420,12 @@ begin { dolink }
       putstr(ccname);
       if fstatic then putstr(' -static -g3') else putstr(' -g3');
       putchr(' ');
+      { The PE default stack reserve (2mb) is a quarter of the linux default
+        (8mb). Deep recursion that fits on linux (the recursive descent
+        compiler compiling itself, deviant sources, user recursion) would
+        overflow the windows stack, so reserve the linux default explicitly. }
+      if fwindows then begin putstr('-Wl,--stack,');
+         ints(numstr, stksiz); putstr(numstr); putchr(' ') end;
       { An I/O library (terminal or graphics) installs its I/O overrides from a
         constructor in its module object. A program that does not call any of
         its functions (e.g. promoted serial code) would leave that object out
@@ -2808,6 +2918,7 @@ var inshan:  parse.parhan; { handle for instruction parsing }
     cyp:     cpyptr;       { pointer to hosts copy entry }
     condlvl: integer;      { active conditional block level }
     tagact:  boolean;      { conditional tag is active }
+    i:       integer;      { integer value holder }
 
 procedure inserr(view es: string);
 
@@ -3090,6 +3201,16 @@ begin
             parfilstr(fn); { get extension }
             copy(exeext, fn)
 
+         end else if compp(cmd, 'stacksize') then begin
+
+            { set the windows executable stack reserve in bytes (accepts a
+              decimal, or a $/&/% radix prefixed, number). A command line
+              -stacksize wins, so honor the file value only when unset. }
+            lskpspc(inshan); { skip spaces }
+            parse.parnum(inshan, i, 10, err); { get size }
+            if err then inserr('Invalid stack size')
+            else if not sstksiz then stksiz := i
+
          end else if compp(cmd, 'copy') then begin
 
             { copy product to destination after a successful build }
@@ -3296,11 +3417,17 @@ begin
    fhbsd := false; shbsd := false;
    fhwindows := false; shwindows := false;
    fhmac := false; shmac := false;
+   flinuxexe := false; slinuxexe := false;
+   fbsdexe := false; sbsdexe := false;
+   fwindowsexe := false; swindowsexe := false;
+   fmacexe := false; smacexe := false;
    copies := nil; { clear hosts tree copy list }
    hostid := 0; { set host unknown }
    copy(ccname, 'gcc'); { set default C compiler/linker driver }
    copy(cgname, 'pgen'); { set default code generator }
    clears(exeext); { set no executable extension }
+   stksiz := stacksizedef; { set default windows stack reserve }
+   sstksiz := false; { stack reserve not set on command line }
    serrfil := false;
    slistfil := false;
 
@@ -3348,6 +3475,11 @@ begin
       writeln('  -mp  -modulepath=<path>   Set module search path');
       writeln('  -bp  -buildpath=<path>    Place generated components here');
       writeln('  -ef  -errfile=<file>      Set error output file');
+      writeln('       -stacksize=<n>       Windows executable stack reserve, bytes');
+      writeln('       -linuxexe            Run tools from the linux host executables');
+      writeln('       -bsdexe              Run tools from the bsd host executables');
+      writeln('       -windowsexe          Run tools from the windows host executables');
+      writeln('       -macexe              Run tools from the mac host executables');
       writeln;
       writeln('Passthrough options (passed to compiler):');
       writeln('  -l   -list                Generate listing');

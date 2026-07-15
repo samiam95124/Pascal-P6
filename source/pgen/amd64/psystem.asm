@@ -35,11 +35,20 @@
         .type   psystem_caseerror, @function
 .endif
 psystem_caseerror:
+.ifdef WINDOWS
+        andq    $0xfffffffffffffff0,%rsp # align stack
+        leaq    modnam(%rip),%rcx        # set no module name
+        movq    $0,%rdx                  # set no line number
+        leaq    CaseValueNotFound(%rip),%r8 # load case fault error
+        subq    $32,%rsp                 # allocate shadow space
+        call    psystem_errore           # go handler
+.else
         andq    $0xfffffffffffffff0,%rsp # align stack
         leaq    modnam(%rip),%rdi        # set no module name
         movq    $0,%rsi                  # set no line number
         leaq    CaseValueNotFound(%rip),%rdx # load case fault error
         call    psystem_errore           # go handler
+.endif
         jmp     .                        # soft halt
 
 ################################################################################

@@ -135,14 +135,24 @@ policies, either expressed or implied, of the Pascal-P6 project.
  * platform. psystem uses long as the machine word/Pascal integer type,
  * which scales with the target on all other systems (64 bits on LP64
  * systems, 32 bits on 32 bit targets). For Windows only, long is
- * redefined to long long (64 bits), and labs to llabs to match. These
- * definitions must appear after all system includes so that the C
- * library prototypes keep their true types. Code that needs an exact
- * width uses the stdint.h types, which are typedefs and thus unaffected.
+ * redefined to long long (64 bits), and labs to llabs to match. LONG_MAX
+ * and LONG_MIN are limits.h macros that the type redefinition does not
+ * reach, yet psystem uses them as the Pascal maxint/minint (the range of
+ * the integer type); they are redefined to the long long limits so the
+ * range tracks the redefined type -- otherwise reading an integer near
+ * the true maxint (e.g. a maxint type bound in a p-code deck) trips a
+ * false overflow against the 32 bit LONG_MAX. These definitions must
+ * appear after all system includes so that the C library prototypes keep
+ * their true types. Code that needs an exact width uses the stdint.h
+ * types, which are typedefs and thus unaffected.
  */
 #ifdef _WIN32
 #define long long long
 #define labs llabs
+#undef LONG_MAX
+#define LONG_MAX LLONG_MAX
+#undef LONG_MIN
+#define LONG_MIN LLONG_MIN
 #endif
 
 extern void psystem_unwind(const char* modnam, int line, int en);
