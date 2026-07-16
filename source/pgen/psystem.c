@@ -5171,6 +5171,12 @@ void psystem_chg(
     while (i > 0 && nn[i] == ' ') i--,nl--;
     if (nl >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(nfn, nn, nl);
+#ifdef _WIN32
+    /* posix rename replaces an existing destination; windows rename does
+       not. Remove the destination first to match the semantics the runtime
+       is written to (e.g. pc replacing an existing intermediate). */
+    remove(nfn);
+#endif
     r = rename(ofn, nfn); /* rename file */
     if (r) errore(modnam, __LINE__, FILENAMECHANGEFAIL);
 

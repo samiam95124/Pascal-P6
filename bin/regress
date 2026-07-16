@@ -146,11 +146,8 @@ function do_regress {
     #
     # Run previous versions of the system and Pascal-S
     #
-    echo "Testing Pascal-s..."
     echo "Pascal-s run" >> "$report"
-    setout sample_programs
-    testpascals $option
-    dotestresult sample_programs sample_programs roman
+    dotestprog sample_programs sample_programs pascals
 
     echo "Testing Pascal-P2..."
     echo "Pascal-P2 run" >> "$report"
