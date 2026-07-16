@@ -2127,7 +2127,16 @@ static FILE* opentemp(filnum fn, const char* mode)
     int fd;
     const char* td;
 
-    td = getenv("TMPDIR"); if (!td || !*td) td = "/tmp";
+    td = getenv("TMPDIR");
+#ifdef _WIN32
+    /* windows has no /tmp: honor the windows temp conventions, falling back
+       to the current directory */
+    if (!td || !*td) td = getenv("TMP");
+    if (!td || !*td) td = getenv("TEMP");
+    if (!td || !*td) td = ".";
+#else
+    if (!td || !*td) td = "/tmp";
+#endif
     snprintf(filnamtab[fn], FILLEN+1, "%s/p6tmpXXXXXX", td);
     fd = mkstemp(filnamtab[fn]); /* securely create the temp file and its name */
     if (fd < 0) return NULL;

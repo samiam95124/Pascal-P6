@@ -1,3 +1,53 @@
 # source/cmach/extern.inc is a generated file (tools/extgen/gencexec.py) but is
 # committed like the genpexec Pascal outputs (source/*/extexec.pas), so a clean
 # checkout builds cmach without running the generator.
+
+# Products are committed only in the hosts tree (hosts/<host>/<arch>/<bits>);
+# the working copies in bin and libs are restored from it by configure
+# (mandatory after checkout) and rebuilt by the build scripts. Scripts,
+# module headers (.pas) and the portable intermediates (.p6) stay tracked.
+bin/backgammon
+bin/breakout
+bin/checkers
+bin/chess
+bin/cmach
+bin/cmachg
+bin/cmacht
+bin/conquest
+bin/defenders
+bin/dif
+bin/find_getpgm
+bin/flip
+bin/genobj
+bin/graphics_test
+bin/management_test
+bin/netprobe
+bin/network_test
+bin/p2c
+bin/parser
+bin/pasdoc
+bin/pasfmt
+bin/passym
+bin/pc
+bin/pcom
+bin/pgen
+bin/pgen_arm64
+bin/pint
+bin/pintg
+bin/pintt
+bin/pmach
+bin/pmachg
+bin/pmacht
+bin/pong
+bin/services_test
+bin/services_test1
+bin/sndprobe
+bin/sound_test
+bin/strings_test
+bin/terminal_test
+bin/widget_test
+bin/*.exe
+libs/*.a
+libs/*.o
+libs/win64/
+libs/arm64/
