@@ -116,8 +116,21 @@ else
 
 fi
 
-if [ ! -f "$base.cmp" ]; then
-   echo "*** testlibprog: gold file $base.cmp does not exist"
+#
+# Select the gold standard. A test whose output legitimately differs by
+# platform (path roots, file attributes, the option character, ...) keeps a
+# gold per platform in libs/tests/linux and libs/tests/win; a test with
+# platform neutral output keeps a single gold in libs/tests. The platform
+# directory is searched first, then the shared location.
+#
+if [ "$OS" = "Windows_NT" ]; then platdir="win"; else platdir="linux"; fi
+if [ -f "libs/tests/$platdir/$name.cmp" ]; then
+   cmp="libs/tests/$platdir/$name.cmp"
+else
+   cmp="$base.cmp"
+fi
+if [ ! -f "$cmp" ]; then
+   echo "*** testlibprog: gold file $cmp does not exist"
    exit 1
 fi
 
@@ -128,7 +141,7 @@ fi
 # "dif -q"; the other tests compare with "dif -w" (ignore whitespace), under
 # which any literal '?' in a gold file stays literal.
 strip "$ob.lst" "$ob.lst.s"
-strip "$base.cmp" "$ob.cmp.s"
+strip "$cmp" "$ob.cmp.s"
 if [ "$name" = "services_test" ]; then
    dif -q "$ob.lst.s" "$ob.cmp.s" > "$ob.dif"
 else
