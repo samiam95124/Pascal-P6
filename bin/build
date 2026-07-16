@@ -126,6 +126,12 @@ compprog pc/hashtabr
 compprog pc/hashtabs
 compprog source/genobj
 #
+# dif is required by the test scripts: testprog compares the program listing
+# against the golden through it, and a missing dif silently passes every test
+# (an empty .dif is a pass).
+#
+compprog utils/dif
+#
 # Test programs in libs/tests: build each as a native executable and place it
 # in bin. pc detects each program's modules (graphics, sound, network,
 # terminal, services) and links the matching libraries, so windowed, sound and
@@ -343,3 +349,4 @@ compwin pc/pc
 compwin source/genobj
 compwin source/pint
 compwin source/pmach
+compwin utils/dif

@@ -1,5 +1,14 @@
 #!/bin/bash
 #
+# The windows tools resolve child commands through the "Path" environment
+# name (the windows capitalization); a posix shell exports "PATH". Provide
+# both so the prebuilt tool set works when run from bash on a windows host
+# (the amitk environment lookup is also being made case insensitive).
+#
+if [ "$OS" = "Windows_NT" ] && command -v cygpath >/dev/null 2>&1; then
+    export Path="$(cygpath -pw "$PATH")"
+fi
+#
 # Compile a file in batch mode, as a thin wrapper over the pc build driver.
 #
 # Execution:

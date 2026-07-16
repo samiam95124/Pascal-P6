@@ -1,5 +1,14 @@
 #!/bin/bash
 #
+# The windows tools resolve child commands through the "Path" environment
+# name (the windows capitalization); a posix shell exports "PATH". Provide
+# both so the prebuilt tool set works when run from bash on a windows host
+# (the amitk environment lookup is also being made case insensitive).
+#
+if [ "$OS" = "Windows_NT" ] && command -v cygpath >/dev/null 2>&1; then
+    export Path="$(cygpath -pw "$PATH")"
+fi
+#
 # Run a Pascal file in batch mode using GPC Pascal
 #
 # Runs a Pascal intermediate in batch mode.
@@ -258,8 +267,21 @@ elif [ "$pgen" = "1" ]; then
     else
 
         echo Running with pgen
-        ./$obase $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
-        rc=$?
+        # on a windows host the native product is $obase.exe; the C runtime
+        # writes text streams with CRLF, so normalize the listing to LF the
+        # same as the wine cross run above
+        if [ -f "$obase.exe" ]; then
+
+            ./$obase.exe $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
+            rc=$?
+            sed -i 's/\r$//' $obase.lst
+
+        else
+
+            ./$obase $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
+            rc=$?
+
+        fi
 
     fi
 
