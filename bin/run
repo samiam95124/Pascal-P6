@@ -258,6 +258,16 @@ if [ "$pmach" = "1" ]; then
         $pmachcmd $obase.p6o ${tmpd}temp3 $userargs $options < $infile &> $obase.lst
         rc=$? # capture the run result before cleanup clobbers it
 
+    elif [ -s "$progfile.dat" ]; then
+
+        # The program takes a prd file. The interpreter's own arguments are the
+        # deck and its output slot, so the program's file parameter follows
+        # them on the command line. It cannot be reached by concatenating the
+        # data to the deck: that leaves prd unnamed, and a reset(prd) then
+        # fails "Filename empty".
+        $pmachcmd $obase.p6o $obase.out $progfile.dat $options < $infile &> $obase.lst
+        rc=$? # capture the run result before cleanup clobbers it
+
     else
 
         cat $obase.p6o $progfile.dat > ${tmpd}temp.p6o
@@ -329,6 +339,13 @@ else
         # explicit arguments: the deck runs as is, arguments on the command
         # line after the interpreter's output slot
         $pintcmd $obase.p6 ${tmpd}temp3 $userargs $options < $infile &> $obase.lst
+        rc=$? # capture the run result before cleanup clobbers it
+
+    elif [ -s "$progfile.dat" ]; then
+
+        # The program takes a prd file; see the pmach case above. The file
+        # parameter follows the interpreter's deck and output slot.
+        $pintcmd $obase.p6 $obase.out $progfile.dat $options < $infile &> $obase.lst
         rc=$? # capture the run result before cleanup clobbers it
 
     else

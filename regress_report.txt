@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Wed 15 Jul 2026 11:28:43 PM PDT
+Thu 16 Jul 2026 11:03:26 AM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/test_results/pint/hello.dif
@@ -13,7 +13,7 @@ pint run ***************************************
 0 sample_programs/test_results/pint/basics.dif
 0 standard_tests/test_results/pint/iso7185pat.dif
 Pascal-s run
-0 sample_programs/test_results/pint/roman.dif
+0 sample_programs/test_results/pint/pascals.dif
 Pascal-P2 run
 0 p2/test_results/pint/roman.dif
 Pascal-P4 run
@@ -42,7 +42,7 @@ pmach run ***************************************
 0 sample_programs/test_results/pmach/basics.dif
 0 standard_tests/test_results/pmach/iso7185pat.dif
 Pascal-s run
-0 sample_programs/test_results/pmach/roman.dif
+0 sample_programs/test_results/pmach/pascals.dif
 Pascal-P2 run
 0 p2/test_results/pmach/roman.dif
 Pascal-P4 run
@@ -69,7 +69,7 @@ cmach run ***************************************
 0 sample_programs/test_results/cmach/basics.dif
 0 standard_tests/test_results/cmach/iso7185pat.dif
 Pascal-s run
-0 sample_programs/test_results/cmach/roman.dif
+0 sample_programs/test_results/cmach/pascals.dif
 Pascal-P2 run
 0 p2/test_results/cmach/roman.dif
 Pascal-P4 run
@@ -96,7 +96,7 @@ package run ***************************************
 0 sample_programs/test_results/package/basics.dif
 0 standard_tests/test_results/package/iso7185pat.dif
 Pascal-s run
-0 sample_programs/test_results/package/roman.dif
+0 sample_programs/test_results/package/pascals.dif
 Pascal-P2 run
 0 p2/test_results/package/roman.dif
 Pascal-P4 run
@@ -123,7 +123,7 @@ pgen run ***************************************
 0 sample_programs/test_results/pgen/basics.dif
 0 standard_tests/test_results/pgen/iso7185pat.dif
 Pascal-s run
-0 sample_programs/test_results/pgen/roman.dif
+0 sample_programs/test_results/pgen/pascals.dif
 Pascal-P2 run
 0 p2/test_results/pgen/roman.dif
 Pascal-P4 run
@@ -141,12 +141,12 @@ services_test run
 
 Total differences: 0
 Fails: 0
-Wed 15 Jul 2026 11:33:15 PM PDT
+Thu 16 Jul 2026 11:08:16 AM PDT
 Files sha256sum ***************************************
 Source files
 054fab0763a8fb06ac0ba49e43bea3abde6709d51ac8a8270c2dd6d1e811d239  -
 batch files
-c0a716ad2734301fa2a0462aa1e070636daa9fcaa6aabd794dab1bf68e7cf775  -
+becaaab991cc399c04e4d84a40625ca1f140ee2ed30c85deb103161058e0e883  -
 P2 files
 abb5a8a00d377dbcf7c793f9f399fb51e017f2e27ecab9607e4cace253472cfb  -
 p4 files
