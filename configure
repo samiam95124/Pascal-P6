@@ -144,32 +144,6 @@ fi
 
 cp $hostcell/bin/* bin 2>/dev/null
 cp $hostcell/libs/* libs 2>/dev/null
-
-#
-# On a windows host, remove the unix binaries from bin. The repository
-# carries the linux tool set in bin (linux is the default setup); on windows
-# those extensionless names shadow the .exe names for the bash test scripts
-# (bash resolves the exact name first), so every script would exec a foreign
-# binary and fail. Scripts are text files and are kept; only ELF format
-# binaries are removed. These are tracked files, so git status shows them
-# deleted until a configure on a unix host (or git checkout -- bin) restores
-# them.
-#
-if [ "$host" = "windows" ]; then
-
-    for f in bin/*; do
-
-        # an extensionless file with the ELF magic is a foreign unix binary
-        if [ -f "$f" ] && [[ "$(basename "$f")" != *.* ]] && \
-           [ "$(head -c 4 "$f" 2>/dev/null)" = $'\x7fELF' ]; then
-
-            rm -f "$f"
-
-        fi
-
-    done
-
-fi
 rm -f bin/.gitkeep libs/.gitkeep
 
 echo "Configure completed!"
