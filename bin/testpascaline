@@ -1,145 +1,44 @@
 #!/bin/bash
 #
-# Script to run Pascaline test suite
+# Run the Pascaline test suite.
 #
-# Execution:
+# The test is a three-unit Pascaline program (pascaline.pas and the modules
+# pascaline1/pascaline2); pc discovers and builds the modules from the uses
+# chain, so the whole build is one compile. The program takes free form
+# arguments (two header filenames and assorted parameters), passed through
+# run's --args override, with pascaline.inp as input; the listing is compared
+# against pascaline.cmp.
 #
-# testpascaline [--pmach|--cmach|--pint]
+# The test directory must be the working directory with bare filenames. For a
+# parallel per-model run (REGRESS_OUT set), the inputs are copied into the
+# per-model directory and the work happens there, so bare-filename products do
+# not collide with other models.
 #
-# The flags are one of:
+# testpascaline [--pgen|--pint|--pmach|--cmach|--package]
 #
-# --pmach   Generate mach code and run the result through pmach.
-# --cmach   Generate mach code and run the result through cmach.
-# --pint    Generate mach code and run the result through pint.
-# --package Generate mach code and run as standalone package
-# --pgen    Generate native code for AMD64 (default).
-#
-# The test files live in pascaline_tests/ (test_path). pcom/pgen require the
-# test directory to be the working directory with bare filenames -- a
-# path-qualified input produces a malformed assembly -- so the script changes
-# into test_path. This runs in its own process, so it does not alter the
-# caller's working directory.
-#
+option=$1
+if [ -z "$option" ]; then option="--pgen"; fi
 
-#
-# default to pgen
-#
-param1=$1
-if [ -z "$param1" ]; then
-
-    param1="--pgen"
-
-fi
-
-# directory holding the test files
 test_path=pascaline_tests
-
-#
-# For a parallel per-model run (REGRESS_OUT set), copy the inputs into the
-# per-model directory and work there instead, so the bare-filename products
-# (pascaline.p6/.s/.lst/.dif/.p6o and the executable) do not collide with other
-# models. pcom/pgen still see bare filenames in the working directory.
-#
 if [ -n "$REGRESS_OUT" ]; then
     mkdir -p "$REGRESS_OUT"
     cp "$test_path"/pascaline2.pas "$test_path"/pascaline1.pas "$test_path"/pascaline.pas \
        "$test_path"/pascaline.inp "$test_path"/pascaline.cmp \
        "$test_path"/headertest1 "$test_path"/headertest2 "$test_path"/readtest.txt "$REGRESS_OUT"/
     test_path="$REGRESS_OUT"
-    # cd below puts us inside the per-model dir, so the sub-tools (compile, pint,
-    # pgen) must write here with bare filenames -- not re-apply REGRESS_OUT.
+    # the work happens inside the per-model dir with bare filenames; the
+    # sub-tools must not re-apply REGRESS_OUT
     unset REGRESS_OUT
 fi
-
 cd "$test_path" || { echo "*** testpascaline: cannot enter $test_path"; exit 1; }
 
-#
-# Compile sources
-#
-if [ "$param1" = "--pgen" ]; then
+compile --list- $option pascaline || exit 1
+run --nolist $option --args="headertest1 headertest2 42 123.456 hi there" pascaline
 
-    # compile each intermediate separately
-    pcom -amd64_sysv pascaline2.pas pascaline2.p6 -l-
-    pgen pascaline2.p6 pascaline2.s
-    pcom -amd64_sysv pascaline1.pas pascaline1.p6 -l-
-    pgen pascaline1.p6 pascaline1.s
-    pcom -amd64_sysv pascaline.pas pascaline.p6 -l-
-    pgen pascaline.p6 pascaline.s
-
-else
-
-    # form combined intermediate
-    #echo "Will execute: compile $param1 pascaline2 pascaline1 pascaline"
-    compile --out="$REGRESS_OUT" $param1 pascaline2 pascaline1 pascaline
-
-fi
-
-#
-# Run test with parameters
-#
-if [ "$param1" = "--pmach" ]; then
-
-    echo Running with pmach
-    pint pascaline.p6 pascaline.p6o --machdeck
-    # echo "will execute: pmach pascaline.p6o temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst"
-    pmach pascaline.p6o temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-    diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
-    wc -l pascaline.dif
-
-elif [ "$param1" = "--cmach" ]; then
-
-	echo Running with cmach
-    pint pascaline.p6 pascaline.p6o --machdeck
-    cmach pascaline.p6o headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-    diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
-    wc -l pascaline.dif
-
-elif [ "$param1" = "--pgen" ]; then
-
-	echo Running with pgen
-    #echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/pgen/psystem.c \
-    #    -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
-    #    $PASCALP6/source/pgen/amd64/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
-    gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
-        $PASCALP6/source/pgen/amd64/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm > pascaline.err 2>&1
-    if [ "$?" == "0" ]; then
-
-        ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-        diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
-        wc -l pascaline.dif
-
-    else
-
-        echo "*** testpascaline: Compile failed"
-        exit 1
-
-    fi
-
-elif [ "$param1" = "--pint" ]; then
-
-	echo Running with pint
-    pint pascaline.p6 temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-    diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
-    wc -l pascaline.dif
-
-elif [ "$param1" = "--package" ]; then
-
-	echo Running with package mode
-    pint pascaline.p6 pascaline.p6o --machdeck
-    genobj pascaline.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -o pascaline $PASCALP6/source/cmach/cmach.c program_code.c -lm > pascaline.err 2>&1
-    if [ "$?" == "0" ]; then
-
-        ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-        diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
-        wc -l pascaline.dif
-
-    else
-
-        echo "*** testpascaline: Compile failed"
-        exit 1
-
-    fi
-
-fi
+# a missing listing means the run itself failed; do not let an empty
+# comparison read as a pass
+if [ ! -f pascaline.lst ]; then echo "*** FAIL (no listing)"; exit 1; fi
+diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
+wc -l pascaline.dif
+if test -s pascaline.dif; then echo "*** FAIL"; exit 1
+else echo "PASS"; fi

@@ -1,107 +1,45 @@
 #!/bin/bash
 #
-# Script to test p4 compile and run
+# Test the historic Pascal-P4 port.
 #
-# When REGRESS_OUT is set (a parallel per-model regress run), all generated
-# files go to that per-model directory; inputs (the .pas/.cmp) are read from
-# p4/. When unset, everything stays in p4/ as before.
+# Two stages, both through the standard compile/run flow: pcom (the P4
+# compiler) translates p4/standardp.pas into P4 intermediate code, then pint
+# (the P4 interpreter) runs that intermediate. The backend option passes
+# through to both stages, and the listing is compared against p4/standardp.cmp
+# (p4/standardpc.cmp for the C-based and native backends, which differ in
+# real number formatting).
 #
-if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; incd="$REGRESS_OUT"
-else tmpd=""; incd="."; fi
+# testp4 [--pgen|--pint|--pmach|--cmach|--package]
+#
+option=$1
+if [ -z "$option" ]; then option="--pgen"; fi
+if [ -n "$REGRESS_OUT" ]; then tmpd="$REGRESS_OUT/"; else tmpd=""; fi
 ob() { if [ -n "$REGRESS_OUT" ]; then echo "$REGRESS_OUT/$(basename "$1")"; else echo "$1"; fi; }
 
 #
-# Compile p4. The single intermediate is reused for every backend; the native
-# (pgen) path needs it compiled with the SysV ABI flag.
+# Translate standardp.pas to P4 intermediate with the P4 compiler: the source
+# arrives on input, the intermediate filename is the program argument.
 #
-amdopt=""
-if [ "$1" = "--pgen" ]; then amdopt="--amd64_sysv"; fi
-echo "Compiling pcom to intermediate code"
-compile --out="$REGRESS_OUT" --list- $1 $amdopt p4/pcom
-cat $(ob p4/pcom).err
+compile --out="$REGRESS_OUT" --list- $option p4/pcom || exit 1
+run --nolist $option --args="$(ob p4/standardp).p4" --in=p4/standardp.pas p4/pcom
+
 #
-# Run the p4 compiler to get p4 intermediate
+# Run the intermediate through the P4 interpreter and compare.
 #
-if [ "$1" = "--pgen" ]; then
-    $(ob p4/pcom) $(ob p4/standardp).p4 < p4/standardp.pas
-else
-    pint $(ob p4/pcom).p6 ${tmpd}temp $(ob p4/standardp).p4 < p4/standardp.pas
-fi
-#
-# Compile pint
-#
-echo Compiling pint to intermediate code
-compile --out="$REGRESS_OUT" --list- $1 $amdopt p4/pint
-#
-# Create null input file
-#
-echo > ${tmpd}pint.inp
-#
-# Now run pint(p4) on pint(p6), which runs the test program.
-#
-if [ "$1" = "--pmach" ]; then
+compile --out="$REGRESS_OUT" --list- $option p4/pint || exit 1
+run --nolist $option --args="$(ob p4/standardp).p4 ${tmpd}temp4" --in=/dev/null p4/pint
 
-    echo "Executing with pmach..."
-    pint $(ob p4/pint).p6 $(ob p4/pint).p6o --machdeck
-    pmach $(ob p4/pint).p6o ${tmpd}temp $(ob p4/standardp).p4 ${tmpd}temp1 < ${tmpd}pint.inp > $(ob p4/standardp).lst
-
-elif [ "$1" = "--cmach" ]; then
-
-    echo "Executing with cmach..."
-    pint $(ob p4/pint).p6 $(ob p4/pint).p6o --machdeck
-    cmach $(ob p4/pint).p6o $(ob p4/standardp).p4 ${tmpd}temp < ${tmpd}pint.inp > $(ob p4/standardp).lst
-
-elif [ "$1" = "--package" ]; then
-
-    echo "Executing with package..."
-    pint $(ob p4/pint).p6 $(ob p4/pint).p6o --machdeck
-    genobj $(ob p4/pint).p6o ${tmpd}program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -o $(ob p4/pint) $PASCALP6/source/cmach/cmach.c ${tmpd}program_code.c -lm
-	$(ob p4/pint) $(ob p4/standardp).p4 ${tmpd}temp $options < ${tmpd}pint.inp > $(ob p4/standardp).lst
-
-elif [ "$1" = "--pgen" ]; then
-
-    echo "Executing with pgen..."
-    pgen $(ob p4/pint).p6 $(ob p4/pint).s
-    gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
-        $PASCALP6/source/pgen/amd64/main.asm $(ob p4/pint).s -o $(ob p4/pint) -lm
-	$(ob p4/pint) $(ob p4/standardp).p4 ${tmpd}temp $options < ${tmpd}pint.inp > $(ob p4/standardp).lst
-
-else
-
-    echo "Executing with pint..."
-    pint $(ob p4/pint).p6 ${tmpd}temp $(ob p4/standardp).p4 ${tmpd}temp4 < ${tmpd}pint.inp > $(ob p4/standardp).lst
-
-fi
-#
-# Now compare with reference
-#
-echo Comparing PAT result to reference
-strip $(ob p4/standardp).lst ${tmpd}tmp1
-if [ "$1" = "--cmach" ] || [ "$1" = "--package" ] || [ "$1" = "--pgen" ]; then
-
+# a missing listing means the run itself failed; do not let an empty
+# comparison read as a pass
+if [ ! -f $(ob p4/pint).lst ]; then echo "*** FAIL (no listing)"; exit 1; fi
+strip $(ob p4/pint).lst ${tmpd}tmp1
+if [ "$option" = "--cmach" ] || [ "$option" = "--package" ] || [ "$option" = "--pgen" ]; then
     strip p4/standardpc.cmp ${tmpd}tmp2
-
 else
-
     strip p4/standardp.cmp ${tmpd}tmp2
-
 fi
 diff -B ${tmpd}tmp1 ${tmpd}tmp2 > $(ob p4/standardp).dif
-rm -f ${tmpd}tmp1
-rm -f ${tmpd}tmp2
-ls -l $(ob p4/standardp).dif > ${tmpd}tmp1
-grep ".dif" ${tmpd}tmp1
-rm -f ${tmpd}tmp1
-## pass if diff file is empty
-if test -s $(ob p4/standardp).dif
-then
-    echo "*** FAIL"
-    exit 1
-else
-    echo "PASS"
-fi
-
-rm -f ${tmpd}pcom.inp
-rm -f ${tmpd}pint.inp
+rm -f ${tmpd}tmp1 ${tmpd}tmp2
+ls -l $(ob p4/standardp).dif | grep ".dif"
+if test -s $(ob p4/standardp).dif; then echo "*** FAIL"; exit 1
+else echo "PASS"; fi
