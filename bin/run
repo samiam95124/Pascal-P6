@@ -46,6 +46,9 @@ winexe=0
 progfile=""
 options=""
 nolist="0"
+userargs=""
+argset=0
+infile=""
 
 #echo "run: command line: $@"
 
@@ -142,10 +145,26 @@ do
         echo "--windows Run a Windows cross-compiled executable under wine."
         echo "--windowsexe Run the interpreters from the windows host cell."
 		echo "--nolist Do not output listing."
+        echo "--args=<str> Replace the default program arguments (<file>.dat <out>)."
+        echo "--in=<file>  Replace the default program input file (<file>.inp)."
 
 		echo ""
-		goto stop
+		exit 0
 		
+    elif [ "${param:0:7}" = "--args=" ]; then
+
+        # replace the default program arguments (<file>.dat <obase>.out) with
+        # the given string. Lets a test drive programs whose arguments do not
+        # follow the data file convention (e.g. an output filename, or free
+        # form parameters). Quote the value to pass several.
+        userargs="${param#--args=}"
+        argset=1
+
+    elif [ "${param:0:5}" = "--in=" ]; then
+
+        # replace the default program input file (<file>.inp)
+        infile="${param#--in=}"
+
     elif [ "${param:0:1}" = "-" ]; then
 
         # concatentate unrecognized options in option string
@@ -189,12 +208,18 @@ if [ "$pgen" != "1" ] && [ "$package" != "1" ] && [ ! -f "$obase.p6" ]; then
 	exit 1
 
 fi
-if [ ! -f "$progfile.inp" ]; then
+if [ -z "$infile" ]; then infile="$progfile.inp"; fi
+# -e, not -f: /dev/null is a valid input and not a regular file
+if [ ! -e "$infile" ]; then
 
-	echo "$progfile.inp does not exist"
+	echo "$infile does not exist"
 	exit 1
 
 fi
+
+# program arguments: --args= replaces the default data file/output pair
+if [ "$argset" = "1" ]; then prgargs="$userargs"
+else prgargs="$progfile.dat $obase.out"; fi
 
 # Interpreter selection: the windows tool set (--windowsexe explicitly, or
 # REGRESS_WINDOWSEXE exported by the regression the same way as REGRESS_OUT)
@@ -226,23 +251,34 @@ if [ "$pmach" = "1" ]; then
     echo "o e+" > ${tmpd}temp
     cat ${tmpd}temp $obase.p6 > ${tmpd}temp2.p6
     $pintcmd ${tmpd}temp2.p6 $obase.p6o > ${tmpd}temp
-    cat $obase.p6o $progfile.dat > ${tmpd}temp.p6o
-    $pmachcmd ${tmpd}temp.p6o $obase.out $options < $progfile.inp &> $obase.lst
-    rc=$? # capture the run result before cleanup clobbers it
+    if [ "$argset" = "1" ]; then
+
+        # explicit arguments: the deck runs as is, arguments on the command
+        # line after the interpreter's output slot
+        $pmachcmd $obase.p6o ${tmpd}temp3 $userargs $options < $infile &> $obase.lst
+        rc=$? # capture the run result before cleanup clobbers it
+
+    else
+
+        cat $obase.p6o $progfile.dat > ${tmpd}temp.p6o
+        $pmachcmd ${tmpd}temp.p6o $obase.out $options < $infile &> $obase.lst
+        rc=$? # capture the run result before cleanup clobbers it
+
+    fi
     rm ${tmpd}temp ${tmpd}temp2.p6
 
 elif [ "$cmach" = "1" ]; then
 
 	echo Running with cmach
     $pintcmd $obase.p6 $obase.p6o --machdeck > ${tmpd}temp
-    cmach $obase.p6o $options $progfile.dat $obase.out < $progfile.inp &> $obase.lst
+    cmach $obase.p6o $options $prgargs < $infile &> $obase.lst
     rc=$? # capture the run result before cleanup clobbers it
     rm ${tmpd}temp
 
 elif [ "$package" = "1" ]; then
 
     echo Running with package
-    ./$obase $options $progfile.dat $obase.out < $progfile.inp &> $obase.lst
+    ./$obase $options $prgargs < $infile &> $obase.lst
     rc=$?
 
 elif [ "$pgen" = "1" ]; then
@@ -257,8 +293,8 @@ elif [ "$pgen" = "1" ]; then
         # is a native-named ELF that binfmt runs through qemu transparently.
         if command -v wine64 >/dev/null 2>&1; then wine=wine64; else wine=wine; fi
         echo "Running with pgen under wine"
-        WINEDEBUG=-all $wine ./$obase.exe $progfile.dat $obase.out $options \
-            < $progfile.inp &> $obase.lst
+        WINEDEBUG=-all $wine ./$obase.exe $prgargs $options \
+            < $infile &> $obase.lst
         rc=$?
         # the Windows C runtime writes text streams with CRLF line endings;
         # normalize to LF so the listing matches the platform-neutral golden
@@ -272,13 +308,13 @@ elif [ "$pgen" = "1" ]; then
         # same as the wine cross run above
         if [ -f "$obase.exe" ]; then
 
-            ./$obase.exe $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
+            ./$obase.exe $prgargs $options < $infile &> $obase.lst
             rc=$?
             sed -i 's/\r$//' $obase.lst
 
         else
 
-            ./$obase $progfile.dat $obase.out $options < $progfile.inp &> $obase.lst
+            ./$obase $prgargs $options < $infile &> $obase.lst
             rc=$?
 
         fi
@@ -288,10 +324,21 @@ elif [ "$pgen" = "1" ]; then
 else
 
 	echo Running with pint
-    cat $obase.p6 $progfile.dat > ${tmpd}temp.p6
-    $pintcmd ${tmpd}temp.p6 $obase.out $options < $progfile.inp &> $obase.lst
-    rc=$? # capture the run result before cleanup clobbers it
-    rm ${tmpd}temp.p6
+    if [ "$argset" = "1" ]; then
+
+        # explicit arguments: the deck runs as is, arguments on the command
+        # line after the interpreter's output slot
+        $pintcmd $obase.p6 ${tmpd}temp3 $userargs $options < $infile &> $obase.lst
+        rc=$? # capture the run result before cleanup clobbers it
+
+    else
+
+        cat $obase.p6 $progfile.dat > ${tmpd}temp.p6
+        $pintcmd ${tmpd}temp.p6 $obase.out $options < $infile &> $obase.lst
+        rc=$? # capture the run result before cleanup clobbers it
+        rm ${tmpd}temp.p6
+
+    fi
 
 fi
 
