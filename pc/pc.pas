@@ -2423,9 +2423,16 @@ begin { dolink }
       { The PE default stack reserve (2mb) is a quarter of the linux default
         (8mb). Deep recursion that fits on linux (the recursive descent
         compiler compiling itself, deviant sources, user recursion) would
-        overflow the windows stack, so reserve the linux default explicitly. }
-      if fwindows then begin putstr('-Wl,--stack,');
-         ints(numstr, stksiz); putstr(numstr); putchr(' ') end;
+        overflow the windows stack, so reserve the linux default explicitly.
+        The full reserve is also COMMITTED: windows grows the stack through a
+        single guard page, and pgen generated code allocates large and
+        variable sized frames with plain rsp adjustments (no stack probes),
+        which fault when they skip past the guard page. Committing the whole
+        stack up front removes the guard mechanism. -Xlinker is used because
+        -Wl, would split the reserve,commit pair at the comma. }
+      if fwindows then begin putstr('-Xlinker --stack=');
+         ints(numstr, stksiz); putstr(numstr);
+         putchr(','); putstr(numstr); putchr(' ') end;
       { An I/O library (terminal or graphics) installs its I/O overrides from a
         constructor in its module object. A program that does not call any of
         its functions (e.g. promoted serial code) would leave that object out

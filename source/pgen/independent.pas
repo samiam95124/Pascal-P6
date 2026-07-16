@@ -2770,9 +2770,15 @@ begin
 end;
 
 { write a string reference attribute (DW_FORM_strp) }
+{ A reference into another debug section must be section relative on
+  windows/COFF (.secrel32): a .long there is a 32 bit absolute relocation,
+  which the linker faults when the debug sections land beyond 32 bit range. }
 procedure dwstrref(s: pstring);
 begin
-  writeln(prr, '        .long   .Ldw', dwaddstr(s):1)
+  if windows then
+    writeln(prr, '        .secrel32   .Ldw', dwaddstr(s):1)
+  else
+    writeln(prr, '        .long   .Ldw', dwaddstr(s):1)
 end;
 
 { DWARF abbreviation table constants }
@@ -3570,7 +3576,11 @@ begin
   writeln(prr, '        .long   .Ldw_info_end - .Ldw_info_hdr /* unit length */');
   writeln(prr, '.Ldw_info_hdr:');
   writeln(prr, '        .short  4 /* DWARF version */');
-  writeln(prr, '        .long   .Ldw_abbrev_start /* debug_abbrev offset */');
+  { cross section reference: section relative on windows/COFF (see dwstrref) }
+  if windows then
+    writeln(prr, '        .secrel32   .Ldw_abbrev_start /* debug_abbrev offset */')
+  else
+    writeln(prr, '        .long   .Ldw_abbrev_start /* debug_abbrev offset */');
   adrsz := dwarf_addr_size;
   writeln(prr, '        .byte   ', adrsz:1, ' /* address size */');
 
@@ -3594,7 +3604,11 @@ begin
     writeln(prr, ' /* DW_AT_high_pc (no functions) */')
   end;
   { line number table reference }
-  writeln(prr, '        .long   .Ldw_line_start /* DW_AT_stmt_list */');
+  { cross section reference: section relative on windows/COFF (see dwstrref) }
+  if windows then
+    writeln(prr, '        .secrel32   .Ldw_line_start /* DW_AT_stmt_list */')
+  else
+    writeln(prr, '        .long   .Ldw_line_start /* DW_AT_stmt_list */');
 
   { emit base type DIEs }
   dwldef(dwlint); writeln(prr);
