@@ -39,6 +39,7 @@ package=0
 pgen=0
 full="0"
 windowsexe=0
+linear=0
 option=""
 
 diftot=0
@@ -313,6 +314,14 @@ do
 
         pgen=1
 
+    elif [ "$param" = "--linear" ]; then
+
+        # run the models one at a time with their output going straight to the
+        # console, instead of concurrently with the live status display. Slower
+        # (no overlap), but the run is followable in real time -- useful for
+        # watching where a slow or wedged model is spending its time.
+        linear=1
+
     elif [ "$param" = "--windowsexe" ]; then
 
         # run the toolchain from the windows host cell executables
@@ -340,6 +349,8 @@ do
         echo "--package Run in package mode."
         echo "--pgen    Run in pgen mode."
         echo "--windowsexe Run the toolchain from the windows host executables."
+        echo "--linear  Run the models one at a time with live console output"
+        echo "          (no parallel status display); slower but followable."
         echo ""
 		exit 0
 		
@@ -409,56 +420,82 @@ if [ "$windowsexe" = "1" ]; then
 
 fi
 
-#
-# Launch each model concurrently (each in its own subshell). Each model's
-# console output is captured to its own log so the parallel models do not
-# interleave on the terminal; the logs are replayed in model order after the
-# run.
-#
-pids=""
-for m in $models; do
-    case "$m" in
-        pint)    run_model --pint    pint    ;;
-        pmach)   run_model --pmach   pmach   ;;
-        cmach)   run_model --cmach   cmach   ;;
-        package) run_model --package package ;;
-        pgen)    run_model --pgen    pgen    ;;
-    esac > "$WORK/$m.log" 2>&1 &
-    pids="$pids $!"
-done
+if [ "$linear" = "1" ]; then
 
-#
-# Live status on this console while the models run: clear the page once, then
-# at the home position each second redraw a line per model -- its log and report
-# line counts, and "done" once it has written its totals. Loop until every model
-# subshell has exited (\033[K clears each line so shrinking values leave no
-# trailing characters).
-#
-printf '\033[2J'
-SECONDS=0
-while true; do
-
-    printf '\033[H'
-    printf 'Regression running  elapsed %d:%02d:%02d\033[K\n\033[K\n' \
-        $((SECONDS/3600)) $(((SECONDS%3600)/60)) $((SECONDS%60))
+    #
+    # Linear mode: run the models one at a time with their output going
+    # straight to the console (no capture, no status display), so the run is
+    # followable live. The per-model .report and .totals files are still
+    # written by run_model, so the summary below is unchanged; the per-model
+    # .log is written too (via tee) so the merge/replay path stays uniform,
+    # but the replay is skipped since the output already reached the console.
+    #
     for m in $models; do
+        echo ""
+        echo "===================== $m model ====================="
+        case "$m" in
+            pint)    run_model --pint    pint    ;;
+            pmach)   run_model --pmach   pmach   ;;
+            cmach)   run_model --cmach   cmach   ;;
+            package) run_model --package package ;;
+            pgen)    run_model --pgen    pgen    ;;
+        esac 2>&1 | tee "$WORK/$m.log"
+    done
 
-        log=0
-        rep=0
-        stat='....'
-        if [ -f "$WORK/$m.log" ];    then log=`wc -l < "$WORK/$m.log"`; fi
-        if [ -f "$WORK/$m.report" ]; then rep=`wc -l < "$WORK/$m.report"`; fi
-        if [ -f "$WORK/$m.totals" ]; then stat='done'; fi
-        printf '  %-8s %s  log=%-7s report=%-5s\033[K\n' "$m" "$stat" "$log" "$rep"
+else
+
+    #
+    # Launch each model concurrently (each in its own subshell). Each model's
+    # console output is captured to its own log so the parallel models do not
+    # interleave on the terminal; the logs are replayed in model order after the
+    # run.
+    #
+    pids=""
+    for m in $models; do
+        case "$m" in
+            pint)    run_model --pint    pint    ;;
+            pmach)   run_model --pmach   pmach   ;;
+            cmach)   run_model --cmach   cmach   ;;
+            package) run_model --package package ;;
+            pgen)    run_model --pgen    pgen    ;;
+        esac > "$WORK/$m.log" 2>&1 &
+        pids="$pids $!"
+    done
+
+    #
+    # Live status on this console while the models run: clear the page once, then
+    # at the home position each second redraw a line per model -- its log and report
+    # line counts, and "done" once it has written its totals. Loop until every model
+    # subshell has exited (\033[K clears each line so shrinking values leave no
+    # trailing characters).
+    #
+    printf '\033[2J'
+    SECONDS=0
+    while true; do
+
+        printf '\033[H'
+        printf 'Regression running  elapsed %d:%02d:%02d\033[K\n\033[K\n' \
+            $((SECONDS/3600)) $(((SECONDS%3600)/60)) $((SECONDS%60))
+        for m in $models; do
+
+            log=0
+            rep=0
+            stat='....'
+            if [ -f "$WORK/$m.log" ];    then log=`wc -l < "$WORK/$m.log"`; fi
+            if [ -f "$WORK/$m.report" ]; then rep=`wc -l < "$WORK/$m.report"`; fi
+            if [ -f "$WORK/$m.totals" ]; then stat='done'; fi
+            printf '  %-8s %s  log=%-7s report=%-5s\033[K\n' "$m" "$stat" "$log" "$rep"
+
+        done
+        alive=0
+        for p in $pids; do if kill -0 "$p" 2>/dev/null; then alive=1; fi; done
+        if [ "$alive" = "0" ]; then break; fi
+        sleep 1
 
     done
-    alive=0
-    for p in $pids; do if kill -0 "$p" 2>/dev/null; then alive=1; fi; done
-    if [ "$alive" = "0" ]; then break; fi
-    sleep 1
+    wait
 
-done
-wait
+fi
 echo ""
 
 #
@@ -476,12 +513,16 @@ done
 #
 # Replay each model's captured console output, grouped in model order, so the
 # run is followable without the parallel models interleaving on the terminal.
+# In linear mode the output already went to the console live, so skip the
+# replay to avoid printing it twice.
 #
-for m in $models; do
-    echo ""
-    echo "===================== $m model output ====================="
-    cat "$WORK/$m.log"
-done
+if [ "$linear" != "1" ]; then
+    for m in $models; do
+        echo ""
+        echo "===================== $m model output ====================="
+        cat "$WORK/$m.log"
+    done
+fi
 
 #
 # Print collected status
