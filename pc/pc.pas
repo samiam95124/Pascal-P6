@@ -2507,8 +2507,10 @@ begin { dolink }
       { The network library secures connections through OpenSSL. }
       if networked then begin putchr(' ');
          if fwindows then
-            { The Windows network model connects through Winsock. }
-            putstr('-lwsock32')
+            { The Windows network model secures connections through the win64
+              build of OpenSSL, whose static libraries pull in Winsock (ws2_32)
+              and the certificate/crypto system libraries (crypt32, gdi32). }
+            putstr('-lssl -lcrypto -lws2_32 -lcrypt32 -lgdi32')
          else
             putstr('-lssl -lcrypto -lpthread -ldl')
          end;
