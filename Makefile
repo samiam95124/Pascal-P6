@@ -1031,6 +1031,25 @@ $(BUILD)/win64/cmach_package_min.o: $(SOURCE)/cmach/cmach.c
 # provides the terminal core too, so the graphics flavor links graphics.a (not
 # terminal.a -- they share the ami_* core and cannot co-link).
 cmacht: bin/cmacht
+ifeq ($(HOST),windows)
+# Windows host: build like the standalone win64 cmach.exe (the Ami
+# non-bypass stdio and the win64 external archives), adding the terminal
+# flavor: -DTERMINAL and the win64 terminal archive, which draws through
+# GDI and uses the winmm joystick/timer calls (both in the lib set).
+bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
+		$(LIBS)/win64/services.a $(LIBS)/win64/terminal.a $(LIBS)/win64/sound.a \
+		$(LIBS)/win64/network.a $(BUILD)/win64/cmach_stdio.o
+	@echo
+	@echo "Building cmacht (terminal flavor) for win64..."
+	@echo
+	mkdir -p $(WINCELL)/bin
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -DEXTERNALS -DTERMINAL $(WIN_STDIO_INC) \
+		-o $(BUILD)/win64/cmacht.exe $(SOURCE)/cmach/cmach.c \
+		$(BUILD)/win64/cmach_stdio.o \
+		$(LIBS)/win64/terminal.a $(WINCMACHLIBS) -lgdi32
+	cp $(BUILD)/win64/cmacht.exe $(PASCALP6)/bin/cmacht
+	cp $(BUILD)/win64/cmacht.exe $(WINCELL)/bin/cmacht.exe
+else
 bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
 		$(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/sound.a $(LIBS)/network.a \
 		$(LIBS)/psystem.a
@@ -1045,6 +1064,7 @@ bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
 	cp $(BUILD)/cmacht64le $(PASCALP6)/bin/cmacht
 	mkdir -p $(HOSTCELL)/bin
 	cp $(BUILD)/cmacht64le $(HOSTCELL)/bin/cmacht
+endif
 
 cmachg: bin/cmachg
 # cmachg hosts a graphics window over the interpreted program like pmachg/pintg,
@@ -1053,6 +1073,25 @@ cmachg: bin/cmachg
 # window at startup; the interpreter keeps its console and vmhost opens the
 # program's window via openwin. The standard libs/graphics.a auto-creates a main
 # window at init, which collides with vmhost's openwin and hangs.
+ifeq ($(HOST),windows)
+# Windows host: like the win64 cmacht above but -DGRAPHICS with the win64
+# "blonde" graphics archive (source/graph/win64). The portable widget
+# package (gnome_widgets) is not linked on windows (native widgets); GDI
+# and the common dialogs take the place of the X11 closure.
+bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
+		$(LIBS)/win64/services.a source/graph/win64/graphics.a \
+		$(LIBS)/win64/sound.a $(LIBS)/win64/network.a $(BUILD)/win64/cmach_stdio.o
+	@echo
+	@echo "Building cmachg (graphics flavor) for win64..."
+	@echo
+	mkdir -p $(WINCELL)/bin
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -DEXTERNALS -DGRAPHICS $(WIN_STDIO_INC) \
+		-o $(BUILD)/win64/cmachg.exe $(SOURCE)/cmach/cmach.c \
+		$(BUILD)/win64/cmach_stdio.o \
+		source/graph/win64/graphics.a $(WINCMACHLIBS) -lgdi32 -lcomdlg32
+	cp $(BUILD)/win64/cmachg.exe $(PASCALP6)/bin/cmachg
+	cp $(BUILD)/win64/cmachg.exe $(WINCELL)/bin/cmachg.exe
+else
 bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/gnome_widgets.o \
 		$(LIBS)/sound.a $(LIBS)/network.a $(LIBS)/psystem.a
@@ -1072,6 +1111,7 @@ bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 	cp $(BUILD)/cmachg64le $(PASCALP6)/bin/cmachg
 	mkdir -p $(HOSTCELL)/bin
 	cp $(BUILD)/cmachg64le $(HOSTCELL)/bin/cmachg
+endif
 
 #
 # Build spew, an automated test facillity.

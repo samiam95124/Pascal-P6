@@ -61,6 +61,20 @@ function compwin {
 
 OPTIONS=$2
 
+#
+# The graph flavor's "blonde" graphics archive is per-target: the linux
+# build keeps it in source/graph itself, the windows build in
+# source/graph/win64 (mirroring the hosts tree layout). Select the target's
+# archive ahead of the flavor sources so the flavored interpreter builds
+# (pintg, pmachg) link the right one. cygpath exists only on a windows
+# msys/cygwin host, so it detects windows robustly.
+#
+if command -v cygpath >/dev/null 2>&1; then
+   GRAPHMP="source/graph/win64;source/graph"
+else
+   GRAPHMP="source/graph"
+fi
+
 make clean
 make $1
 if [ $? -ne 0 ]; then
@@ -230,7 +244,7 @@ echo "**********************************************************************"
 echo "Building source/pint (graphics flavor) as pintg..."
 echo "**********************************************************************"
 echo ""
-pc source/pint -mp=source/graph -r $OPTIONS
+pc source/pint "-mp=$GRAPHMP" -r $OPTIONS
 if [ $? -ne 0 ]; then
 
    echo "*** Error: compile failed"
@@ -270,7 +284,7 @@ echo "**********************************************************************"
 echo "Building source/pmach (graphics flavor) as pmachg..."
 echo "**********************************************************************"
 echo ""
-pc source/pmach -mp=source/graph -r $OPTIONS
+pc source/pmach "-mp=$GRAPHMP" -r $OPTIONS
 if [ $? -ne 0 ]; then
 
    echo "*** Error: compile failed"
