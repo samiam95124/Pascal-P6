@@ -541,15 +541,18 @@ endif
 #
 # The same source as the native cmach (source/cmach/cmach.c), cross compiled
 # with mingw. Built with -DEXTERNALS so it hosts the Ami external models
-# (services, sound, network) and -DSTDIO_BYPASS so its file table and the model
-# bindings share one stdio world, exactly as the native cmach (see its notes
-# below). The bypass stdio object is compiled here with -DSTDIO_BYPASS (unlike
-# the win64 psystem stdio, which is not); the Ami windows bypass stdio supplies
-# stdio_rename in that mode. Links the win64 external archives with the Windows
-# system libraries (winsock, winmm) and OpenSSL for the network model's
+# (services, sound, network). Unlike the native cmach, it is NOT built with
+# -DSTDIO_BYPASS: on Windows the Ami stdio is linked in to override the C
+# runtime stdio calls directly (the same reason the win64 psystem does not set
+# it -- there is no glibc weak-symbol backdoor to funnel around), so cmach, the
+# Ami stdio object, and the model archives all share the one overriding stdio
+# world. Building cmach with bypass instead would give it Ami-stdio FILE handles
+# that the non-bypass model archives then pass to the C runtime fputs, which
+# deadlocks on the foreign FILE lock. Links the win64 external archives with the
+# Windows system libraries (winsock, winmm) and OpenSSL for the network model's
 # TLS/DTLS. The synth -u anchors the native build carries are ELF/ALSA specific
-# and do not apply here. Installed into the windows host tree; configure
-# restores it to bin on a windows host.
+# and do not apply here. Installed into the windows host tree; configure restores
+# it to bin on a windows host.
 #
 WINCMACHLIBS=$(LIBS)/win64/services.a $(LIBS)/win64/sound.a \
 	$(LIBS)/win64/network.a -lssl -lcrypto -lwinmm -lwsock32 -lws2_32 \
@@ -562,9 +565,9 @@ $(WINCELL)/bin/cmach.exe: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc \
 	@echo
 	mkdir -p $(BUILD)/win64
 	mkdir -p $(WINCELL)/bin
-	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -DSTDIO_BYPASS $(WIN_STDIO_INC) \
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) $(WIN_STDIO_INC) \
 		-o $(BUILD)/win64/cmach_stdio.o -c $(AMILIBC)/stdio.c
-	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) \
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -DEXTERNALS $(WIN_STDIO_INC) \
 		-o $(WINCELL)/bin/cmach.exe $(SOURCE)/cmach/cmach.c \
 		$(BUILD)/win64/cmach_stdio.o $(WINCMACHLIBS)
 endif
