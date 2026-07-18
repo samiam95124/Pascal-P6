@@ -2456,11 +2456,13 @@ begin { dolink }
       fndfil(psystem, true);
       if not exists(psystem) then { not found }
          writeln('*** pc: Error: support module "%"', psystem);
-      if windowed then begin
+      if windowed and not fwindows then begin
 
          { find the widgets module. It overrides the graphics widget stubs from
            a constructor and exports no symbols, so it cannot be force-linked
-           from an archive; it is linked as an explicit object. }
+           from an archive; it is linked as an explicit object. Windows is
+           excluded: its graphics model carries a native widget set, so the
+           portable widget package is not used there. }
          copy(widgets, 'gnome_widgets');
          fndfil(widgets, true);
          if not exists(widgets) then { not found }
@@ -2517,8 +2519,8 @@ begin { dolink }
         the module chain, so a foreign object between main and the modules
         breaks the chain. Its graphics references resolve from the graphics.a
         members the -u anchor has already extracted, and its stdio from
-        psystem, later on the line. }
-      if windowed then begin putstr(widgets); putchr(' ') end;
+        psystem, later on the line. Not linked on windows (native widgets). }
+      if windowed and not fwindows then begin putstr(widgets); putchr(' ') end;
       putstr(psystem);
       putchr(' ');
       putstr('-lm -lpthread');
@@ -2530,19 +2532,21 @@ begin { dolink }
          if fwindows then
             { The Windows graphics model renders through GDI and picks files
               and colors through the common dialogs; user32/kernel32 link
-              implicitly. No X11/FreeType/FontConfig closure. }
-            putstr('-lgdi32 -lcomdlg32')
+              implicitly. No X11/FreeType/FontConfig closure. winmm supplies
+              the joystick calls and the multimedia frame timer. }
+            putstr('-lgdi32 -lcomdlg32 -lwinmm')
          else begin
             putstr('-lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lfontconfig');
             putchr(' ');
             putstr('-luuid -lexpat -lfreetype -lpng16 -lm -lz -ldl')
          end end;
       { The Windows terminal model draws its console window through GDI, so it
-        needs gdi32 (the linux terminal is self contained). Harmless for a
-        non-terminal program: gdi32 is an import library with nothing pulled in
-        unless referenced. The graphics case already carries gdi32 above. }
+        needs gdi32 (the linux terminal is self contained), and winmm for the
+        joystick calls and the multimedia frame timer. Harmless for a
+        non-terminal program: they are import libraries with nothing pulled in
+        unless referenced. The graphics case already carries both above. }
       if terminaled and fwindows and not windowed then begin putchr(' ');
-         putstr('-lgdi32') end;
+         putstr('-lgdi32 -lwinmm') end;
       { The sound library plays through ALSA and synthesizes through
         fluidsynth (whose closure adds glib and pcre). The static libasound
         and libfluidsynth are locally built and installed in /usr/local/lib

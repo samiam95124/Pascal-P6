@@ -436,11 +436,13 @@ $(LIBS)/win64/graphics.a: $(AMIWIN)/graphics.c \
 		-o $(BUILD)/win64/graphics.o -c $(AMIWIN)/graphics.c
 	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
 		-o $(BUILD)/win64/graph_services.o -c $(AMIWIN)/services.c
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
+		-o $(BUILD)/win64/graph_config.o -c $(PASCALP6)/amitk/utils/config.c
 	rm -f $(LIBS)/win64/graphics.a
 	$(WINAR) rc $(LIBS)/win64/graphics.a $(BUILD)/win64/graphics_wrapper_asm.o \
 		$(BUILD)/win64/graphics_wrapper.o $(BUILD)/win64/graphics_support.o \
 		$(BUILD)/win64/graphics.o $(BUILD)/win64/graph_services.o \
-		$(BUILD)/win64/support.o
+		$(BUILD)/win64/graph_config.o $(BUILD)/win64/support.o
 	mkdir -p $(WINCELL)/libs
 	cp $(LIBS)/win64/graphics.a $(WINCELL)/libs
 
@@ -459,7 +461,7 @@ source/graph/win64/graphics.a: $(LIBS)/win64/graphics.a
 	$(WINAR) rc source/graph/win64/graphics.a $(BUILD)/win64/graphics_wrapper_asm.o \
 		$(BUILD)/win64/graphics_wrapper.o $(BUILD)/win64/graphics_support.o \
 		$(BUILD)/win64/graphics_blonde.o $(BUILD)/win64/graph_services.o \
-		$(BUILD)/win64/support.o
+		$(BUILD)/win64/graph_config.o $(BUILD)/win64/support.o
 
 #
 # Gnome widgets for win64, the portable widget set drawn with the graphics API.
