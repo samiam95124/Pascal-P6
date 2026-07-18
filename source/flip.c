@@ -86,7 +86,8 @@ void main(int argc, char *argv[])
     int forcebin;
     int pstdout;
     char *cp;
-    char tmpfn[2048]; /* per-file unique temp name (see below) */
+    char tmpfn[2048]; /* unique temp name, rooted at the target (see below) */
+    int tmpfd;        /* mkstemp descriptor for the temp file */
 
     unixmode = 1; /* set default is unix mode */
     forcebin = 0; /* do not force convertion of bin file */
@@ -123,18 +124,25 @@ void main(int argc, char *argv[])
             exit(1);
 
         }
-        /* Build a per-file, per-process unique temp name in the target's own
-           directory. The old fixed "flip_temp" in the current directory was
-           shared: several regression models run flip at once from the same
-           working directory, so their temps collided and cross-contaminated
-           the files they renamed into place. Keeping the temp beside the
-           target also keeps the final rename within one filesystem. */
-        snprintf(tmpfn, sizeof(tmpfn), "%s.flip%d", *argv, (int)getpid());
         if (pstdout) dfp = stdout; /* send to standard output */
-        else if ((dfp = fopen(tmpfn, "wb")) == NULL) {
+        else {
 
-            printf("flip: Can't open output file %s\n", *argv);
-            exit(1);
+            /* Create the temp with mkstemp: it coins a unique name and creates
+               the file atomically, so concurrent flips never collide. The old
+               fixed "flip_temp" was shared -- several regression models run
+               flip at once from the same directory, so their temps collided
+               and cross-contaminated the files they renamed into place.
+               The template is rooted at the target (target + suffix), not the
+               system temp directory, because flip finishes with
+               rename(temp, target), which cannot cross filesystems. */
+            snprintf(tmpfn, sizeof(tmpfn), "%s.flipXXXXXX", *argv);
+            tmpfd = mkstemp(tmpfn);
+            if (tmpfd < 0 || (dfp = fdopen(tmpfd, "wb")) == NULL) {
+
+                printf("flip: Can't open output file %s\n", *argv);
+                exit(1);
+
+            }
 
         }
         /* copy contents and fix line endings to temp file */
