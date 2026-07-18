@@ -145,7 +145,11 @@ begin (*xlate*)
     readln(prd)
   end;
   writeln(prr, '};');
-  write(prr, 'long program_code_len = 0x'); wrtnum(prr, ad, 16, 8, true);
+  { Emit the length as 'long long' (64-bit on every target) rather than 'long'.
+    cmach reads this extern as a full address word; on windows (LLP64) cmach.c
+    remaps long to long long, so a plain 'long' here would store only 32 bits
+    and cmach would read 8, picking up garbage high bits and a wild pctop. }
+  write(prr, 'long long program_code_len = 0x'); wrtnum(prr, ad, 16, 8, true);
   writeln(prr, ';');
 end;
 
