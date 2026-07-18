@@ -5,7 +5,9 @@
 # both so the prebuilt tool set works when run from bash on a windows host
 # (the amitk environment lookup is also being made case insensitive).
 #
-if [ "$OS" = "Windows_NT" ] && command -v cygpath >/dev/null 2>&1; then
+# cygpath exists only on a windows msys/cygwin host, so it detects windows
+# robustly -- unlike $OS, which is not reliably inherited by nested shells.
+if command -v cygpath >/dev/null 2>&1; then
     export Path="$(cygpath -pw "$PATH")"
 fi
 
