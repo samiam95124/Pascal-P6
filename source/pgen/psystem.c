@@ -882,6 +882,10 @@ static void sdif(settype s1, settype s2)
 
 static boolean sisin(long i, settype s)
 {
+    /* An element outside the set's universe (SETLOW..SETHIGH) is simply not a
+       member. Guarding here also avoids a negative shift count (undefined
+       behavior) for i < 0, e.g. -1/8 == 0 with -1%8 == -1 giving 1<<-1. */
+    if (i < SETLOW || i > SETHIGH) return (FALSE);
     return (!!(s[i/8] & 1<<i%8));
 }
 
@@ -6007,6 +6011,10 @@ boolean psystem_setsin(
 
 {
 
+    /* An element outside the set's universe (SETLOW..SETHIGH) is simply not a
+       member. Guarding here also avoids a negative shift count (undefined
+       behavior) for i < 0, e.g. -1/8 == 0 with -1%8 == -1 giving 1<<-1. */
+    if (i < SETLOW || i > SETHIGH) return (FALSE);
     return (!!(s[i/8] & 1<<i%8));
 
 }
