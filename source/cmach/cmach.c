@@ -156,6 +156,37 @@
 #include <unistd.h>
 #include <string.h>
 
+/*
+ * Windows x64 is LLP64: long is 32 bits, unlike every other 64 bit platform.
+ * cmach uses long throughout as the machine word/Pascal integer type -- the
+ * store is indexed and read as long* (getint/putint), address is a typedef for
+ * long, and LONG_MAX/LONG_MIN are the integer range bounds -- which scales with
+ * the target on every other host (64 bits on LP64, 32 bits on 32 bit targets).
+ * For Windows only, long is redefined to long long (64 bits), labs to llabs,
+ * and LONG_MAX/LONG_MIN to the long long limits so the range tracks the type;
+ * otherwise a value near the true maxint trips a false overflow against the 32
+ * bit LONG_MAX (e.g. startrek's course arithmetic). Placed at the top so the
+ * whole interpreter -- loader and executor -- agrees on the word width (a split
+ * misparses the code deck), after the system includes so the C library keeps
+ * its true types, and suspended across the Ami model headers below (which use
+ * literal long long). Mirrors the block in psystem.c.
+ *
+ * The macro widens the variables but not printf/scanf format strings, so the
+ * few %ld/%lx that read or print the long machine word use the LM length
+ * modifier -- "ll" on Windows to match the redefined long, "l" elsewhere.
+ */
+#ifdef _WIN32
+#define long long long
+#define labs llabs
+#undef LONG_MAX
+#define LONG_MAX LLONG_MAX
+#undef LONG_MIN
+#define LONG_MIN LLONG_MIN
+#define LM "ll"
+#else
+#define LM "l"
+#endif
+
 /*******************************************************************************
 
                                      KNOBS
@@ -786,7 +817,7 @@ void finish(long e)
 
 void errors(address a, address l)
 { printf("\n*** Runtime error\n");
-      if (srclin > 0) printf(" [%ld]: ", srclin);
+      if (srclin > 0) printf(" [%" LM "d]: ", srclin);
       if (l > MAXAST) l = MAXAST;
       while (l > 0) { printf("%c", store[a]); a = a+1; l = l-1; }
       finish(1);
@@ -802,7 +833,7 @@ void errors(address a, address l)
 /* handle exception vector */
 void errorv(address ea)
 { printf("\n*** Runtime error");
-  if (srclin > 0) printf(" [%ld]: ", srclin);
+  if (srclin > 0) printf(" [%" LM "d]: ", srclin);
   switch (ea) {
 
     /* Exceptions that can be intercepted */
@@ -1189,7 +1220,22 @@ void swpstk(address l)
    against this base, matching pmach. */
 #define EXTVECBASE 19
 address extvecbase = EXTVECBASE;
-/* native Ami binding declarations, so ami_* return types are not truncated */
+/* native Ami binding declarations, so ami_* return types are not truncated.
+ *
+ * The Ami model headers are the one place cmach must see the platform's true
+ * long. On Windows the long redefinition at the top of the file is in force by
+ * here, but these headers use literal long long for 64 bit file sizes (which
+ * the macro would turn into long long long long), and their prototypes must
+ * match the Ami archives, compiled with the platform's native long. Suspend
+ * the redefinition across the includes, then restore it. */
+#ifdef _WIN32
+#undef long
+#undef labs
+#undef LONG_MAX
+#undef LONG_MIN
+#define LONG_MAX 0x7fffffffL
+#define LONG_MIN (-LONG_MAX-1)
+#endif
 #include "services.h"
 #include "sound.h"
 #include "network.h"
@@ -1201,6 +1247,14 @@ address extvecbase = EXTVECBASE;
 #include "graphics.h"
 #elif defined(TERMINAL)
 #include "terminal.h"
+#endif
+#ifdef _WIN32
+#define long long long
+#define labs llabs
+#undef LONG_MAX
+#define LONG_MAX LLONG_MAX
+#undef LONG_MIN
+#define LONG_MIN LLONG_MIN
 #endif
 /* defined further below in this file; the executor references them */
 void valfil(address fa);
@@ -1436,14 +1490,14 @@ void load(FILE* fp)
     ad = 0; l = 1;
     while (l > 0 && (c = fgetc(fp)) != EOF) {
         if (c != ':') errorl();
-        fscanf(fp, "%2lx%16lx", &l, &i); ad2 = i;
+        fscanf(fp, "%2" LM "x%16" LM "x", &l, &i); ad2 = i;
         if (ad != ad2 && l > 0) errorl();
         cs = 0;
         for (i = 1; i <= l; i++) {
-            fscanf(fp, "%2lx", &b); putbyt(ad, b); cs = (cs+b)%256;
+            fscanf(fp, "%2" LM "x", &b); putbyt(ad, b); cs = (cs+b)%256;
             ad = ad+1;
         };
-        fscanf(fp, "%2lx\n", &csc); if (cs != csc) errorl();
+        fscanf(fp, "%2" LM "x\n", &csc); if (cs != csc) errorl();
     }
     pctop = ad;
     /* uncomment for program code dump */
@@ -1616,7 +1670,7 @@ void dmpblk(void)
     blk = gbtop; /* set to bottom of heap */
     while (blk < np) { /* search blocks in heap */
         l = getadr(blk); /* get length */
-        printf("%ld: Addr: %08lx Len: %08lx Occ: %d\n", c, blk, labs(l), l < 0);
+        printf("%" LM "d: Addr: %08" LM "x Len: %08" LM "x Occ: %d\n", c, blk, labs(l), l < 0);
         c++;
         if (labs(l) < HEAPAL || labs(l) > np) errorv(HEAPFORMATINVALID);
         blk = blk+labs(l); /* go next block */
@@ -2255,7 +2309,7 @@ void callsp(void)
 
     /* system routine call trace diagnostic */
     /*
-    printf("callsp: q: %ld\n", q);
+    printf("callsp: q: %" LM "d\n", q);
     */
 
     if (q > MAXSP) errorv(INVALIDSTANDARDPROCEDUREORFUNCTION);
@@ -2868,7 +2922,7 @@ void sinins()
 
     /* instruction execution trace diagnostic */
     /*
-    printf("%08lx/%08lx: %02x\n", pc, sp, store[pc]);
+    printf("%08" LM "x/%08" LM "x: %02x\n", pc, sp, store[pc]);
     */
 
     if (pc >= pctop) errorv(PCOUTOFRANGE);
