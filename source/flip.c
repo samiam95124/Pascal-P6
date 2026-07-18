@@ -71,6 +71,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 void main(int argc, char *argv[])
 
@@ -85,6 +86,8 @@ void main(int argc, char *argv[])
     int forcebin;
     int pstdout;
     char *cp;
+    char tmpfn[2048]; /* unique temp name, rooted at the target (see below) */
+    int tmpfd;        /* mkstemp descriptor for the temp file */
 
     unixmode = 1; /* set default is unix mode */
     forcebin = 0; /* do not force convertion of bin file */
@@ -122,10 +125,24 @@ void main(int argc, char *argv[])
 
         }
         if (pstdout) dfp = stdout; /* send to standard output */
-        else if ((dfp = fopen("flip_temp", "wb")) == NULL) {
+        else {
 
-            printf("flip: Can't open output file %s\n", *argv);
-            exit(1);
+            /* Create the temp with mkstemp: it coins a unique name and creates
+               the file atomically, so concurrent flips never collide. The old
+               fixed "flip_temp" was shared -- several regression models run
+               flip at once from the same directory, so their temps collided
+               and cross-contaminated the files they renamed into place.
+               The template is rooted at the target (target + suffix), not the
+               system temp directory, because flip finishes with
+               rename(temp, target), which cannot cross filesystems. */
+            snprintf(tmpfn, sizeof(tmpfn), "%s.flipXXXXXX", *argv);
+            tmpfd = mkstemp(tmpfn);
+            if (tmpfd < 0 || (dfp = fdopen(tmpfd, "wb")) == NULL) {
+
+                printf("flip: Can't open output file %s\n", *argv);
+                exit(1);
+
+            }
 
         }
         /* copy contents and fix line endings to temp file */
@@ -178,7 +195,7 @@ void main(int argc, char *argv[])
                     printf("File %s is binary, skipping\n", *argv);
                     fclose(sfp); // close input file
                     fclose(dfp); // close output file
-                    remove("flip_temp"); // remove temp file
+                    remove(tmpfn); // remove temp file
                     goto skip; // skip to next file
 
                 }
@@ -201,9 +218,9 @@ void main(int argc, char *argv[])
                 exit(1);
 
             }
-            if (rename("flip_temp", *argv)) { /* rename temp to final */
+            if (rename(tmpfn, *argv)) { /* rename temp to final */
 
-                printf("Cannot rename flip_temp to %s\n", *argv);
+                printf("Cannot rename %s to %s\n", tmpfn, *argv);
                 exit(1);
 
             }
