@@ -198,6 +198,8 @@ win64: $(LIBS)/win64/psystem.a $(LIBS)/win64/main.o $(LIBS)/win64/services.a \
 	$(LIBS)/win64/terminal.a $(LIBS)/win64/graphics.a \
 	source/graph/win64/graphics.a $(LIBS)/win64/gnome_widgets.o \
 	$(LIBS)/win64/sound.a $(LIBS)/win64/network.a \
+	$(BUILD)/win64/cmach_stdio.o $(BUILD)/win64/cmach_package.o \
+	$(BUILD)/win64/cmach_package_min.o \
 	$(WINCELL)/bin/cmach.exe
 
 arm64: $(LIBS)/arm64/psystem.a $(LIBS)/arm64/main.o $(LIBS)/arm64/services.a
@@ -996,6 +998,28 @@ $(BUILD)/cmach/cmach_package_min.o: $(SOURCE)/cmach/cmach.c
 	mkdir -p $(BUILD)/cmach
 	$(CC) $(CFLAGS) -DPACKAGE -DGPC=0 \
 		-o $(BUILD)/cmach/cmach_package_min.o -c $(SOURCE)/cmach/cmach.c
+
+# Windows x64 package objects. The same two builds as the native pair above,
+# compiled with the win64 toolchain and the Ami non-bypass stdio (WIN_STDIO_INC),
+# exactly as the standalone win64 cmach.exe is built -- so a windows package
+# hosts file I/O identically to the tested cmach.exe. pc links these against the
+# per-program deck plus cmach_stdio.o (the shared Ami stdio object below).
+# cmach_package.o carries -DEXTERNALS (services/sound/network); the _min build
+# omits it for programs that use no externals.
+$(BUILD)/win64/cmach_stdio.o: $(AMILIBC)/stdio.c
+	mkdir -p $(BUILD)/win64
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) $(WIN_STDIO_INC) \
+		-o $(BUILD)/win64/cmach_stdio.o -c $(AMILIBC)/stdio.c
+
+$(BUILD)/win64/cmach_package.o: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc
+	mkdir -p $(BUILD)/win64
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -DEXTERNALS $(WIN_STDIO_INC) -DPACKAGE -DGPC=0 \
+		-o $(BUILD)/win64/cmach_package.o -c $(SOURCE)/cmach/cmach.c
+
+$(BUILD)/win64/cmach_package_min.o: $(SOURCE)/cmach/cmach.c
+	mkdir -p $(BUILD)/win64
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) $(WIN_STDIO_INC) -DPACKAGE -DGPC=0 \
+		-o $(BUILD)/win64/cmach_package_min.o -c $(SOURCE)/cmach/cmach.c
 
 # cmacht and cmachg are the terminal and graphics flavors of cmach, mirroring
 # pmacht/pmachg: the same cmach.c built with -DTERMINAL / -DGRAPHICS so it hosts

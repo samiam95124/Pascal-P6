@@ -2175,6 +2175,7 @@ var p, n, e: filnam;  { path components }
     sndarch: filnam;  { sound archive (package externals) }
     netarch: filnam;  { network archive (package externals) }
     psstdio: filnam;  { psystem bypass stdio object (package externals) }
+    cmstdio: filnam;  { win64 cmach Ami stdio object (windows package) }
     toolfn:  filnam;  { toolchain command holder }
     numstr:  filnam;  { number to string conversion holder }
 
@@ -2333,6 +2334,39 @@ begin { dolink }
               models (services, sound, network), so all three archives are
               linked unconditionally, exactly as the standalone cmach does. pc
               bridges its build config to the C define flags here. }
+            if hostid = 3 then begin { windows host }
+
+               { Windows package: mirror the standalone win64 cmach.exe -- the
+                 win64 -DEXTERNALS -DPACKAGE object, the per-program deck, the
+                 Ami non-bypass stdio object, and the win64 external archives
+                 with their windows dependency stack (WINCMACHLIBS). No ALSA/
+                 fluidsynth/glib: the windows externals resolve to winmm and the
+                 socket libraries. }
+               services.maknam(fnc, pgmpath, '../build/win64/cmach_package', 'o');
+               services.fulnam(fnc);
+               if not exists(fnc) then error('win64 cmach_package.o not found');
+               services.maknam(cmstdio, pgmpath, '../build/win64/cmach_stdio', 'o');
+               services.fulnam(cmstdio);
+               services.maknam(servarch, pgmpath, '../libs/win64/services', 'a');
+               services.fulnam(servarch);
+               services.maknam(sndarch, pgmpath, '../libs/win64/sound', 'a');
+               services.fulnam(sndarch);
+               services.maknam(netarch, pgmpath, '../libs/win64/network', 'a');
+               services.fulnam(netarch);
+               putstr(ccname);
+               putstr(' -static -g3 -o '); putstr(fns); putchr(' ');
+               putstr(fnc); putchr(' ');
+               putstr('program_code.c'); putchr(' ');
+               putstr(cmstdio); putchr(' ');
+               putstr(servarch); putchr(' ');
+               putstr(sndarch); putchr(' ');
+               putstr(netarch); putchr(' ');
+               putstr('-lssl -lcrypto -lwinmm -lwsock32 -lws2_32');
+               putstr(' -lcrypt32 -lm -lpthread');
+               excact(cmdbuf) { execute command buffer action }
+
+            end else begin
+
             services.maknam(fnc, pgmpath, '../build/cmach/cmach_package', 'o');
             services.fulnam(fnc);
             if not exists(fnc) then error('cmach_package.o not found');
@@ -2361,10 +2395,33 @@ begin { dolink }
             putstr(' -lglib-2.0 -lpcre -lpthread -ldl -lm');
             excact(cmdbuf) { execute command buffer action }
 
+            end
+
          end else begin
 
             { No Ami externals: a minimal package (cmach plus the embedded
               deck) that builds without the external dependency stack. }
+            if hostid = 3 then begin { windows host }
+
+               { Windows minimal package: the win64 -DPACKAGE object (built with
+                 the Ami non-bypass stdio, no -DEXTERNALS) plus the deck and the
+                 shared cmach_stdio.o object. File I/O then matches the standalone
+                 win64 cmach.exe; no external dependency stack is needed. }
+               services.maknam(fnc, pgmpath, '../build/win64/cmach_package_min', 'o');
+               services.fulnam(fnc);
+               if not exists(fnc) then error('win64 cmach_package_min.o not found');
+               services.maknam(cmstdio, pgmpath, '../build/win64/cmach_stdio', 'o');
+               services.fulnam(cmstdio);
+               putstr(ccname);
+               putstr(' -static -g3 -o '); putstr(fns); putchr(' ');
+               putstr(fnc); putchr(' ');
+               putstr('program_code.c'); putchr(' ');
+               putstr(cmstdio); putchr(' ');
+               putstr('-lm');
+               excact(cmdbuf) { execute command buffer action }
+
+            end else begin
+
             services.maknam(fnc, pgmpath, '../build/cmach/cmach_package_min', 'o');
             services.fulnam(fnc);
             if not exists(fnc) then error('cmach_package_min.o not found');
@@ -2374,6 +2431,8 @@ begin { dolink }
             putstr('program_code.c'); putchr(' ');
             putstr('-lm');
             excact(cmdbuf) { execute command buffer action }
+
+            end
 
          end
 
