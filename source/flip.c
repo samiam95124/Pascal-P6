@@ -71,6 +71,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 void main(int argc, char *argv[])
 
@@ -85,6 +86,7 @@ void main(int argc, char *argv[])
     int forcebin;
     int pstdout;
     char *cp;
+    char tmpfn[2048]; /* per-file unique temp name (see below) */
 
     unixmode = 1; /* set default is unix mode */
     forcebin = 0; /* do not force convertion of bin file */
@@ -121,8 +123,15 @@ void main(int argc, char *argv[])
             exit(1);
 
         }
+        /* Build a per-file, per-process unique temp name in the target's own
+           directory. The old fixed "flip_temp" in the current directory was
+           shared: several regression models run flip at once from the same
+           working directory, so their temps collided and cross-contaminated
+           the files they renamed into place. Keeping the temp beside the
+           target also keeps the final rename within one filesystem. */
+        snprintf(tmpfn, sizeof(tmpfn), "%s.flip%d", *argv, (int)getpid());
         if (pstdout) dfp = stdout; /* send to standard output */
-        else if ((dfp = fopen("flip_temp", "wb")) == NULL) {
+        else if ((dfp = fopen(tmpfn, "wb")) == NULL) {
 
             printf("flip: Can't open output file %s\n", *argv);
             exit(1);
@@ -178,7 +187,7 @@ void main(int argc, char *argv[])
                     printf("File %s is binary, skipping\n", *argv);
                     fclose(sfp); // close input file
                     fclose(dfp); // close output file
-                    remove("flip_temp"); // remove temp file
+                    remove(tmpfn); // remove temp file
                     goto skip; // skip to next file
 
                 }
@@ -201,9 +210,9 @@ void main(int argc, char *argv[])
                 exit(1);
 
             }
-            if (rename("flip_temp", *argv)) { /* rename temp to final */
+            if (rename(tmpfn, *argv)) { /* rename temp to final */
 
-                printf("Cannot rename flip_temp to %s\n", *argv);
+                printf("Cannot rename %s to %s\n", tmpfn, *argv);
                 exit(1);
 
             }
