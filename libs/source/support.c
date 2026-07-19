@@ -145,6 +145,27 @@ __asm__ (
 "    ret\n"
 );
 
+#elif defined(_WIN32)
+
+/* Windows x64: the C caller enters with (code=%rcx, display=%rdx, arg=%r8)
+   per the win64 convention, and the Pascaline side uses the same convention
+   (parameter 1 in %rcx) with the display carried in %rbp as on SysV. The
+   win64 shadow space is allocated for the callee. */
+__asm__ (
+"    .text\n"
+"    .globl pacall\n"
+"pacall:\n"                 /* void pacall(code=%rcx, display=%rdx, arg=%r8) */
+"    push %rbp\n"           /* preserve C frame pointer */
+"    mov  %rcx, %rax\n"     /* %rax = code address */
+"    mov  %rdx, %rbp\n"     /* %rbp = display (static link) */
+"    mov  %r8,  %rcx\n"     /* %rcx = argument (Pascaline param 1) */
+"    sub  $32, %rsp\n"      /* win64 shadow space */
+"    call *%rax\n"          /* enter the Pascaline procedure */
+"    add  $32, %rsp\n"
+"    pop  %rbp\n"           /* restore C frame pointer */
+"    ret\n"
+);
+
 #else
 
 __asm__ (
@@ -221,6 +242,33 @@ void* mkevtthunk(void* code, void* display, void* dispatch)
     lit[1] = display;
     lit[2] = dispatch;
     __builtin___clear_cache((char*)t, (char*)(t+THUNKSZ));
+
+    return t;
+}
+
+#elif defined(_WIN32)
+
+/* emit a movabs of a 64 bit immediate into a register (opcode selects reg) */
+static unsigned char* emitimm(unsigned char* p, unsigned char op, void* val)
+{
+    *p++ = 0x48; *p++ = op;
+    memcpy(p, &val, 8);
+    return p+8;
+}
+
+/* build a thunk: void thunk(void* arg) -> dispatch(code, display, arg).
+   Windows x64 convention: the incoming argument is in %rcx and the
+   dispatcher takes (code=%rcx, display=%rdx, arg=%r8). */
+void* mkevtthunk(void* code, void* display, void* dispatch)
+{
+    unsigned char* t = thunkalloc();
+    unsigned char* p = t;
+
+    *p++ = 0x49; *p++ = 0x89; *p++ = 0xc8;   /* mov  %rcx,%r8   (arg -> arg3) */
+    p = emitimm(p, 0xba, display);           /* movabs display,%rdx (arg2)    */
+    p = emitimm(p, 0xb9, code);              /* movabs code,%rcx    (arg1)    */
+    p = emitimm(p, 0xb8, dispatch);          /* movabs dispatch,%rax          */
+    *p++ = 0xff; *p++ = 0xe0;                /* jmp  *%rax                    */
 
     return t;
 }
