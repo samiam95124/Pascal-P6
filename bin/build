@@ -11,6 +11,43 @@
 #
 # build "-Bi" "-r -d"
 #
+#
+# Install a built program into bin. bin holds only binaries for the host we
+# are running on: on a windows host the native build product is <prog>.exe,
+# elsewhere the bare <prog>. The selection is by host, never by guessing
+# between candidate files, so a stale bare-named leftover (e.g. a linux
+# binary from an earlier use of the same tree) can never be installed.
+# Cross compiled products (compwin) go only to the hosts tree, never bin.
+# On windows both bin names (<name> and <name>.exe) are written so shell
+# callers and native tool spawns (which require the .exe) both resolve.
+# cygpath exists only on a windows msys/cygwin host, so it detects windows
+# robustly.
+#
+function instprog {
+
+   local src="$1"
+   local dst="$2"
+
+   if [ -d "$dst" ]; then dst="$dst/$(basename $1)"; fi
+   if command -v cygpath >/dev/null 2>&1; then
+
+      if [ ! -f "$1.exe" ]; then
+
+         echo "*** Error: windows build product $1.exe missing"
+         exit 1
+
+      fi
+      cp "$1.exe" "$dst"
+      case "$dst" in *.exe) ;; *) cp "$1.exe" "$dst.exe" ;; esac
+
+   else
+
+      cp "$src" "$dst"
+
+   fi
+
+}
+
 function compprog {
 
    echo ""
@@ -25,7 +62,7 @@ function compprog {
       exit 1
 
    fi
-   cp $1 bin
+   instprog $1 bin
 
 }
 
@@ -60,6 +97,20 @@ function compwin {
 }
 
 OPTIONS=$2
+
+#
+# The graph flavor's "blonde" graphics archive is per-target: the linux
+# build keeps it in source/graph itself, the windows build in
+# source/graph/win64 (mirroring the hosts tree layout). Select the target's
+# archive ahead of the flavor sources so the flavored interpreter builds
+# (pintg, pmachg) link the right one. cygpath exists only on a windows
+# msys/cygwin host, so it detects windows robustly.
+#
+if command -v cygpath >/dev/null 2>&1; then
+   GRAPHMP="source/graph/win64;source/graph"
+else
+   GRAPHMP="source/graph"
+fi
 
 make clean
 make $1
@@ -174,7 +225,7 @@ cp graph_games/conquest_map.bmp graph_games/slide.wav graph_games/dice.wav bin/
 #
 cp bin/pgen pgen.old
 compprog source/pgen/amd64/pgen
-cp source/pgen/amd64/pgen bin/pgen_amd64
+instprog source/pgen/amd64/pgen bin/pgen_amd64
 cp bin/pgen pgen.new
 cp pgen.old bin/pgen
 compprog source/pcom
@@ -199,7 +250,7 @@ if [ $? -ne 0 ]; then
    exit 1
 
 fi
-cp source/pgen/arm64/pgen bin/pgen_arm64
+instprog source/pgen/arm64/pgen bin/pgen_arm64
 compprog source/pint
 #
 # pintt is the same source built with the terminal module flavor first on
@@ -219,7 +270,7 @@ if [ $? -ne 0 ]; then
    exit 1
 
 fi
-cp source/pint bin/pintt
+instprog source/pint bin/pintt
 #
 # pintg is the graphics-hosted interpreter: the graph flavor links the
 # "blonde" graphics archive (no automatic standard I/O window) and hosts
@@ -230,14 +281,14 @@ echo "**********************************************************************"
 echo "Building source/pint (graphics flavor) as pintg..."
 echo "**********************************************************************"
 echo ""
-pc source/pint -mp=source/graph -r $OPTIONS
+pc source/pint "-mp=$GRAPHMP" -r $OPTIONS
 if [ $? -ne 0 ]; then
 
    echo "*** Error: compile failed"
    exit 1
 
 fi
-cp source/pint bin/pintg
+instprog source/pint bin/pintg
 pc source/pint -r $OPTIONS
 if [ $? -ne 0 ]; then
 
@@ -245,7 +296,7 @@ if [ $? -ne 0 ]; then
    exit 1
 
 fi
-cp source/pint bin
+instprog source/pint bin
 compprog source/pmach
 #
 # pmacht and pmachg are the same source built with the terminal and graphics
@@ -264,20 +315,20 @@ if [ $? -ne 0 ]; then
    exit 1
 
 fi
-cp source/pmach bin/pmacht
+instprog source/pmach bin/pmacht
 echo ""
 echo "**********************************************************************"
 echo "Building source/pmach (graphics flavor) as pmachg..."
 echo "**********************************************************************"
 echo ""
-pc source/pmach -mp=source/graph -r $OPTIONS
+pc source/pmach "-mp=$GRAPHMP" -r $OPTIONS
 if [ $? -ne 0 ]; then
 
    echo "*** Error: compile failed"
    exit 1
 
 fi
-cp source/pmach bin/pmachg
+instprog source/pmach bin/pmachg
 pc source/pmach -r $OPTIONS
 if [ $? -ne 0 ]; then
 
@@ -285,7 +336,7 @@ if [ $? -ne 0 ]; then
    exit 1
 
 fi
-cp source/pmach bin
+instprog source/pmach bin
 
 #
 # cmacht is the terminal flavor of cmach, the same cmach.c built with -DTERMINAL
