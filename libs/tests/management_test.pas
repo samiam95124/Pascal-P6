@@ -357,7 +357,10 @@ begin
    title(output, 'This is a mangement test window');
    writeln('The title bar of this window should read: This is a mangement test window');
    prtceng(maxyg(output)-chrsizy(output), 'Window title test');
-   waitnext;
+   { wait directly: waitnext retitles the window with the frame number, which
+     would overwrite the very title this test displays for verification }
+   repeat event(input, er) until (er.etype = etenter) or (er.etype = etterm);
+   if er.etype = etterm then goto 99;
 
    { ************************** Multiple windows ************************** }
 
