@@ -89,6 +89,21 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
     symRunner = new SymRunner(symPath, modulesPath);
     connection.console.log(`Pascaline: using passym at ${symPath}`);
 
+    // If a tool cannot be run, say so once instead of silently doing
+    // nothing -- a new user should get a pointer, not a mystery.
+    let toolWarned = false;
+    const warnTool = (tool: string, feature: string) => (error: Error) => {
+        connection.console.log(`Pascaline: ${tool} failed: ${error.message}`);
+        if (toolWarned) { return; }
+        toolWarned = true;
+        connection.window.showWarningMessage(
+            `Pascaline: cannot run '${tool}' (${feature} disabled). ` +
+            `Build the Pascal-P6 tools (bin/build), open a folder inside ` +
+            `the Pascal-P6 tree, or add its bin directory to PATH.`);
+    };
+    parserRunner.onSpawnFail = warnTool('parser', 'error checking');
+    symRunner.onSpawnFail = warnTool('passym', 'symbol features');
+
     return {
         capabilities: {
             textDocumentSync: {

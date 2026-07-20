@@ -20,8 +20,14 @@ function findTool(name: string): string {
     if (configured && configured !== name) { return configured; }
     const exe = process.platform === 'win32' ? name + '.exe' : name;
     for (const f of vscode.workspace.workspaceFolders ?? []) {
-        const p = path.join(f.uri.fsPath, 'bin', exe);
-        if (fs.existsSync(p)) { return p; }
+        let dir = f.uri.fsPath;
+        for (;;) {
+            const p = path.join(dir, 'bin', exe);
+            if (fs.existsSync(p)) { return p; }
+            const parent = path.dirname(dir);
+            if (parent === dir) { break; }
+            dir = parent;
+        }
     }
     return name;
 }
