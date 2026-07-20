@@ -7445,11 +7445,13 @@ end;
     fi2 := 1;
     if incbuf[ii] <> ' ' then with fp^ do begin
       lchar := ' ';
-      while (incbuf[ii] <> ' ') and (incbuf[ii] <> ':') and 
+      { ';' separates path entries on all hosts: ':' collides with windows
+        drive letters (C:\...) }
+      while (incbuf[ii] <> ' ') and (incbuf[ii] <> ';') and
             (ii <= maxlin) and (fi2 <= fillen) do begin
         fn[fi2] := incbuf[ii]; lchar := fn[fi2]; ii := ii+1; fi2 := fi2+1
       end;
-      if (incbuf[ii] = ':') and (ii < maxlin) then ii := ii+1;
+      if (incbuf[ii] = ';') and (ii < maxlin) then ii := ii+1;
       if (lchar <> '/') and (fi2 < fillen) and (ii > 1) then begin
         fn[fi2] := '/'; fi2 := fi2+1
       end
