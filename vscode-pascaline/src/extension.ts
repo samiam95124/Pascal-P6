@@ -60,8 +60,17 @@ class PascalineTaskProvider implements vscode.TaskProvider {
         const base = path.basename(file, path.extname(file));
         const def = definition ??
             { type: 'pascaline', task: 'build', file: file };
-        const exec = new vscode.ProcessExecution(findTool('pc'), [base],
-                                                 { cwd: dir });
+        const pc = findTool('pc');
+        // pc finds its subtools (pcom, pgen) on PATH, so put its own
+        // directory there -- otherwise a workspace whose bin is not on the
+        // editor's PATH fails the compile with no message.
+        const env: { [key: string]: string } = {};
+        if (path.isAbsolute(pc)) {
+            env['PATH'] = path.dirname(pc) + path.delimiter +
+                (process.env.PATH ?? '');
+        }
+        const exec = new vscode.ProcessExecution(pc, [base],
+                                                 { cwd: dir, env: env });
         const task = new vscode.Task(def, vscode.TaskScope.Workspace,
                                      'build ' + base, 'pascaline', exec, []);
         task.group = vscode.TaskGroup.Build;

@@ -228,7 +228,14 @@ export class PascalineDebugSession extends LoggingDebugSession {
      */
     private compile(pcPath: string, programName: string, cwd: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            execFile(pcPath, [programName, '-pint'], { cwd }, (error, stdout, stderr) => {
+            // pc finds its subtools (pcom, pgen) on PATH, so make sure its
+            // own directory is there when we have a real path to it.
+            const env = { ...process.env };
+            if (path.isAbsolute(pcPath)) {
+                env['PATH'] = path.dirname(pcPath) + path.delimiter +
+                    (env['PATH'] ?? '');
+            }
+            execFile(pcPath, [programName, '-pint'], { cwd, env }, (error, stdout, stderr) => {
                 if (stdout) {
                     this.sendEvent(new OutputEvent(stdout, 'console'));
                 }
