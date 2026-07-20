@@ -2,7 +2,7 @@
   "name": "pascaline",
   "displayName": "Pascaline",
   "description": "Language support and debugging for the Pascaline programming language (ISO 7185 Pascal extended)",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "publisher": "pascal-p6",
   "repository": {
     "type": "git",
@@ -68,9 +68,34 @@
           "type": "boolean",
           "default": true,
           "description": "Run the parser to check for errors when a file is opened."
+        },
+        "pascaline.pc": {
+          "type": "string",
+          "default": "pc",
+          "description": "Path to the pc compiler. When left as 'pc', the workspace bin directory is searched first, then PATH."
+        },
+        "pascaline.pint": {
+          "type": "string",
+          "default": "pint",
+          "description": "Path to the pint interpreter. When left as 'pint', the workspace bin directory is searched first, then PATH."
         }
       }
     },
+    "taskDefinitions": [
+      {
+        "type": "pascaline",
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "The task to perform (build)."
+          },
+          "file": {
+            "type": "string",
+            "description": "The .pas file to build. Defaults to the active editor's file."
+          }
+        }
+      }
+    ],
     "commands": [
       {
         "command": "pascaline.openDocumentation",
