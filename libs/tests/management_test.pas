@@ -1095,17 +1095,23 @@ begin
 
       event(input, er);
       if ((er.etype = etredraw) or (er.etype = etresize)) and
-         (er.winid = 1) then begin { parent window only: a child resize (native
-                                     sizing borders) must not retrigger the
-                                     parent-tracking resize of the children }
+         (er.winid = 1) then begin { parent window only }
 
          page;
          prtceng(maxyg(output)-chrsizy(output),
                  'Child windows stacking resize test pixel 1');
          prtceng(1, 'move and resize');
-         setsizg(win3, maxxg(output)-xs*2, maxyg(output)-ys*2);
-         setsizg(win4, maxxg(output)-xs*2, maxyg(output)-ys*2);
-         setsizg(win2, maxxg(output)-xs*2, maxyg(output)-ys*2)
+         { Re-track the children only when the parent is resized. A redraw
+           must not: interactively resizing a child (native sizing borders)
+           uncovers parent area and generates parent redraws, which would
+           snap the child back to the tracked size while it is dragged. }
+         if er.etype = etresize then begin
+
+            setsizg(win3, maxxg(output)-xs*2, maxyg(output)-ys*2);
+            setsizg(win4, maxxg(output)-xs*2, maxyg(output)-ys*2);
+            setsizg(win2, maxxg(output)-xs*2, maxyg(output)-ys*2)
+
+         end
 
       end;
       if er.etype = etterm then goto 99
@@ -1154,17 +1160,21 @@ begin
 
       event(input, er);
       if ((er.etype = etredraw) or (er.etype = etresize)) and
-         (er.winid = 1) then begin { parent window only: a child resize (native
-                                     sizing borders) must not retrigger the
-                                     parent-tracking resize of the children }
+         (er.winid = 1) then begin { parent window only }
 
          page;
          prtceng(maxyg(output)-chrsizy(output),
                  'Child windows stacking resize test pixel 2');
          prtceng(1, 'move and resize');
-         setsizg(win2, maxxg(output)-xs*1*2, maxyg(output)-ys*1*2);
-         setsizg(win3, maxxg(output)-xs*2*2, maxyg(output)-ys*2*2);
-         setsizg(win4, maxxg(output)-xs*3*2, maxyg(output)-ys*3*2)
+         { re-track the children only when the parent is resized (see the
+           pixel 1 test above) }
+         if er.etype = etresize then begin
+
+            setsizg(win2, maxxg(output)-xs*1*2, maxyg(output)-ys*1*2);
+            setsizg(win3, maxxg(output)-xs*2*2, maxyg(output)-ys*2*2);
+            setsizg(win4, maxxg(output)-xs*3*2, maxyg(output)-ys*3*2)
+
+         end
 
       end;
       if er.etype = etterm then goto 99
