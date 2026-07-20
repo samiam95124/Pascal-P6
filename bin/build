@@ -221,18 +221,46 @@ compprog graph_games/pong
 cp -r graph_games/chess_pieces bin/
 cp graph_games/conquest_map.bmp graph_games/slide.wav graph_games/dice.wav bin/
 #
+# Save and restore an installed bin program across a rebuild, for the
+# pgen/pcom matched set juggle below. On windows the .exe is the
+# authoritative product -- it is what pc's native tool spawns resolve --
+# so the save takes the .exe and the restore rewrites both bin names;
+# elsewhere the bare name is the product. A bare-name-only juggle on
+# windows leaves the .exe untouched, silently building pcom with the
+# wrong code generator.
+#
+function saveprog {
+
+   if command -v cygpath >/dev/null 2>&1; then
+      cp "bin/$1.exe" "$2"
+   else
+      cp "bin/$1" "$2"
+   fi
+
+}
+
+function restoreprog {
+
+   cp "$2" "bin/$1"
+   if command -v cygpath >/dev/null 2>&1; then
+      cp "$2" "bin/$1.exe"
+   fi
+
+}
+
+#
 # pgen and pcom must be a matched set
 #
-cp bin/pgen pgen.old
+saveprog pgen pgen.old
 compprog source/pgen/amd64/pgen
 instprog source/pgen/amd64/pgen bin/pgen_amd64
-cp bin/pgen pgen.new
-cp pgen.old bin/pgen
+saveprog pgen pgen.new
+restoreprog pgen pgen.old
 compprog source/pcom
 #
 # Now regular
 #
-cp pgen.new bin/pgen
+restoreprog pgen pgen.new
 #
 # The arm64 code generator is a cross tool: it runs on this host and generates
 # aarch64 code. It keeps its own name in bin so it can sit beside the native
