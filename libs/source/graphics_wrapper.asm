@@ -1768,16 +1768,41 @@ graphics.viewscale$p_fc_n_n:
 graphics.viewscale$p_n_n:
     jmp     wrapper_viewscale
 
+# The mode set parameter is a value set. The windows Pascaline convention
+# passes a set by reference, but the C wrappers take the set value as a
+# plain word: reform by dereferencing the set pointer in its slot. (The
+# SysV convention passes the set value directly, so no reform there.)
+
 graphics.winclient$p_fc_i_i_i_i_sx$wmframe$wmsize$wmsysbar$:
+.ifdef WINDOWS
+    movq    0x30(%rsp),%rax         # ms: set pointer in stack slot 6
+    movq    (%rax),%rax             # fetch the set value word
+    movq    %rax,0x30(%rsp)
+.endif
     jmp     wrapper_winclientf
 
 graphics.winclient$p_i_i_i_i_sx$wmframe$wmsize$wmsysbar$:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%rax         # ms: set pointer in stack slot 5
+    movq    (%rax),%rax             # fetch the set value word
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_winclient
 
 graphics.winclientg$p_fc_i_i_i_i_sx$wmframe$wmsize$wmsysbar$:
+.ifdef WINDOWS
+    movq    0x30(%rsp),%rax         # ms: set pointer in stack slot 6
+    movq    (%rax),%rax             # fetch the set value word
+    movq    %rax,0x30(%rsp)
+.endif
     jmp     wrapper_winclientgf
 
 graphics.winclientg$p_i_i_i_i_sx$wmframe$wmsize$wmsysbar$:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%rax         # ms: set pointer in stack slot 5
+    movq    (%rax),%rax             # fetch the set value word
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_winclientg
 
 graphics.writejust$p_fc_vc_i:
