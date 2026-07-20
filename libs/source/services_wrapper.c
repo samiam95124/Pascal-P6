@@ -1008,24 +1008,23 @@ void ami_maknam(char* fn, int fnl, char* p, char* n, char* e);
 ********************************************************************************/
 
 pstring wrapper_maknampssp(
-    /** string pointer */ pstring p,
-    /** string pointer */ string n,
-    /** string length */  int nl,
+    /** string pointer */ string  p,
+    /** string length */  int     pl,
+    /** string pointer */ string  n,
+    /** string length */  int     nl,
     /** string pointer */ pstring e
 )
 
 {
 
-    string ps;
-    int    pl;
     string es;
     int    el;
     char buff[BUFLEN];
 
-    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    rempad(p, &pl); /* remove padding */
     rempad(n, &nl); /* remove padding */
     pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
-    ami_maknam(buff, BUFLEN, cstrz(ps, pl), cstrz(n, nl), cstrz(es, el));
+    ami_maknam(buff, BUFLEN, cstrz(p, pl), cstrz(n, nl), cstrz(es, el));
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 

@@ -141,15 +141,35 @@ sound.fltwaveout$p_i_i:
     jmp     wrapper_fltwaveout
 
 sound.getparamsynthin$p_i_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # value: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # length: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_getparamsynthin
 
 sound.getparamsynthout$p_i_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # value: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # length: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_getparamsynthout
 
 sound.getparamwavein$p_i_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # value: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # length: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_getparamwavein
 
 sound.getparamwaveout$p_i_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # value: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # length: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_getparamwaveout
 
 sound.instchange$p_i_i_x$1$16$i_x$1$128$i:
@@ -237,15 +257,35 @@ sound.reverb$p_i_i_x$1$16$i_i:
     jmp     wrapper_reverb
 
 sound.setparamsynthin$f_i_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # value: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # length: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_setparamsynthin
 
 sound.setparamsynthout$f_i_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # value: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # length: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_setparamsynthout
 
 sound.setparamwavein$f_i_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # value: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # length: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_setparamwavein
 
 sound.setparamwaveout$f_i_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # value: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # length: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_setparamwaveout
 
 sound.sgnwavein$f_i:
