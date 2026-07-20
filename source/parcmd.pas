@@ -143,12 +143,14 @@ begin
           { include string }
           options[oi] := false;
           getcommand;
-          ii := maxlin; while (incbuf[ii] = ' ') and (ii > 1) do ii := ii-1; 
+          { the separator is ';' on all hosts: ':' collides with windows
+            drive letters (C:\...) }
+          ii := maxlin; while (incbuf[ii] = ' ') and (ii > 1) do ii := ii-1;
           if incbuf[ii] <> ' ' then begin
             if ii < maxlin then ii := ii+1;
-            if (ii < maxlin-1) then begin incbuf[ii] := ':'; ii := ii+1 end
+            if (ii < maxlin-1) then begin incbuf[ii] := ';'; ii := ii+1 end
           end;
-          while not (bufcommand in [' ',':',',']) do begin
+          while not (bufcommand in [' ',',']) do begin
             if ii = maxlin then begin
               writeln('*** Include path too long');
               halt

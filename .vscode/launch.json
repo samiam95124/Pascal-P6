@@ -10,6 +10,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "windows": {
+                "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "miDebuggerPath": "C:\\msys64\\mingw64\\bin\\gdb.exe"
+            },
             "args": [],
             "stopAtEntry": false,
             "preLaunchTask": "Build C (gcc)",
@@ -35,6 +39,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "windows": {
+                "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "miDebuggerPath": "C:\\msys64\\mingw64\\bin\\gdb.exe"
+            },
             "args": [],
             "stopAtEntry": false,
             "preLaunchTask": "Build Pascal",

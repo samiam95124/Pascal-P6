@@ -35,6 +35,10 @@ export class SymRunner {
     private symPath: string;
     private modulesPath?: string;
 
+    /** Called when the passym executable cannot be run at all, so the
+        server can tell the user instead of silently reporting nothing. */
+    onSpawnFail?: (error: Error) => void;
+
     constructor(symPath: string, modulesPath?: string) {
         this.symPath = symPath;
         this.modulesPath = modulesPath;
@@ -57,6 +61,13 @@ export class SymRunner {
                 cwd: dir,
                 timeout: 30000
             }, (error, stdout, _stderr) => {
+                if (error && !stdout) {
+                    // Never ran (not found, not executable, ...): report it
+                    // rather than silently losing all symbol features.
+                    this.onSpawnFail?.(error);
+                    resolve({ symbols: [], references: [] });
+                    return;
+                }
                 if (!stdout) {
                     resolve({ symbols: [], references: [] });
                     return;
@@ -102,31 +113,40 @@ export class SymRunner {
     }
 
     /**
-     * Find the passym executable. Checks:
-     * 1. bin/passym relative to workspace root
-     * 2. 'passym' on PATH
+     * Find the passym executable. Checks bin/passym at the workspace root
+     * and each parent directory (so opening any folder inside a Pascal-P6
+     * tree still finds the tools), then falls back to 'passym' on PATH.
      */
     static findSym(workspaceRoot?: string): string {
-        if (workspaceRoot) {
-            const rel = path.join(workspaceRoot, 'bin', 'passym');
+        const exe = process.platform === 'win32' ? 'passym.exe' : 'passym';
+        let dir = workspaceRoot;
+        while (dir) {
+            const rel = path.join(dir, 'bin', exe);
             if (fs.existsSync(rel)) {
                 return rel;
             }
+            const parent = path.dirname(dir);
+            if (parent === dir) { break; }
+            dir = parent;
         }
         return 'passym';
     }
 
     /**
      * Find the module search path: the `libs` directory at the workspace
-     * root, where the standard modules (graphics, sound, services, strings)
-     * live. Returns undefined if there is no such directory.
+     * root or a parent, where the standard modules (graphics, sound,
+     * services, strings) live. Returns undefined if there is none.
      */
     static findModules(workspaceRoot?: string): string | undefined {
-        if (workspaceRoot) {
-            const rel = path.join(workspaceRoot, 'libs');
+        let dir = workspaceRoot;
+        while (dir) {
+            const rel = path.join(dir, 'libs');
             if (fs.existsSync(rel)) {
                 return rel;
             }
+            const parent = path.dirname(dir);
+            if (parent === dir) { break; }
+            dir = parent;
         }
         return undefined;
     }

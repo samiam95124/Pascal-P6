@@ -11,6 +11,105 @@ import {
 
 let client: LanguageClient | undefined;
 
+/* Locate a Pascal-P6 tool. A configured absolute path wins, then the
+   workspace bin directory (the normal layout when the workspace is the
+   Pascal-P6 tree or a project beside it), then the bare name on PATH. */
+function findTool(name: string): string {
+    const cfg = vscode.workspace.getConfiguration('pascaline');
+    const configured = cfg.get<string>(name);
+    if (configured && configured !== name) { return configured; }
+    const exe = process.platform === 'win32' ? name + '.exe' : name;
+    for (const f of vscode.workspace.workspaceFolders ?? []) {
+        let dir = f.uri.fsPath;
+        for (;;) {
+            const p = path.join(dir, 'bin', exe);
+            if (fs.existsSync(p)) { return p; }
+            const parent = path.dirname(dir);
+            if (parent === dir) { break; }
+            dir = parent;
+        }
+    }
+    return name;
+}
+
+/* Build tasks for .pas files: compile with pc in the file's directory.
+   ProcessExecution runs the compiler directly, with no shell in between,
+   so the task works identically on every platform. */
+class PascalineTaskProvider implements vscode.TaskProvider {
+    provideTasks(): vscode.Task[] {
+        const editor = vscode.window.activeTextEditor;
+        if (editor && editor.document.languageId === 'pascaline') {
+            return [this.buildTask(editor.document.uri.fsPath)];
+        }
+        return [];
+    }
+
+    resolveTask(task: vscode.Task): vscode.Task | undefined {
+        const file = (task.definition as any).file as string | undefined;
+        if (file) { return this.buildTask(file, task.definition); }
+        const editor = vscode.window.activeTextEditor;
+        if (editor && editor.document.languageId === 'pascaline') {
+            return this.buildTask(editor.document.uri.fsPath, task.definition);
+        }
+        return undefined;
+    }
+
+    private buildTask(file: string,
+                      definition?: vscode.TaskDefinition): vscode.Task {
+        const dir = path.dirname(file);
+        const base = path.basename(file, path.extname(file));
+        const def = definition ??
+            { type: 'pascaline', task: 'build', file: file };
+        const exec = new vscode.ProcessExecution(findTool('pc'), [base],
+                                                 { cwd: dir });
+        const task = new vscode.Task(def, vscode.TaskScope.Workspace,
+                                     'build ' + base, 'pascaline', exec, []);
+        task.group = vscode.TaskGroup.Build;
+        return task;
+    }
+}
+
+/* Debug configurations: let F5 work on a .pas file with no launch.json.
+   An empty configuration is filled in as a pint debug launch, and the pc
+   and pint tool locations are resolved to real paths so the debugger does
+   not depend on the PATH the editor happened to inherit. */
+class PascalineConfigProvider implements vscode.DebugConfigurationProvider {
+    resolveDebugConfiguration(
+        _folder: vscode.WorkspaceFolder | undefined,
+        config: vscode.DebugConfiguration
+    ): vscode.ProviderResult<vscode.DebugConfiguration> {
+        if (!config.type && !config.request && !config.name) {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document.languageId === 'pascaline') {
+                config.type = 'pascaline';
+                config.request = 'launch';
+                config.name = 'Debug with pint';
+                config.program = editor.document.uri.fsPath;
+                config.stopOnEntry = true;
+            }
+        }
+        if (config.type === 'pascaline') {
+            if (!config.pc || config.pc === 'pc') {
+                config.pc = findTool('pc');
+            }
+            if (!config.pint || config.pint === 'pint') {
+                config.pint = findTool('pint');
+            }
+        }
+        return config;
+    }
+
+    provideDebugConfigurations(): vscode.DebugConfiguration[] {
+        return [{
+            type: 'pascaline',
+            request: 'launch',
+            name: 'Debug with pint',
+            program: '${file}',
+            stopOnEntry: true
+        }];
+    }
+}
+
 function openPasdocWebview(htmlPath: string, symbolName: string) {
     const content = fs.readFileSync(htmlPath, 'utf-8');
     const title = path.basename(htmlPath, '.html') + ' - Documentation';
@@ -62,6 +161,22 @@ export function activate(context: vscode.ExtensionContext) {
     const factory = new InlineDebugAdapterFactory();
     context.subscriptions.push(
         vscode.debug.registerDebugAdapterDescriptorFactory('pascaline', factory)
+    );
+
+    // Build tasks and default debug configurations
+    context.subscriptions.push(
+        vscode.tasks.registerTaskProvider('pascaline',
+                                          new PascalineTaskProvider())
+    );
+    const configProvider = new PascalineConfigProvider();
+    context.subscriptions.push(
+        vscode.debug.registerDebugConfigurationProvider('pascaline',
+                                                        configProvider)
+    );
+    context.subscriptions.push(
+        vscode.debug.registerDebugConfigurationProvider(
+            'pascaline', configProvider,
+            vscode.DebugConfigurationProviderTriggerKind.Dynamic)
     );
 
     // Pasdoc documentation command

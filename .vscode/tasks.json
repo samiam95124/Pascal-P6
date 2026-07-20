@@ -15,6 +15,15 @@
                     "PATH": "${workspaceFolder}/bin:${env:PATH}"
                 }
             },
+            "windows": {
+                "options": {
+                    "cwd": "${fileDirname}",
+                    "env": {
+                        "PASCALP6": "${workspaceFolder}",
+                        "PATH": "${workspaceFolder}\\bin;C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;${env:PATH}"
+                    }
+                }
+            },
             "problemMatcher": []
         },
         {
@@ -23,6 +32,14 @@
             "command": "gcc -g3 -O0 ${file} -o ${fileDirname}/${fileBasenameNoExtension}",
             "options": {
                 "cwd": "${fileDirname}"
+            },
+            "windows": {
+                "options": {
+                    "cwd": "${fileDirname}",
+                    "env": {
+                        "PATH": "C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;${env:PATH}"
+                    }
+                }
             },
             "problemMatcher": [
                 "$gcc"
@@ -37,6 +54,16 @@
                 "cwd": "${fileDirname}",
                 "env": {
                     "PATH": "${workspaceFolder}/bin:${env:PATH}"
+                }
+            },
+            "windows": {
+                "command": "pc ${fileBasenameNoExtension}; if ($?) { & .\\${fileBasenameNoExtension}.exe }",
+                "options": {
+                    "cwd": "${fileDirname}",
+                    "env": {
+                        "PASCALP6": "${workspaceFolder}",
+                        "PATH": "${workspaceFolder}\\bin;C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;${env:PATH}"
+                    }
                 }
             },
             "problemMatcher": []

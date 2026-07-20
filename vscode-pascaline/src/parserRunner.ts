@@ -26,6 +26,10 @@ export class ParserRunner {
     private parserPath: string;
     private modulesPath?: string;
 
+    /** Called when the parser executable cannot be run at all, so the
+        server can tell the user instead of silently reporting nothing. */
+    onSpawnFail?: (error: Error) => void;
+
     constructor(parserPath: string, modulesPath?: string) {
         this.parserPath = parserPath;
         this.modulesPath = modulesPath;
@@ -50,6 +54,13 @@ export class ParserRunner {
                 cwd: dir,
                 timeout: 30000
             }, (error, stdout, _stderr) => {
+                if (error && !stdout) {
+                    // Never ran (not found, not executable, ...): report it
+                    // rather than silently showing a clean bill of health.
+                    this.onSpawnFail?.(error);
+                    resolve([]);
+                    return;
+                }
                 if (!stdout) {
                     resolve([]);
                     return;
@@ -144,16 +155,21 @@ export class ParserRunner {
     }
 
     /**
-     * Find the parser executable. Checks:
-     * 1. bin/parser relative to workspace root
-     * 2. 'parser' on PATH
+     * Find the parser executable. Checks bin/parser at the workspace root
+     * and each parent directory (so opening any folder inside a Pascal-P6
+     * tree still finds the tools), then falls back to 'parser' on PATH.
      */
     static findParser(workspaceRoot?: string): string {
-        if (workspaceRoot) {
-            const rel = path.join(workspaceRoot, 'bin', 'parser');
+        const exe = process.platform === 'win32' ? 'parser.exe' : 'parser';
+        let dir = workspaceRoot;
+        while (dir) {
+            const rel = path.join(dir, 'bin', exe);
             if (fs.existsSync(rel)) {
                 return rel;
             }
+            const parent = path.dirname(dir);
+            if (parent === dir) { break; }
+            dir = parent;
         }
         return 'parser';
     }

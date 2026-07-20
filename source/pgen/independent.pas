@@ -2233,6 +2233,12 @@ begin
                if i = max(srcfil) then error('filename to long')
              end;
              services.brknam(srcfil, p, n, e);
+             { the assembler treats a backslash in a string as an escape
+               lead-in, which garbles windows paths ("\t" becomes a tab
+               character); emit forward slashes, which the assembler, gdb
+               and windows itself all accept }
+             for i := 1 to max(srcfil) do
+               if srcfil[i] = chr(92) then srcfil[i] := '/';
              if domrklin then begin
              { place label at start of .debug_line for DW_AT_stmt_list }
              { the ELF section attributes are not accepted by the COFF

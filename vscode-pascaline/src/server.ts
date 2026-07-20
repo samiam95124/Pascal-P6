@@ -34,9 +34,21 @@ import {
 } from 'vscode-languageserver/node';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { fileURLToPath } from 'url';
 
 import { ParserRunner } from './parserRunner';
 import { SymRunner, SymbolInfo, SymResult } from './symRunner';
+
+/* Convert a file: URI to a filesystem path. fileURLToPath handles the
+   windows drive-letter form (file:///c%3A/... -> c:\...), where stripping
+   the scheme by hand leaves a broken leading-slash path. */
+function uriToPath(uri: string): string {
+    try {
+        return fileURLToPath(uri);
+    } catch {
+        return decodeURIComponent(uri.replace('file://', ''));
+    }
+}
 
 const connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
@@ -60,7 +72,7 @@ let settings: Settings = {
 connection.onInitialize((params: InitializeParams): InitializeResult => {
     const workspaceFolders = params.workspaceFolders;
     const workspaceRoot = workspaceFolders?.[0]?.uri
-        ? decodeURIComponent(workspaceFolders[0].uri.replace('file://', ''))
+        ? uriToPath(workspaceFolders[0].uri)
         : undefined;
 
     // Module search path (libs/) so programs that `uses` modules resolve
@@ -76,6 +88,21 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
     const symPath = SymRunner.findSym(workspaceRoot);
     symRunner = new SymRunner(symPath, modulesPath);
     connection.console.log(`Pascaline: using passym at ${symPath}`);
+
+    // If a tool cannot be run, say so once instead of silently doing
+    // nothing -- a new user should get a pointer, not a mystery.
+    let toolWarned = false;
+    const warnTool = (tool: string, feature: string) => (error: Error) => {
+        connection.console.log(`Pascaline: ${tool} failed: ${error.message}`);
+        if (toolWarned) { return; }
+        toolWarned = true;
+        connection.window.showWarningMessage(
+            `Pascaline: cannot run '${tool}' (${feature} disabled). ` +
+            `Build the Pascal-P6 tools (bin/build), open a folder inside ` +
+            `the Pascal-P6 tree, or add its bin directory to PATH.`);
+    };
+    parserRunner.onSpawnFail = warnTool('parser', 'error checking');
+    symRunner.onSpawnFail = warnTool('passym', 'symbol features');
 
     return {
         capabilities: {
@@ -948,7 +975,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
     if (!parserRunner) return;
 
     const uri = document.uri;
-    const filePath = decodeURIComponent(uri.replace('file://', ''));
+    const filePath = uriToPath(uri);
     if (!filePath.endsWith('.pas')) return;
 
     try {
@@ -976,7 +1003,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
 async function updateSymbols(document: TextDocument): Promise<void> {
     if (!symRunner) return;
 
-    const filePath = decodeURIComponent(document.uri.replace('file://', ''));
+    const filePath = uriToPath(document.uri);
     if (!filePath.endsWith('.pas')) return;
 
     try {

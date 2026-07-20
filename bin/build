@@ -183,6 +183,13 @@ compprog source/genobj
 #
 compprog utils/dif
 #
+# parser and passym serve the vscode Pascaline extension's language server:
+# parser produces on-save diagnostics, passym symbol information. Without
+# them in bin the extension runs but reports nothing.
+#
+compprog source/parser
+compprog utils/passym
+#
 # Test programs in libs/tests: build each as a native executable and place it
 # in bin. pc detects each program's modules (graphics, sound, network,
 # terminal, services) and links the matching libraries, so windowed, sound and
