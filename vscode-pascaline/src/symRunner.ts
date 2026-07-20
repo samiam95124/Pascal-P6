@@ -107,8 +107,9 @@ export class SymRunner {
      * 2. 'passym' on PATH
      */
     static findSym(workspaceRoot?: string): string {
+        const exe = process.platform === 'win32' ? 'passym.exe' : 'passym';
         if (workspaceRoot) {
-            const rel = path.join(workspaceRoot, 'bin', 'passym');
+            const rel = path.join(workspaceRoot, 'bin', exe);
             if (fs.existsSync(rel)) {
                 return rel;
             }

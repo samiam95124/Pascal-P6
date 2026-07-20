@@ -125,10 +125,11 @@ export class PascalineDebugSession extends LoggingDebugSession {
         this.sourceDir = path.dirname(this.sourceFile);
 
         // If pc/pint paths are defaults, walk up from source dir to find bin/
+        const exeSuffix = process.platform === 'win32' ? '.exe' : '';
         if (pcPath === 'pc') {
             let dir = this.sourceDir;
             while (dir !== path.dirname(dir)) {
-                const binPc = path.join(dir, 'bin', 'pc');
+                const binPc = path.join(dir, 'bin', 'pc' + exeSuffix);
                 if (fs.existsSync(binPc)) {
                     pcPath = binPc;
                     break;
@@ -139,7 +140,7 @@ export class PascalineDebugSession extends LoggingDebugSession {
         if (pintPath === 'pint') {
             let dir = this.sourceDir;
             while (dir !== path.dirname(dir)) {
-                const binPint = path.join(dir, 'bin', 'pint');
+                const binPint = path.join(dir, 'bin', 'pint' + exeSuffix);
                 if (fs.existsSync(binPint)) {
                     pintPath = binPint;
                     break;

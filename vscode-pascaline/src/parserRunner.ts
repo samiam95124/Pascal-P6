@@ -149,8 +149,9 @@ export class ParserRunner {
      * 2. 'parser' on PATH
      */
     static findParser(workspaceRoot?: string): string {
+        const exe = process.platform === 'win32' ? 'parser.exe' : 'parser';
         if (workspaceRoot) {
-            const rel = path.join(workspaceRoot, 'bin', 'parser');
+            const rel = path.join(workspaceRoot, 'bin', exe);
             if (fs.existsSync(rel)) {
                 return rel;
             }

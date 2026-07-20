@@ -7663,10 +7663,11 @@ end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
           begin klass := func; strcopy(name, na[i]); idtype := realptr;
-            pflist := cp; forwdecl := false; sysrot := true; extern := false; 
-            pflev := 0; pfname := i - 12; pfdeckind := declared; 
-            pfkind := actual; pfaddr := 0; pext := false; pmod := nil; 
-            pfattr := fpanone; grpnxt := nil; grppar := cp1; pfvid := nil
+            pflist := cp; pfdeckind := declared; pfkind := actual;
+            forwdecl := false; sysrot := true; extern := false;
+            pflev := 0; pfname := i - 12; pfaddr := 0; pext := false;
+            pmod := nil; pfattr := fpanone; grpnxt := nil; grppar := cp1;
+            pfvid := nil
           end;
         enterid(cp1)
       end;
@@ -7828,17 +7829,19 @@ end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
       begin klass := proc; strcopy(name, '         '); idtype := nil;
-        forwdecl := false; next := nil; sysrot := false; extern := false; 
-        pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
-        pfkind := actual; pmod := nil; grpnxt := nil; grppar := uprcptr;
+        pfdeckind := declared; pfkind := actual;
+        forwdecl := false; next := nil; sysrot := false; extern := false;
+        pflev := 0; genlabel(pfname); pflist := nil;
+        pmod := nil; grpnxt := nil; grppar := uprcptr;
         pfvid := nil
       end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
       begin klass := func; strcopy(name, '         '); idtype := nil;
-        next := nil; forwdecl := false; sysrot := false; extern := false; 
-        pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
-        pfkind := actual; pmod := nil; grpnxt := nil; grppar := ufctptr;
+        pfdeckind := declared; pfkind := actual;
+        next := nil; forwdecl := false; sysrot := false; extern := false;
+        pflev := 0; genlabel(pfname); pflist := nil;
+        pmod := nil; grpnxt := nil; grppar := ufctptr;
         pfvid := nil
       end
   end (*enterundecl*) ;
