@@ -267,12 +267,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
         if pc <= maxintparregw-1 then begin
           resreg(parregw[pc]); resreg(parregw[pc+1]);
           assreg(pp, rf, parregw[pc], parregw[pc+1])
-        end else if pc = maxintparregw then begin
-          { the pair straddles the register/stack boundary: the first half
-            takes the last register slot, the second half overflows to the
-            stack (the callee sees them as two positional parameters) }
-          resreg(parregw[pc]); getreg(r2, rf);
-          assreg(pp, rf, parregw[pc], r2)
         end else begin
           getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2)
         end;
@@ -1114,37 +1108,31 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
     { recursively traverse list to process overflow params right-to-left }
     procedure pshovfw(p: expptr; var pc: integer);
-    var stk, strad: boolean;
+    var stk: boolean;
     begin
       if p <> nil then begin
         pshovfw(p^.next, pc); { recurse to end first }
         { now processing right-to-left }
-        strad := false;
         if isfltres(p) then begin
           pc := pc-1; stk := pc >= maxfltparregw
         end else if instab[p^.op].insr = 2 then begin
-          pc := pc-2; stk := pc >= maxintparregw;
-          { a pair whose first half takes the last register slot straddles
-            the boundary: only its second half goes to the stack }
-          strad := pc = maxintparregw-1
+          pc := pc-2; stk := pc >= maxintparregw-1
         end else begin
           pc := pc-1; stk := pc >= maxintparregw
         end;
-        if stk or strad then begin
+        if stk then begin
           genexp(p);
           if p^.r2 <> rgnull then begin
             wrtins(' pushq %1 # place 2nd register on stack', p^.r2);
             stkadr := stkadr-intsize
           end;
-          if stk then begin
-            if p^.r1 in [rgrax..rgr15] then begin
-              wrtins(' pushq %1 # save parameter', p^.r1);
-              stkadr := stkadr-intsize
-            end else if p^.r1 in [rgxmm0..rgxmm15] then begin
-              wrtins(' subq $0,%rsp # allocate real on stack', realsize);
-              stkadr := stkadr-realsize;
-              wrtins(' movsd %1,(%rsp) # place real on stack', p^.r1)
-            end
+          if p^.r1 in [rgrax..rgr15] then begin
+            wrtins(' pushq %1 # save parameter', p^.r1);
+            stkadr := stkadr-intsize
+          end else if p^.r1 in [rgxmm0..rgxmm15] then begin
+            wrtins(' subq $0,%rsp # allocate real on stack', realsize);
+            stkadr := stkadr-realsize;
+            wrtins(' movsd %1,(%rsp) # place real on stack', p^.r1)
           end
         end
       end
@@ -1218,10 +1206,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       end else begin
         if instab[p^.op].insr = 2 then begin
           pc := pc + 2;
-          { a pair ending at maxintparregw+1 straddles the boundary: only
-            its second half occupies the stack }
-          if pc > maxintparregw+1 then sz := sz + intsize * 2
-          else if pc = maxintparregw+1 then sz := sz + intsize
+          if pc > maxintparregw then sz := sz + intsize * 2
         end else begin
           pc := pc + 1;
           if pc > maxintparregw then sz := sz + intsize

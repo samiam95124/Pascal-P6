@@ -331,12 +331,22 @@ services.maknam$f_vc_vc_vc:
 # function maknam(view p: string; view n: string; e: pstring): pstring; external;
 
 services.maknam$f_vc_vc_pvc:
-    jmp     wrapper_maknamppsp
+    jmp     wrapper_maknampssp
 
 # function maknam(view p: string; n: pstring; view e: string): pstring; external;
+#
+# The e string pair starts at parameter slot 4. The Pascaline convention
+# keeps a pair whole, so the caller passes it entirely on the stack; the
+# windows C convention splits it, slot 4 in r9 and slot 5 on the stack.
+# Reform: pull the pointer half into r9 and shift the length half down.
 
 services.maknam$f_vc_pvc_vc:
-    jmp     wrapper_maknamppsp
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # e: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # el: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
+    jmp     wrapper_maknampsps
 
 # function maknam(view p: string; n: pstring; e: pstring): pstring; external;
 
@@ -344,8 +354,16 @@ services.maknam$f_vc_pvc_pvc:
     jmp     wrapper_maknampspp
 
 # function maknam(p: pstring; view n: string; view e: string): pstring; external;
+#
+# The e string pair starts at parameter slot 4: reform for windows, as in
+# maknam$f_vc_pvc_vc above.
 
 services.maknam$f_pvc_vc_vc:
+.ifdef WINDOWS
+    movq    0x28(%rsp),%r9          # e: whole stacked pair -> C slot 4
+    movq    0x30(%rsp),%rax         # el: shift down one slot
+    movq    %rax,0x28(%rsp)
+.endif
     jmp     wrapper_maknamppss
 
 # function maknam(p: pstring; view n: string; e: pstring): pstring; external;

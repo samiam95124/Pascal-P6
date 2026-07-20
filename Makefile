@@ -346,7 +346,8 @@ $(LIBS)/win64/services.a: $(PASCALP6)/amitk/windows/services.c \
 		-o $(BUILD)/win64/support.o -c $(LIBS)/source/support.c
 	$(WINCC) $(WINCFLAGS) $(WINSERVCPP) \
 		-o $(BUILD)/win64/services_support.o -c $(LIBS)/source/services_support.c
-	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/services_wrapper_asm.o \
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -Wa,--defsym,WINDOWS=1 \
+		-o $(BUILD)/win64/services_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/services_wrapper.asm
 	$(WINCC) $(WINCFLAGS) $(WINSERVCPP) \
 		-o $(BUILD)/win64/services_wrapper.o -c $(LIBS)/source/services_wrapper.c
@@ -386,7 +387,8 @@ $(LIBS)/win64/terminal.a: $(AMIWIN)/terminal.c \
 		-o $(BUILD)/win64/support.o -c $(LIBS)/source/support.c
 	$(WINCC) $(WINCFLAGS) $(WINTERMCPP) \
 		-o $(BUILD)/win64/terminal_support.o -c $(LIBS)/source/terminal_support.c
-	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/terminal_wrapper_asm.o \
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -Wa,--defsym,WINDOWS=1 \
+		-o $(BUILD)/win64/terminal_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/terminal_wrapper.asm
 	$(WINCC) $(WINCFLAGS) $(WINTERMCPP) \
 		-o $(BUILD)/win64/terminal_wrapper.o -c $(LIBS)/source/terminal_wrapper.c
@@ -428,7 +430,8 @@ $(LIBS)/win64/graphics.a: $(AMIWIN)/graphics.c \
 		-o $(BUILD)/win64/support.o -c $(LIBS)/source/support.c
 	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
 		-o $(BUILD)/win64/graphics_support.o -c $(LIBS)/source/graphics_support.c
-	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/graphics_wrapper_asm.o \
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -Wa,--defsym,WINDOWS=1 \
+		-o $(BUILD)/win64/graphics_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/graphics_wrapper.asm
 	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
 		-o $(BUILD)/win64/graphics_wrapper.o -c $(LIBS)/source/graphics_wrapper.c
@@ -498,7 +501,8 @@ $(LIBS)/win64/sound.a: $(AMIWIN)/sound.c \
 	mkdir -p $(LIBS)/win64
 	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
 		-o $(BUILD)/win64/snd_support.o -c $(LIBS)/source/support.c
-	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/sound_wrapper_asm.o \
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -Wa,--defsym,WINDOWS=1 \
+		-o $(BUILD)/win64/sound_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/sound_wrapper.asm
 	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
 		-o $(BUILD)/win64/sound_wrapper.o -c $(LIBS)/source/sound_wrapper.c
@@ -524,7 +528,8 @@ $(LIBS)/win64/network.a: $(AMIWIN)/network.c \
 	mkdir -p $(LIBS)/win64
 	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
 		-o $(BUILD)/win64/net_support.o -c $(LIBS)/source/support.c
-	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/win64/network_wrapper_asm.o \
+	$(WINCC) $(WINCFLAGS) $(CPPFLAGS64LE) -Wa,--defsym,WINDOWS=1 \
+		-o $(BUILD)/win64/network_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/network_wrapper.asm
 	$(WINCC) $(WINCFLAGS) $(WINSNDNETCPP) \
 		-o $(BUILD)/win64/network_wrapper.o -c $(LIBS)/source/network_wrapper.c
