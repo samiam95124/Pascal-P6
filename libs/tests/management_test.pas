@@ -1094,7 +1094,10 @@ begin
    repeat
 
       event(input, er);
-      if (er.etype = etredraw) or (er.etype = etresize) then begin
+      if ((er.etype = etredraw) or (er.etype = etresize)) and
+         (er.winid = 1) then begin { parent window only: a child resize (native
+                                     sizing borders) must not retrigger the
+                                     parent-tracking resize of the children }
 
          page;
          prtceng(maxyg(output)-chrsizy(output),
@@ -1150,7 +1153,10 @@ begin
    repeat
 
       event(input, er);
-      if (er.etype = etredraw) or (er.etype = etresize) then begin
+      if ((er.etype = etredraw) or (er.etype = etresize)) and
+         (er.winid = 1) then begin { parent window only: a child resize (native
+                                     sizing borders) must not retrigger the
+                                     parent-tracking resize of the children }
 
          page;
          prtceng(maxyg(output)-chrsizy(output),
@@ -1187,7 +1193,10 @@ begin
    repeat
 
       event(input, er); { get next event }
-      if (er.etype = etredraw) or (er.etype = etresize) then begin
+      if ((er.etype = etredraw) or (er.etype = etresize)) and
+         (er.winid = 1) then begin { parent window only: a child resize (native
+                                     sizing borders) must not retrigger the
+                                     parent-tracking resize of the children }
 
          { clear screen without overwriting frame }
          fcolor(output, white);
