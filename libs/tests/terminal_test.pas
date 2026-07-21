@@ -356,6 +356,14 @@ end;
 
 begin
 
+   { clear the benchmark table: a terminate can reach the report before
+     any benchmark has run }
+   for bi := bncharw to bnbuffer do begin
+
+      benchtab[bi].iter := 0;
+      benchtab[bi].time := 0
+
+   end;
    select(output, 2, 2); { move off the display buffer }
    { set black on white text }
    fcolor(output, black);
@@ -1181,7 +1189,10 @@ begin
 
       end;
       write(benchtab[bi].time*0.0001:6:2, '    ');
-      writeln(benchtab[bi].time*0.0001/benchtab[bi].iter:1:8)
+      if benchtab[bi].iter > 0 then
+         writeln(benchtab[bi].time*0.0001/benchtab[bi].iter:1:8)
+      else
+         writeln('      --') { benchmark did not run }
 
    end;
    writeln
