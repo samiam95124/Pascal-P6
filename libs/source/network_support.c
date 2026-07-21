@@ -77,6 +77,16 @@ static void bindnet(pfile infile, pfile outfile, FILE* gf)
     psystem_libcatcfil(infile, af, 0);
     fd2 = dup(fd);
     if (fd2 >= 0 && fd2 < MAXNETFIL) netfil[fd2] = gf; /* both find the conn */
+#ifdef __MINGW32__
+    /* The windows network model tracks connections by descriptor (the
+       descriptor itself is parked on the nul device; a winsock SOCKET is
+       not a CRT descriptor as on linux). Enter the duplicate in the model,
+       or the write side's I/O would go to the nul device. */
+    {
+        extern void ami_netshare(int fd, int fd2);
+        ami_netshare(fd, fd2);
+    }
+#endif
     af = stdio_fdopen(fd2, "r+");
     psystem_libcatcfil(outfile, af, 1);
 }

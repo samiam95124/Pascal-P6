@@ -188,16 +188,11 @@ function do_regress {
     testlibprog $option strings_test
     dotestresult libs/tests libs/tests strings_test
 
-    # network_test is disabled for now: the windows network model's write
-    # side is not socket-backed (the dup'd write descriptor writes to the nul
-    # device instead of the socket), so the client/server exchange deadlocks
-    # and, with no watchdog in the harness, wedges the whole run indefinitely.
-    # Re-enable once the network port's socket-file close/write path is fixed.
-    #echo "Testing network_test..."
-    #echo "network_test run" >> "$report"
-    #setout libs/tests
-    #testlibprog $option network_test
-    #dotestresult libs/tests libs/tests network_test
+    echo "Testing network_test..."
+    echo "network_test run" >> "$report"
+    setout libs/tests
+    testlibprog $option network_test
+    dotestresult libs/tests libs/tests network_test
 
     echo "Testing services_test..."
     echo "services_test run" >> "$report"
