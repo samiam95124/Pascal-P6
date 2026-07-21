@@ -525,6 +525,7 @@ static boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 static boolean filecr[MAXFIL+1];  /* last file character read was cr */
 static boolean filelf[MAXFIL+1];  /* last file character read was lf */
 static boolean filbof[MAXFIL+1]; /* beginning of file */
+static int     filbond[MAXFIL+1]; /* bonded partner logical file no. (0 none) */
 static varptr varlst; /* active var block pushdown stack */
 static varptr varfre; /* free var block entries */
 static wthptr wthlst; /* active with block pushdown stack */
@@ -4927,19 +4928,32 @@ void psystem_clst(
 
 {
 
-    int fn;
+    int fn, pn;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
     /* check file is open */
-    if (filstate[fn] != fsread && filstate[fn] != fswrite) 
+    if (filstate[fn] != fsread && filstate[fn] != fswrite)
         errore(modnam, __LINE__, FILENOTOPEN);
     if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
     filstate[fn] = fsclosed; /* set status closed */
+    /* A bonded pair shares one stream: closing either closes it once (just
+       done) and ends both. The partner references the same, now closed,
+       stream, so do not close it again; mark it closed so any later use or
+       close of the partner is a "file not open" error. */
+    pn = filbond[fn];
+    if (pn) {
+
+        filbond[fn] = 0; /* dissolve the bond both ways */
+        filbond[pn] = 0;
+        filanamtab[pn] = FALSE;
+        filstate[pn] = fsclosed;
+
+    }
 
 }
 
@@ -4957,19 +4971,29 @@ void psystem_clsb(
 
 {
 
-    int fn;
+    int fn, pn;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
     /* check file is open */
-    if (filstate[fn] != fsread && filstate[fn] != fswrite) 
+    if (filstate[fn] != fsread && filstate[fn] != fswrite)
         errore(modnam, __LINE__, FILENOTOPEN);
     if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
     filstate[fn] = fsclosed; /* set status closed */
+    /* bonded pair: close ends both sides, once (see psystem_clst) */
+    pn = filbond[fn];
+    if (pn) {
+
+        filbond[fn] = 0; /* dissolve the bond both ways */
+        filbond[pn] = 0;
+        filanamtab[pn] = FALSE;
+        filstate[pn] = fsclosed;
+
+    }
 
 }
 
@@ -5718,6 +5742,63 @@ void psystem_libcatcfil(
 
 /** ****************************************************************************
 
+Bond two Pascal files as a pair
+
+Marks two Pascal files as a bonded pair: two logical files sharing one
+underlying stream. Closing either closes the shared stream once and marks
+both files closed, so any later use or close of either side is an error.
+This is how a bidirectional connection (a socket) is presented to Pascal --
+which insists on unidirectional text files -- as a read file and a write
+file without duplicating the underlying descriptor.
+
+*******************************************************************************/
+
+void psystem_bondfil(
+    /** first file of the pair */  pasfil* a,
+    /** second file of the pair */ pasfil* b
+)
+
+{
+
+    int fna, fnb;
+
+    valfil(a); valfil(b); /* validate both files */
+    fna = *a; fnb = *b; /* get logical file numbers */
+    if (fna <= COMMANDFN || fnb <= COMMANDFN)
+        errore(modnam, __LINE__, FILEMODEINCORRECT);
+    filbond[fna] = fnb; /* bond each to the other */
+    filbond[fnb] = fna;
+
+}
+
+/** ****************************************************************************
+
+Attach one libc stream to a bonded Pascal file pair
+
+Binds both Pascal files of a pair to a single libc stream and bonds them, as
+one operation. The read file gets the read binding, the write file the write
+binding; both reference the one stream, so the connection uses a single
+descriptor. Doing it as a set keeps the pair consistent for tasks that may
+hold the two sides independently.
+
+*******************************************************************************/
+
+void psystem_libcatcfilset(
+    /** read side Pascal file */  pasfil* infile,
+    /** write side Pascal file */ pasfil* outfile,
+    /** libc stream to attach */  void*   fp
+)
+
+{
+
+    psystem_libcatcfil(infile, fp, 0);  /* bind read side */
+    psystem_libcatcfil(outfile, fp, 1); /* bind write side */
+    psystem_bondfil(infile, outfile);   /* bond the pair */
+
+}
+
+/** ****************************************************************************
+
 Compare strings
 
 Compares two strings, and returns:
@@ -6353,6 +6434,7 @@ static void init(int argc, char* argv[])
         filstate[i] = fsnone; /* never opened */
         filanamtab[i] = FALSE; /* no name assigned */
         filtable[i] = NULL; /* clear Unix file pointer */
+        filbond[i] = 0; /* not bonded to a partner */
 
     }
 

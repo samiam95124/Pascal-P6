@@ -274,10 +274,9 @@ begin
 
    waitnet(fi, fo, port, secure);
    getline(fi, buff, len); { client line received }
-   writeln(fo, 'Hello, client');
-   close(fo); { flush the reply to the client }
+   writeln(fo, 'Hello, client'); { line buffered: sent at the newline }
    { hold the connection up briefly so the client can read and the
-     certificate tests can inspect, then exit (closing it) }
+     certificate tests can inspect, then close (either side ends it) }
    pause(2*second);
    close(fi)
 
@@ -336,11 +335,10 @@ begin
    spawn('tcpserver', port, secure);
    addrnet('localhost', addr);
    opennet(fi, fo, addr, port, secure);
-   writeln(fo, 'Hello, server');
-   close(fo); { flush; the read side keeps the connection up }
-   getline(fi, buff, len);
+   writeln(fo, 'Hello, server'); { line buffered: sent at the newline }
+   getline(fi, buff, len); { read the reply, connection still open }
    pass := lineis(buff, len, 'Hello, client');
-   close(fi);
+   close(fi); { close once; either side ends the bonded connection }
    report(name, pass)
 
 end;
@@ -409,10 +407,9 @@ begin
    report('certnet raw certificate', not blank(cert));
 
    { complete the exchange so the server exits }
-   writeln(fo, 'Hello, server');
-   close(fo);
-   getline(fi, buff, len); { response }
-   close(fi)
+   writeln(fo, 'Hello, server'); { line buffered: sent at the newline }
+   getline(fi, buff, len); { response, connection still open }
+   close(fi) { close once; either side ends the bonded connection }
 
 end;
 

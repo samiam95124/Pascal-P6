@@ -37,6 +37,7 @@ extern void* cstr2pstr(char* cs, int l);
 
 /* psystem runtime (Ami-stdio world) */
 extern void  psystem_libcatcfil(pfile f, void* fp, long wr);
+extern void  psystem_libcatcfilset(pfile infile, pfile outfile, void* fp);
 extern void* psystem_libcrdfil(pfile f);
 extern void* psystem_libcwrfil(pfile f);
 
@@ -62,23 +63,22 @@ static FILE* netfil[MAXNETFIL];
 static void bindnet(pfile infile, pfile outfile, FILE* gf)
 {
     int   fd;
-    int   fd2;
     void* af;
 
     fd = fileno(gf); /* glibc descriptor of the connection */
     if (fd >= 0 && fd < MAXNETFIL) netfil[fd] = gf; /* save for cert calls */
-    /* Reopen the descriptor in the Ami-stdio world, one file per side. The
-       Ami stdio tracks one FILE per descriptor, so the write side gets a
-       duplicate of the descriptor (which also gives each side independent
-       close semantics). Both sides open in update mode: the socket
-       descriptor is read-write, and the Ami fdopen verifies the requested
-       mode against the descriptor's actual access mode. */
+    /* A socket is one bidirectional channel; Pascal wants unidirectional
+       text files, so it is presented as a bonded pair -- a read file and a
+       write file over the ONE stream (one descriptor). Closing either closes
+       the connection once; the pairing and single close live in psystem
+       (psystem_libcatcfilset / psystem_bondfil). No dup, and so no per-host
+       descriptor-to-socket bookkeeping. Open in update mode: the socket is
+       read-write and the Ami fdopen checks the mode against the descriptor.
+       Line buffer the stream so a writeln reaches the socket at its newline
+       without a close to flush it, while reads stay buffered. */
     af = stdio_fdopen(fd, "r+");
-    psystem_libcatcfil(infile, af, 0);
-    fd2 = dup(fd);
-    if (fd2 >= 0 && fd2 < MAXNETFIL) netfil[fd2] = gf; /* both find the conn */
-    af = stdio_fdopen(fd2, "r+");
-    psystem_libcatcfil(outfile, af, 1);
+    setvbuf((FILE*)af, NULL, _IOLBF, BUFSIZ);
+    psystem_libcatcfilset(infile, outfile, af);
 }
 
 /* recover the connection's glibc FILE from a Pascaline file */
