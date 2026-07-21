@@ -48,6 +48,13 @@ extern void* psystem_libcwrfil(pfile f);
 #ifdef __MINGW32__
 #define stdio_fdopen(fd, mode) ((void*)fdopen((fd), (mode)))
 #define stdio_fileno(fp)       fileno((FILE*)(fp))
+/* On Windows the connection state lives in a descriptor-indexed table in
+   network.c, and the descriptor itself is parked on the nul device (a winsock
+   SOCKET is not a CRT descriptor). A plain dup of it is not entered in that
+   table, so the write side's I/O would fall through to the nul device;
+   ami_netshare enters the duplicate as a sharer of the connection. On linux
+   the descriptor is the socket itself, so dup alone suffices. */
+extern void ami_netshare(int fd, int fd2);
 #else
 extern void* stdio_fdopen(int fd, const char* mode);
 extern int   stdio_fileno(void* fp);
@@ -77,6 +84,9 @@ static void bindnet(pfile infile, pfile outfile, FILE* gf)
     psystem_libcatcfil(infile, af, 0);
     fd2 = dup(fd);
     if (fd2 >= 0 && fd2 < MAXNETFIL) netfil[fd2] = gf; /* both find the conn */
+#ifdef __MINGW32__
+    ami_netshare(fd, fd2); /* enter the duplicate in the connection table */
+#endif
     af = stdio_fdopen(fd2, "r+");
     psystem_libcatcfil(outfile, af, 1);
 }

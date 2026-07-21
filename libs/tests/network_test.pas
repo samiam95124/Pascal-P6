@@ -35,11 +35,13 @@
 *                                                                             *
 * The IPV6 forms are not yet covered, matching the note in network_test.txt. *
 *                                                                             *
-* Known gap: the TLS line exchange fails. The network_support.c bridge binds *
-* the write side of a connection to a raw dup of the descriptor, which       *
-* network.c does not track, so writes through the outfile bypass SSL_write   *
-* and reach the TLS peer in the clear. The DTLS and certificate paths do not *
-* use the bridged write side and pass.                                       *
+* Known gap: the TLS line exchange fails on linux. The network_support.c     *
+* bridge binds the write side of a connection to a raw dup of the            *
+* descriptor, which the linux network.c does not track, so writes through    *
+* the outfile bypass SSL_write and reach the TLS peer in the clear. On       *
+* windows the bridge enters the duplicate in the connection table            *
+* (ami_netshare), but the test stays off until linux gets the equivalent.    *
+* The DTLS and certificate paths do not use the bridged write side and pass. *
 *                                                                             *
 ******************************************************************************}
 
@@ -481,10 +483,10 @@ begin
 
       taddrnet;
       ttcp('TCP exchange in the clear', porttcp+portbase, 0);
-      { The secured TCP exchange is commented out for now: Ami has the
-        capability, but the Pascaline binding has not implemented it yet --
-        the connection's bridged write side does not route through the
-        tracked TLS path, so the exchange goes out in the clear. }
+      { The secured TCP exchange is commented out for now: on linux the
+        connection's bridged write side does not route through the tracked
+        TLS path, so the exchange goes out in the clear. The windows bridge
+        routes it (ami_netshare); enable when linux does the same. }
       { ttcp('TCP exchange secured (TLS)', porttls+portbase, 1); }
       tmsg('message exchange in the clear', portmsg+portbase, 0);
       tmsg('message exchange secured (DTLS)', portdtls+portbase, 1);
