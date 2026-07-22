@@ -4727,10 +4727,15 @@ end;
                                  gen1s(114(*lto*),dplmt,symptr)
                                else gen1s(37(*lao*),dplmt,symptr);
                                { if there is an offset left in the address,
-                                 apply it now }
-                               if ({chkext(symptr) or} chkfix(symptr)) and
+                                 apply it now. An imported (external) or fixed
+                                 base is a link-time symbol that lao/lto emit
+                                 without the offset, so a nonzero field offset
+                                 must be added to the address here -- otherwise
+                                 the address, and any store or var-parameter
+                                 pass through it, lands on the base. }
+                               if (chkext(symptr) or chkfix(symptr)) and
                                   (dplmt <> 0) then
-                                  gen1t(34(*inc*),idplmt,nilptr);
+                                  gen1t(34(*inc*),dplmt,nilptr);
                              end else gen2(50(*lda*),level-(level-vlevel),dplmt);
                      indrct: if idplmt <> 0 then
                                gen1t(34(*inc*),idplmt,nilptr);
@@ -9661,7 +9666,15 @@ end;
             lattr2 := gattr; { save access before load }
             if gattr.typtr <> nil then
               if (gattr.access<>drct) or structt(gattr.typtr) or
-                 tagasc or isasgnopr(gattr.typtr) then { force addr for := overload }
+                 tagasc or isasgnopr(gattr.typtr) then begin
+                 { force addr for := overload }
+                if gattr.kind <> expr then loadaddress
+              end
+              { imported/fixed base + field offset: the direct sro carries no
+                offset, so store through a computed address instead. gattr is
+                a direct variable here, so dplmt is the active variant. }
+              else if (chkext(gattr.symptr) or chkfix(gattr.symptr)) and
+                      (gattr.dplmt <> 0) then
                 if gattr.kind <> expr then loadaddress;
             lattr := gattr;
             insymbol; expression(fsys, false); schrcst := ischrcst(gattr);

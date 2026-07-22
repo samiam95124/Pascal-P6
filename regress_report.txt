@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Mon Jul 20 12:23:20 PDT 2026
+Wed 22 Jul 2026 12:09:20 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/test_results/pint/hello.dif
@@ -24,6 +24,8 @@ Pascaline run
 0 pascaline_tests/test_results/pint/pascaline.dif
 strings_test run
 0 libs/tests/test_results/pint/strings_test.dif
+network_test run
+0 libs/tests/test_results/pint/network_test.dif
 services_test run
 0 libs/tests/test_results/pint/services_test.dif
 Debug test run
@@ -51,6 +53,8 @@ Pascaline run
 0 pascaline_tests/test_results/pmach/pascaline.dif
 strings_test run
 0 libs/tests/test_results/pmach/strings_test.dif
+network_test run
+0 libs/tests/test_results/pmach/network_test.dif
 services_test run
 0 libs/tests/test_results/pmach/services_test.dif
 cmach run ***************************************
@@ -76,6 +80,8 @@ Pascaline run
 0 pascaline_tests/test_results/cmach/pascaline.dif
 strings_test run
 0 libs/tests/test_results/cmach/strings_test.dif
+network_test run
+0 libs/tests/test_results/cmach/network_test.dif
 services_test run
 0 libs/tests/test_results/cmach/services_test.dif
 package run ***************************************
@@ -101,6 +107,8 @@ Pascaline run
 0 pascaline_tests/test_results/package/pascaline.dif
 strings_test run
 0 libs/tests/test_results/package/strings_test.dif
+network_test run
+0 libs/tests/test_results/package/network_test.dif
 services_test run
 0 libs/tests/test_results/package/services_test.dif
 pgen run ***************************************
@@ -126,24 +134,26 @@ Pascaline run
 0 pascaline_tests/test_results/pgen/pascaline.dif
 strings_test run
 0 libs/tests/test_results/pgen/strings_test.dif
+network_test run
+0 libs/tests/test_results/pgen/network_test.dif
 services_test run
 0 libs/tests/test_results/pgen/services_test.dif
 
 Total differences: 0
 Fails: 0
-Mon Jul 20 12:32:42 PDT 2026
+Wed 22 Jul 2026 12:14:13 PM PDT
 Files sha256sum ***************************************
 Source files
-b6b54c3736ee090bbf073c2663fd00b66497b0baee825c469ed7571139634ceb *-
+95386fed03564f165e02ebeb09bae7dfd8e938e10aa47194b3af6d413b8898ad  -
 batch files
-f01bc867c09e01c44228aee91cd7a43875a6f268f118e766778c8da3f6908d33 *-
+e9ceb50b2017055de32de35fbb2c9e53fa9d3f1c3a8b001a1bdc54e496f967ef  -
 P2 files
-3ec5368c13184fb47328ea0508b35347580fe3c19ea619de43b111810e34025c *-
+abb5a8a00d377dbcf7c793f9f399fb51e017f2e27ecab9607e4cace253472cfb  -
 p4 files
-5d6aef5b34f071775ac9fd7f4a3bd241575bff49b21467ebe28137d0519cfca6 *-
+f246858c7fc855feec1440577453f01b00292750b3606e7e3acf35d18d293bb7  -
 Sample program test files
-54f8913dbf55678f356646464127cd46ee700f3cbf9c7ac63137e0eac4455553 *-
+91810b2fe3806fa167505b0224f3d3b7296d533882d558417a71705ff4cb13e6  -
 standard test files
-19f68c3090745de29a63e1dbe4477e75c543eeb893f7ce8005f8d09c474fab28 *-
+dfebd148fc9f3cf0359273ff261325253c260f785fd66a8cbae7cdc57ef3632d  -
 other files
-da71c6af0847ff6e95c88454630e8d54de84a3ab32d58c29bee925f0ed818c9e *-
+154020bf2b3b041b36680efa8242faae4cf5d3dcc7fbd5ba2a004b188d73ea4c  -
