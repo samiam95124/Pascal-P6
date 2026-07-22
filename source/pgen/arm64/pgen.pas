@@ -2289,6 +2289,44 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     end
   end;
 
+  { Vector initialize dynamic (vin). Allocates a dynamic container and fills
+    its template. q is the number of index levels, q1 the base element size.
+    The template/pointer address is on top of the stack, with the q dimensions
+    below it. psystem_vin reads the dimensions as a contiguous long array, so
+    they are packed 8 bytes apart into a 16 byte aligned block (as callnwldsl
+    does for its tag list; pshexps lays entries 16 apart, which will not do).
+    The first dimension popped (nearest the template) goes to the highest slot,
+    matching the push order the AMD64 backend produces: al[0] is the last
+    dimension popped. }
+  procedure callvin;
+  var frereg: regset; ep, ep2: expptr; i, alloc: integer; stkadrs: integer;
+  begin
+    stkadrs := stkadr;
+    frereg := allreg; popstk(ep); { template/pointer address }
+    alloc := ((q*intsize+15) div 16)*16;
+    if alloc > 0 then begin
+      wrtins(' sub sp, sp, #^0 // reserve dimension list', alloc);
+      stkadr := stkadr-alloc
+    end;
+    for i := 1 to q do begin
+      frereg := allreg; popstk(ep2); assreg(ep2, frereg, rgnull, rgnull);
+      dmptre(ep2); genexp(ep2);
+      wrtins(' str %1, [sp, #^0] // place dimension', (q-i)*intsize, ep2^.r1);
+      deltre(ep2)
+    end;
+    assreg(ep, allreg, rgx2, rgnull); dmptre(ep); genexp(ep); { template -> x2 }
+    wrtins(' mov x0, #^0 // number of levels', q);
+    wrtins(' mov x1, #^0 // base element size', q1);
+    wrtins(' mov x3, sp // dimension list');
+    wrtins(' bl psystem_vin // fill template and allocate variable');
+    if alloc > 0 then begin
+      wrtins(' add sp, sp, #^0 // dump dimensions from stack', alloc);
+      stkadr := stkadr+alloc
+    end;
+    deltre(ep);
+    stkadr := stkadrs
+  end;
+
 begin { assemble }
   refer(dmplst); { diagnostics }
   refer(dmptmp);
@@ -2333,6 +2371,21 @@ begin { assemble }
     {lto}
     234: begin labelsearch(def, val, sp, blk);
       getexp(ep); ep^.qs := sp; ep^.fl := sp; attach(ep); pshstk(ep)
+    end;
+
+    {vin}
+    226: begin parqq;
+      writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
+      callvin;
+      botstk
+    end;
+
+    {cps}
+    176: begin
+      getexp(ep); popstk(ep2); popstk(ep3);
+      duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
+      frereg := allreg; assreg(ep, frereg, rgnull, rgnull);
+      dmptre(ep); genexp(ep); deltre(ep)
     end;
 
     {ixa}
