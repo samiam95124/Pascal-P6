@@ -3022,7 +3022,13 @@ end;
 
   { write shorthand type }
   procedure wrttypc(var f: text; tp: stp; fl: integer);
-  const maxtrk = 4000;
+  const maxtrk = 20000; { type track capacity; also the error 227 threshold. A
+                          large record graph (e.g. a window control record that
+                          transitively expands a whole drawing type graph) can
+                          exceed a few thousand digest characters. The digest is
+                          emitted correctly regardless; this only bounds cycle
+                          tracking, so raising it cannot change behavior for any
+                          type that fit under the old limit. }
   var typtrk: array [1..maxtrk] of stp; cti: integer; err: boolean;
 
   procedure wrttypsub(tp: stp);
