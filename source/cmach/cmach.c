@@ -730,6 +730,7 @@ FILE* filtable[MAXFIL+1]; /* general file holders */
 filnam filnamtab[MAXFIL+1]; /* assigned name of files */
 boolean filanamtab[MAXFIL+1]; /* name has been assigned flags */
 filsts filstate[MAXFIL+1]; /* file state holding */
+int filbond[MAXFIL+1]; /* bonded partner logical file no. (0 none) */
 boolean filbuff[MAXFIL+1]; /* file buffer full status */
 boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 boolean filecr[MAXFIL+1];  /* last file character read was cr */
@@ -1321,6 +1322,35 @@ void psystem_libcatcfil(unsigned char* f, FILE* fp, long wr)
     if (filstate[fn] == fsread || filstate[fn] == fswrite) fclose(filtable[fn]);
     filtable[fn] = fp;   /* attach the libc file */
     filstate[fn] = wr ? fswrite : fsread;
+}
+
+/* Bond two Pascal files as a pair: two logical files sharing one stream.
+   Closing either closes the shared stream once and marks both closed, so
+   any later use or close of either side is an error. This presents a
+   bidirectional connection (a socket) to Pascal -- which wants
+   unidirectional text files -- as a read file and a write file without
+   duplicating the underlying descriptor. */
+void psystem_bondfil(unsigned char* a, unsigned char* b)
+{
+    address ada = (address)(a-store);
+    address adb = (address)(b-store);
+    int fna, fnb;
+
+    valfil(ada); valfil(adb);
+    fna = store[ada]; fnb = store[adb];
+    if (fna <= COMMANDFN || fnb <= COMMANDFN) errore(FILEMODEINCORRECT);
+    filbond[fna] = fnb; /* bond each to the other */
+    filbond[fnb] = fna;
+}
+
+/* Attach one libc stream to a bonded pair as a set: bind both Pascal files
+   to the one stream and bond them, in one operation. */
+void psystem_libcatcfilset(unsigned char* infile, unsigned char* outfile,
+                           FILE* fp)
+{
+    psystem_libcatcfil(infile, fp, 0);  /* bind read side */
+    psystem_libcatcfil(outfile, fp, 1); /* bind write side */
+    psystem_bondfil(infile, outfile);   /* bond the pair */
 }
 
 /* the write-side counterpart of psystem_libcrdfil: the graphics support layer
@@ -2822,6 +2852,17 @@ void callsp(void)
                 if (!filanamtab[fn]) remove(filnamtab[fn]);
                 filanamtab[fn] = FALSE; /* break any name association */
                 filstate[fn] = fsclosed;
+                /* A bonded pair shares one stream: closing either closes it
+                   once (just done) and ends both. The partner references the
+                   same, now closed, stream, so mark it closed without closing
+                   again; any later use or close of the partner is an error. */
+                if (filbond[fn]) {
+                    j = filbond[fn];
+                    filbond[fn] = 0; /* dissolve the bond both ways */
+                    filbond[j] = 0;
+                    filanamtab[j] = FALSE;
+                    filstate[j] = fsclosed;
+                }
                 break;
     case 48 /*pos*/: popint(i); popadr(ad); valfil(ad); fn = store[ad];
                 if (i < 1) errore(INVALIDFILEPOSITION);
@@ -3730,6 +3771,7 @@ int main (int argc, char *argv[])
     for (i = 1; i <= MAXFIL; i++) {
         filstate[i] = fsnone; /* never opened */
         filanamtab[i] = FALSE; /* no name assigned */
+        filbond[i] = 0; /* not bonded to a partner */
     }
 
     /* construct bit equivalence table */
