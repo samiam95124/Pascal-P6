@@ -49,9 +49,12 @@ extern void* psystem_libcwrfil(pfile f);
 #ifdef __MINGW32__
 #define stdio_fdopen(fd, mode) ((void*)fdopen((fd), (mode)))
 #define stdio_fileno(fp)       fileno((FILE*)(fp))
+#define stdio_setvbuf(fp, buf, mode, size) \
+    setvbuf((FILE*)(fp), (buf), (mode), (size))
 #else
 extern void* stdio_fdopen(int fd, const char* mode);
 extern int   stdio_fileno(void* fp);
+extern int   stdio_setvbuf(void* fp, char* buf, int mode, size_t size);
 #endif
 
 /* glibc FILE for a connection, indexed by its file descriptor, so the
@@ -77,7 +80,11 @@ static void bindnet(pfile infile, pfile outfile, FILE* gf)
        Line buffer the stream so a writeln reaches the socket at its newline
        without a close to flush it, while reads stay buffered. */
     af = stdio_fdopen(fd, "r+");
-    setvbuf((FILE*)af, NULL, _IOLBF, BUFSIZ);
+    /* af is an Ami-stdio FILE, so its buffering must be set through the Ami
+       stdio's setvbuf (stdio_setvbuf), not glibc's -- glibc's setvbuf would
+       dereference the Ami FILE as a glibc FILE and crash. On Windows there is
+       one stdio world, so stdio_setvbuf maps to the standard setvbuf. */
+    stdio_setvbuf(af, NULL, _IOLBF, BUFSIZ);
     psystem_libcatcfilset(infile, outfile, af);
 }
 
