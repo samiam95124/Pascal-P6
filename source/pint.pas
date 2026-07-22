@@ -363,7 +363,10 @@ const
       extsrc      = '.pas'; { extention for source file }
       maxwth      = 10;   { maximum number of watched addresses }
       maxana      = 10;   { maximum depth of analyzer traces }
-      maxsym      = 4000; { maximum length of symbol/module name }
+      maxsym      = 20000; { maximum length of symbol/module name. The name
+                             embeds the type digest, which can run to several
+                             thousand characters for a large record graph;
+                             matches pcom's maxtrk. }
       extvecmax   = 1024; { reserved external vector table slots }
 
 type
