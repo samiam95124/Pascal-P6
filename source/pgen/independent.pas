@@ -3479,9 +3479,13 @@ end;
 
 { emit variable/parameter DIE }
 procedure dwemitvar(sp: psymbol);
-var pc: dwparctl; tl, abbcode: integer;
+var pc: dwparctl; tl, abbcode: integer; hasdig: boolean;
 begin
-  if (sp^.digest <> nil) and (max(sp^.digest^) > 0) then begin
+  { nil guarded separately: Pascal does not short-circuit 'and', so the
+    digest length must not be taken when the digest is nil }
+  hasdig := false;
+  if sp^.digest <> nil then hasdig := max(sp^.digest^) > 0;
+  if hasdig then begin
     { parse digest to get/emit type, get label }
     dwsetpar(pc, sp^.digest);
     dwparsedigest(pc, tl);
