@@ -6444,11 +6444,17 @@ end;
 
     procedure maxfunction;
       var lattr: attr; lvl, lmn, lmx: integer; lsp, lsp1: stp; lvalu: valu;
+          arrf: boolean;
     begin chkstd;
       if sy = lparent then insymbol else error(9);
       variable(fsys+[rparent,comma], false);
       lattr := gattr;
-      if (lattr.typtr <> nil) and (lattr.typtr^.form = arrays) then begin
+      { fixed array? guard the nil type separately -- Pascal does not
+        short-circuit 'and', so the form test must not run when typtr is nil
+        (e.g. the argument was not a variable) }
+      arrf := false;
+      if lattr.typtr <> nil then arrf := lattr.typtr^.form = arrays;
+      if arrf then begin
         { fixed array: max is the static upper bound (last index) at the level.
           The level, if given, must be a constant since the geometry is static. }
         lvl := 1;
