@@ -8332,7 +8332,7 @@ end;
 
     procedure fixeddeclaration;
       var lcp: ctp; lsp: stp; lsize: addrrange;
-          v: integer; d: boolean; dummy: stp;
+          v: integer; d: boolean; dummy: stp; contf: boolean;
     procedure fixeditem(fsys: setofsys; lsp: stp; size: integer; var v: integer; var d: boolean);
       var fvalu: valu; lsp1: stp; lcp: ctp; i, min, max: integer;
           test: boolean;
@@ -8467,8 +8467,11 @@ end;
           if fv.intval then begin
             if typ = charptr then write(prr, 'c c ', fv.ival:1)
             else if typ = boolptr then write(prr, 'c b ', fv.ival:1)
-            else if (typ <> nil) and (typ^.size = 1) then
-              write(prr, 'c x ', fv.ival:1)
+            else if typ <> nil then begin
+              { nil guarded separately: Pascal does not short-circuit 'and' }
+              if typ^.size = 1 then write(prr, 'c x ', fv.ival:1)
+              else write(prr, 'c i ', fv.ival:1)
+            end
             else write(prr, 'c i ', fv.ival:1)
           end else if fv.valp <> nil then begin
             if fv.valp^.cclass = reel then write(prr, 'c r ', fv.valp^.rval:23)
@@ -8563,7 +8566,11 @@ end;
         if sy = colon then insymbol else error(5);
         typ(fsys + [semicolon,relop] + typedels,lsp,lsize);
         if lcp <> nil then lcp^.idtype := lsp;
-        if (lcp <> nil) and (lsp <> nil) and (lsp^.form = arrayc) then
+        { container? guard the nil type separately -- Pascal does not
+          short-circuit 'and', so the form test must not run when lsp is nil }
+        contf := false;
+        if lcp <> nil then if lsp <> nil then contf := lsp^.form = arrayc;
+        if contf then
           { container: determine geometry from the initializer }
           fixedcontainer(lcp)
         else begin
