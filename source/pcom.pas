@@ -4385,12 +4385,14 @@ end;
           new(lvp,pset); pshcst(lvp); lvp^.cclass := pset; lvp^.pval := [];
           if sy <> rbrack then repeat
             constexpr(fsys+[rbrack,comma,range], fsp, fvalu);
-            if not fvalu.intval then error(134);
+            if not fvalu.intval then
+              begin error(134); fvalu.intval := true; fvalu.ival := setlow end;
             if sy = range then begin
               insymbol; lv := fvalu;
               constexpr(fsys+[rbrack,comma], fsp, fvalu);
-              if not fvalu.intval then error(134);
-              if (lv.ival < setlow) or (lv.ival > sethigh) or 
+              if not fvalu.intval then
+                begin error(134); fvalu.intval := true; fvalu.ival := setlow end;
+              if (lv.ival < setlow) or (lv.ival > sethigh) or
                  (fvalu.ival < setlow) or (fvalu.ival > sethigh) then error(291)
               else for i := lv.ival to fvalu.ival do lvp^.pval := lvp^.pval+[i]
             end else begin
