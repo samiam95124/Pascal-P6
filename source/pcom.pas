@@ -6423,15 +6423,20 @@ end;
     end;
 
     procedure referprocedure;
-    var lcp: ctp;
+    var lcp: ctp; test: boolean;
     begin chkstd;
-       if sy <> ident then begin
-          error(2); skip(fsys + [comma,rparent])
-       end else begin 
-          searchid([types,konst,vars,fixedt,field,func,proc],lcp);
-          lcp^.refer := true;
-          insymbol
-       end
+       { accept a comma separated list of identifiers }
+       repeat
+          if sy <> ident then begin
+             error(2); skip(fsys + [comma,rparent])
+          end else begin
+             searchid([types,konst,vars,fixedt,field,func,proc],lcp);
+             lcp^.refer := true;
+             insymbol
+          end;
+          test := sy <> comma;
+          if not test then insymbol
+       until test
     end;
 
     procedure seterrprocedure;
