@@ -159,7 +159,7 @@ const
    maxsp      = 115;  { number of standard procedures/functions }
    maxins     = 131;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
-   maxstd     = 84;   { number of standard identifiers }
+   maxstd     = 87;   { number of standard identifiers }
    maxres     = 68;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
    explen     = 32;   { length of exception names }
@@ -552,7 +552,8 @@ var
     boolptr,nilptr,textptr,
     exceptptr,stringptr,pstringptr,
     byteptr,vectorptr,matrixptr,
-    abyteptr,scharptr: stp;         (*pointers to entries of standard ids*)
+    abyteptr,scharptr,fbyteptr,
+    pbyteptr,pabyteptr: stp;        (*pointers to entries of standard ids*)
     utypptr,ucstptr,uvarptr,
     ufldptr,uprcptr,ufctptr,        (*pointers to entries for undeclared ids*)
     fwptr: ctp;                     (*head of chain of forw decl type ids*)
@@ -11127,6 +11128,7 @@ end;
     na[76] := 'string   '; na[77] := 'pstring  '; na[78] := 'byte     ';
     na[79] := 'vector   '; na[80] := 'matrix   '; na[81] := 'abyte    ';
     na[82] := 'schar    '; na[83] := 'refer    '; na[84] := 'seterr   ';
+    na[85] := 'fbyte    '; na[86] := 'pbyte    '; na[87] := 'pabyte   ';
 
   end (*stdnames*) ;
 
@@ -11199,6 +11201,18 @@ end;
     with scharptr^ do
       begin form := power; size := setsize; packing := false; elset := charptr;
             matchpack := true end;
+    new(fbyteptr,files); pshstc(fbyteptr);                    (*file of byte*)
+    with fbyteptr^ do
+      begin form := files; filtype := byteptr; size := filesize+1;
+            packing := false end;
+    new(pbyteptr,pointer); pshstc(pbyteptr);                  (*byte pointer*)
+    with pbyteptr^ do
+      begin form := pointer; size := ptrsize; packing := false;
+            eltype := byteptr end;
+    new(pabyteptr,pointer); pshstc(pabyteptr);              (*byte array pointer*)
+    with pabyteptr^ do
+      begin form := pointer; size := ptrsize; packing := false;
+            eltype := abyteptr end;
   end (*enterstdtypes*) ;
 
   procedure entstdnames;
@@ -11295,6 +11309,9 @@ end;
     entstdtyp(80, matrixptr);                                 (*matrix*)
     entstdtyp(81, abyteptr);                                  (*array of bytes*)
     entstdtyp(82, scharptr);                                  (*set of char*)
+    entstdtyp(85, fbyteptr);                                  (*file of byte*)
+    entstdtyp(86, pbyteptr);                                  (*pointer to byte*)
+    entstdtyp(87, pabyteptr);                            (*pointer to abyte*)
 
     cp1 := nil;
     for i := 1 to 2 do
