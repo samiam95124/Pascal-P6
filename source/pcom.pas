@@ -4385,12 +4385,14 @@ end;
           new(lvp,pset); pshcst(lvp); lvp^.cclass := pset; lvp^.pval := [];
           if sy <> rbrack then repeat
             constexpr(fsys+[rbrack,comma,range], fsp, fvalu);
-            if not fvalu.intval then error(134);
+            if not fvalu.intval then
+              begin error(134); fvalu.intval := true; fvalu.ival := setlow end;
             if sy = range then begin
               insymbol; lv := fvalu;
               constexpr(fsys+[rbrack,comma], fsp, fvalu);
-              if not fvalu.intval then error(134);
-              if (lv.ival < setlow) or (lv.ival > sethigh) or 
+              if not fvalu.intval then
+                begin error(134); fvalu.intval := true; fvalu.ival := setlow end;
+              if (lv.ival < setlow) or (lv.ival > sethigh) or
                  (fvalu.ival < setlow) or (fvalu.ival > sethigh) then error(291)
               else for i := lv.ival to fvalu.ival do lvp^.pval := lvp^.pval+[i]
             end else begin
@@ -6423,15 +6425,20 @@ end;
     end;
 
     procedure referprocedure;
-    var lcp: ctp;
+    var lcp: ctp; test: boolean;
     begin chkstd;
-       if sy <> ident then begin
-          error(2); skip(fsys + [comma,rparent])
-       end else begin 
-          searchid([types,konst,vars,fixedt,field,func,proc],lcp);
-          lcp^.refer := true;
-          insymbol
-       end
+       { accept a comma separated list of identifiers }
+       repeat
+          if sy <> ident then begin
+             error(2); skip(fsys + [comma,rparent])
+          end else begin
+             searchid([types,konst,vars,fixedt,field,func,proc],lcp);
+             lcp^.refer := true;
+             insymbol
+          end;
+          test := sy <> comma;
+          if not test then insymbol
+       until test
     end;
 
     procedure seterrprocedure;
@@ -10269,13 +10276,15 @@ end;
             if sy = ident then begin
               searchid([vars],lcp);
               with lcp^, lattr do
-                begin typtr := idtype; kind := varbl; packing := false;
+                begin symptr := lcp; typtr := idtype; kind := varbl;
+                  packing := false;
                   if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
                   if part = ptview then error(290);
                   if vkind = actual then
                     begin access := drct; vlevel := vlev;
                       if vlev <> level then error(183);
-                      dplmt := vaddr
+                      { don't offset far }
+                      if chkext(lcp) then dplmt := 0 else dplmt := vaddr
                     end
                   else begin error(155); typtr := nil end
                 end;
@@ -10906,8 +10915,30 @@ end;
         if (nc < fillen) and (nc < ec) then 
           begin fn[i] := fp^.fn[nc]; nc := nc+1 end
       end;
-      if fn = id then schnam := true; 
-      fp := fp^.uselist 
+      if fn = id then schnam := true;
+      fp := fp^.uselist
+    end
+  end;
+  { Search the active include stack for the used module. The include stack
+    holds the files still being compiled: the chain of uses in process and
+    the base file at the bottom. The used identifier naming one of them is a
+    circular module reference. }
+  function schcyc: boolean;
+  var fn: filnam; i, nc, ec: 1..fillen; fp: filptr;
+  begin schcyc := false; fp := incstk;
+    while fp <> nil do begin
+      nc := 1;
+      for i := 1 to fillen do
+        if (fp^.fn[i] = '/') or (fp^.fn[i] = '\\') then nc := i+1;
+      ec := fillen;
+      for i := 1 to fillen do if fp^.fn[i] = '.' then ec := i;
+      for i := 1 to fillen do begin
+        fn[i] := ' ';
+        if (nc < fillen) and (nc < ec) then
+          begin fn[i] := fp^.fn[nc]; nc := nc+1 end
+      end;
+      if fn = id then schcyc := true;
+      fp := fp^.next
     end
   end;
   begin
@@ -10916,6 +10947,17 @@ end;
       thismod := nil;
       if sy <> ident then error(2) else begin
         dup := schnam;
+        if not dup then if schcyc then begin
+          { the used module is one of the files still being compiled: a
+            circular module reference. The structure may still be valid, so
+            warn rather than error, and skip the reopen -- the module is
+            already in process }
+          if errfval then
+            writeln(errf, '*** Warning: circular module reference: ', id:kk)
+          else
+            writeln('*** Warning: circular module reference: ', id:kk);
+          dup := true
+        end;
         if not dup then begin
           eols := eol; prcodes := prcode; lists := list; gcs := gc;
           nammods := nammod; curmods := curmod; entnames := entname;
@@ -12360,6 +12402,7 @@ begin
   new(fp); with fp^ do begin
       next := incstk; incstk := fp; priv := false; linecount := 0; lineout := 0;
       si := 1; sl := 0; lo := false; fio := false; use := false; uselist := nil;
+      fn := srcfil; { name the frame so the uses cycle check sees the base }
       mn := nil { no module name on the level-0 frame; putinp/putstrs walk it }
   end;
   readline;
