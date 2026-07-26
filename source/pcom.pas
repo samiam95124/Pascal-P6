@@ -10916,8 +10916,30 @@ end;
         if (nc < fillen) and (nc < ec) then 
           begin fn[i] := fp^.fn[nc]; nc := nc+1 end
       end;
-      if fn = id then schnam := true; 
-      fp := fp^.uselist 
+      if fn = id then schnam := true;
+      fp := fp^.uselist
+    end
+  end;
+  { Search the active include stack for the used module. The include stack
+    holds the files still being compiled: the chain of uses in process and
+    the base file at the bottom. The used identifier naming one of them is a
+    circular module reference. }
+  function schcyc: boolean;
+  var fn: filnam; i, nc, ec: 1..fillen; fp: filptr;
+  begin schcyc := false; fp := incstk;
+    while fp <> nil do begin
+      nc := 1;
+      for i := 1 to fillen do
+        if (fp^.fn[i] = '/') or (fp^.fn[i] = '\\') then nc := i+1;
+      ec := fillen;
+      for i := 1 to fillen do if fp^.fn[i] = '.' then ec := i;
+      for i := 1 to fillen do begin
+        fn[i] := ' ';
+        if (nc < fillen) and (nc < ec) then
+          begin fn[i] := fp^.fn[nc]; nc := nc+1 end
+      end;
+      if fn = id then schcyc := true;
+      fp := fp^.next
     end
   end;
   begin
@@ -10926,6 +10948,17 @@ end;
       thismod := nil;
       if sy <> ident then error(2) else begin
         dup := schnam;
+        if not dup then if schcyc then begin
+          { the used module is one of the files still being compiled: a
+            circular module reference. The structure may still be valid, so
+            warn rather than error, and skip the reopen -- the module is
+            already in process }
+          if errfval then
+            writeln(errf, '*** Warning: circular module reference: ', id:kk)
+          else
+            writeln('*** Warning: circular module reference: ', id:kk);
+          dup := true
+        end;
         if not dup then begin
           eols := eol; prcodes := prcode; lists := list; gcs := gc;
           nammods := nammod; curmods := curmod; entnames := entname;
@@ -12386,6 +12419,7 @@ begin
   new(fp); with fp^ do begin
       next := incstk; incstk := fp; priv := false; linecount := 0; lineout := 0;
       si := 1; sl := 0; lo := false; fio := false; use := false; uselist := nil;
+      fn := srcfil; { name the frame so the uses cycle check sees the base }
       mn := nil { no module name on the level-0 frame; putinp/putstrs walk it }
   end;
   readline;
