@@ -378,7 +378,7 @@ var addr: lcardinal;
 begin
 
    addrnet('localhost', addr);
-   max := maxmsg(addr);
+   max := maxmsg(addr, 0);
    report('maxmsg sane', max > 0);
    rely := relymsg(addr);
    report('relymsg sane', (rely = 0) or (rely = 1))

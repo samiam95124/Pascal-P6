@@ -673,14 +673,14 @@ void wrapper_execep(
 
 procedure execw(view cmd: string; out e: integer);
 ->
-void ami_execw(char* cmd, int *e);
+void ami_execw(char* cmd, ami_long *e);
 
 ********************************************************************************/
 
 void wrapper_execw(
     /** string pointer */ char* s,
     /** string length */  int l,
-    /** error */          int *e
+    /** error */          long *e
 )
 
 {
@@ -694,14 +694,14 @@ void wrapper_execw(
 
 procedure execw(cmd: pstring; out e: integer);
 ->
-void ami_execw(char* cmd, int *e);
+void ami_execw(char* cmd, ami_long *e);
 
 ********************************************************************************/
 
 void wrapper_execwp(
     /** filename */    pstring fn,
     /** environment */ ami_envptr el,
-    /** error */       int *e
+    /** error */       long *e
 )
 
 {
@@ -719,7 +719,7 @@ void wrapper_execwp(
 
 procedure execew(view cmd: string; el: envptr; out e: integer);
 ->
-void ami_execew(char* cmd, ami_envrec *el, int *e);
+void ami_execew(char* cmd, ami_envrec *el, ami_long *e);
 
 ********************************************************************************/
 
@@ -727,7 +727,7 @@ void wrapper_execew(
     /** string pointer */ char* s,
     /** string length */  int l,
     /** environment */    envptr el,
-    /** error */          int *e
+    /** error */          long *e
 )
 
 {
@@ -745,14 +745,14 @@ void wrapper_execew(
 
 procedure execew(cmd: pstring; el: envptr; out e: integer);
 ->
-void ami_execew(char* cmd, ami_envrec *el, int *e);
+void ami_execew(char* cmd, ami_envrec *el, ami_long *e);
 
 ********************************************************************************/
 
 void wrapper_execewp(
     /** filename */    pstring fn,
     /** environment */ envptr el,
-    /** error */       int *e
+    /** error */       long *e
 )
 
 {

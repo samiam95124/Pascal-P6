@@ -24,7 +24,7 @@ const
    nterminal = 93; { number of terminal externals }
    ngraphics = 452; { number of graphics externals }
    nsound = 78; { number of sound externals }
-   nnetwork = 20; { number of network externals }
+   nnetwork = 24; { number of network externals }
 
 type
 
@@ -653,10 +653,10 @@ fixed
       'tabbar@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i     ',
       'tabbarg@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i ',
       'tabbarg@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i    ',
-      'tabbarsiz@p_fc_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i                     ',
-      'tabbarsiz@p_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i                        ',
-      'tabbarsizg@p_fc_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i                    ',
-      'tabbarsizg@p_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i                       ',
+      'tabbarsiz@p_fc_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i_i_i_i_',
+      'tabbarsiz@p_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i',
+      'tabbarsizg@p_fc_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i_i_i_i',
+      'tabbarsizg@p_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i_i_i_i_i_',
       'tabsel@p_fc_i_i                                                                 ',
       'tabsel@p_i_i                                                                    ',
       'timer@p_fc_i_i_b                                                                ',
@@ -771,14 +771,18 @@ fixed
    networktab: array [1..nnetwork] of syment = array
       'addrnet@p_vc_x(0,9223372036854775807)i                                          ',
       'addrnetv6@p_vc_x(0,9223372036854775807)i_x(0,9223372036854775807)i              ',
-      'maxmsg@f_x(0,9223372036854775807)i                                              ',
-      'maxmsgv6@f_x(0,9223372036854775807)i_x(0,9223372036854775807)i                  ',
+      'maxmsg@f_x(0,9223372036854775807)i_i                                            ',
+      'maxmsgv6@f_x(0,9223372036854775807)i_x(0,9223372036854775807)i_i                ',
       'relymsg@f_x(0,9223372036854775807)i                                             ',
       'relymsgv6@f_x(0,9223372036854775807)i_x(0,9223372036854775807)i                 ',
       'openmsg@f_x(0,9223372036854775807)i_i_i                                         ',
       'openmsgv6@f_x(0,9223372036854775807)i_x(0,9223372036854775807)i_i_i             ',
       'wrmsg@p_i_vx(0,255)i                                                            ',
       'rdmsg@f_i_vx(0,255)i                                                            ',
+      'rdymsg@f_i_i                                                                    ',
+      'tmomsg@p_i_i                                                                    ',
+      'bufmsg@p_i_i                                                                    ',
+      'shutmsg@p_i                                                                     ',
       'clsmsg@p_i                                                                      ',
       'waitmsg@f_i_i                                                                   ',
       'certmsg@f_i_i_vc                                                                ',

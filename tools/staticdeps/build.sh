@@ -47,8 +47,16 @@ mkdir -p "$WORK"
 # ALSA: version-match the installed runtime so the static library agrees with
 # the system's configuration files in /usr/share/alsa.
 #
-ALSAVER=$(dpkg -l libasound2 2>/dev/null | tail -1 | awk '{print $3}' | cut -d- -f1)
-ALSAVER=${ALSAVER:-1.2.2}
+# pkg-config reports the installed version (libasound2-dev is required for
+# the headers anyway); dpkg is the fallback. The dpkg package name is
+# libasound2t64 from Ubuntu 24.04 on (the 64 bit time_t transition), and a
+# name dpkg does not know reports "<none>", so only a version is accepted.
+ALSAVER=$(pkg-config --modversion alsa 2>/dev/null)
+if [ -z "$ALSAVER" ]; then
+    ALSAVER=$(dpkg -l 'libasound2*' 2>/dev/null | awk '/^ii/ {print $3; exit}' \
+              | cut -d- -f1)
+fi
+case "$ALSAVER" in [0-9]*) ;; *) ALSAVER=1.2.2 ;; esac
 echo "Building static ALSA $ALSAVER..."
 cd "$WORK"
 if [ ! -f "alsa-lib-$ALSAVER.tar.bz2" ]; then
@@ -82,14 +90,16 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=off \
     -Denable-libsndfile=off -Denable-jack=off -Denable-pulseaudio=off \
     -Denable-dbus=off -Denable-ladspa=off -Denable-readline=off \
     -Denable-network=off -Denable-sdl2=off -Denable-oss=off \
-    -Denable-aufile=off -Denable-ipv6=off > /dev/null
+    -Denable-aufile=off -Denable-ipv6=off -Denable-pipewire=off \
+    -Denable-openmp=off -Denable-libinstpatch=off -Denable-systemd=off \
+    -Denable-lash=off > /dev/null
 make -j"$(nproc)" libfluidsynth > /dev/null
 sudo cp src/libfluidsynth.a /usr/local/lib/
 echo "installed /usr/local/lib/libfluidsynth.a"
 
 echo
 echo "Static dependency closure for pc link lines:"
-echo "  sound:   -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre \\"
+echo "  sound:   -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ \\"
 echo "           -Wl,--whole-archive -lasound -Wl,--no-whole-archive -lm -lpthread -ldl"
 echo "           (libasound whole-archive: the device plugins register through"
 echo "            per-member constructors, so every member must link)"

@@ -25,15 +25,19 @@ type
 
 procedure addrnet(view name: string; var addr: lcardinal); external;
 procedure addrnetv6(view name: string; var addrh: lcardinal; var addrl: lcardinal); external;
-function maxmsg(addr: lcardinal): integer; external;
-function maxmsgv6(addrh: lcardinal; addrl: lcardinal): integer; external;
+function maxmsg(addr: lcardinal; secure: integer): integer; external;
+function maxmsgv6(addrh: lcardinal; addrl: lcardinal; secure: integer): integer; external;
 function relymsg(addr: lcardinal): integer; external;
 function relymsgv6(addrh: lcardinal; addrl: lcardinal): integer; external;
 function openmsg(addr: lcardinal; port: integer; secure: integer): integer; external;
 function openmsgv6(addrh: lcardinal; addrl: lcardinal; port: integer; secure: integer): integer; external;
 procedure wrmsg(fn: integer; view msg: bytarr); external;
 function rdmsg(fn: integer; var msg: bytarr): integer; external;
-procedure clsmsg(f: integer); external;
+function rdymsg(fn: integer; usec: integer): integer; external;
+procedure tmomsg(fn: integer; usec: integer); external;
+procedure bufmsg(fn: integer; len: integer); external;
+procedure shutmsg(fn: integer); external;
+procedure clsmsg(fn: integer); external;
 function waitmsg(port: integer; secure: integer): integer; external;
 function certmsg(fn: integer; which: integer; var cert: string): integer; external;
 

@@ -662,7 +662,7 @@ class CGen(Gen):
         out = ['        case %d: { /* %s -- exec with environment list */' % (idx, name),
                '            ami_envrec* ep;']
         if iew:
-            out.append('            int rc;')
+            out.append('            ami_long rc; /* ami_long: the API integer */')
         out.append('            %s' % load)
         out.append('            ep = buildenvlist(getadr(%s));' % el_off)
         if iew:

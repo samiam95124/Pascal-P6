@@ -4,12 +4,18 @@
 #
 # Form:
 # 
-# build [<options for make>] [<options for pc>]
+# build [--cross] [<options for make>] [<options for pc>]
 #
 # Note: if you want to give multiple options for make or pc, surround in quotes
 # like:
 #
 # build "-Bi" "-r -d"
+#
+# The build is for the running host only. --cross also builds the products
+# for the cross hosts (at present the windows host tree: the win64 runtime
+# libraries and the cross compiled toolchain), which needs each cross host's
+# toolchain and libraries (e.g. mingw-w64 with a win64 OpenSSL) installed.
+# On a windows host the windows products are native and always built.
 #
 #
 # Install a built program into bin. bin holds only binaries for the host we
@@ -96,6 +102,18 @@ function compwin {
 
 }
 
+#
+# Build the windows host tree products if cross building was asked for, or if
+# this is a windows host (where they are the native products). cygpath exists
+# only on a windows msys/cygwin host, so it detects windows robustly.
+#
+WINTREE=
+if [ "$1" = "--cross" ]; then
+   WINTREE=1
+   shift
+fi
+if command -v cygpath >/dev/null 2>&1; then WINTREE=1; fi
+
 OPTIONS=$2
 
 #
@@ -152,8 +170,10 @@ echo "**********************************************************************"
 echo ""
 pc libs/source/strings -r
 cp libs/source/strings.o libs
-pc libs/source/strings -windows -r
-cp libs/source/strings.o hosts/windows/x86/bit64/libs
+if [ -n "$WINTREE" ]; then
+   pc libs/source/strings -windows -r
+   cp libs/source/strings.o hosts/windows/x86/bit64/libs
+fi
 pc libs/source/strings -pint -r
 cp libs/source/strings.p6 libs
 
@@ -164,8 +184,10 @@ echo "*******************************************s***************************"
 echo ""
 pc libs/source/parse -r
 cp libs/source/parse.o libs
-pc libs/source/parse -windows -r
-cp libs/source/parse.o hosts/windows/x86/bit64/libs
+if [ -n "$WINTREE" ]; then
+   pc libs/source/parse -windows -r
+   cp libs/source/parse.o hosts/windows/x86/bit64/libs
+fi
 pc libs/source/parse -pint -r
 cp libs/source/parse.p6 libs
 
@@ -398,6 +420,12 @@ echo "**********************************************************************"
 echo ""
 make bin/cmachg
 if [ $? -ne 0 ]; then echo "*** Error: cmachg build failed"; exit 1; fi
+
+#
+# The remainder builds the windows host tree, only on a windows host or when
+# cross building was asked for (--cross).
+#
+if [ -z "$WINTREE" ]; then exit 0; fi
 
 #
 # Windows host runtime libraries: (re)build the win64 psystem/services/etc.

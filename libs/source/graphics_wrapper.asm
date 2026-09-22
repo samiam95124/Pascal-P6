@@ -421,10 +421,10 @@
     .globl  graphics.tabbarclientg$p_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
     .globl  graphics.tabbarg$p_fc_i_i_i_i_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i
     .globl  graphics.tabbarg$p_i_i_i_i_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i
-    .globl  graphics.tabbarsiz$p_fc_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
-    .globl  graphics.tabbarsiz$p_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
-    .globl  graphics.tabbarsizg$p_fc_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
-    .globl  graphics.tabbarsizg$p_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
+    .globl  graphics.tabbarsiz$p_fc_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
+    .globl  graphics.tabbarsiz$p_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
+    .globl  graphics.tabbarsizg$p_fc_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
+    .globl  graphics.tabbarsizg$p_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i
     .globl  graphics.tabsel$p_fc_i_i
     .globl  graphics.tabsel$p_i_i
     .globl  graphics.timer$p_fc_i_i_b
@@ -1714,16 +1714,16 @@ graphics.tabbarg$p_fc_i_i_i_i_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$t
 graphics.tabbarg$p_i_i_i_i_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i:
     jmp     wrapper_tabbarg
 
-graphics.tabbarsiz$p_fc_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i:
+graphics.tabbarsiz$p_fc_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i:
     jmp     wrapper_tabbarsizf
 
-graphics.tabbarsiz$p_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i:
+graphics.tabbarsiz$p_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i:
     jmp     wrapper_tabbarsiz
 
-graphics.tabbarsizg$p_fc_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i:
+graphics.tabbarsizg$p_fc_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i:
     jmp     wrapper_tabbarsizgf
 
-graphics.tabbarsizg$p_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i:
+graphics.tabbarsizg$p_pr$next$0$p2$str$8$pvc$_x$totop$toright$tobottom$toleft$_i_i_i_i_i_i:
     jmp     wrapper_tabbarsizg
 
 graphics.tabsel$p_fc_i_i:

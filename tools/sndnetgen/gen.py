@@ -7,6 +7,15 @@
 # The FILE*-carrying network functions are hand-written in
 # libs/source/network_support.c; they are declared in network.pas here but
 # excluded from wrapper/stub generation (SPECIALS).
+# libs/source/network_wrapper.c is hand maintained (LLP64 types, see its
+# header), so for network only the .pas and the stub are written.
+#
+# The Ami API integer is ami_long (localdefs.h), the machine word: long on
+# LP64 and 32 bit hosts, long long on 64 bit windows. That is the Pascaline
+# integer on every host, so the generated wrappers carry ami_long for every
+# integer and pass it through unconverted. The wrappers do not include
+# support.h (its long remap stays out of the glibc world), so they spell the
+# type out rather than using long.
 import re, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -14,11 +23,13 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 INC  = os.path.join(ROOT, 'amitk', 'include')
 SRC  = os.path.join(ROOT, 'libs', 'source')
 
-# functions not bound at all (plugin registration, raw sequencer access)
-SKIP = {'wrsynth', 'rdsynth', 'excseq'}
-# header-vs-source name corrections (sound.h declares ami_getparamswaveout,
-# sound.c defines ami_getparamwaveout)
-FIXNAME = {'getparamswaveout': 'getparamwaveout'}
+# functions not bound at all (plugin registration, raw sequencer access,
+# the network error handler callback)
+SKIP = {'wrsynth', 'rdsynth', 'excseq', 'neterror'}
+# modules whose wrapper .c is hand maintained and not written here
+HANDWRAP = {'network'}
+# C integer types, all the Pascaline integer
+INTS = ('int', 'ami_long')
 # bound, but the wrapper is hand-written in network_support.c
 SPECIALS = {'opennet', 'opennetv6', 'waitnet', 'certnet',
             'certlistnet', 'certlistmsg', 'certlistfree'}
@@ -30,7 +41,7 @@ def protos(hdr):
         line=line.rstrip()
         if cur:
             cur += ' '+line.strip()
-        elif re.match(r'^(void|int|FILE\*)\s+ami_', line):
+        elif re.match(r'^(void|int|ami_long|ami_ulong|FILE\*)\s+ami_', line):
             cur = line.strip()
         else:
             continue
@@ -40,10 +51,10 @@ def protos(hdr):
     return out
 
 def parse(p):
-    m=re.match(r'^(void|int|FILE\*)\s+ami_([a-z0-9]+)\s*\((.*)\)$', p)
+    m=re.match(r'^(void|int|ami_long|ami_ulong|FILE\*)\s+ami_([a-z0-9]+)\s*\((.*)\)$', p)
     if not m: return None
     ret,name,args=m.group(1),m.group(2),m.group(3).strip()
-    name=FIXNAME.get(name, name)
+    if ret in INTS: ret='int' # any integer return is the Pascaline integer
     params=[] if args in('','void') else [a.strip() for a in args.split(',')]
     pl=[]
     for a in params:
@@ -73,18 +84,18 @@ def classify(name, pl):
     while i < len(pl):
         ct,pn = pl[i]; cn=ct.replace(' ','')
         nxt = pl[i+1] if i+1 < len(pl) else (None,None)
-        if cn=='string' and nxt[0] is not None and nxt[0].replace(' ','')=='int' \
+        if cn=='string' and nxt[0] is not None and nxt[0].replace(' ','') in INTS \
            and nxt[1] in ('len','sl') and i+1 == len(pl)-1:
             groups.append(('outstr', pn)); i+=2; continue
         if cn=='string':
             groups.append(('instr', pn)); i+=1; continue
         if cn in ('byte*','void*'):
             groups.append(('buf', pn, pl[i+1][1])); i+=2; continue
-        if cn in ('unsignedlong*','unsignedlonglong*'):
+        if cn in ('unsignedlong*','unsignedlonglong*','ami_ulong*'):
             groups.append(('outcard', pn,
                            'unsigned long long*' if 'longlong' in cn
                            else 'unsigned long*')); i+=1; continue
-        if cn in ('unsignedlong','unsignedlonglong'):
+        if cn in ('unsignedlong','unsignedlonglong','ami_ulong'):
             groups.append(('card', pn)); i+=1; continue
         if cn in ptypes:
             groups.append(('typed', pn, ptypes[cn])); i+=1; continue
@@ -145,6 +156,14 @@ def gen_module(mod, hdr, title, types, specials_decls):
     pas.append('end.')
     open(os.path.join(SRC, mod+'.pas'),'w').write('\n'.join(pas)+'\n')
 
+    if mod not in HANDWRAP: gen_wrapper(mod, hdr, gen)
+    gen_stub(mod, ps)
+    print('%s: %d functions generated, %d specials, %d consts%s'
+          % (mod, len(gen), len([p for p in ps if p[1] in SPECIALS]), len(cl),
+             ' (wrapper hand maintained)' if mod in HANDWRAP else ''))
+
+def gen_wrapper(mod, hdr, gen):
+
     # ----- wrapper .c -----
     c=[]
     c.append('/* Generated %s wrappers. Do not edit by hand.' % mod)
@@ -157,17 +176,14 @@ def gen_module(mod, hdr, title, types, specials_decls):
     c.append('#include <%s>' % hdr)
     c.append('')
     c.append('extern char* cstrz(char* s, int l); /* support.o: trim pad + terminate */')
-    if mod=='sound':
-        c.append('/* sound.h declares this one with a stray s (getparamswaveout) */')
-        c.append('void ami_getparamwaveout(int p, string name, string value, int len);')
     c.append('')
     for ret,name,pl in gen:
-        cret = 'int' if ret=='int' else 'void'
+        cret = 'ami_long' if ret=='int' else 'void'
         cargs=[]; call=[]; post=[]
         for g in classify(name, pl):
             k=g[0]
             if k in ('scalar','typed'):
-                cargs.append('int %s' % g[1]); call.append(g[1])
+                cargs.append('ami_long %s' % g[1]); call.append(g[1])
             elif k=='card':
                 cargs.append('long %s' % g[1]); call.append(g[1])
             elif k=='outcard':
@@ -187,15 +203,24 @@ def gen_module(mod, hdr, title, types, specials_decls):
                 cargs.append('char* %s' % g[1]); cargs.append('int %sl' % g[1])
                 call.append('(void*)%s' % g[1]); call.append('%sl' % g[1])
         sig=', '.join(cargs) if cargs else 'void'
-        body='    %sami_%s(%s);' % ('return ' if cret=='int' else '',
-                                    name, ', '.join(call))
         c.append('%s wrapper_%s(%s)' % (cret, name, sig))
         c.append('{')
-        c.append(body)
-        c += post
+        if cret!='void' and post:
+            # the out string is padded after the call, so the result is held
+            c.append('    %s r;' % cret)
+            c.append('')
+            c.append('    r = ami_%s(%s);' % (name, ', '.join(call)))
+            c += post
+            c.append('    return r;')
+        else:
+            c.append('    %sami_%s(%s);' % ('return ' if cret!='void' else '',
+                                            name, ', '.join(call)))
+            c += post
         c.append('}')
         c.append('')
     open(os.path.join(SRC, mod+'_wrapper.c'),'w').write('\n'.join(c)+'\n')
+
+def gen_stub(mod, ps):
 
     # ----- stub .pas -----
     s=[]
@@ -245,8 +270,6 @@ def gen_module(mod, hdr, title, types, specials_decls):
         s[-1]=s[-1].rstrip(';')
     s.append('end.')
     open(os.path.join(HERE, mod+'stub.pas'),'w').write('\n'.join(s)+'\n')
-    print('%s: %d functions generated, %d specials, %d consts'
-          % (mod, len(gen), len([p for p in ps if p[1] in SPECIALS]), len(cl)))
 
 gen_module('sound', 'sound.h',
     'Sound Library Interface',

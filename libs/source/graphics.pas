@@ -632,10 +632,10 @@ procedure tabbar(var f: text; x1: integer; y1: integer; x2: integer; y2: integer
 overload procedure tabbar(x1: integer; y1: integer; x2: integer; y2: integer; sp: strptr; tor: tabori; id: integer); external;
 procedure tabbarg(var f: text; x1: integer; y1: integer; x2: integer; y2: integer; sp: strptr; tor: tabori; id: integer); external;
 overload procedure tabbarg(x1: integer; y1: integer; x2: integer; y2: integer; sp: strptr; tor: tabori; id: integer); external;
-procedure tabbarsiz(var f: text; tor: tabori; cw: integer; ch: integer; var w: integer; var h: integer; var ox: integer; var oy: integer); external;
-overload procedure tabbarsiz(tor: tabori; cw: integer; ch: integer; var w: integer; var h: integer; var ox: integer; var oy: integer); external;
-procedure tabbarsizg(var f: text; tor: tabori; cw: integer; ch: integer; var w: integer; var h: integer; var ox: integer; var oy: integer); external;
-overload procedure tabbarsizg(tor: tabori; cw: integer; ch: integer; var w: integer; var h: integer; var ox: integer; var oy: integer); external;
+procedure tabbarsiz(var f: text; sp: strptr; tor: tabori; cw: integer; ch: integer; var w: integer; var h: integer; var ox: integer; var oy: integer); external;
+overload procedure tabbarsiz(sp: strptr; tor: tabori; cw: integer; ch: integer; var w: integer; var h: integer; var ox: integer; var oy: integer); external;
+procedure tabbarsizg(var f: text; sp: strptr; tor: tabori; cw: integer; ch: integer; var w: integer; var h: integer; var ox: integer; var oy: integer); external;
+overload procedure tabbarsizg(sp: strptr; tor: tabori; cw: integer; ch: integer; var w: integer; var h: integer; var ox: integer; var oy: integer); external;
 procedure tabsel(var f: text; id: integer; tn: integer); external;
 overload procedure tabsel(id: integer; tn: integer); external;
 procedure timer(var f: text; i: integer; t: integer; r: boolean); external;

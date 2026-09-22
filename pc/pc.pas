@@ -2392,7 +2392,7 @@ begin { dolink }
             putstr(psstdio); putchr(' ');
             putstr('-lssl -lcrypto -Wl,--whole-archive -lasound');
             putstr(' -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth');
-            putstr(' -lglib-2.0 -lpcre -lpthread -ldl -lm');
+            putstr(' -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ -lpthread -ldl -lm');
             excact(cmdbuf) { execute command buffer action }
 
             end
@@ -2526,8 +2526,11 @@ begin { dolink }
       putstr('-lm -lpthread');
       { The graphics window library renders through X11/FreeType/FontConfig
         (Linux). A fully static link needs their entire transitive closure;
-        the set below is 'pkg-config --static --libs x11 xext freetype2
-        fontconfig' plus -ldl. These must follow the archives that use them. }
+        the set below is 'pkg-config --static --libs x11 xext xtst freetype2
+        fontconfig' plus -ldl. These must follow the archives that use them.
+        The X11 graphics model injects synthetic input through XTest (which
+        brings Xi and Xfixes); newer FreeType decompresses through bzip2 and
+        brotli. }
       if windowed then begin putchr(' ');
          if fwindows then
             { The Windows graphics model renders through GDI and picks files
@@ -2536,9 +2539,11 @@ begin { dolink }
               the joystick calls and the multimedia frame timer. }
             putstr('-lgdi32 -lcomdlg32 -lwinmm')
          else begin
-            putstr('-lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lfontconfig');
+            putstr('-lXtst -lXi -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp');
             putchr(' ');
-            putstr('-luuid -lexpat -lfreetype -lpng16 -lm -lz -ldl')
+            putstr('-lfontconfig -luuid -lexpat -lfreetype -lpng16 -lbz2');
+            putchr(' ');
+            putstr('-lbrotlidec -lbrotlicommon -lm -lz -ldl')
          end end;
       { The Windows terminal model draws its console window through GDI, so it
         needs gdi32 (the linux terminal is self contained), and winmm for the
@@ -2561,11 +2566,14 @@ begin { dolink }
             { The Windows sound model drives the multimedia MIDI/wave API. }
             putstr('-lwinmm')
          else begin
-            putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre');
+            { glib 2.73 and on (Ubuntu 24.04's 2.80) use pcre2, earlier ones
+              pcre; both are named, the unused one costs nothing. fluidsynth
+              2.3 has C++ members, hence the C++ runtime. }
+            putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8');
             putchr(' ');
             putstr('-Wl,--whole-archive -lasound -Wl,--no-whole-archive');
             putchr(' ');
-            putstr('-lm -lpthread -ldl')
+            putstr('-lstdc++ -lm -lpthread -ldl')
          end end;
       { The network library secures connections through OpenSSL. }
       if networked then begin putchr(' ');
