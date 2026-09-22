@@ -4,9 +4,12 @@
 # Configure script for Pascal-p6
 #
 # Sets up the complete Pascal-p6 project: determines the host, architecture
-# and bit length this machine presents, and restores the working bin and libs
-# directories from the matching directory of the hosts tree. The hostinstall
-# make target performs the reverse snapshot.
+# and bit length this machine presents, checks the external tools and
+# libraries the build needs and installs the missing ones (building the
+# static ALSA and fluidsynth archives that no distribution carries), then
+# restores the working bin and libs directories from the matching directory
+# of the hosts tree. The hostinstall make target performs the reverse
+# snapshot.
 #
 ################################################################################
 
@@ -24,6 +27,179 @@ function checkexists {
         echo "*** No $1 was found"
 
     fi
+
+}
+
+#
+# The external tools and libraries the build needs, beyond the base shell
+# utilities. Each entry is:
+#
+#     <check>;<target>;<package>
+#
+# where <check> is one of:
+#
+#     cmd    the target is a program that must be on the path
+#     pkg    the target is a pkg-config module, which is how a library's
+#            development package (its headers and link libraries) announces
+#            itself
+#     hdr    the target is a header file that must be present, for a library
+#            that installs no pkg-config file
+#
+# and <package> is the Debian/Ubuntu package that supplies it.
+#
+# The libraries are the ones the Ami models bind to, and that pc names on its
+# link lines: OpenSSL for network, ALSA and fluidsynth (with glib and pcre)
+# for sound, X11 with XTest for graphics, and FreeType with FontConfig for
+# its fonts. The rest are the static closure of those, because Pascaline
+# links fully static: every transitive library has to be present, not just
+# the top one.
+#
+# Both pcre versions are named: glib 2.73 and on use pcre2, earlier ones
+# pcre, and pc names both because the unused one costs nothing -- but the
+# linker has to find both.
+#
+# The development packages for ALSA and fluidsynth supply the headers only.
+# The distribution carries no static archive for either, so a fully static
+# link also needs tools/staticdeps/build.sh, which builds them.
+#
+DEPS="
+cmd;gcc;build-essential
+cmd;g++;build-essential
+cmd;make;build-essential
+cmd;ar;binutils
+cmd;pkg-config;pkg-config
+cmd;zip;zip
+pkg;openssl;libssl-dev
+pkg;alsa;libasound2-dev
+pkg;fluidsynth;libfluidsynth-dev
+pkg;glib-2.0;libglib2.0-dev
+pkg;libpcre;libpcre3-dev
+pkg;libpcre2-8;libpcre2-dev
+pkg;x11;libx11-dev
+pkg;xext;libxext-dev
+pkg;xtst;libxtst-dev
+pkg;xi;libxi-dev
+pkg;xfixes;libxfixes-dev
+pkg;xcb;libxcb1-dev
+pkg;xau;libxau-dev
+pkg;xdmcp;libxdmcp-dev
+pkg;freetype2;libfreetype-dev
+pkg;fontconfig;libfontconfig1-dev
+pkg;libpng;libpng-dev
+pkg;zlib;zlib1g-dev
+pkg;expat;libexpat1-dev
+pkg;uuid;uuid-dev
+pkg;libbrotlidec;libbrotli-dev
+hdr;/usr/include/bzlib.h;libbz2-dev
+"
+
+#
+# The tools tools/staticdeps/build.sh needs to build the static ALSA and
+# fluidsynth archives: cmake configures fluidsynth, wget fetches both
+# sources, patch applies the ALSA static patch and bzip2 unpacks the ALSA
+# tarball. The compiler and make it also needs are in DEPS above.
+#
+SDEPS="
+cmd;cmake;cmake
+cmd;wget;wget
+cmd;patch;patch
+cmd;bzip2;bzip2
+"
+
+#
+# Find the dependencies of the given class in the given table that are not
+# present, and leave the packages that supply them in "missing". The class
+# is "cmd" for the programs and "lib" for the libraries, which are checked
+# in that order because the library checks run through pkg-config, itself
+# one of the programs.
+#
+function checkdeps {
+
+    local ent kind target package
+
+    missing=
+    for ent in $2 ; do
+
+        kind=${ent%%;*}
+        target=${ent#*;}
+        package=${target##*;}
+        target=${target%%;*}
+
+        case $kind in
+
+            cmd) if [ "$1" != "cmd" ] ; then continue ; fi
+                 if command -v $target >/dev/null ; then continue ; fi ;;
+            pkg) if [ "$1" != "lib" ] ; then continue ; fi
+                 if pkg-config --exists $target 2>/dev/null ; then continue ; fi ;;
+            hdr) if [ "$1" != "lib" ] ; then continue ; fi
+                 if [ -f "$target" ] ; then continue ; fi ;;
+
+        esac
+
+        echo "*** Missing $target, from package $package"
+
+        #
+        # One package can supply several targets (build-essential supplies
+        # gcc, g++ and make), so name it once.
+        #
+        case " $missing " in
+
+            *" $package "*) ;;
+            *)              missing="$missing $package" ;;
+
+        esac
+
+    done
+
+}
+
+#
+# Install the packages left in "missing" by checkdeps. A failed install is
+# most often stale package lists, so that is updated and the install tried
+# once more before giving up.
+#
+function installdeps {
+
+    if [ -z "$missing" ] ; then
+
+        return 0
+
+    fi
+
+    if [ -z "$aptget" ] || [ -n "$noinstall" ] ; then
+
+        echo "Install these with: $sudo apt-get install -y$missing"
+        return 1
+
+    fi
+
+    echo "Installing:$missing"
+    if $sudo apt-get install -y $missing ; then
+
+        return 0
+
+    fi
+
+    echo "Install failed, updating package lists and retrying"
+    $sudo apt-get update && $sudo apt-get install -y $missing
+
+}
+
+#
+# Check that a static archive for the given library is on the linker's
+# search path, by linking a program that names it. This is what the build
+# does: Pascaline links fully static, so a library present only as a shared
+# object does not serve.
+#
+function checkstatic {
+
+    local tmp
+
+    tmp=`mktemp -d`
+    echo 'int main(void) { return 0; }' > $tmp/probe.c
+    gcc -static -o $tmp/probe $tmp/probe.c -l$1 > /dev/null 2>&1
+    rc=$?
+    rm -rf $tmp
 
 }
 
@@ -61,6 +237,44 @@ case `uname -m` in
 esac
 
 #
+# Check user arguments. These are read before anything is checked or
+# installed, so --help and --no-install take effect first.
+#
+for var in "$@"
+do
+
+    if [ $var = "--help" ]
+    then
+
+        echo "Configure host for Pascal-p6"
+        echo
+        echo "--32:         Select 32 bit target"
+        echo "--64:         Select 64 bit target"
+        echo "--no-install: Only report the missing tools, libraries and"
+        echo "              static archives, do not install or build them"
+        echo
+        exit 0
+
+    elif [ $var = "--32" ]
+    then
+
+        bits="32"
+
+    elif [ $var = "--64" ]
+    then
+
+        bits="64"
+
+    elif [ $var = "--no-install" ]
+    then
+
+        noinstall="1"
+
+    fi
+
+done
+
+#
 # Determine if needed programs exist. The only fatal one is grep, because we
 # need that to run this script. The rest will impact the running of various
 # test and build scripts.
@@ -77,7 +291,109 @@ checkexists sed
 checkexists rm
 checkexists cp
 checkexists mv
+checkexists ls
 
+#
+# Check the external tools and libraries, and install what is missing.
+# Installing needs apt-get, so on a host without it the check reports and
+# the install is left to hand. Root installs directly, anyone else through
+# sudo.
+#
+aptget=
+sudo=
+if command -v apt-get >/dev/null ; then
+
+    aptget="1"
+
+fi
+if [ "`id -u`" != "0" ] ; then
+
+    sudo="sudo"
+    if ! command -v sudo >/dev/null ; then
+
+        echo "*** Not root and no sudo: nothing can be installed"
+        noinstall="1"
+
+    fi
+
+fi
+
+checkdeps cmd "$DEPS"
+installdeps
+
+#
+# The library checks ask pkg-config, so they only mean anything once it is
+# there.
+#
+if command -v pkg-config >/dev/null ; then
+
+    checkdeps lib "$DEPS"
+    installdeps
+
+else
+
+    echo "*** No pkg-config: the build libraries cannot be checked"
+
+fi
+
+#
+# The static ALSA and fluidsynth archives the sound model links. No
+# distribution carries these -- libasound2-dev and libfluidsynth-dev install
+# the headers and the shared objects only -- so they are built from source
+# by tools/staticdeps/build.sh, which installs them in /usr/local/lib.
+# Without them the link of cmach, and of any program using the sound module,
+# fails with "cannot find -lasound" or "cannot find -lfluidsynth".
+#
+# The build is from the source of each project and takes some minutes, so it
+# is run only when an archive is actually missing.
+#
+if [ "$host" = "linux" ] && command -v gcc >/dev/null ; then
+
+    staticmiss=
+    checkstatic asound
+    if [[ $rc != 0 ]] ; then
+
+        staticmiss="$staticmiss libasound.a"
+
+    fi
+    checkstatic fluidsynth
+    if [[ $rc != 0 ]] ; then
+
+        staticmiss="$staticmiss libfluidsynth.a"
+
+    fi
+
+    if [ -n "$staticmiss" ] ; then
+
+        echo "*** Missing static archives:$staticmiss"
+
+        if [ -n "$noinstall" ] ; then
+
+            echo "Build these with: tools/staticdeps/build.sh"
+
+        else
+
+            checkdeps cmd "$SDEPS"
+            installdeps
+            echo "Building static ALSA and fluidsynth from source. This takes"
+            echo "some minutes and fetches both sources from the network."
+            ./tools/staticdeps/build.sh
+            if [[ $? != 0 ]] ; then
+
+                echo "*** Unable to build the static archives"
+
+            fi
+
+        fi
+
+    fi
+
+fi
+
+#
+# flip is built from source here rather than installed, since not every
+# distribution carries it. It needs the compiler checked above.
+#
 checkexists flip > /dev/null
 
 if [[ $rc != 0 ]] ; then
@@ -96,38 +412,6 @@ if [[ $rc != 0 ]] ; then
     fi
 
 fi
-checkexists ls
-checkexists zip
-
-#
-# Check user arguments
-#
-for var in "$@"
-do
-
-    if [ $var = "--help" ]
-    then
-
-        echo "Configure host for Pascal-p6"
-        echo
-        echo "--32:        Select 32 bit target"
-        echo "--64:        Select 64 bit target"
-        echo
-        exit 0
-
-    elif [ $var = "--32" ]
-    then
-
-        bits="32"
-
-    elif [ $var = "--64" ]
-    then
-
-        bits="64"
-
-    fi
-
-done
 
 #
 # Restore the working binaries and libraries from the hosts tree
