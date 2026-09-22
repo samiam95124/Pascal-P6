@@ -295,19 +295,32 @@ restoreprog pgen pgen.new
 # aarch64 code. It keeps its own name in bin so it can sit beside the native
 # code generator (the pc instruction file selects it for arm64_sysv targets).
 #
+# All build products go to a scratch build path (-bp), not the source tree,
+# for the same reason the windows cross build does it. source/pgen/independent
+# is shared by both code generators and uses the registers module, whose reg
+# type names that target's registers, so the type digest in every signature it
+# passes differs between them. Built in the source tree, the two targets write
+# the one source/pgen/independent.o in turn, and a later amd64 build (pc
+# without -r reuses an existing object) links the arm64 one and fails with
+# undefined references to registers.wrtreg and its neighbours. The build path
+# is cleared for the build and the executable copied from it.
+#
 echo ""
 echo "**********************************************************************"
 echo "Building source/pgen/arm64/pgen as pgen_arm64..."
 echo "**********************************************************************"
 echo ""
-pc source/pgen/arm64/pgen -r $OPTIONS
+bp="build/arm64/exe"
+rm -rf "$bp"; mkdir -p "$bp"
+pc source/pgen/arm64/pgen -bp="$bp" -r $OPTIONS
 if [ $? -ne 0 ]; then
 
    echo "*** Error: compile failed"
    exit 1
 
 fi
-instprog source/pgen/arm64/pgen bin/pgen_arm64
+instprog "$bp/pgen" bin/pgen_arm64
+rm -rf "$bp"
 compprog source/pint
 #
 # pintt is the same source built with the terminal module flavor first on
