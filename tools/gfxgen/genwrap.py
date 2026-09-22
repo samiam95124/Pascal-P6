@@ -29,6 +29,11 @@ SPECIAL_TYPES = ('ami_pevthan', 'ami_pevthan*', 'ami_evtrec*', 'ami_menuptr',
                  'ami_qfnopts*', 'ami_qfropts*', 'ami_qfteffects*')
 NVARIANT = {'wrtstr'}                    # has an ami_Xn length variant
 NAME_REMAP = {'for':'flor','bor':'blor'} # ami_ short name -> Pascaline wrapper name
+# The Ami API integer is ami_long (localdefs.h), the machine word. The wrappers
+# spell it long: support.h remaps long to long long on windows, where ami_long
+# is long long, so the two are the same type on every host and pass unconverted.
+INTS = ('int', 'long', 'ami_long')
+R9PAD = 'long r9pad'
 
 def emit(ret, name, params):
     """Return (c_text or None). None => special, hand-write."""
@@ -38,7 +43,8 @@ def emit(ret, name, params):
         ct = split_param(p)[0].replace(' ','')
         if ct in SPECIAL_TYPES: return None  # hand-write
 
-    cret = {'void':'void','int':'int','float':'double'}.get(ret,'void')
+    cret = {'void':'void','int':'long','ami_long':'long',
+            'float':'double'}.get(ret,'void')
     # Build wrapper params as (decls, int-register slots) groups plus
     # call-arg list and pre/post statements. The slot weights model the
     # pgen amd64_sysv caller: a Pascaline string passes as a 2-slot
@@ -53,7 +59,7 @@ def emit(ret, name, params):
         ct,pn = split_param(rest[i]); cn=ct.replace(' ','')
         if cn=='char*' and i+1<len(rest):
             nt,nn=split_param(rest[i+1])
-            if nt.replace(' ','')=='int' and nn==pn+'l':  # output string buffer
+            if nt.replace(' ','') in INTS and nn==pn+'l':  # output string buffer
                 groups.append(([f'string {pn}', f'int {nn}'], 2))
                 callargs += [pn, nn]
                 # ami_* returns a null-terminated C string; convert it to a
@@ -69,11 +75,9 @@ def emit(ret, name, params):
             else:
                 callargs.append(f'cstrz({pn}, {pn}l)')     # null-terminate
             i+=1; continue
-        if cn=='int*':                                     # var integer out
+        if cn in ('int*','ami_long*'):                     # var integer out
             groups.append(([f'long* {pn}'], 1))
-            pre.append(f'int t{pn};')
-            callargs.append(f'&t{pn}')
-            post.append(f'*{pn} = t{pn};')
+            callargs.append(pn)
             i+=1; continue
         if cn=='FILE*':                                    # explicit file param
             groups.append(([f'pfile p{pn}'], 1))
@@ -82,20 +86,31 @@ def emit(ret, name, params):
         if cn=='float':                                    # xmm, no int slot
             groups.append(([f'double {pn}'], 0))
             callargs.append(f'(float){pn}'); i+=1; continue
-        # default: scalar (int / enum / winmodset / bool) -> int
-        groups.append(([f'int {pn}'], 1)); callargs.append(pn); i+=1
+        # default: scalar integer -> long; enum / winmodset / bool -> int
+        groups.append(([f'{"long" if cn in INTS else "int"} {pn}'], 1))
+        callargs.append(pn); i+=1
 
     def padded(prefix_slots):
         # lay the groups out for one form; a 2-slot pair starting with
         # exactly one register free gets a pad to burn that register
         ps=[]; c=prefix_slots
         for decls, slots in groups:
-            if slots==2 and c==5: ps.append('long r9pad'); c+=1
+            if slots==2 and c==5: ps.append(R9PAD); c+=1
             ps += decls; c+=slots
         return ps
     pname = NAME_REMAP.get(name, name)
     callee = ('ami_'+name+'n') if name in NVARIANT else ('ami_'+name)
     rkw = 'return ' if cret!='void' else ''
+
+    def plist(ps):
+        # join a parameter list; the r9pad slot is SysV only: on win64 the
+        # whole string pair is stacked and no slot is skipped
+        if R9PAD not in ps: return ', '.join(ps)
+        k = ps.index(R9PAD)
+        return (', '.join(ps[:k]) + ',\n#ifndef _WIN32\n'
+                '    long r9pad, /* SysV only: the string pair straddles slot 6, leaving r9 dead;\n'
+                '                   on win64 the whole pair is stacked and no slot is skipped */\n'
+                '#endif\n    ' + ', '.join(ps[k+1:]))
 
     def body(fileexpr):
         lines=[]
@@ -109,14 +124,14 @@ def emit(ret, name, params):
 
     txt=[]
     if has_file:
-        ps = ', '.join(['pfile pfp']+padded(1))
+        ps = plist(['pfile pfp']+padded(1))
         txt.append(f'{cret} wrapper_{pname}f({ps})\n{{\n{body("f")}\n}}')
         p2 = padded(0)
-        ps2 = ', '.join(p2) if p2 else 'void'
+        ps2 = plist(p2) if p2 else 'void'
         txt.append(f'{cret} wrapper_{pname}({ps2})\n{{\n{body("stdout")}\n}}')
     else:
         p1 = padded(0)
-        ps = ', '.join(p1) if p1 else 'void'
+        ps = plist(p1) if p1 else 'void'
         txt.append(f'{cret} wrapper_{pname}({ps})\n{{\n{body(None)}\n}}')
     return '\n\n'.join(txt)
 
@@ -134,6 +149,7 @@ for line in open(FUNCS):
     out.append(t); out.append('')
 
 open(OUT,'w').write('\n'.join(out)+'\n')
-gen=sum(1 for l in out if l.startswith('void wrapper_') or l.startswith('int wrapper_') or l.startswith('double wrapper_'))
+gen=sum(1 for t in out for l in t.split('\n')
+        if l.startswith(('void wrapper_','long wrapper_','double wrapper_')))
 print(f"generated {gen} wrapper functions -> {OUT}")
 print(f"SPECIAL (hand-write {len(specials)}): {' '.join(sorted(set(specials)))}")

@@ -1535,7 +1535,7 @@ begin
    sp^.str := copy('Left');
    sp^.next := lp;
    lp := sp;
-   tabbarsiz(output, totop, 20, 2, x, y, ox, oy);
+   tabbarsiz(output, lp, totop, 20, 2, x, y, ox, oy);
    tabbar(output, 15, 3, 15+x-1, 3+y-1, lp, totop, 1);
 
    new(lp);
@@ -1549,7 +1549,7 @@ begin
    sp^.str := copy('Top');
    sp^.next := lp;
    lp := sp;
-   tabbarsiz(output, toright, 4, 12, x, y, ox, oy);
+   tabbarsiz(output, lp, toright, 4, 12, x, y, ox, oy);
    tabbar(output, 37, 7, 37+x-1, 7+y-1, lp, toright, 2);
 
    new(lp);
@@ -1563,7 +1563,7 @@ begin
    sp^.str := copy('Left');
    sp^.next := lp;
    lp := sp;
-   tabbarsiz(output, tobottom, 20, 2, x, y, ox, oy);
+   tabbarsiz(output, lp, tobottom, 20, 2, x, y, ox, oy);
    tabbar(output, 15, 19, 15+x-1, 19+y-1, lp, tobottom, 3);
 
    new(lp);
@@ -1577,7 +1577,7 @@ begin
    sp^.str := copy('Top');
    sp^.next := lp;
    lp := sp;
-   tabbarsiz(output, toleft, 4, 12, x, y, ox, oy);
+   tabbarsiz(output, lp, toleft, 4, 12, x, y, ox, oy);
    tabbar(output, 5, 7, 5+x-1, 7+y-1, lp, toleft, 4);
 
    repeat
@@ -1648,7 +1648,7 @@ begin
    sp^.str := copy('Left');
    sp^.next := lp;
    lp := sp;
-   tabbarsizg(output, totop, csx, csy, xs, ys, cox, coy);
+   tabbarsizg(output, lp, totop, csx, csy, xs, ys, cox, coy);
    tabbarg(output, ox, oy, ox+xs-1, oy+ys-1, lp, totop, 1);
    y := oy+ys-1;
 
@@ -1668,7 +1668,7 @@ begin
    sp^.str := copy('Top');
    sp^.next := lp;
    lp := sp;
-   tabbarsizg(output, toright, csx, csy, xs, ys, cox, coy);
+   tabbarsizg(output, lp, toright, csx, csy, xs, ys, cox, coy);
    tabbarg(output, ox, oy, ox+xs-1, oy+ys-1, lp, toright, 2);
 
    ox := trunc(maxyg(output)*0.3);
@@ -1687,7 +1687,7 @@ begin
    sp^.str := copy('Left');
    sp^.next := lp;
    lp := sp;
-   tabbarsizg(output, tobottom, csx, csy, xs, ys, cox, coy);
+   tabbarsizg(output, lp, tobottom, csx, csy, xs, ys, cox, coy);
    tabbarg(output, ox, oy, ox+xs-1, oy+ys-1, lp, tobottom, 3);
 
    ox := trunc(maxxg(output)*0.05);
@@ -1706,7 +1706,7 @@ begin
    sp^.str := copy('Top');
    sp^.next := lp;
    lp := sp;
-   tabbarsizg(output, toleft, csx, csy, xs, ys, cox, coy);
+   tabbarsizg(output, lp, toleft, csx, csy, xs, ys, cox, coy);
    tabbarg(output, ox, oy, ox+xs-1, oy+ys-1, lp, toleft, 4);
 
    repeat
@@ -1774,7 +1774,7 @@ begin
    sp^.str := copy('Left');
    sp^.next := lp;
    lp := sp;
-   tabbarsiz(output, totop, 30, 12, x, y, ox, oy);
+   tabbarsiz(output, lp, totop, 30, 12, x, y, ox, oy);
    tabbar(output, 20-ox, 7-oy, 20+x-ox-1, 7+y-oy-1, lp, totop, 1);
 
    new(lp);
@@ -1788,7 +1788,7 @@ begin
    sp^.str := copy('Top');
    sp^.next := lp;
    lp := sp;
-   tabbarsiz(output, toright, 30, 12, x, y, ox, oy);
+   tabbarsiz(output, lp, toright, 30, 12, x, y, ox, oy);
    tabbar(output, 20-ox, 7-oy, 20+x-ox-1, 7+y-oy-1, lp, toright, 2);
 
    new(lp);
@@ -1802,7 +1802,7 @@ begin
    sp^.str := copy('Left');
    sp^.next := lp;
    lp := sp;
-   tabbarsiz(output, tobottom, 30, 12, x, y, ox, oy);
+   tabbarsiz(output, lp, tobottom, 30, 12, x, y, ox, oy);
    tabbar(output, 20-ox, 7-oy, 20+x-ox-1, 7+y-oy-1, lp, tobottom, 3);
 
    new(lp);
@@ -1816,7 +1816,7 @@ begin
    sp^.str := copy('Top');
    sp^.next := lp;
    lp := sp;
-   tabbarsiz(output, toleft, 30, 12, x, y, ox, oy);
+   tabbarsiz(output, lp, toleft, 30, 12, x, y, ox, oy);
    tabbar(output, 20-ox, 7-oy, 20+x-ox-1, 7+y-oy-1, lp, toleft, 4);
 
    repeat
@@ -1881,7 +1881,7 @@ begin
    sp^.str := copy('Left');
    sp^.next := lp;
    lp := sp;
-   tabbarsizg(output, totop, 200, 200, x, y, ox, oy);
+   tabbarsizg(output, lp, totop, 200, 200, x, y, ox, oy);
    tabbarg(output, 200-ox, 100-oy, 200+x-ox, 100+y-oy, lp, totop, 1);
 
    new(lp);
@@ -1895,7 +1895,7 @@ begin
    sp^.str := copy('Top');
    sp^.next := lp;
    lp := sp;
-   tabbarsizg(output, toright, 200, 200, x, y, ox, oy);
+   tabbarsizg(output, lp, toright, 200, 200, x, y, ox, oy);
    tabbarg(output, 200-ox, 100-oy, 200+x-ox, 100+y-oy, lp, toright, 2);
 
    new(lp);
@@ -1909,7 +1909,7 @@ begin
    sp^.str := copy('Left');
    sp^.next := lp;
    lp := sp;
-   tabbarsizg(output, tobottom, 200, 200, x, y, ox, oy);
+   tabbarsizg(output, lp, tobottom, 200, 200, x, y, ox, oy);
    tabbarg(output, 200-ox, 100-oy, 200+x-ox, 100+y-oy, lp, tobottom, 3);
 
    new(lp);
@@ -1923,7 +1923,7 @@ begin
    sp^.str := copy('Top');
    sp^.next := lp;
    lp := sp;
-   tabbarsizg(output, toleft, 200, 200, x, y, ox, oy);
+   tabbarsizg(output, lp, toleft, 200, 200, x, y, ox, oy);
    tabbarg(output, 200-ox, 100-oy, 200+x-ox, 100+y-oy, lp, toleft, 4);
 
    repeat

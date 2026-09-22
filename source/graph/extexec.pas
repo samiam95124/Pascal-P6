@@ -5876,11 +5876,35 @@ begin
 
        end;
 
-       421: begin { tabbarsiz@p_fc_x(totop,toright,tobottom,toleft)_i_ }
+       421: begin { tabbarsiz@p_fc_pr(next:0:p2,str:8:pvc)_x(totop,tor }
 
-           ad := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           ad := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
            if fn <= commandfn then errore(FileModeIncorrect);
            a1 := fn;
+           a2 := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize+intsize); { string list }
+           a3 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize);
+           a4 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
+           a5 := getint(params+adrsize+adrsize+adrsize+adrsize);
+           a6 := getadr(params+adrsize+adrsize+adrsize);
+           a7 := 0;
+           a8 := getadr(params+adrsize+adrsize);
+           a9 := 0;
+           a10 := getadr(params+adrsize);
+           a11 := 0;
+           a12 := getadr(params);
+           a13 := 0;
+           graphics.tabbarsiz(filtable[a1], getstrlst(a2), cnvtabori(a3), a4, a5, a7, a9, a11, a13);
+           putint(a6, a7);
+           putint(a8, a9);
+           putint(a10, a11);
+           putint(a12, a13);
+           params := params+adrsize+intsize+intsize+intsize+intsize+adrsize+adrsize+adrsize+adrsize;
+
+       end;
+
+       422: begin { tabbarsiz@p_pr(next:0:p2,str:8:pvc)_x(totop,torigh }
+
+           a1 := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize+intsize); { string list }
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize);
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a4 := getint(params+adrsize+adrsize+adrsize+adrsize);
@@ -5892,42 +5916,44 @@ begin
            a10 := 0;
            a11 := getadr(params);
            a12 := 0;
-           graphics.tabbarsiz(filtable[a1], cnvtabori(a2), a3, a4, a6, a8, a10, a12);
+           graphics.tabbarsiz(getstrlst(a1), cnvtabori(a2), a3, a4, a6, a8, a10, a12);
            putint(a5, a6);
            putint(a7, a8);
            putint(a9, a10);
            putint(a11, a12);
-           params := params+adrsize+intsize+intsize+intsize+adrsize+adrsize+adrsize+adrsize;
+           params := params+intsize+intsize+intsize+intsize+adrsize+adrsize+adrsize+adrsize;
 
        end;
 
-       422: begin { tabbarsiz@p_x(totop,toright,tobottom,toleft)_i_i_i }
+       423: begin { tabbarsizg@p_fc_pr(next:0:p2,str:8:pvc)_x(totop,tor }
 
-           a1 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize);
-           a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
-           a3 := getint(params+adrsize+adrsize+adrsize+adrsize);
-           a4 := getadr(params+adrsize+adrsize+adrsize);
-           a5 := 0;
-           a6 := getadr(params+adrsize+adrsize);
+           ad := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
+           if fn <= commandfn then errore(FileModeIncorrect);
+           a1 := fn;
+           a2 := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize+intsize); { string list }
+           a3 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize);
+           a4 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
+           a5 := getint(params+adrsize+adrsize+adrsize+adrsize);
+           a6 := getadr(params+adrsize+adrsize+adrsize);
            a7 := 0;
-           a8 := getadr(params+adrsize);
+           a8 := getadr(params+adrsize+adrsize);
            a9 := 0;
-           a10 := getadr(params);
+           a10 := getadr(params+adrsize);
            a11 := 0;
-           graphics.tabbarsiz(cnvtabori(a1), a2, a3, a5, a7, a9, a11);
-           putint(a4, a5);
+           a12 := getadr(params);
+           a13 := 0;
+           graphics.tabbarsizg(filtable[a1], getstrlst(a2), cnvtabori(a3), a4, a5, a7, a9, a11, a13);
            putint(a6, a7);
            putint(a8, a9);
            putint(a10, a11);
-           params := params+intsize+intsize+intsize+adrsize+adrsize+adrsize+adrsize;
+           putint(a12, a13);
+           params := params+adrsize+intsize+intsize+intsize+intsize+adrsize+adrsize+adrsize+adrsize;
 
        end;
 
-       423: begin { tabbarsizg@p_fc_x(totop,toright,tobottom,toleft)_i_ }
+       424: begin { tabbarsizg@p_pr(next:0:p2,str:8:pvc)_x(totop,torigh }
 
-           ad := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize+intsize); valfil(ad); fn := getbyt(ad);
-           if fn <= commandfn then errore(FileModeIncorrect);
-           a1 := fn;
+           a1 := getadr(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize+intsize); { string list }
            a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize);
            a3 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
            a4 := getint(params+adrsize+adrsize+adrsize+adrsize);
@@ -5939,34 +5965,12 @@ begin
            a10 := 0;
            a11 := getadr(params);
            a12 := 0;
-           graphics.tabbarsizg(filtable[a1], cnvtabori(a2), a3, a4, a6, a8, a10, a12);
+           graphics.tabbarsizg(getstrlst(a1), cnvtabori(a2), a3, a4, a6, a8, a10, a12);
            putint(a5, a6);
            putint(a7, a8);
            putint(a9, a10);
            putint(a11, a12);
-           params := params+adrsize+intsize+intsize+intsize+adrsize+adrsize+adrsize+adrsize;
-
-       end;
-
-       424: begin { tabbarsizg@p_x(totop,toright,tobottom,toleft)_i_i_i }
-
-           a1 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize+intsize);
-           a2 := getint(params+adrsize+adrsize+adrsize+adrsize+intsize);
-           a3 := getint(params+adrsize+adrsize+adrsize+adrsize);
-           a4 := getadr(params+adrsize+adrsize+adrsize);
-           a5 := 0;
-           a6 := getadr(params+adrsize+adrsize);
-           a7 := 0;
-           a8 := getadr(params+adrsize);
-           a9 := 0;
-           a10 := getadr(params);
-           a11 := 0;
-           graphics.tabbarsizg(cnvtabori(a1), a2, a3, a5, a7, a9, a11);
-           putint(a4, a5);
-           putint(a6, a7);
-           putint(a8, a9);
-           putint(a10, a11);
-           params := params+intsize+intsize+intsize+adrsize+adrsize+adrsize+adrsize;
+           params := params+intsize+intsize+intsize+intsize+adrsize+adrsize+adrsize+adrsize;
 
        end;
 
@@ -6288,9 +6292,11 @@ end;
 procedure execterminal(routine: integer; var params: integer);
 
 var a1, a2, a3, a4, rv: integer;
+    r1: real;
     s: str;
     ad, ad2:  address;
     fn:       fileno;
+    st:       settype;
     er:       graphics.evtrec;
 
 begin

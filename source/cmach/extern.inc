@@ -76,14 +76,17 @@ static void putabyte(address sa, byte* buf, long l)
 }
 
 /* load a pstring parameter into a zero-terminated buffer. A pstring parameter
-   slot is the inline [length][base] descriptor extlink's getpstr reads (length
-   at +0, base address at +INTSIZE) -- distinct from a pstring field inside a
-   record, which points at a [length][chars] heap block. */
+   slot holds a pointer to a heap string container laid out as [length][chars]
+   (see mkpstr); dereference the pointer rather than reading an inline descriptor.
+   Reading the slot as an inline [length][base] pair overran the one-word slot
+   into undefined memory. */
 static void getpstr(address sa, char* s)
 {
-    address ad; long l, i;
-    l = getadr(sa);            /* length */
-    ad = getadr(sa+INTSIZE);   /* base address of chars */
+    address p, ad; long l, i;
+    p = getadr(sa);            /* the pstring pointer */
+    if (p == NILVAL) { s[0] = 0; return; }
+    l = getint(p);             /* length at the start of the container */
+    ad = p+INTSIZE;            /* chars follow the length */
     if (l > STRMAX-1) l = STRMAX-1;
     while (l > 0 && getchr(ad+l-1) == ' ') l--; /* trim trailing pad (cstrz), as
                                                    the wrappers do for pstring view
@@ -296,7 +299,7 @@ static void freecertlist(address ad)
     }
 }
 
-int NumExternal(void) { return 744; }
+int NumExternal(void) { return 748; }
 
 void ExecuteExternal(int routine, address* params)
 {
@@ -552,7 +555,7 @@ void ExecuteExternal(int routine, address* params)
         } break;
         case 36: { /* execew -- exec with environment list */
             ami_envrec* ep;
-            int rc;
+            ami_long rc; /* ami_long: the API integer */
             getstr((*params)+ADRSIZE*2, s);
             ep = buildenvlist(getadr((*params)+ADRSIZE));
             ami_execew(s, ep, &rc);
@@ -562,7 +565,7 @@ void ExecuteExternal(int routine, address* params)
         } break;
         case 37: { /* execew -- exec with environment list */
             ami_envrec* ep;
-            int rc;
+            ami_long rc; /* ami_long: the API integer */
             getpstr((*params)+ADRSIZE*2, s);
             ep = buildenvlist(getadr((*params)+ADRSIZE));
             ami_execew(s, ep, &rc);
@@ -1505,17 +1508,19 @@ void ExecuteExternal(int routine, address* params)
             putint(a3, a4);
             *params += (PTRSIZE+INTSIZE)+ADRSIZE+ADRSIZE;
         } break;
-        case 727: { /* maxmsg@f_x(0,9223372036854775807)i */
-            a1 = getint((*params));
-            rv = ami_maxmsg(a1);
-            *params += INTSIZE;
+        case 727: { /* maxmsg@f_x(0,9223372036854775807)i_i */
+            a1 = getint((*params)+INTSIZE);
+            a2 = getint((*params));
+            rv = ami_maxmsg(a1, a2);
+            *params += INTSIZE+INTSIZE;
             putint(*params, rv);
         } break;
         case 728: { /* maxmsgv6@f_x(0,9223372036854775807)i_x(0,9223 */
-            a1 = getint((*params)+INTSIZE);
-            a2 = getint((*params));
-            rv = ami_maxmsgv6(a1, a2);
-            *params += INTSIZE+INTSIZE;
+            a1 = getint((*params)+INTSIZE+INTSIZE);
+            a2 = getint((*params)+INTSIZE);
+            a3 = getint((*params));
+            rv = ami_maxmsgv6(a1, a2, a3);
+            *params += INTSIZE+INTSIZE+INTSIZE;
             putint(*params, rv);
         } break;
         case 729: { /* relymsg@f_x(0,9223372036854775807)i */
@@ -1564,19 +1569,43 @@ void ExecuteExternal(int routine, address* params)
             *params += INTSIZE+(PTRSIZE+INTSIZE);
             putint(*params, rv);
         } break;
-        case 735: { /* clsmsg@p_i */
+        case 735: { /* rdymsg@f_i_i */
+            a1 = getint((*params)+INTSIZE);
+            a2 = getint((*params));
+            rv = ami_rdymsg(a1, a2);
+            *params += INTSIZE+INTSIZE;
+            putint(*params, rv);
+        } break;
+        case 736: { /* tmomsg@p_i_i */
+            a1 = getint((*params)+INTSIZE);
+            a2 = getint((*params));
+            ami_tmomsg(a1, a2);
+            *params += INTSIZE+INTSIZE;
+        } break;
+        case 737: { /* bufmsg@p_i_i */
+            a1 = getint((*params)+INTSIZE);
+            a2 = getint((*params));
+            ami_bufmsg(a1, a2);
+            *params += INTSIZE+INTSIZE;
+        } break;
+        case 738: { /* shutmsg@p_i */
+            a1 = getint((*params));
+            ami_shutmsg(a1);
+            *params += INTSIZE;
+        } break;
+        case 739: { /* clsmsg@p_i */
             a1 = getint((*params));
             ami_clsmsg(a1);
             *params += INTSIZE;
         } break;
-        case 736: { /* waitmsg@f_i_i */
+        case 740: { /* waitmsg@f_i_i */
             a1 = getint((*params)+INTSIZE);
             a2 = getint((*params));
             rv = ami_waitmsg(a1, a2);
             *params += INTSIZE+INTSIZE;
             putint(*params, rv);
         } break;
-        case 737: { /* certmsg@f_i_i_vc */
+        case 741: { /* certmsg@f_i_i_vc */
             a1 = getint((*params)+(PTRSIZE+INTSIZE)+INTSIZE);
             a2 = getint((*params)+(PTRSIZE+INTSIZE));
             a3 = (*params); /* var string descriptor */
@@ -1586,7 +1615,7 @@ void ExecuteExternal(int routine, address* params)
             *params += INTSIZE+INTSIZE+(PTRSIZE+INTSIZE);
             putint(*params, rv);
         } break;
-        case 738: { /* opennet@p_fc_fc_x(0,9223372036854775807)i_i_ */
+        case 742: { /* opennet@p_fc_fc_x(0,9223372036854775807)i_i_ */
             a1 = getadr((*params)+INTSIZE+INTSIZE+INTSIZE+ADRSIZE); /* file var address */
             a2 = getadr((*params)+INTSIZE+INTSIZE+INTSIZE); /* file var address */
             a3 = getint((*params)+INTSIZE+INTSIZE);
@@ -1595,7 +1624,7 @@ void ExecuteExternal(int routine, address* params)
             wrapper_opennet((unsigned char*)(store+a1), (unsigned char*)(store+a2), a3, a4, a5);
             *params += ADRSIZE+ADRSIZE+INTSIZE+INTSIZE+INTSIZE;
         } break;
-        case 739: { /* opennetv6@p_fc_fc_x(0,9223372036854775807)i_x( */
+        case 743: { /* opennetv6@p_fc_fc_x(0,9223372036854775807)i_x( */
             a1 = getadr((*params)+INTSIZE+INTSIZE+INTSIZE+INTSIZE+ADRSIZE); /* file var address */
             a2 = getadr((*params)+INTSIZE+INTSIZE+INTSIZE+INTSIZE); /* file var address */
             a3 = getint((*params)+INTSIZE+INTSIZE+INTSIZE);
@@ -1605,7 +1634,7 @@ void ExecuteExternal(int routine, address* params)
             wrapper_opennetv6((unsigned char*)(store+a1), (unsigned char*)(store+a2), a3, a4, a5, a6);
             *params += ADRSIZE+ADRSIZE+INTSIZE+INTSIZE+INTSIZE+INTSIZE;
         } break;
-        case 740: { /* waitnet@p_fc_fc_i_i */
+        case 744: { /* waitnet@p_fc_fc_i_i */
             a1 = getadr((*params)+INTSIZE+INTSIZE+ADRSIZE); /* file var address */
             a2 = getadr((*params)+INTSIZE+INTSIZE); /* file var address */
             a3 = getint((*params)+INTSIZE);
@@ -1613,7 +1642,7 @@ void ExecuteExternal(int routine, address* params)
             wrapper_waitnet((unsigned char*)(store+a1), (unsigned char*)(store+a2), a3, a4);
             *params += ADRSIZE+ADRSIZE+INTSIZE+INTSIZE;
         } break;
-        case 741: { /* certnet@f_fc_i_vc */
+        case 745: { /* certnet@f_fc_i_vc */
             ad = getadr((*params)+(PTRSIZE+INTSIZE)+INTSIZE); valfil(ad); fn = getbyt(ad);
             if (fn <= COMMANDFN) errore(FILEMODEINCORRECT);
             a1 = fn;
@@ -1625,7 +1654,7 @@ void ExecuteExternal(int routine, address* params)
             *params += ADRSIZE+INTSIZE+(PTRSIZE+INTSIZE);
             putint(*params, rv);
         } break;
-        case 742: { /* certlistnet -- TLS net cert list */
+        case 746: { /* certlistnet -- TLS net cert list */
             ami_certptr cp;
             ad = getadr((*params)+ADRSIZE+INTSIZE); valfil(ad); fn = getbyt(ad);
             if (fn <= COMMANDFN) errore(FILEMODEINCORRECT);
@@ -1637,7 +1666,7 @@ void ExecuteExternal(int routine, address* params)
             putadr(ad2, putcertlist(cp));
             *params += ADRSIZE+INTSIZE+ADRSIZE;
         } break;
-        case 743: { /* certlistmsg -- TLS msg cert list */
+        case 747: { /* certlistmsg -- TLS msg cert list */
             ami_certptr cp;
             a1 = getint((*params)+ADRSIZE+INTSIZE); /* connection */
             a2 = getint((*params)+ADRSIZE);         /* which */
@@ -1647,7 +1676,7 @@ void ExecuteExternal(int routine, address* params)
             putadr(ad2, putcertlist(cp));
             *params += ADRSIZE+INTSIZE+INTSIZE;
         } break;
-        case 744: { /* certlistfree -- free a VM cert list */
+        case 748: { /* certlistfree -- free a VM cert list */
             ad2 = getadr(*params);  /* var list cell */
             freecertlist(getadr(ad2));
             putadr(ad2, NILVAL);

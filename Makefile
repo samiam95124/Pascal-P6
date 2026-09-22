@@ -469,12 +469,18 @@ source/graph/win64/graphics.a: $(LIBS)/win64/graphics.a
 #
 # Gnome widgets for win64, the portable widget set drawn with the graphics API.
 # Same role as the native gnome_widgets.o: pc links it as an explicit object in
-# windowed programs.
+# windowed programs, with widget_base partially linked in as there.
 #
-$(LIBS)/win64/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
+$(LIBS)/win64/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c \
+	$(PASCALP6)/amitk/portable/widget_base.c
+	mkdir -p $(BUILD)/win64
 	mkdir -p $(LIBS)/win64
 	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
-		-o $(LIBS)/win64/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+		-o $(BUILD)/win64/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+	$(WINCC) $(WINCFLAGS) $(WINGRAPHCPP) \
+		-o $(BUILD)/win64/widget_base.o -c $(PASCALP6)/amitk/portable/widget_base.c
+	$(WINCC) -r -nostdlib -o $(LIBS)/win64/gnome_widgets.o \
+		$(BUILD)/win64/gnome_widgets.o $(BUILD)/win64/widget_base.o
 	mkdir -p $(WINCELL)/libs
 	cp $(LIBS)/win64/gnome_widgets.o $(WINCELL)/libs
 endif
@@ -782,13 +788,15 @@ endif
 # the same way as terminal.a but with graphics.c and its font dependencies.
 # graphics.c renders through X11/FreeType/FontConfig, so it is compiled with
 # those include paths and programs that use graphics.a must link
-# -lX11 -lfreetype -lfontconfig (in addition to the usual -lm -lpthread).
+# -lXtst -lX11 -lfreetype -lfontconfig (in addition to the usual -lm -lpthread).
+# The X11 backend lives in amitk/linux/x11 and finds the shared linux headers
+# through -I$(AMI).
 #
 GRAPHCFG=$(shell pkg-config --cflags freetype2 fontconfig)
 GRAPHCPP=$(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source \
 	$(GRAPHCFG)
 ifneq ($(AMITK),)
-$(LIBS)/graphics.a: $(AMI)/graphics.c \
+$(LIBS)/graphics.a: $(AMI)/x11/graphics.c \
 	$(LIBS)/source/graphics_wrapper.asm \
 	$(LIBS)/source/graphics_wrapper.c \
 	$(LIBS)/source/graphics_support.c \
@@ -804,8 +812,8 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 		-c -x assembler $(LIBS)/source/graphics_wrapper.asm
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(BUILD)/libs/graphics_wrapper.o -c $(LIBS)/source/graphics_wrapper.c
-	$(CC) $(CFLAGS) $(GRAPHCPP) \
-		-o $(BUILD)/libs/graphics.o -c $(AMI)/graphics.c
+	$(CC) $(CFLAGS) $(GRAPHCPP) -I$(AMI) \
+		-o $(BUILD)/libs/graphics.o -c $(AMI)/x11/graphics.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(BUILD)/libs/graph_services.o -c $(AMI)/services.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
@@ -832,8 +840,8 @@ $(LIBS)/graphics.a: $(AMI)/graphics.c \
 #
 source/graph/graphics.a: $(LIBS)/graphics.a
 	mkdir -p source/graph
-	$(CC) $(CFLAGS) $(GRAPHCPP) -DNOSTDWIN \
-		-o $(BUILD)/libs/graphics_blonde.o -c $(AMI)/graphics.c
+	$(CC) $(CFLAGS) $(GRAPHCPP) -I$(AMI) -DNOSTDWIN \
+		-o $(BUILD)/libs/graphics_blonde.o -c $(AMI)/x11/graphics.c
 	rm -f source/graph/graphics.a
 	ar rc source/graph/graphics.a $(BUILD)/libs/graphics_wrapper_asm.o \
 		$(BUILD)/libs/graphics_wrapper.o $(BUILD)/libs/graphics_support.o \
@@ -848,9 +856,19 @@ source/graph/graphics.a: $(LIBS)/graphics.a
 # pc links it as an explicit object in windowed programs. Built with the same
 # flags as graphics.o (STDIO_BYPASS: it prints to Ami-stdio FILEs).
 #
-$(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c
+# widget_base, the common support under the widget packages, is partially
+# linked into the same object. pc places gnome_widgets.o after graphics.a on
+# the link line, so an archive member it needed would already be passed over.
+#
+$(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c \
+	$(PASCALP6)/amitk/portable/widget_base.c
+	mkdir -p $(BUILD)/libs
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
-		-o $(LIBS)/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+		-o $(BUILD)/libs/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+	$(CC) $(CFLAGS) $(GRAPHCPP) \
+		-o $(BUILD)/libs/widget_base.o -c $(PASCALP6)/amitk/portable/widget_base.c
+	$(CC) -r -nostdlib -o $(LIBS)/gnome_widgets.o \
+		$(BUILD)/libs/gnome_widgets.o $(BUILD)/libs/widget_base.o
 	mkdir -p $(HOSTCELL)/libs
 	cp $(LIBS)/gnome_widgets.o $(HOSTCELL)/libs
 endif
@@ -975,7 +993,7 @@ CMACHSYNTH=-Wl,-u,getparamfluid -Wl,-u,getparamdump
 # out of the link and lose its registration -> "_snd_rawmidi_virtual_open is not
 # defined inside [builtin]" at runtime.
 CMACHEXTLIBS=$(CMACHSYNTH) $(LIBS)/services.a $(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
-	-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpthread -ldl -lm
+	-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ -lpthread -ldl -lm
 
 cmach: bin/cmach
 bin/cmach: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc \
@@ -1065,7 +1083,7 @@ bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -DTERMINAL -o $(BUILD)/cmacht64le \
 		$(SOURCE)/cmach/cmach.c $(CMACHSYNTH) \
 		$(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/sound.a $(LIBS)/network.a \
-		$(PSYSTEM_STDIO) -lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpthread -ldl -lm
+		$(PSYSTEM_STDIO) -lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ -lpthread -ldl -lm
 	cp $(BUILD)/cmacht64le $(PASCALP6)/bin/cmacht
 	mkdir -p $(HOSTCELL)/bin
 	cp $(BUILD)/cmacht64le $(HOSTCELL)/bin/cmacht
@@ -1109,9 +1127,9 @@ bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 		-Wl,--start-group \
 		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/gnome_widgets.o \
 		$(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
-		-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpthread -ldl -lm \
-		-lfontconfig -lfreetype -lXext -lX11 -lpng -lz -lbz2 \
-		-lexpat -luuid -lxcb -lXau -lXdmcp \
+		-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ -lpthread -ldl -lm \
+		-lfontconfig -lfreetype -lXtst -lXi -lXfixes -lXext -lX11 -lpng -lz -lbz2 \
+		-lbrotlidec -lbrotlicommon -lexpat -luuid -lxcb -lXau -lXdmcp \
 		-Wl,--end-group
 	cp $(BUILD)/cmachg64le $(PASCALP6)/bin/cmachg
 	mkdir -p $(HOSTCELL)/bin

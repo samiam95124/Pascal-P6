@@ -145,7 +145,11 @@ end;
 procedure execsound(routine: integer; var params: integer);
 
 var a1, a2, a3, a4, a5, rv: integer;
+    r1: real;
     s, s2: str;
+    ad, ad2:  address;
+    fn:       fileno;
+    st:       settype;
     bp:       bytconp;
 
 begin
@@ -982,9 +986,11 @@ end;
 procedure execnetwork(routine: integer; var params: integer);
 
 var a1, a2, a3, a4, a5, a6, rv: integer;
+    r1: real;
     s: str;
     ad, ad2:  address;
     fn:       fileno;
+    st:       settype;
     bp:       bytconp;
     cp:       network.certptr;
     lcardinal1, lcardinal2: lcardinal;
@@ -1018,21 +1024,23 @@ begin
 
        end;
 
-       3: begin { maxmsg@f_x(0,9223372036854775807)i }
+       3: begin { maxmsg@f_x(0,9223372036854775807)i_i }
 
-           a1 := getint(params);
-           rv := ord(network.maxmsg(a1));
-           params := params+intsize;
+           a1 := getint(params+intsize);
+           a2 := getint(params);
+           rv := ord(network.maxmsg(a1, a2));
+           params := params+intsize+intsize;
            putint(params, rv);
 
        end;
 
        4: begin { maxmsgv6@f_x(0,9223372036854775807)i_x(0,92233720 }
 
-           a1 := getint(params+intsize);
-           a2 := getint(params);
-           rv := ord(network.maxmsgv6(a1, a2));
-           params := params+intsize+intsize;
+           a1 := getint(params+intsize+intsize);
+           a2 := getint(params+intsize);
+           a3 := getint(params);
+           rv := ord(network.maxmsgv6(a1, a2, a3));
+           params := params+intsize+intsize+intsize;
            putint(params, rv);
 
        end;
@@ -1100,7 +1108,43 @@ begin
 
        end;
 
-       11: begin { clsmsg@p_i }
+       11: begin { rdymsg@f_i_i }
+
+           a1 := getint(params+intsize);
+           a2 := getint(params);
+           rv := ord(network.rdymsg(a1, a2));
+           params := params+intsize+intsize;
+           putint(params, rv);
+
+       end;
+
+       12: begin { tmomsg@p_i_i }
+
+           a1 := getint(params+intsize);
+           a2 := getint(params);
+           network.tmomsg(a1, a2);
+           params := params+intsize+intsize;
+
+       end;
+
+       13: begin { bufmsg@p_i_i }
+
+           a1 := getint(params+intsize);
+           a2 := getint(params);
+           network.bufmsg(a1, a2);
+           params := params+intsize+intsize;
+
+       end;
+
+       14: begin { shutmsg@p_i }
+
+           a1 := getint(params);
+           network.shutmsg(a1);
+           params := params+intsize;
+
+       end;
+
+       15: begin { clsmsg@p_i }
 
            a1 := getint(params);
            network.clsmsg(a1);
@@ -1108,7 +1152,7 @@ begin
 
        end;
 
-       12: begin { waitmsg@f_i_i }
+       16: begin { waitmsg@f_i_i }
 
            a1 := getint(params+intsize);
            a2 := getint(params);
@@ -1118,7 +1162,7 @@ begin
 
        end;
 
-       13: begin { certmsg@f_i_i_vc }
+       17: begin { certmsg@f_i_i_vc }
 
            a1 := getint(params+strparsiz+intsize);
            a2 := getint(params+strparsiz);
@@ -1131,7 +1175,7 @@ begin
 
        end;
 
-       14: begin { opennet@p_fc_fc_x(0,9223372036854775807)i_i_i }
+       18: begin { opennet@p_fc_fc_x(0,9223372036854775807)i_i_i }
 
            ad := getadr(params+intsize+intsize+intsize+adrsize); valfil(ad); fn := getbyt(ad);
            if fn <= commandfn then errore(FileModeIncorrect);
@@ -1150,7 +1194,7 @@ begin
 
        end;
 
-       15: begin { opennetv6@p_fc_fc_x(0,9223372036854775807)i_x(0,92 }
+       19: begin { opennetv6@p_fc_fc_x(0,9223372036854775807)i_x(0,92 }
 
            ad := getadr(params+intsize+intsize+intsize+intsize+adrsize); valfil(ad); fn := getbyt(ad);
            if fn <= commandfn then errore(FileModeIncorrect);
@@ -1170,7 +1214,7 @@ begin
 
        end;
 
-       16: begin { waitnet@p_fc_fc_i_i }
+       20: begin { waitnet@p_fc_fc_i_i }
 
            ad := getadr(params+intsize+intsize+adrsize); valfil(ad); fn := getbyt(ad);
            if fn <= commandfn then errore(FileModeIncorrect);
@@ -1188,7 +1232,7 @@ begin
 
        end;
 
-       17: begin { certnet@f_fc_i_vc }
+       21: begin { certnet@f_fc_i_vc }
 
            ad := getadr(params+strparsiz+intsize); valfil(ad); fn := getbyt(ad);
            if fn <= commandfn then errore(FileModeIncorrect);
@@ -1203,7 +1247,7 @@ begin
 
        end;
 
-       18: begin { certlistnet@p_fc_i_pr }
+       22: begin { certlistnet@p_fc_i_pr }
 
            ad := getadr(params+adrsize+intsize); valfil(ad); fn := getbyt(ad);
            if fn <= commandfn then errore(FileModeIncorrect);
@@ -1217,7 +1261,7 @@ begin
 
        end;
 
-       19: begin { certlistmsg@p_i_i_pr }
+       23: begin { certlistmsg@p_i_i_pr }
 
            a1 := getint(params+adrsize+intsize); { connection }
            a2 := getint(params+adrsize); { which }
@@ -1229,7 +1273,7 @@ begin
 
        end;
 
-       20: begin { certlistfree@p_pr }
+       24: begin { certlistfree@p_pr }
 
            ad2 := getadr(params); { var list cell }
            freecertlist(getadr(ad2));

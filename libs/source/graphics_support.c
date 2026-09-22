@@ -285,23 +285,23 @@ LSTBOX(dropboxg)
 LSTBOX(dropeditbox)
 LSTBOX(dropeditboxg)
 
-/* size queries: strptr + 2 out ints (listbox) */
+/* size queries: strptr + 2 out ints (listbox). The out ints are ami_long,
+   the Pascaline integer (long here, through support.h), and pass straight
+   through. */
 #define LSTSIZ2(NM) \
 void wrapper_##NM##f(pfile pfp, void* sp, long* w, long* h) \
-{ FILE* f=psystem_libcwrfil(pfp); int tw,th; ami_##NM(f,cvtstrlst(sp),&tw,&th); \
-  *w=tw; *h=th; } \
+{ FILE* f=psystem_libcwrfil(pfp); ami_##NM(f,cvtstrlst(sp),w,h); } \
 void wrapper_##NM(void* sp, long* w, long* h) \
-{ int tw,th; ami_##NM(stdout,cvtstrlst(sp),&tw,&th); *w=tw; *h=th; }
+{ ami_##NM(stdout,cvtstrlst(sp),w,h); }
 LSTSIZ2(listboxsiz)
 LSTSIZ2(listboxsizg)
 
 /* size queries: strptr + 4 out ints (drop box closed/open width/height) */
 #define LSTSIZ4(NM) \
 void wrapper_##NM##f(pfile pfp, void* sp, long* cw, long* ch, long* ow, long* oh) \
-{ FILE* f=psystem_libcwrfil(pfp); int a,b,c,d; ami_##NM(f,cvtstrlst(sp),&a,&b,&c,&d); \
-  *cw=a; *ch=b; *ow=c; *oh=d; } \
+{ FILE* f=psystem_libcwrfil(pfp); ami_##NM(f,cvtstrlst(sp),cw,ch,ow,oh); } \
 void wrapper_##NM(void* sp, long* cw, long* ch, long* ow, long* oh) \
-{ int a,b,c,d; ami_##NM(stdout,cvtstrlst(sp),&a,&b,&c,&d); *cw=a;*ch=b;*ow=c;*oh=d; }
+{ ami_##NM(stdout,cvtstrlst(sp),cw,ch,ow,oh); }
 LSTSIZ4(dropboxsiz)
 LSTSIZ4(dropboxsizg)
 LSTSIZ4(dropeditboxsiz)
@@ -315,6 +315,18 @@ void wrapper_##NM(int x1,int y1,int x2,int y2, void* sp, int tor, int id) \
 { ami_##NM(stdout,x1,y1,x2,y2,cvtstrlst(sp),tor,id); }
 TABBAR(tabbar)
 TABBAR(tabbarg)
+
+/* tab bar size: strptr + orientation + client size + 4 out ints. The tab
+   labels size the bar, so it takes the string list as the placing call does */
+#define TABSIZ(NM) \
+void wrapper_##NM##f(pfile pfp, void* sp, int tor, long cw, long ch, \
+                     long* w, long* h, long* ox, long* oy) \
+{ FILE* f=psystem_libcwrfil(pfp); ami_##NM(f,cvtstrlst(sp),tor,cw,ch,w,h,ox,oy); } \
+void wrapper_##NM(void* sp, int tor, long cw, long ch, \
+                  long* w, long* h, long* ox, long* oy) \
+{ ami_##NM(stdout,cvtstrlst(sp),tor,cw,ch,w,h,ox,oy); }
+TABSIZ(tabbarsiz)
+TABSIZ(tabbarsizg)
 
 /********************************************************************************
 
@@ -349,11 +361,11 @@ void wrapper_openwin(pfile infile, pfile outfile, pfile parent, int wid)
     psystem_libcatcfil(outfile, fout, 1);
 }
 
-/* query dialogs: out strings and an option set (int). Require the widget
-   package to actually run; the option set is copied as an int bitmask. */
+/* query dialogs: out strings and an option set. Require the widget
+   package to actually run; the option set is an ami_long bitmask, the
+   Pascaline integer, and passes straight through. */
 void wrapper_queryfind(string s, int sl, long* opt)
 {
-    int topt = (int)*opt;
     char buff[1024];
     int n;
 
@@ -367,16 +379,14 @@ void wrapper_queryfind(string s, int sl, long* opt)
     memcpy(buff, s, n);
     while (n > 0 && buff[n-1] == ' ') n--; /* trim trailing pad */
     buff[n] = 0;
-    ami_queryfind(buff, sizeof(buff), &topt);
+    ami_queryfind(buff, sizeof(buff), opt);
     n = strlen(buff); if (n > sl) n = sl;
     memcpy(s, buff, n);
     while (n < sl) s[n++] = ' '; /* space pad the result */
-    *opt = topt;
 }
 
 void wrapper_queryfindrep(string s, int sl, string r, int rl, long* opt)
 {
-    int topt = (int)*opt;
     char sbuff[1024], rbuff[1024];
     int n, m;
 
@@ -388,29 +398,22 @@ void wrapper_queryfindrep(string s, int sl, string r, int rl, long* opt)
     m = rl < (int)sizeof(rbuff)-1 ? rl : (int)sizeof(rbuff)-1;
     memcpy(rbuff, r, m);
     while (m > 0 && rbuff[m-1] == ' ') m--; rbuff[m] = 0;
-    ami_queryfindrep(sbuff, sizeof(sbuff), rbuff, sizeof(rbuff), &topt);
+    ami_queryfindrep(sbuff, sizeof(sbuff), rbuff, sizeof(rbuff), opt);
     n = strlen(sbuff); if (n > sl) n = sl;
     memcpy(s, sbuff, n); while (n < sl) s[n++] = ' ';
     m = strlen(rbuff); if (m > rl) m = rl;
     memcpy(r, rbuff, m); while (m < rl) r[m++] = ' ';
-    *opt = topt;
 }
 
 void wrapper_queryfontf(pfile pfp, long* fc, long* s, long* fr, long* fg,
                         long* fb, long* br, long* bg, long* bb, long* effect)
 {
     FILE* f = psystem_libcwrfil(pfp);
-    int afc,as,afr,afg,afb,abr,abg,abb,aeff;
-    afc=*fc; as=*s; afr=*fr; afg=*fg; afb=*fb; abr=*br; abg=*bg; abb=*bb; aeff=*effect;
-    ami_queryfont(f, &afc,&as,&afr,&afg,&afb,&abr,&abg,&abb,&aeff);
-    *fc=afc; *s=as; *fr=afr; *fg=afg; *fb=afb; *br=abr; *bg=abg; *bb=abb; *effect=aeff;
+    ami_queryfont(f, fc, s, fr, fg, fb, br, bg, bb, effect);
 }
 
 void wrapper_queryfont(long* fc, long* s, long* fr, long* fg, long* fb,
                        long* br, long* bg, long* bb, long* effect)
 {
-    int afc,as,afr,afg,afb,abr,abg,abb,aeff;
-    afc=*fc; as=*s; afr=*fr; afg=*fg; afb=*fb; abr=*br; abg=*bg; abb=*bb; aeff=*effect;
-    ami_queryfont(stdout, &afc,&as,&afr,&afg,&afb,&abr,&abg,&abb,&aeff);
-    *fc=afc; *s=as; *fr=afr; *fg=afg; *fb=afb; *br=abr; *bg=abg; *bb=abb; *effect=aeff;
+    ami_queryfont(stdout, fc, s, fr, fg, fb, br, bg, bb, effect);
 }

@@ -418,10 +418,10 @@ tabbar@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i
 tabbar@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i
 tabbarg@p_fc_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i
 tabbarg@p_i_i_i_i_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i
-tabbarsiz@p_fc_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i
-tabbarsiz@p_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i
-tabbarsizg@p_fc_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i
-tabbarsizg@p_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i
+tabbarsiz@p_fc_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i
+tabbarsiz@p_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i
+tabbarsizg@p_fc_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i
+tabbarsizg@p_pr(next:0:p2,str:8:pvc)_x(totop,toright,tobottom,toleft)_i_i_i_i_i_i
 tabsel@p_fc_i_i
 tabsel@p_i_i
 timer@p_fc_i_i_b

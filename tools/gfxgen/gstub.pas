@@ -438,10 +438,10 @@ begin
       tabbar(ii, ii, ii, ii, spp, totop, ii);
       tabbarg(output, ii, ii, ii, ii, spp, totop, ii);
       tabbarg(ii, ii, ii, ii, spp, totop, ii);
-      tabbarsiz(output, totop, ii, ii, ii, ii, ii, ii);
-      tabbarsiz(totop, ii, ii, ii, ii, ii, ii);
-      tabbarsizg(output, totop, ii, ii, ii, ii, ii, ii);
-      tabbarsizg(totop, ii, ii, ii, ii, ii, ii);
+      tabbarsiz(output, spp, totop, ii, ii, ii, ii, ii, ii);
+      tabbarsiz(spp, totop, ii, ii, ii, ii, ii, ii);
+      tabbarsizg(output, spp, totop, ii, ii, ii, ii, ii, ii);
+      tabbarsizg(spp, totop, ii, ii, ii, ii, ii, ii);
       tabsel(output, ii, ii);
       tabsel(ii, ii);
       timer(output, ii, ii, bb);
