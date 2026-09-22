@@ -5,25 +5,41 @@ To install Pascal-P6, execute:
 [Linux]
 
 > ./configure
+> . ./setpath
 > make
 
 [Windows]
 
 > configure
+> setpath
 > make
 
-To access binaries in the project, execute:
+setpath puts the project's bin directory on the path and sets PASCALP6, the
+project root the makefile builds its paths from. It has to be sourced (the
+leading ". " on Linux) rather than run, because a program cannot set the
+environment of the shell that called it, and it has to come before make.
 
-[Linux]
+Note that you can copy the path set within the setpath or setpath.bat batch
+file to your startup environment to prevent the need to execute this again.
 
-./setpath
+configure checks the external tools and libraries the build needs and, on a
+Debian or Ubuntu host, installs the missing ones with apt-get. These are the
+libraries the Ami models bind to -- OpenSSL for network, ALSA and fluidsynth
+for sound, X11 with XTest for graphics, FreeType and FontConfig for its
+fonts -- along with the static closure of those, because Pascaline links
+fully static.
 
-[Windows --
+The static ALSA and fluidsynth archives are not carried by any distribution,
+so configure builds them from source with tools/staticdeps/build.sh when they
+are absent. That takes some minutes and fetches both sources from the
+network.
 
-setpath
+To see what is missing without installing or building anything, run:
 
-Note that you can copy the path set within the setpath or setpath.bat batch file
-to your startup environment to prevent the need to execute this again.
+> ./configure --no-install
+
+The packages it names are Debian and Ubuntu names. On another distribution,
+install the equivalents by hand and run configure again.
 
 You can then compile and run single Pascal sources with the command:
 

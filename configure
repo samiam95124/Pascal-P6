@@ -430,4 +430,20 @@ cp $hostcell/bin/* bin 2>/dev/null
 cp $hostcell/libs/* libs 2>/dev/null
 rm -f bin/.gitkeep libs/.gitkeep
 
+#
+# The makefile takes the project root from PASCALP6, and setpath is what
+# sets it, along with putting bin on the path. Sourcing setpath cannot be
+# done from here, since a program cannot set the environment of the shell
+# that called it, so this only warns: with PASCALP6 unset the makefile's
+# paths become /source, /build and so on, and the build fails without
+# naming the cause.
+#
+if [ -z "$PASCALP6" ] ; then
+
+    echo
+    echo "*** PASCALP6 is not set. Run \". ./setpath\" before make"
+    echo
+
+fi
+
 echo "Configure completed!"
