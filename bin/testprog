@@ -191,6 +191,19 @@ if [ ! -f "$cmpfile.cmp" ]; then
 fi
 
 #
+# The compare below runs through dif, and its verdict is the size of the
+# .dif file: an empty file is a pass. A missing dif leaves an empty file
+# through the redirect, which would pass every test without comparing, so
+# it is a hard error here.
+#
+if ! command -v dif > /dev/null; then
+
+    echo "*** Error: dif is not on the path (build utils/dif or run configure)"
+    exit 1
+
+fi
+
+#
 # Run the program
 #
 echo "Running $progfile..."
