@@ -431,6 +431,14 @@ cp $hostcell/libs/* libs 2>/dev/null
 rm -f bin/.gitkeep libs/.gitkeep
 
 #
+# The asset-loading games (chess, conquest, backgammon) find their data in
+# their own program directory, so it goes next to the binaries in bin, as
+# bin/build installs it.
+#
+cp -r graph_games/chess_pieces bin/
+cp graph_games/conquest_map.bmp graph_games/slide.wav graph_games/dice.wav bin/
+
+#
 # The makefile takes the project root from PASCALP6, and setpath is what
 # sets it, along with putting bin on the path. Sourcing setpath cannot be
 # done from here, since a program cannot set the environment of the shell
