@@ -83,6 +83,15 @@ begin
   writeln(prr, '        strb    w10, [x9, #listoff]');
   writeln(prr, '        mov     w10, #commandfn');
   writeln(prr, '        strb    w10, [x9, #commandoff]');
+  if iso7185 then begin
+    { the ISO 7185 mode checks in psystem (field widths) follow the program's
+      compile mode, which reaches psystem only through this store }
+    writeln(prr, '// Set ISO 7185 mode');
+    writeln(prr, '        adrp    x9, psystem_iso7185');
+    writeln(prr, '        add     x9, x9, :lo12:psystem_iso7185');
+    writeln(prr, '        mov     x10, #1');
+    writeln(prr, '        str     x10, [x9]')
+  end;
   writeln(prr, '// Call startup code');
   writeln(prr, '        bl      1f');
   writeln(prr, '// Return 0');
@@ -3435,7 +3444,7 @@ begin { assemble }
       frereg := allreg; popstk(ep);
       assreg(ep, frereg, rgx0, rgnull); dmptrel(ep, 19); genexp(ep);
       writeln(prr, '// generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' add x1, x0, #^0 // set end of variable block', ep^.q-1);
+      wrtins(' add x1, x0, #^0 // set end of variable block', q-1);
       wrtins(' bl psystem_varenter // establish variable reference block');
       deltre(ep);
       botstk
