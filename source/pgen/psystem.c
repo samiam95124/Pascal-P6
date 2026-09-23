@@ -162,14 +162,9 @@ extern void psystem_unwind(const char* modnam, int line, int en);
 
   The defaults are:
   WRDSIZ32       - 32 bit compiler.
-  ISO7185_PASCAL - uses ISO 7185 standard language only.
 */
 #if !defined(WRDSIZ32) && !defined(WRDSIZ64)
 #define WRDSIZ32 1
-#endif
-
-#ifndef ISO7185
-#define ISO7185 FALSE /* iso7185 standard flag */
 #endif
 
 #ifndef DORECYCL
@@ -512,6 +507,8 @@ address psystem_expadr; /* exception address of exception handler starts */
 address psystem_expstk; /* exception address of sp at handlers */
 address psystem_expmrk; /* exception address of mp at handlers */
 long psystem_errret; /* return error for program */
+boolean psystem_iso7185 = FALSE; /* ISO 7185 mode: set by the program preamble
+                                    when it was compiled in standard mode */
 
 /* internal variables */
 static const char*modnam = "psystem"; /* name of this module */
@@ -2041,7 +2038,7 @@ static void writeipf(pasfil* f, long i, long w, long r, long lz)
 
     valfilwm(f);
     fn = *f;
-    if (w < 1 && ISO7185) 
+    if (w < 1 && psystem_iso7185) 
         errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
@@ -2619,7 +2616,7 @@ void psystem_wrs(
     valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) 
+    if (w < 1 && psystem_iso7185) 
         errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (l > labs(w)) l = labs(w); /* limit string to field */
     if (fn <= COMMANDFN) switch (fn) {
@@ -2729,14 +2726,13 @@ boolean psystem_efb(
 
     int fn;
  
+    valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    valfil(f); /* validate file for reading */
+    /* a file that was never reset or rewritten has no end to find */
+    if (filstate[fn] == fsclosed) errore(modnam, __LINE__, FILEMODEINCORRECT);
     if (filstate[fn] == fswrite) return(TRUE);
-    else 
-      if (filstate[fn] == fsread) 
-         return (eoffile(filtable[fn], fn) && !filbuff[fn]);
-      else return(FALSE);
+    else return (eoffile(filtable[fn], fn) && !filbuff[fn]);
 
 }
 
@@ -2756,8 +2752,12 @@ boolean psystem_eln(
 
     int fn;
 
-    valfilrm(f); /* validate file */
+    valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
+
+    /* a file that was never opened is reported as such, ahead of the mode */
+    if (filstate[fn] == fsclosed) errore(modnam, __LINE__, FILENOTOPEN);
+    valfilrm(f); /* validate file for reading */
 
     return (eolnfn(fn));
 
@@ -3025,7 +3025,7 @@ void psystem_wrc(
     valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) 
+    if (w < 1 && psystem_iso7185) 
         errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
@@ -4321,7 +4321,7 @@ void psystem_wrf(
     valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) 
+    if (w < 1 && psystem_iso7185) 
         errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (fr < 1) errore(modnam, __LINE__, INVALIDFRACTIONSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {

@@ -146,6 +146,12 @@ begin
   writeln(prr, '        movb    $errorfn,globals_start+erroroff(%rip)');
   writeln(prr, '        movb    $listfn,globals_start+listoff(%rip)');
   writeln(prr, '        movb    $commandfn,globals_start+commandoff(%rip)');
+  if iso7185 then begin
+    { the ISO 7185 mode checks in psystem (field widths) follow the program's
+      compile mode, which reaches psystem only through this store }
+    writeln(prr, '# Set ISO 7185 mode');
+    writeln(prr, '        movq    $1,psystem_iso7185(%rip)')
+  end;
   writeln(prr, '# Call startup code');
   writeln(prr, '        call    1f');
   writeln(prr, '        popq    %rax');
@@ -3485,7 +3491,7 @@ begin { assemble }
       assreg(ep, frereg, argr(1), rgnull); dmptrel(ep, 19); genexp(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' movq %1,%2 # set start of variable block', argr(1), argr(2));
-      wrtins(' addq $0,%1 # set end of variable block', ep^.q-1, argr(2));
+      wrtins(' addq $0,%1 # set end of variable block', q-1, argr(2));
       wrtcps(' call psystem_varenter # establish variable reference block');
       deltre(ep);
       botstk
