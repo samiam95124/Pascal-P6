@@ -532,13 +532,11 @@ fi
 echo "" >> regress_report.txt
 echo "Total differences: $diftot" >> regress_report.txt
 echo "Fails: $fails"  >> regress_report.txt
-if [ "$diftot" != "0" ]; then
+regfail=0
+if [ "$diftot" != "0" ] || [ "$fails" != "0" ]; then
 
     echo "*** Regression fails" >> regress_report.txt
-
-elif [ "$fails" != "0" ]; then
-
-    echo "*** Regression fails" >> regress_report.txt
+    regfail=1
 
 fi
 date >> regress_report.txt
@@ -546,3 +544,9 @@ echo "Files sha256sum ***************************************" >> regress_report
 chkfiles >> regress_report.txt
 cat regress_report.txt
 echo ""
+
+#
+# The exit status carries the result: 0 when every test compared clean and
+# every program built and ran, 1 otherwise, so scripts can rely on it.
+#
+exit $regfail
