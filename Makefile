@@ -92,7 +92,7 @@ else
 endif
 
 CC=gcc
-CFLAGS=-static -g3 -DWRDSIZ64
+CFLAGS=-static-libgcc -static-libstdc++ -g3 -DWRDSIZ64
 
 #
 # Windows x64 toolchain. On a Windows host the native gcc is used; on any
@@ -124,7 +124,7 @@ else
 ARMCC=aarch64-linux-gnu-gcc
 ARMAR=aarch64-linux-gnu-ar
 endif
-ARMCFLAGS=-static -g3 -DWRDSIZ64
+ARMCFLAGS=-static-libgcc -static-libstdc++ -g3 -DWRDSIZ64
 
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
@@ -993,7 +993,7 @@ CMACHSYNTH=-Wl,-u,getparamfluid -Wl,-u,getparamdump
 # out of the link and lose its registration -> "_snd_rawmidi_virtual_open is not
 # defined inside [builtin]" at runtime.
 CMACHEXTLIBS=$(CMACHSYNTH) $(LIBS)/services.a $(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
-	-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ -lpthread -ldl -lm
+	-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm
 
 cmach: bin/cmach
 bin/cmach: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc \
@@ -1083,7 +1083,7 @@ bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -DTERMINAL -o $(BUILD)/cmacht64le \
 		$(SOURCE)/cmach/cmach.c $(CMACHSYNTH) \
 		$(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/sound.a $(LIBS)/network.a \
-		$(PSYSTEM_STDIO) -lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ -lpthread -ldl -lm
+		$(PSYSTEM_STDIO) -lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm
 	cp $(BUILD)/cmacht64le $(PASCALP6)/bin/cmacht
 	mkdir -p $(HOSTCELL)/bin
 	cp $(BUILD)/cmacht64le $(HOSTCELL)/bin/cmacht
@@ -1127,7 +1127,7 @@ bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 		-Wl,--start-group \
 		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/gnome_widgets.o \
 		$(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
-		-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ -lpthread -ldl -lm \
+		-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm \
 		-lfontconfig -lfreetype -lXtst -lXi -lXfixes -lXext -lX11 -lpng -lz -lbz2 \
 		-lbrotlidec -lbrotlicommon -lexpat -luuid -lxcb -lXau -lXdmcp \
 		-Wl,--end-group

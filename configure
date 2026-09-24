@@ -48,15 +48,15 @@ function checkexists {
 # and <package> is the Debian/Ubuntu package that supplies it.
 #
 # The libraries are the ones the Ami models bind to, and that pc names on its
-# link lines: OpenSSL for network, ALSA and fluidsynth (with glib and pcre)
+# link lines: OpenSSL for network, ALSA and fluidsynth (with glib and pcre2)
 # for sound, X11 with XTest for graphics, and FreeType with FontConfig for
 # its fonts. The rest are the static closure of those, because Pascaline
 # links fully static: every transitive library has to be present, not just
 # the top one.
 #
-# Both pcre versions are named: glib 2.73 and on use pcre2, earlier ones
-# pcre, and pc names both because the unused one costs nothing -- but the
-# linker has to find both.
+# Only pcre2 is named. glib 2.73 and on use pcre2, and the earlier glib of
+# Ubuntu 20.04 links its own pcre when glib is linked as a shared library,
+# so pcre (pcre1, which Ubuntu 26.04 no longer carries) is never needed.
 #
 # The development packages for ALSA and fluidsynth supply the headers only.
 # The distribution carries no static archive for either, so a fully static
@@ -73,7 +73,6 @@ pkg;openssl;libssl-dev
 pkg;alsa;libasound2-dev
 pkg;fluidsynth;libfluidsynth-dev
 pkg;glib-2.0;libglib2.0-dev
-pkg;libpcre;libpcre3-dev
 pkg;libpcre2-8;libpcre2-dev
 pkg;x11;libx11-dev
 pkg;xext;libxext-dev
