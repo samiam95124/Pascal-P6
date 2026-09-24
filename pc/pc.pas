@@ -171,7 +171,7 @@ var
 { generate html documentation }            fhtml:   boolean;
 { print help }                             fhelp:   boolean;
 { no graphical windows mode }              fngwin:  boolean;
-{ link the executable statically }         fstatic: boolean;
+{ link the executable statically }         fstatic, sstatic: boolean;
 { default to terminal mode }               fdeftrm: boolean;
 { default to graphical mode }              fdefgra: boolean;
 { compile for pint (interpreter) }         fpint, spint:   boolean;
@@ -465,7 +465,7 @@ begin
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
-      setflg('static', fstatic); { link static (-static) or dynamic (-nstatic) }
+      setflg('static', fstatic, sstatic); { -static or -nstatic }
       setflg('dt', 'defaultterminal', fdeftrm); { default to terminal mode }
       setflg('dg', 'defaultgraphical', fdefgra); { default to graphical mode }
       { passthrough options for the compiler. Note most of these are the long
@@ -2382,7 +2382,8 @@ begin { dolink }
               (program_code.c, a plain byte array compiled here) and the external
               archives plus their dependency stack. }
             putstr(ccname);
-            putstr(' -static -g3 -o '); putstr(fns); putchr(' ');
+            if fstatic then putstr(' -static -g3 -o ') else putstr(' -g3 -o ');
+            putstr(fns); putchr(' ');
             putstr(fnc); putchr(' ');
             putstr('program_code.c'); putchr(' ');
             putstr('-Wl,-u,getparamfluid -Wl,-u,getparamdump'); putchr(' ');
@@ -2392,7 +2393,7 @@ begin { dolink }
             putstr(psstdio); putchr(' ');
             putstr('-lssl -lcrypto -Wl,--whole-archive -lasound');
             putstr(' -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth');
-            putstr(' -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ -lpthread -ldl -lm');
+            putstr(' -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm');
             excact(cmdbuf) { execute command buffer action }
 
             end
@@ -2553,7 +2554,7 @@ begin { dolink }
       if terminaled and fwindows and not windowed then begin putchr(' ');
          putstr('-lgdi32 -lwinmm') end;
       { The sound library plays through ALSA and synthesizes through
-        fluidsynth (whose closure adds glib and pcre). The static libasound
+        fluidsynth (whose closure adds glib and pcre2). The static libasound
         and libfluidsynth are locally built and installed in /usr/local/lib
         by tools/staticdeps/build.sh (the distribution carries only the
         shared libraries). libasound links whole-archive: its device plugins
@@ -2566,10 +2567,11 @@ begin { dolink }
             { The Windows sound model drives the multimedia MIDI/wave API. }
             putstr('-lwinmm')
          else begin
-            { glib 2.73 and on (Ubuntu 24.04's 2.80) use pcre2, earlier ones
-              pcre; both are named, the unused one costs nothing. fluidsynth
-              2.3 has C++ members, hence the C++ runtime. }
-            putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8');
+            { glib 2.73 and on (Ubuntu 24.04's 2.80) use pcre2; the earlier
+              glib of 20.04 carries its own pcre as a shared library, so
+              pcre (pcre1, gone in 26.04) is never named. fluidsynth 2.3
+              has C++ members, hence the C++ runtime. }
+            putstr('-L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8');
             putchr(' ');
             putstr('-Wl,--whole-archive -lasound -Wl,--no-whole-archive');
             putchr(' ');
@@ -3421,7 +3423,8 @@ begin
    fdoc := false; { generate documentation }
    fhtml := false; { generate html documentation }
    fhelp := false; { print help }
-   fstatic := true; { link static by default (for portability) }
+   fstatic := false; { link dynamic by default (the host sets the real default below) }
+   sstatic := false; { static/dynamic not selected by the user }
    fdeftrm := false; { set no default to terminal mode }
    fdefgra := false; { set no default to graphical mode }
    fpint := false; { set no pint (interpreter) }
@@ -3549,7 +3552,8 @@ begin
       writeln('       -pgen                Compile for pgen mode (executable)');
       writeln('  -ktw -keepterminalwindow  Keep terminal window');
       writeln('  -sc  -symcoff             Generate COFF symbols');
-      writeln('       -static -nstatic     Link static (default) or dynamic');
+      writeln('       -static -nstatic     Link static or dynamic (default: static on');
+      writeln('                            windows, dynamic elsewhere)');
       writeln('  -dt  -defaultterminal     Default to terminal mode');
       writeln('  -dg  -defaultgraphical    Default to graphical mode');
       writeln('  -mp  -modulepath=<path>   Set module search path');
@@ -3609,6 +3613,15 @@ begin
    else if shwindows then hostid := 3
    else if shmac then hostid := 4
    else hostid := psystem_host;
+   { Default link mode, unless the user selected one with -static/-nstatic.
+     Windows links static: the C runtime and OpenSSL are not otherwise on the
+     target, and the static product is portable there. Linux (and the other
+     glibc hosts) link the C library dynamically: a static glibc still loads
+     the host's name service modules (the libnss_ shared objects) at runtime
+     and those must match the glibc version compiled in, so a static product
+     only runs on the release it was built on, whereas a dynamic one built
+     against an older glibc runs on every newer release. }
+   if not sstatic then fstatic := hostid = 3;
    { determine the default calling convention for executable builds, unless
      the user selected one. The target host implies the convention: a windows
      target uses win64; otherwise the convention this pc was built with

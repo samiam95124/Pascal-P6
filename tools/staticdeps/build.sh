@@ -17,7 +17,7 @@
 # fluidsynth plugin only loads SoundFonts (.sf2), which fluidsynth reads
 # itself; libsndfile would only add support for other sample-file formats and
 # brings a large static closure of its own. The remaining fluidsynth closure
-# is glib and pcre, whose static libraries the distribution carries.
+# is glib and pcre2, whose static libraries the distribution carries.
 #
 # The ALSA static patch (alsa-static.patch) makes two changes a static link
 # requires:
@@ -99,7 +99,7 @@ echo "installed /usr/local/lib/libfluidsynth.a"
 
 echo
 echo "Static dependency closure for pc link lines:"
-echo "  sound:   -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre -lpcre2-8 -lstdc++ \\"
+echo "  sound:   -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ \\"
 echo "           -Wl,--whole-archive -lasound -Wl,--no-whole-archive -lm -lpthread -ldl"
 echo "           (libasound whole-archive: the device plugins register through"
 echo "            per-member constructors, so every member must link)"
