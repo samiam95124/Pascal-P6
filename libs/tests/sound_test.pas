@@ -29,7 +29,7 @@ label 99; { terminate }
 const
 
    second = 10000;      { one second in 100 microsecond ticks }
-   i32max = 2147483647; { 32 bit INT_MAX, the parameter scale used by sound }
+   i32max = 2147483647; { 32 bit INT_MAX, modulus of the random number generator }
 
 var
 
@@ -133,7 +133,7 @@ begin
       { Generate a random key }
       key := 60+randn(12)-1;
       { Play a note }
-      noteon(port, 0, 1, key, i32max);
+      noteon(port, 0, 1, key, maxint);
       { Sleep for 1/10 second }
       waittime(second div 20);
       { Stop the note }
@@ -157,7 +157,7 @@ procedure playnote(port: integer; n: note);
 
 begin
 
-   noteon(port, 0, 1, n, i32max); { play middle C }
+   noteon(port, 0, 1, n, maxint); { play middle C }
    waittime(second div 4);
    noteoff(port, 0, 1, n, 0);
    waittime(second div 4)
@@ -176,31 +176,31 @@ procedure playscale(port: integer; t: integer);
 
 begin
 
-   noteon(port, 0, 1, note_c+octave_6, i32max);
+   noteon(port, 0, 1, note_c+octave_6, maxint);
    waittime(t);
    noteoff(port, 0, 1, note_c+octave_6, 0);
    waittime(second div 4);
-   noteon(port, 0, 1, note_d+octave_6, i32max);
+   noteon(port, 0, 1, note_d+octave_6, maxint);
    waittime(t);
    noteoff(port, 0, 1, note_d+octave_6, 0);
    waittime(second div 4);
-   noteon(port, 0, 1, note_e+octave_6, i32max);
+   noteon(port, 0, 1, note_e+octave_6, maxint);
    waittime(t);
    noteoff(port, 0, 1, note_e+octave_6, 0);
    waittime(second div 4);
-   noteon(port, 0, 1, note_f+octave_6, i32max);
+   noteon(port, 0, 1, note_f+octave_6, maxint);
    waittime(t);
    noteoff(port, 0, 1, note_f+octave_6, 0);
    waittime(second div 4);
-   noteon(port, 0, 1, note_g+octave_6, i32max);
+   noteon(port, 0, 1, note_g+octave_6, maxint);
    waittime(t);
    noteoff(port, 0, 1, note_g+octave_6, 0);
    waittime(second div 4);
-   noteon(port, 0, 1, note_a+octave_6, i32max);
+   noteon(port, 0, 1, note_a+octave_6, maxint);
    waittime(t);
    noteoff(port, 0, 1, note_a+octave_6, 0);
    waittime(second div 4);
-   noteon(port, 0, 1, note_b+octave_6, i32max);
+   noteon(port, 0, 1, note_b+octave_6, maxint);
    waittime(t);
    noteoff(port, 0, 1, note_b+octave_6, 0);
    waittime(second div 4)
@@ -247,7 +247,7 @@ begin
    for n := note_c+octave_1 to note_g+octave_11 do begin
 
       write(n:1, ' ');
-      noteon(dport, 0, 1, n, i32max);
+      noteon(dport, 0, 1, n, maxint);
       waittime(second div 10);
       noteoff(dport, 0, 1, n, 0)
 
@@ -263,7 +263,7 @@ begin
 
       write(ins:1, ' ');
       instchange(dport, 0, 1, ins);
-      noteon(dport, 0, 1, note_c+octave_6, i32max);
+      noteon(dport, 0, 1, note_c+octave_6, maxint);
       waittime(second div 10);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 10)
@@ -280,7 +280,7 @@ begin
    for n := note_acoustic_bass_drum to note_open_triangle do begin
 
       write(n:1, ' ');
-      noteon(dport, 0, 10, n, i32max);
+      noteon(dport, 0, 10, n, maxint);
       waittime(second div 10);
       noteoff(dport, 0, 10, n, 0);
       waittime(second div 10)
@@ -305,7 +305,7 @@ begin
    instchange(dport, 0, 1, inst_acoustic_grand);
    for i := 0 to 19 do begin
 
-      noteon(dport, 0, 1, note_c+octave_6, i*(i32max div 20));
+      noteon(dport, 0, 1, note_c+octave_6, i*(maxint div 20));
       waittime(second div 4);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 4)
@@ -356,12 +356,12 @@ begin
    waitret;
    for i := 0 to 10 do begin
 
-      writeln('Attack: ', i*(i32max div 10):1);
-      attack(dport, 0, 1, i*(i32max div 10));
+      writeln('Attack: ', i*(maxint div 10):1);
+      attack(dport, 0, 1, i*(maxint div 10));
       playnote(dport, note_c+octave_6)
 
    end;
-   attack(dport, 0, 1, i32max div 2); { reset normal }
+   attack(dport, 0, 1, maxint div 2); { reset normal }
    writeln('Complete');
    waitret;
 
@@ -370,12 +370,12 @@ begin
    instchange(dport, 0, 1, inst_drawbar_organ);
    for i := 0 to 10 do begin
 
-      writeln('Attack: ', i*(i32max div 10):1);
-      attack(dport, 0, 1, i*(i32max div 10));
+      writeln('Attack: ', i*(maxint div 10):1);
+      attack(dport, 0, 1, i*(maxint div 10));
       playnote(dport, note_c+octave_6)
 
    end;
-   attack(dport, 0, 1, i32max div 2); { reset normal }
+   attack(dport, 0, 1, maxint div 2); { reset normal }
    writeln('Complete');
    waitret;
 
@@ -385,12 +385,12 @@ begin
    instchange(dport, 0, 1, inst_acoustic_grand);
    for i := 0 to 10 do begin
 
-      writeln('Release: ', i*(i32max div 10):1);
-      release(dport, 0, 1, i*(i32max div 10));
+      writeln('Release: ', i*(maxint div 10):1);
+      release(dport, 0, 1, i*(maxint div 10));
       playnote(dport, note_c+octave_6)
 
    end;
-   release(dport, 0, 1, i32max div 2); { reset normal }
+   release(dport, 0, 1, maxint div 2); { reset normal }
    writeln('Complete');
    waitret;
 
@@ -399,12 +399,12 @@ begin
    instchange(dport, 0, 1, inst_drawbar_organ);
    for i := 0 to 10 do begin
 
-      writeln('Release: ', i*(i32max div 10):1);
-      release(dport, 0, 1, i*(i32max div 10));
+      writeln('Release: ', i*(maxint div 10):1);
+      release(dport, 0, 1, i*(maxint div 10));
       playnote(dport, note_c+octave_6)
 
    end;
-   release(dport, 0, 1, i32max div 2); { reset normal }
+   release(dport, 0, 1, maxint div 2); { reset normal }
    writeln('Complete');
    waitret;
 
@@ -413,22 +413,22 @@ begin
    waitret;
    instchange(dport, 0, 1, inst_acoustic_grand);
    legato(dport, 0, 1, 0);
-   noteon(dport, 0, 1, note_c+octave_6, i32max); { play middle C }
+   noteon(dport, 0, 1, note_c+octave_6, maxint); { play middle C }
    waittime(second div 4);
-   noteon(dport, 0, 1, note_d+octave_6, i32max); { play D }
+   noteon(dport, 0, 1, note_d+octave_6, maxint); { play D }
    waittime(second div 4);
    { turn off both }
-   noteoff(dport, 0, 1, note_c+octave_6, i32max);
-   noteoff(dport, 0, 1, note_d+octave_6, i32max);
+   noteoff(dport, 0, 1, note_c+octave_6, maxint);
+   noteoff(dport, 0, 1, note_d+octave_6, maxint);
    { now repeat with legato on }
    legato(dport, 0, 1, 1);
-   noteon(dport, 0, 1, note_c+octave_6, i32max); { play middle C }
+   noteon(dport, 0, 1, note_c+octave_6, maxint); { play middle C }
    waittime(second div 4);
-   noteon(dport, 0, 1, note_d+octave_6, i32max); { play D }
+   noteon(dport, 0, 1, note_d+octave_6, maxint); { play D }
    waittime(second div 4);
    { turn off both }
-   noteoff(dport, 0, 1, note_c+octave_6, i32max);
-   noteoff(dport, 0, 1, note_d+octave_6, i32max);
+   noteoff(dport, 0, 1, note_c+octave_6, maxint);
+   noteoff(dport, 0, 1, note_d+octave_6, maxint);
    legato(dport, 0, 1, 0); { reset normal }
    writeln('Complete');
    waitret;
@@ -437,22 +437,22 @@ begin
    waitret;
    instchange(dport, 0, 1, inst_drawbar_organ);
    legato(dport, 0, 1, 0);
-   noteon(dport, 0, 1, note_c+octave_6, i32max); { play middle C }
+   noteon(dport, 0, 1, note_c+octave_6, maxint); { play middle C }
    waittime(second div 4);
-   noteon(dport, 0, 1, note_d+octave_6, i32max); { play D }
+   noteon(dport, 0, 1, note_d+octave_6, maxint); { play D }
    waittime(second div 4);
    { turn off both }
-   noteoff(dport, 0, 1, note_c+octave_6, i32max);
-   noteoff(dport, 0, 1, note_d+octave_6, i32max);
+   noteoff(dport, 0, 1, note_c+octave_6, maxint);
+   noteoff(dport, 0, 1, note_d+octave_6, maxint);
    { now repeat with legato on }
    legato(dport, 0, 1, 1);
-   noteon(dport, 0, 1, note_c+octave_6, i32max); { play middle C }
+   noteon(dport, 0, 1, note_c+octave_6, maxint); { play middle C }
    waittime(second div 4);
-   noteon(dport, 0, 1, note_d+octave_6, i32max); { play D }
+   noteon(dport, 0, 1, note_d+octave_6, maxint); { play D }
    waittime(second div 4);
    { turn off both }
-   noteoff(dport, 0, 1, note_c+octave_6, i32max);
-   noteoff(dport, 0, 1, note_d+octave_6, i32max);
+   noteoff(dport, 0, 1, note_c+octave_6, maxint);
+   noteoff(dport, 0, 1, note_d+octave_6, maxint);
    legato(dport, 0, 1, 0); { reset normal }
    writeln('Complete');
    waitret;
@@ -464,25 +464,25 @@ begin
    instchange(dport, 0, 1, inst_acoustic_grand);
    for i := 0 to 9 do begin
 
-      writeln('Portamento time: ', i*(i32max div 10):1);
-      porttime(dport, 0, 1, i*(i32max div 10));
+      writeln('Portamento time: ', i*(maxint div 10):1);
+      porttime(dport, 0, 1, i*(maxint div 10));
       portamento(dport, 0, 1, 0);
-      noteon(dport, 0, 1, note_c+octave_6, i32max); { play middle C }
+      noteon(dport, 0, 1, note_c+octave_6, maxint); { play middle C }
       waittime(second div 4);
-      noteon(dport, 0, 1, note_d+octave_6, i32max); { play D }
+      noteon(dport, 0, 1, note_d+octave_6, maxint); { play D }
       waittime(second div 4);
       { turn off both }
-      noteoff(dport, 0, 1, note_c+octave_6, i32max);
-      noteoff(dport, 0, 1, note_d+octave_6, i32max);
+      noteoff(dport, 0, 1, note_c+octave_6, maxint);
+      noteoff(dport, 0, 1, note_d+octave_6, maxint);
       { now repeat with portamento on }
       portamento(dport, 0, 1, 1);
-      noteon(dport, 0, 1, note_c+octave_6, i32max); { play middle C }
+      noteon(dport, 0, 1, note_c+octave_6, maxint); { play middle C }
       waittime(second div 4);
-      noteon(dport, 0, 1, note_d+octave_6, i32max); { play D }
+      noteon(dport, 0, 1, note_d+octave_6, maxint); { play D }
       waittime(second div 4);
       { turn off both }
-      noteoff(dport, 0, 1, note_c+octave_6, i32max);
-      noteoff(dport, 0, 1, note_d+octave_6, i32max)
+      noteoff(dport, 0, 1, note_c+octave_6, maxint);
+      noteoff(dport, 0, 1, note_d+octave_6, maxint)
 
    end;
    portamento(dport, 0, 1, 0); { reset normal }
@@ -494,24 +494,24 @@ begin
    instchange(dport, 0, 1, inst_drawbar_organ);
    for i := 0 to 9 do begin
 
-      writeln('Portamento time: ', i*(i32max div 10):1);
+      writeln('Portamento time: ', i*(maxint div 10):1);
       portamento(dport, 0, 1, 0);
-      noteon(dport, 0, 1, note_c+octave_6, i32max); { play middle C }
+      noteon(dport, 0, 1, note_c+octave_6, maxint); { play middle C }
       waittime(second div 4);
-      noteon(dport, 0, 1, note_d+octave_6, i32max); { play D }
+      noteon(dport, 0, 1, note_d+octave_6, maxint); { play D }
       waittime(second div 4);
       { turn off both }
-      noteoff(dport, 0, 1, note_c+octave_6, i32max);
-      noteoff(dport, 0, 1, note_d+octave_6, i32max);
+      noteoff(dport, 0, 1, note_c+octave_6, maxint);
+      noteoff(dport, 0, 1, note_d+octave_6, maxint);
       { now repeat with portamento on }
       portamento(dport, 0, 1, 1);
-      noteon(dport, 0, 1, note_c+octave_6, i32max); { play middle C }
+      noteon(dport, 0, 1, note_c+octave_6, maxint); { play middle C }
       waittime(second div 4);
-      noteon(dport, 0, 1, note_d+octave_6, i32max); { play D }
+      noteon(dport, 0, 1, note_d+octave_6, maxint); { play D }
       waittime(second div 4);
       { turn off both }
-      noteoff(dport, 0, 1, note_c+octave_6, i32max);
-      noteoff(dport, 0, 1, note_d+octave_6, i32max)
+      noteoff(dport, 0, 1, note_c+octave_6, maxint);
+      noteoff(dport, 0, 1, note_d+octave_6, maxint)
 
    end;
    portamento(dport, 0, 1, 0); { reset normal }
@@ -520,34 +520,34 @@ begin
 
    writeln('Channel volume test. Play note continuously while advancing volume');
    instchange(dport, 0, 1, inst_drawbar_organ);
-   noteon(dport, 0, 1, note_c+octave_6, i32max);
+   noteon(dport, 0, 1, note_c+octave_6, maxint);
    { advance volume sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Volume: ', i*(i32max div 20):1);
-      volsynthchan(dport, 0, 1, i*(i32max div 20));
+      writeln('Volume: ', i*(maxint div 20):1);
+      volsynthchan(dport, 0, 1, i*(maxint div 20));
       waittime(second div 4)
 
    end;
-   noteoff(dport, 0, 1, note_c+octave_6, i32max);
+   noteoff(dport, 0, 1, note_c+octave_6, maxint);
    { reset channel vol to midline }
-   volsynthchan(dport, 0, 1, i32max div 2);
+   volsynthchan(dport, 0, 1, maxint div 2);
    writeln('Complete');
    waitret;
 
    writeln('Channel balance test. Play note continuously while changing');
    writeln('from to right');
    instchange(dport, 0, 1, inst_drawbar_organ);
-   noteon(dport, 0, 1, note_c+octave_6, i32max);
+   noteon(dport, 0, 1, note_c+octave_6, maxint);
    { advance volume sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Balance: ', -i32max+(i*((i32max div 20)*2)):1);
-      balance(dport, 0, 1, -i32max+(i*((i32max div 20)*2)));
+      writeln('Balance: ', -maxint+(i*((maxint div 20)*2)):1);
+      balance(dport, 0, 1, -maxint+(i*((maxint div 20)*2)));
       waittime(second div 4)
 
    end;
-   noteoff(dport, 0, 1, note_c+octave_6, i32max);
+   noteoff(dport, 0, 1, note_c+octave_6, maxint);
    { reset channel balance to midline }
    balance(dport, 0, 1, 0);
    writeln('Complete');
@@ -555,16 +555,16 @@ begin
 
    writeln('Channel vibrato test. Play note continuously while advancing vibrato');
    instchange(dport, 0, 1, inst_drawbar_organ);
-   noteon(dport, 0, 1, note_c+octave_6, i32max);
+   noteon(dport, 0, 1, note_c+octave_6, maxint);
    { advance vibrato sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Vibrato: ', i*(i32max div 20):1);
-      vibrato(dport, 0, 1, i*(i32max div 20));
+      writeln('Vibrato: ', i*(maxint div 20):1);
+      vibrato(dport, 0, 1, i*(maxint div 20));
       waittime(second)
 
    end;
-   noteoff(dport, 0, 1, note_c+octave_6, i32max);
+   noteoff(dport, 0, 1, note_c+octave_6, maxint);
    { reset channel vibrato to midline }
    vibrato(dport, 0, 1, 0);
    writeln('Complete');
@@ -573,16 +573,16 @@ begin
    writeln('Channel pan test. Play note continuously while changing');
    writeln('pan from to right');
    instchange(dport, 0, 1, inst_drawbar_organ);
-   noteon(dport, 0, 1, note_c+octave_6, i32max);
+   noteon(dport, 0, 1, note_c+octave_6, maxint);
    { advance pan sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Pan: ', -i32max+(i*((i32max div 20)*2)):1);
-      pan(dport, 0, 1, -i32max+(i*((i32max div 20)*2)));
+      writeln('Pan: ', -maxint+(i*((maxint div 20)*2)):1);
+      pan(dport, 0, 1, -maxint+(i*((maxint div 20)*2)));
       waittime(second div 4)
 
    end;
-   noteoff(dport, 0, 1, note_c+octave_6, i32max);
+   noteoff(dport, 0, 1, note_c+octave_6, maxint);
    { reset channel pan to midline }
    pan(dport, 0, 1, 0);
    writeln('Complete');
@@ -593,9 +593,9 @@ begin
    { advance timbre sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Timbre: ', i*(i32max div 20):1);
-      timbre(dport, 0, 1, i*(i32max div 20));
-      noteon(dport, 0, 1, note_c+octave_6, i32max);
+      writeln('Timbre: ', i*(maxint div 20):1);
+      timbre(dport, 0, 1, i*(maxint div 20));
+      noteon(dport, 0, 1, note_c+octave_6, maxint);
       waittime(second div 4);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 4)
@@ -611,9 +611,9 @@ begin
    { advance brightness sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Brightness: ', i*(i32max div 20):1);
-      brightness(dport, 0, 1, i*(i32max div 20));
-      noteon(dport, 0, 1, note_c+octave_6, i32max);
+      writeln('Brightness: ', i*(maxint div 20):1);
+      brightness(dport, 0, 1, i*(maxint div 20));
+      noteon(dport, 0, 1, note_c+octave_6, maxint);
       waittime(second div 4);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 4)
@@ -629,9 +629,9 @@ begin
    { advance reverb sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Reverb: ', i*(i32max div 20):1);
-      reverb(dport, 0, 1, i*(i32max div 20));
-      noteon(dport, 0, 1, note_c+octave_6, i32max);
+      writeln('Reverb: ', i*(maxint div 20):1);
+      reverb(dport, 0, 1, i*(maxint div 20));
+      noteon(dport, 0, 1, note_c+octave_6, maxint);
       waittime(second div 4);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 4)
@@ -648,9 +648,9 @@ begin
    { advance tremulo sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Tremulo: ', i*(i32max div 20):1);
-      tremulo(dport, 0, 1, i*(i32max div 20));
-      noteon(dport, 0, 1, note_c+octave_6, i32max);
+      writeln('Tremulo: ', i*(maxint div 20):1);
+      tremulo(dport, 0, 1, i*(maxint div 20));
+      noteon(dport, 0, 1, note_c+octave_6, maxint);
       waittime(second div 4);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 4)
@@ -667,9 +667,9 @@ begin
    { advance chorus sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Chorus: ', i*(i32max div 20):1);
-      chorus(dport, 0, 1, i*(i32max div 20));
-      noteon(dport, 0, 1, note_c+octave_6, i32max);
+      writeln('Chorus: ', i*(maxint div 20):1);
+      chorus(dport, 0, 1, i*(maxint div 20));
+      noteon(dport, 0, 1, note_c+octave_6, maxint);
       waittime(second div 4);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 4)
@@ -685,9 +685,9 @@ begin
    { advance celeste sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Celeste: ', i*(i32max div 20):1);
-      celeste(dport, 0, 1, i*(i32max div 20));
-      noteon(dport, 0, 1, note_c+octave_6, i32max);
+      writeln('Celeste: ', i*(maxint div 20):1);
+      celeste(dport, 0, 1, i*(maxint div 20));
+      noteon(dport, 0, 1, note_c+octave_6, maxint);
       waittime(second div 4);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 4)
@@ -703,9 +703,9 @@ begin
    { advance phaser sets on channel while playing }
    for i := 0 to 19 do begin
 
-      writeln('Phaser: ', i*(i32max div 20):1);
-      phaser(dport, 0, 1, i*(i32max div 20));
-      noteon(dport, 0, 1, note_c+octave_6, i32max);
+      writeln('Phaser: ', i*(maxint div 20):1);
+      phaser(dport, 0, 1, i*(maxint div 20));
+      noteon(dport, 0, 1, note_c+octave_6, maxint);
       waittime(second div 4);
       noteoff(dport, 0, 1, note_c+octave_6, 0);
       waittime(second div 4)
@@ -720,16 +720,16 @@ begin
      which is not right }
    writeln('pitch wheel. Vary pitch wheel while playing continuously');
    instchange(dport, 0, 1, inst_lead_1_square);
-   noteon(dport, 0, 1, note_c+octave_6, i32max);
+   noteon(dport, 0, 1, note_c+octave_6, maxint);
    for j := 0 to 9 do begin
 
-      writeln('Pitchrange: ', j*(i32max div 10):1);
-      pitchrange(dport, 0, 1, j*(i32max div 10));
+      writeln('Pitchrange: ', j*(maxint div 10):1);
+      pitchrange(dport, 0, 1, j*(maxint div 10));
       for x := 0 to 9 do
          for i := 0 to 9 do begin
 
-         writeln('Pitch: ', -i32max+(i*((i32max div 10)*2)):1);
-         pitch(dport, 0, 1, -i32max+(i*((i32max div 10)*2)));
+         writeln('Pitch: ', -maxint+(i*((maxint div 10)*2)):1);
+         pitch(dport, 0, 1, -maxint+(i*((maxint div 10)*2)));
          waittime(second div 100)
 
       end

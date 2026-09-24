@@ -36,7 +36,7 @@ const
    bearoffdur  = 250;
    windur      = 800;
 
-   i32max = 2147483647; { 32 bit INT_MAX, base for RGB ratios }
+   i32max = 2147483647; { 32 bit INT_MAX, modulus of the random number generator }
 
    { game constants }
    numpoints   = 24;
@@ -233,13 +233,13 @@ begin
 
 end;
 
-{ color helper (C CLR macro: v*(INT_MAX/255)) }
+{ color helper (C CLR macro: v*(maxint/255)) }
 
 function clr(v: integer): integer;
 
 begin
 
-   clr := v * (i32max div 255)
+   clr := v * (maxint div 255)
 
 end;
 
@@ -682,8 +682,8 @@ begin
 
    if soundenabled then begin
 
-      noteon(synth_out, 0, 1, n, i32max);
-      noteoff(synth_out, curtimeout+dur, 1, n, i32max)
+      noteon(synth_out, 0, 1, n, maxint);
+      noteoff(synth_out, curtimeout+dur, 1, n, maxint)
 
    end
 

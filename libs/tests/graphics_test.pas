@@ -33,8 +33,8 @@ const
    coldiv = 6;          { number of color divisions }
    colsqr = 20;         { size of color square }
    second = 10000;      { one second in 100 microsecond ticks }
-   i32max = 2147483647; { 32 bit INT_MAX, base for angle/RGB ratios }
-   degree = 5965232;    { INT_MAX div 360, ticks per degree }
+   i32max = 2147483647; { 32 bit INT_MAX, modulus of the random number generator }
+   degree = maxint div 360; { ticks per degree }
    maxsquare = 10;      { number of animation squares }
    reprate   = 2;       { number of moves per frame }
    { font codes (from amitk/include/graphics.h: AMI_FONT_TERM..AMI_FONT_TECH) }
@@ -579,10 +579,10 @@ begin
    rrect(output, x, y, x+xfigsiz-1, y+yfigsiz-1, 20, 20);
    fcolor(output, magenta);
    x := x+xfigsiz+xspace;
-   arc(output, x, y, x+xfigsiz-1, y+yfigsiz-1, 0, i32max div 4);
+   arc(output, x, y, x+xfigsiz-1, y+yfigsiz-1, 0, maxint div 4);
    fcolor(output, green);
    farc(output, x, y, x+xfigsiz-1, y+xfigsiz-1,
-                      i32max div 2, i32max div 2+i32max div 4);
+                      maxint div 2, maxint div 2+maxint div 4);
    y := y+yfigsiz+yspace;
    x := xspace div 2;
 
@@ -600,7 +600,7 @@ begin
    fellipse(output, x, y, x+xfigsiz-1, y+yfigsiz-1);
    x := x+xfigsiz+xspace;
    fcolor(output, blue);
-   fchord(output, x, y, x+xfigsiz-1, y+yfigsiz-1, 0, i32max div 2);
+   fchord(output, x, y, x+xfigsiz-1, y+yfigsiz-1, 0, maxint div 2);
    y := y+xfigsiz+xspace;
 
    { third row of figures (lines) }
@@ -880,8 +880,8 @@ begin
 
       repeat
 
-         sa := randn(i32max);
-         ea := randn(i32max)
+         sa := randn(maxint);
+         ea := randn(maxint)
 
       until not (ea <= sa);
       case randr(ord(red), ord(magenta)) of
@@ -920,8 +920,8 @@ begin
 
       repeat
 
-         sa := randn(i32max);
-         ea := randn(i32max)
+         sa := randn(maxint);
+         ea := randn(maxint)
 
       until not (ea <= sa);
       case randr(ord(red), ord(magenta)) of
@@ -960,8 +960,8 @@ begin
 
       repeat
 
-         sa := randn(i32max);
-         ea := randn(i32max)
+         sa := randn(maxint);
+         ea := randn(maxint)
 
       until not (ea <= sa);
       case randr(ord(red), ord(magenta)) of
@@ -1585,15 +1585,15 @@ begin
          fcolorg(output, r, g, b);
          frect(output, x, y, x+colsqr-1, y+colsqr-1);
          x := x+colsqr;
-         if r <= i32max-i32max div coldiv then r := r+i32max div coldiv
+         if r <= maxint-maxint div coldiv then r := r+maxint div coldiv
          else begin
 
             r := 0;
-            if g <= i32max-i32max div coldiv then g := g+i32max div coldiv
+            if g <= maxint-maxint div coldiv then g := g+maxint div coldiv
             else begin
 
                g := 0;
-               if b <= i32max-i32max div coldiv then b := b+i32max div coldiv
+               if b <= maxint-maxint div coldiv then b := b+maxint div coldiv
                else b := 0
 
             end
@@ -1617,7 +1617,7 @@ begin
    x := 1; { set 2st collumn }
    while x < maxxg(output) do begin
 
-      fcolorg(output, i32max div maxxg(output)*x, 0, 0);
+      fcolorg(output, maxint div maxxg(output)*x, 0, 0);
       line(output, x, 1, x, maxyg(output));
       x := x+1
 
@@ -1636,7 +1636,7 @@ begin
    x := 1; { set 2st collumn }
    while x < maxxg(output) do begin
 
-      fcolorg(output, 0, i32max div maxxg(output)*x, 0);
+      fcolorg(output, 0, maxint div maxxg(output)*x, 0);
       line(output, x, 1, x, maxyg(output));
       x := x+1
 
@@ -1655,7 +1655,7 @@ begin
    x := 1; { set 2st collumn }
    while x < maxxg(output) do begin
 
-      fcolorg(output, 0, 0, i32max div maxxg(output)*x);
+      fcolorg(output, 0, 0, maxint div maxxg(output)*x);
       line(output, x, 1, x, maxyg(output));
       x := x+1
 
@@ -2087,13 +2087,13 @@ begin
             (i < (maxyg(output)-chrsizy(output)) div 2) do begin
 
          a := 0;
-         while a <= i32max-i32max div 10 do begin
+         while a <= maxint-maxint div 10 do begin
 
             fcolor(output, c);
             linewidth(output, w);
             arc(output, i, i, maxxg(output)-i,
-                maxyg(output)-chrsizy(output)-i, a, a+i32max div 10);
-            a := a+i32max div 5;
+                maxyg(output)-chrsizy(output)-i, a, a+maxint div 10);
+            a := a+maxint div 5;
             if c < magenta then c := succ(c) else c := black;
             if c = white then c := succ(c)
 
@@ -2124,7 +2124,7 @@ begin
       y := curyg(output);
       c := black;
       aa := 0;
-      ab := i32max div 360*90;
+      ab := maxint div 360*90;
       while y+l*2 < maxyg(output)-yspace do begin
 
          while x+l*2 < maxxg(output)-xspace do begin
@@ -2245,11 +2245,11 @@ begin
    x := x-x mod 10;
    y := maxyg(output)-chrsizy(output)-10;
    y := y-y mod 10;
-   while a <= i32max-i32max div 10 do begin
+   while a <= maxint-maxint div 10 do begin
 
       fcolor(output, c);
-      farc(output, 10, 10, x, y, a, a+i32max div 10);
-      a := a+i32max div 5;
+      farc(output, 10, 10, x, y, a, a+maxint div 10);
+      a := a+maxint div 5;
       if c < magenta then c := succ(c) else c := black;
       if c = white then c := succ(c)
 
@@ -2270,7 +2270,7 @@ begin
    y := yspace;
    c := black;
    aa := 0;
-   ab := i32max div 360*90;
+   ab := maxint div 360*90;
    while y+l*2 < maxyg(output)-yspace do begin
 
       while x+l*2 < maxxg(output)-xspace do begin
@@ -2373,11 +2373,11 @@ begin
    x := x-x mod 10;
    y := maxyg(output)-chrsizy(output)-10;
    y := y-y mod 10;
-   while a <= i32max-i32max div i do begin
+   while a <= maxint-maxint div i do begin
 
       fcolor(output, c);
-      fchord(output, 10, 10, x, y, a, a+i32max div i);
-      a := a+i32max div (i div 2);
+      fchord(output, 10, 10, x, y, a, a+maxint div i);
+      a := a+maxint div (i div 2);
       if c < magenta then c := succ(c) else c := black;
       if c = white then c := succ(c)
 
@@ -2397,7 +2397,7 @@ begin
    y := yspace;
    c := black;
    aa := 0;
-   ab := i32max div 360*90;
+   ab := maxint div 360*90;
    while y+l*2 < maxyg(output)-yspace do begin
 
       while x+l*2 < maxxg(output)-xspace do begin
@@ -2919,7 +2919,7 @@ begin
       rectcord(a, l, tx1, ty1);
       { Rotate text so it reads OUTWARD along the radial. path uses
         the same compass convention as rectcord (0 = north, 90 = east),
-        ratioed to INT_MAX = 360 degrees. }
+        ratioed to maxint = 360 degrees. }
       path(output, a*degree);
       { Shift origin perpendicular to the drawing direction by half the
         character height, so the radial passes through the vertical
@@ -2932,7 +2932,7 @@ begin
       a := a+10
 
    end;
-   path(output, i32max div 4); { restore default (90 deg / east-reading) }
+   path(output, maxint div 4); { restore default (90 deg / east-reading) }
    binvis(output);
    prtcen(maxy(output), 'Polar text lines');
    waitnext;

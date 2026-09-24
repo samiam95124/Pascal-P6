@@ -67,7 +67,7 @@ const
    losedur     = 800;
    windur      = 1000;
 
-   i32max = 2147483647; { 32 bit INT_MAX, base for RGB ratios }
+   i32max = 2147483647; { 32 bit INT_MAX, modulus of the random number generator }
    ftsign = 3;          { AMI_FONT_SIGN }
 
    { territory count }
@@ -285,13 +285,13 @@ begin
 
 end;
 
-{ color helper: scale 0-255 to 0-INT_MAX (C CLR macro) }
+{ color helper: scale 0-255 to 0-maxint (C CLR macro) }
 
 function clr(v: integer): integer;
 
 begin
 
-   clr := v*(i32max div 255)
+   clr := v*(maxint div 255)
 
 end;
 
@@ -388,8 +388,8 @@ procedure playnote(n, dur: integer);
 
 begin
 
-   noteon(synth_out, 0, 1, n, i32max);
-   noteoff(synth_out, curtimeout+dur, 1, n, i32max)
+   noteon(synth_out, 0, 1, n, maxint);
+   noteoff(synth_out, curtimeout+dur, 1, n, maxint)
 
 end;
 
