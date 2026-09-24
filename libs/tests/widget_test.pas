@@ -24,7 +24,6 @@ label 99; { terminate }
 const
 
    second = 10000;      { one second in 100 microsecond ticks }
-   i32max = 2147483647; { 32 bit INT_MAX, used for scroll/progress ratios }
    { font codes (from amitk/include/graphics.h: AMI_FONT_TERM..AMI_FONT_TECH) }
    ftbook = 2;          { AMI_FONT_BOOK }
 
@@ -776,13 +775,13 @@ begin
    writeln('Terminal scroll bar sizing test');
    writeln;
    scrollvert(output, 10, 10, 12, 20, 1);
-   scrollsiz(output, 1, (i32max div 4)*3);
+   scrollsiz(output, 1, (maxint div 4)*3);
    scrollvert(output, 10+5, 10, 12+5, 20, 2);
-   scrollsiz(output, 2, i32max div 2);
+   scrollsiz(output, 2, maxint div 2);
    scrollvert(output, 10+10, 10, 12+10, 20, 3);
-   scrollsiz(output, 3, i32max div 4);
+   scrollsiz(output, 3, maxint div 4);
    scrollvert(output, 10+15, 10, 12+15, 20, 4);
-   scrollsiz(output, 4, i32max div 8);
+   scrollsiz(output, 4, maxint div 8);
    writeln('Now should be four scrollbars, decending in size to the right.');
    writeln('All of the scrollbars can be manipulated.');
    repeat
@@ -941,13 +940,13 @@ begin
    xs := maxxg(output) div 30;
    scrollvertsizg(output, x, y);
    scrollvertg(output, lm, iy, lm+x, iy+ys, 1);
-   scrollsiz(output, 1, (i32max div 4)*3);
+   scrollsiz(output, 1, (maxint div 4)*3);
    scrollvertg(output, lm+xs, iy, lm+xs+x, iy+ys, 2);
-   scrollsiz(output, 2, i32max div 2);
+   scrollsiz(output, 2, maxint div 2);
    scrollvertg(output, lm+xs*2, iy, lm+xs*2+x, iy+ys, 3);
-   scrollsiz(output, 3, i32max div 4);
+   scrollsiz(output, 3, maxint div 4);
    scrollvertg(output, lm+xs*3, iy, lm+xs*3+x, iy+ys, 4);
-   scrollsiz(output, 4, i32max div 8);
+   scrollsiz(output, 4, maxint div 8);
    repeat
 
       event(input, er);
@@ -985,10 +984,10 @@ begin
    xs := maxxg(output) div 30;
    scrollvertsizg(output, x, y);
    scrollvertg(output, lm, iy, lm+x, iy+y, 1);
-   scrollsiz(output, 1, i32max div 2);
+   scrollsiz(output, 1, maxint div 2);
    scrollhorizsizg(output, x, y);
    scrollhorizg(output, lm+xs, iy, lm+xs+x, iy+y, 2);
-   scrollsiz(output, 2, i32max div 2);
+   scrollsiz(output, 2, maxint div 2);
    repeat
 
       event(input, er);
@@ -1164,12 +1163,12 @@ begin
 
          if prog < 20 then begin
 
-            progbarpos(output, 1, i32max-((20-prog)*(i32max div 20)));
+            progbarpos(output, 1, maxint-((20-prog)*(maxint div 20)));
             prog := prog+1 { next progress value }
 
          end else if prog = 20 then begin
 
-            progbarpos(output, 1, i32max);
+            progbarpos(output, 1, maxint);
             writeln('Done !');
             prog := 11;
             killtimer(output, 1)
@@ -1200,12 +1199,12 @@ begin
 
          if prog < 20 then begin
 
-            progbarpos(output, 1, i32max-((20-prog)*(i32max div 20)));
+            progbarpos(output, 1, maxint-((20-prog)*(maxint div 20)));
             prog := prog+1 { next progress value }
 
          end else if prog = 20 then begin
 
-            progbarpos(output, 1, i32max);
+            progbarpos(output, 1, maxint);
             writeln('Done !');
             prog := 11;
             killtimer(output, 1)
@@ -1994,9 +1993,9 @@ begin
    writeln('There should be an pa_color query dialog');
    writeln('Both the dialog and this window should be fully reactive');
    writeln('The pa_color pa_white should be the default selection');
-   r := i32max;
-   g := i32max;
-   b := i32max;
+   r := maxint;
+   g := maxint;
+   b := maxint;
    querycolor(r, g, b);
    writeln;
    writeln('Dialog should have completed now');
@@ -2108,9 +2107,9 @@ begin
    fr := 0; { set foreground to black }
    fg := 0;
    fb := 0;
-   br := i32max; { set background to white }
-   bg := i32max;
-   bb := i32max;
+   br := maxint; { set background to white }
+   bg := maxint;
+   bb := maxint;
    fe := [];
    queryfont(output, fc, fs, fr, fg, fb, br, bg, bb, fe);
    clears(s);

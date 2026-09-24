@@ -37,7 +37,6 @@ label 99; { terminate }
 const
 
    second = 10000;          { one second in 100 microsecond ticks }
-   i32max = 2147483647;     { 32 bit INT_MAX, the RGB ratio used by terminal }
 
 type
 
@@ -262,14 +261,14 @@ begin
    if joy < 0 then begin { plot left }
 
       r := abs(joy);
-      x := (maxx(output) div 2)-round(r*(maxx(output) div 2)/i32max);
+      x := (maxx(output) div 2)-round(r/maxint*(maxx(output) div 2));
       cursor(output, x, line);
       while x <= maxx(output) div 2 do begin write('*'); x := x+1 end
 
    end else begin { plot right }
 
       r := joy;
-      x := round(r*(maxx(output) div 2)/i32max+(maxx(output) div 2));
+      x := round(r/maxint*(maxx(output) div 2)+(maxx(output) div 2));
       i := maxx(output) div 2;
       cursor(output, i, line);
       while i <= x do begin write('*'); i := i+1 end
@@ -314,9 +313,9 @@ procedure fcolorp(c: integer);
 
 begin
 
-   fcolorc(output, i32max div 256 * (c div 65536 mod 256),
-                   i32max div 256 * (c div 256 mod 256),
-                   i32max div 256 * (c mod 256))
+   fcolorc(output, maxint div 256 * (c div 65536 mod 256),
+                   maxint div 256 * (c div 256 mod 256),
+                   maxint div 256 * (c mod 256))
 
 end;
 
@@ -326,9 +325,9 @@ procedure bcolorp(c: integer);
 
 begin
 
-   bcolorc(output, i32max div 256 * (c div 65536 mod 256),
-                   i32max div 256 * (c div 256 mod 256),
-                   i32max div 256 * (c mod 256))
+   bcolorc(output, maxint div 256 * (c div 65536 mod 256),
+                   maxint div 256 * (c div 256 mod 256),
+                   maxint div 256 * (c mod 256))
 
 end;
 

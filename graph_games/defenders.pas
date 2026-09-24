@@ -54,9 +54,8 @@ const
    explode_dur  = 500;
    ufo_dur      = 200;
 
-   { 32 bit INT_MAX, base for color/joystick ratios }
-   i32max       = 2147483647;
-   clrunit      = 8421504;    { i32max div 255, color scale unit }
+   i32max       = 2147483647; { 32 bit INT_MAX, modulus of the random number generator }
+   clrunit      = maxint div 255; { color scale unit }
 
    { directions }
    dir_right    = 1;
@@ -70,7 +69,7 @@ const
    ctl_mouse    = 0;
    ctl_keyboard = 1;
    ctl_joystick = 2;
-   joy_threshold = 107374182; { i32max div 20, movement to take over }
+   joy_threshold = 107374182; { maxint div 20, movement to take over }
 
    { font code (AMI_FONT_SIGN) }
    ftsign       = 3;
@@ -167,7 +166,7 @@ begin
 
 end;
 
-{ color helper: scale 0-255 to 0-INT_MAX }
+{ color helper: scale 0-255 to 0-maxint }
 
 function clr(v: integer): integer;
 
@@ -796,8 +795,8 @@ begin
             pbullets[i].x := player_x;
             pbullets[i].y := player_y-player_h div 3;
             { shoot sound }
-            noteon(synth_out, 0, 1, shoot_note, i32max);
-            noteoff(synth_out, curtimeout+shoot_dur, 1, shoot_note, i32max);
+            noteon(synth_out, 0, 1, shoot_note, maxint);
+            noteoff(synth_out, curtimeout+shoot_dur, 1, shoot_note, maxint);
             fired := true
 
          end
@@ -956,8 +955,8 @@ begin
                ufo.active := false;
                pbullets[i].active := false;
                score := score+100;
-               noteon(synth_out, 0, 1, ufo_note, i32max);
-               noteoff(synth_out, curtimeout+ufo_dur, 1, ufo_note, i32max);
+               noteon(synth_out, 0, 1, ufo_note, maxint);
+               noteoff(synth_out, curtimeout+ufo_dur, 1, ufo_note, maxint);
                hit := true
 
             end;
@@ -990,9 +989,9 @@ begin
 
                         end;
 
-                        noteon(synth_out, 0, 1, hit_note, i32max);
+                        noteon(synth_out, 0, 1, hit_note, maxint);
                         noteoff(synth_out, curtimeout+hit_dur, 1, hit_note,
-                                i32max);
+                                maxint);
                         hit := true
 
                      end
@@ -1041,8 +1040,8 @@ begin
 
          abullets[i].active := false;
          lives := lives-1;
-         noteon(synth_out, 0, 1, explode_note, i32max);
-         noteoff(synth_out, curtimeout+explode_dur, 1, explode_note, i32max);
+         noteon(synth_out, 0, 1, explode_note, maxint);
+         noteoff(synth_out, curtimeout+explode_dur, 1, explode_note, maxint);
          if lives <= 0 then game_over := true
 
       end
@@ -1347,7 +1346,7 @@ begin
          if active_ctl = ctl_joystick then
             if game_started and (not game_over) then begin
 
-            jchr := i32max div ((scr_w-2) div 2);
+            jchr := maxint div ((scr_w-2) div 2);
             player_x := scr_w div 2+er.joypx div jchr;
             if player_x < player_w div 2 then player_x := player_w div 2;
             if player_x > scr_w-player_w div 2 then

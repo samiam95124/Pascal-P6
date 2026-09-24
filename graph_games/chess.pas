@@ -24,7 +24,6 @@ label 99; { terminate }
 
 const
 
-   i32max = 2147483647; { 32 bit INT_MAX, base for RGB ratios }
 
    { sound defines }
    move_note    = note_e+octave_5;
@@ -73,18 +72,18 @@ const
    ftsign = 3;
 
    { board colors }
-   light_r = 240*(i32max div 255);
-   light_g = 217*(i32max div 255);
-   light_b = 181*(i32max div 255);
-   dark_r  = 181*(i32max div 255);
-   dark_g  = 136*(i32max div 255);
-   dark_b  = 99*(i32max div 255);
-   sel_r   = 130*(i32max div 255);
-   sel_g   = 151*(i32max div 255);
-   sel_b   = 105*(i32max div 255);
-   movc_r  = 170*(i32max div 255);
-   movc_g  = 162*(i32max div 255);
-   movc_b  = 58*(i32max div 255);
+   light_r = 240*(maxint div 255);
+   light_g = 217*(maxint div 255);
+   light_b = 181*(maxint div 255);
+   dark_r  = 181*(maxint div 255);
+   dark_g  = 136*(maxint div 255);
+   dark_b  = 99*(maxint div 255);
+   sel_r   = 130*(maxint div 255);
+   sel_g   = 151*(maxint div 255);
+   sel_b   = 105*(maxint div 255);
+   movc_r  = 170*(maxint div 255);
+   movc_g  = 162*(maxint div 255);
+   movc_b  = 58*(maxint div 255);
 
 type
 
@@ -715,8 +714,8 @@ procedure play_sound(n, dur: integer);
 
 begin
 
-   noteon(synth_out, 0, 1, n, i32max);
-   noteoff(synth_out, curtimeout+dur, 1, n, i32max)
+   noteon(synth_out, 0, 1, n, maxint);
+   noteoff(synth_out, curtimeout+dur, 1, n, maxint)
 
 end;
 
@@ -1151,8 +1150,8 @@ begin
    by := boardy0;
 
    fontsiz(output, sz div 4);
-   fcolorg(output, 80*(i32max div 255), 80*(i32max div 255),
-           80*(i32max div 255));
+   fcolorg(output, 80*(maxint div 255), 80*(maxint div 255),
+           80*(maxint div 255));
 
    for c := 0 to 7 do begin
 
@@ -1197,8 +1196,8 @@ begin
    frect(output, 1, sy, maxxg(output), maxyg(output));
 
    fontsiz(output, fsz);
-   fcolorg(output, 40*(i32max div 255), 40*(i32max div 255),
-           40*(i32max div 255));
+   fcolorg(output, 40*(maxint div 255), 40*(maxint div 255),
+           40*(maxint div 255));
 
    if gamestate = 1 then begin
 

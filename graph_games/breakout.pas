@@ -34,7 +34,6 @@ const
    failnote   = note_c+octave_4; { note to play on fail }
    brkrow     = 6;              { number of brick rows }
    brkcol     = 10;             { number of brick columns }
-   i32max     = 2147483647;     { 32 bit INT_MAX }
    ftsign     = 3;              { AMI_FONT_SIGN }
 
 type
@@ -129,13 +128,13 @@ begin
    r := 0; { default to black }
    g := 0;
    b := 0;
-   if c = white then begin r := i32max; g := i32max; b := i32max end
-   else if c = red then begin r := i32max; g := 0; b := 0 end
-   else if c = green then begin r := 0; g := i32max; b := 0 end
-   else if c = blue then begin r := 0; g := 0; b := i32max end
-   else if c = cyan then begin r := 0; g := i32max; b := i32max end
-   else if c = yellow then begin r := i32max; g := i32max; b := 0 end
-   else if c = magenta then begin r := i32max; g := 0; b := i32max end
+   if c = white then begin r := maxint; g := maxint; b := maxint end
+   else if c = red then begin r := maxint; g := 0; b := 0 end
+   else if c = green then begin r := 0; g := maxint; b := 0 end
+   else if c = blue then begin r := 0; g := 0; b := maxint end
+   else if c = cyan then begin r := 0; g := maxint; b := maxint end
+   else if c = yellow then begin r := maxint; g := maxint; b := 0 end
+   else if c = magenta then begin r := maxint; g := 0; b := maxint end
 
 end;
 
@@ -475,7 +474,7 @@ begin
    opensynthout(synth_out); { open synthesizer }
    instchange(synth_out, 0, 1, inst_lead_1_square);
    starttimeout; { start sequencer running }
-   jchr := i32max div ((maxxg(output)-2) div 2); { find basic joystick
+   jchr := maxint div ((maxxg(output)-2) div 2); { find basic joystick
                                                    increment }
    curvis(output, false); { remove drawing cursor }
    auto(output, false); { turn off scrolling }
@@ -571,9 +570,9 @@ begin
                      bdx := -bdx; { change direction }
                      offrect(ball, bdx, bdy); { recalculate }
                      { start bounce note }
-                     noteon(synth_out, 0, 1, wallnote, i32max);
+                     noteon(synth_out, 0, 1, wallnote, maxint);
                      noteoff(synth_out, curtimeout+bouncetime, 1, wallnote,
-                             i32max)
+                             maxint)
 
                   end else if intsec(ball, wallt) then begin { hits top }
 
@@ -581,9 +580,9 @@ begin
                      bdy := -bdy; { change direction }
                      offrect(ball, bdx, bdy); { recalculate }
                      { start bounce note }
-                     noteon(synth_out, 0, 1, wallnote, i32max);
+                     noteon(synth_out, 0, 1, wallnote, maxint);
                      noteoff(synth_out, curtimeout+bouncetime, 1, wallnote,
-                             i32max)
+                             maxint)
 
                   end else if intsec(ball, paddle) then begin
 
@@ -610,9 +609,9 @@ begin
                      if ball.y2 >= paddle.y1 then
                         offrect(ball, 0, -(ball.y2-paddle.y1+1));
                      { start bounce note }
-                     noteon(synth_out, 0, 1, wallnote, i32max);
+                     noteon(synth_out, 0, 1, wallnote, maxint);
                      noteoff(synth_out, curtimeout+bouncetime, 1, wallnote,
-                             i32max)
+                             maxint)
 
                   end else begin { check brick hits }
 
@@ -623,9 +622,9 @@ begin
                         bdy := -bdy; { change direction }
                         offrect(ball, bdx, bdy); { recalculate }
                         { start bounce note }
-                        noteon(synth_out, 0, 1, bricknote, i32max);
+                        noteon(synth_out, 0, 1, bricknote, maxint);
                         noteoff(synth_out, curtimeout+bouncetime, 1,
-                                bricknote, i32max)
+                                bricknote, maxint)
 
                      end
 
@@ -637,9 +636,9 @@ begin
                      { start time on new ball wait }
                      baltim := newbal div balmov;
                      { start fail note }
-                     noteon(synth_out, 0, 1, failnote, i32max);
+                     noteon(synth_out, 0, 1, failnote, maxint);
                      noteoff(synth_out, curtimeout+failtime, 1, failnote,
-                             i32max)
+                             maxint)
 
                   end else begin { ball in play }
 
@@ -671,18 +670,18 @@ begin
 
       until fldbrk = brkrow*brkcol; { until bricks are cleared }
       { play the field clear fanfare }
-      noteon(synth_out,  0,                   1, note_c+octave_6, i32max);
-      noteoff(synth_out, curtimeout+osec*2,   1, note_c+octave_6, i32max);
-      noteon(synth_out,  curtimeout+osec*3,   1, note_d+octave_6, i32max);
-      noteoff(synth_out, curtimeout+osec*4,   1, note_d+octave_6, i32max);
-      noteon(synth_out,  curtimeout+osec*5,   1, note_e+octave_6, i32max);
-      noteoff(synth_out, curtimeout+osec*6,   1, note_e+octave_6, i32max);
-      noteon(synth_out,  curtimeout+osec*7,   1, note_f+octave_6, i32max);
-      noteoff(synth_out, curtimeout+osec*8,   1, note_f+octave_6, i32max);
-      noteon(synth_out,  curtimeout+osec*9,   1, note_e+octave_6, i32max);
-      noteoff(synth_out, curtimeout+osec*10,  1, note_e+octave_6, i32max);
-      noteon(synth_out,  curtimeout+osec*11,  1, note_d+octave_6, i32max);
-      noteoff(synth_out, curtimeout+osec*13,  1, note_d+octave_6, i32max);
+      noteon(synth_out,  0,                   1, note_c+octave_6, maxint);
+      noteoff(synth_out, curtimeout+osec*2,   1, note_c+octave_6, maxint);
+      noteon(synth_out,  curtimeout+osec*3,   1, note_d+octave_6, maxint);
+      noteoff(synth_out, curtimeout+osec*4,   1, note_d+octave_6, maxint);
+      noteon(synth_out,  curtimeout+osec*5,   1, note_e+octave_6, maxint);
+      noteoff(synth_out, curtimeout+osec*6,   1, note_e+octave_6, maxint);
+      noteon(synth_out,  curtimeout+osec*7,   1, note_f+octave_6, maxint);
+      noteoff(synth_out, curtimeout+osec*8,   1, note_f+octave_6, maxint);
+      noteon(synth_out,  curtimeout+osec*9,   1, note_e+octave_6, maxint);
+      noteoff(synth_out, curtimeout+osec*10,  1, note_e+octave_6, maxint);
+      noteon(synth_out,  curtimeout+osec*11,  1, note_d+octave_6, maxint);
+      noteoff(synth_out, curtimeout+osec*13,  1, note_d+octave_6, maxint);
       baltim := (osec*13+newbal) div balmov; { wait fanfare }
       drwrect(ball, white); { clear ball }
       clrrect(ball) { set ball not on screen }

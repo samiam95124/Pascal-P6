@@ -30,7 +30,6 @@ const
    wallnote = note_d+octave_6;  { note to play off wall }
    failtime = 30;               { note to play on failure }
    failnote = note_c+octave_4;  { note to play on fail }
-   i32max   = 2147483647;       { 32 bit INT_MAX, joystick/velocity scale }
    ftsign   = 3;                { AMI_FONT_SIGN }
 
 type
@@ -292,7 +291,7 @@ begin
    opensynthout(synth_out); { open synthesizer }
    instchange(synth_out, 0, 1, inst_lead_1_square);
    { find basic joystick increment }
-   jchr := i32max div ((maxxg(output)-2) div 2);
+   jchr := maxint div ((maxxg(output)-2) div 2);
    curvis(output, false); { remove drawing cursor }
    auto(output, false); { turn off scrolling }
    font(output, ftsign); { sign font }
@@ -373,7 +372,7 @@ begin
 
                nottim := nottim-1; { decrement }
                if nottim = 0 then { times up, turn note off }
-                  noteoff(synth_out, 0, 1, wallnote, i32max)
+                  noteoff(synth_out, 0, 1, wallnote, maxint)
 
             end;
             { if the fail note timer is running, decrement it }
@@ -381,7 +380,7 @@ begin
 
                failtimer := failtimer-1; { decrement }
                if failtimer = 0 then { times up, turn note off }
-                  noteoff(synth_out, 0, 1, failnote, i32max)
+                  noteoff(synth_out, 0, 1, failnote, maxint)
 
             end;
             if ball.x1 > 0 then begin { ball on screen }
@@ -396,7 +395,7 @@ begin
                   bdx := -bdx; { change direction }
                   offrect(ball, bdx, bdy); { recalculate }
                   { start bounce note }
-                  noteon(synth_out, 0, 1, wallnote, i32max);
+                  noteon(synth_out, 0, 1, wallnote, maxint);
                   nottim := bncenote { set timer }
 
                end else if intrect(ball, wallt) then begin { hits top }
@@ -405,7 +404,7 @@ begin
                   bdy := -bdy; { change direction }
                   offrect(ball, bdx, bdy); { recalculate }
                   { start bounce note }
-                  noteon(synth_out, 0, 1, wallnote, i32max);
+                  noteon(synth_out, 0, 1, wallnote, maxint);
                   nottim := bncenote { set timer }
 
                end else if intrect(ball, paddle) then begin
@@ -421,7 +420,7 @@ begin
                   score := score+1; { count hits }
                   scrchg := true; { set changed }
                   { start bounce note }
-                  noteon(synth_out, 0, 1, wallnote, i32max);
+                  noteon(synth_out, 0, 1, wallnote, maxint);
                   nottim := bncenote { set timer }
 
                end;
@@ -431,7 +430,7 @@ begin
                   clrrect(ball); { set ball not on screen }
                   baltim := newbal; { start time on new ball wait }
                   { start fail note }
-                  noteon(synth_out, 0, 1, failnote, i32max);
+                  noteon(synth_out, 0, 1, failnote, maxint);
                   failtimer := failtime { set timer }
 
                end else begin { ball in play }

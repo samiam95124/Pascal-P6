@@ -23,7 +23,6 @@ label 99; { terminate }
 
 const
 
-   i32max = 2147483647; { 32 bit INT_MAX, base for RGB ratios/velocity }
 
    { sound defines }
    move_note    = 53;  { note_e+octave_5 }
@@ -173,13 +172,13 @@ begin
 
 end;
 
-{ scale a 0..255 RGB component to the 0..INT_MAX color range }
+{ scale a 0..255 RGB component to the 0..maxint color range }
 
 function crgb(v: integer): integer;
 
 begin
 
-   crgb := v*(i32max div 255)
+   crgb := v*(maxint div 255)
 
 end;
 
@@ -547,8 +546,8 @@ procedure play_sound(n, dur: integer);
 
 begin
 
-   noteon(synth_out, 0, 1, n, i32max);
-   noteoff(synth_out, curtimeout+dur, 1, n, i32max)
+   noteon(synth_out, 0, 1, n, maxint);
+   noteoff(synth_out, curtimeout+dur, 1, n, maxint)
 
 end;
 
