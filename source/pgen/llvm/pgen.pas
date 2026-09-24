@@ -146,6 +146,7 @@ var
    calcnt: integer;  { local call site counter }
    fncals: calptr;   { the local call sites of this function }
    fnstrips: linelst; { the strip code spliced into this function }
+   donelst: calptr;  { shared call results produced in this function }
    tmps: pstring;    { scratch string }
 
 {******************************************************************************
@@ -909,7 +910,8 @@ begin
    fnparn := 0; fnovf := 0; fnblk := blkstk;
    vn := 0;
    ipjlst := nil;
-   fncals := nil; fnstrips.first := nil; fnstrips.last := nil
+   fncals := nil; fnstrips.first := nil; fnstrips.last := nil;
+   donelst := nil
 
 end;
 
@@ -1437,8 +1439,8 @@ var k, b: integer;
 begin
    for k := 1 to 8 do begin
       b := v mod 256; if b < 0 then b := b+256;
-      obyte(b); v := v div 256;
-      if (v < 0) and (b > 0) then v := v+1
+      obyte(b);
+      v := (v-b) div 256 { exact, so a negative value carries its sign down }
    end
 end;
 
@@ -1705,13 +1707,35 @@ override procedure assemble;
          if estack^.op = 188{cke} then popstk(ep^.al)
    end;
 
-   { duplicate subtree }
+   { duplicate subtree. A call in the tree is made once: the copies share
+     a result value assigned here (t2a flags it), and the first copy
+     generated makes the call. The copy keeps the result frame size label
+     in lb, since it has no sfr link of its own. }
    procedure duptre(s: expptr; var d: expptr);
    begin
       if s = nil then d := nil else begin
+         if s^.op in [246{cuf}, 247{cif}, 249{cvf}, 15{csp}] then begin
+            if s^.t2a <> 1 then begin s^.t2a := 1; s^.r1a := newv; s^.r2a := 0 end;
+            if s^.sl <> nil then s^.lb := s^.sl^.lb
+         end;
          getexp(d); d^ := s^; d^.next := nil; d^.sl := nil; d^.al := nil; d^.pl := nil;
          duptre(s^.l, d^.l); duptre(s^.r, d^.r); duptre(s^.x1, d^.x1); duptre(s^.cl, d^.cl)
       end
+   end;
+
+   { has a shared call result already been produced? }
+   function calldone(v: integer): boolean;
+   var cp: calptr; f: boolean;
+   begin
+      f := false; cp := donelst;
+      while cp <> nil do begin if cp^.k = v then f := true; cp := cp^.next end;
+      calldone := f
+   end;
+
+   procedure setdone(v: integer);
+   var cp: calptr;
+   begin
+      new(cp); cp^.k := v; cp^.next := donelst; donelst := cp
    end;
 
    { get n parameters into the list, in reverse }
@@ -1937,15 +1961,16 @@ override procedure assemble;
    { the result frame of a call: an alloca of the sfr size for stacked
      results, null otherwise }
    function callsfr(ep: expptr): integer;
-   var n: integer;
+   var n: integer; lb: pstring;
    begin
       callsfr := vnull;
-      if ep^.sl <> nil then if ep^.sl^.lb <> nil then
-         if ep^.rc in [2, 3] then begin
-            n := labelvalof(ep^.sl^.lb);
-            if n < 16 then n := 16;
-            callsfr := alloca(n, 'sfr')
-         end
+      lb := nil;
+      if ep^.sl <> nil then lb := ep^.sl^.lb else lb := ep^.lb;
+      if lb <> nil then if ep^.rc in [2, 3] then begin
+         n := labelvalof(lb);
+         if n < 16 then n := 16;
+         callsfr := alloca(n, 'sfr')
+      end
    end;
 
    { return type text of a call by result code }
@@ -1994,8 +2019,10 @@ override procedure assemble;
 
    { user call: cup/cuf }
    procedure gencall(ep: expptr);
+   label 1;
    var sfr, v, fr: integer; nm, rt: pstring; cfn: boolean;
    begin
+      if ep^.t2a = 1 then if calldone(ep^.r1a) then goto 1;
       genexp(ep^.sl); { the sfr: nothing to do here }
       sfr := callsfr(ep);
       genpars(ep^.pl);
@@ -2016,19 +2043,27 @@ override procedure assemble;
       oins; os('store ptr '); ov(fr); os(', ptr @psystem_llvm_sl'); ol;
       oins; os('store ptr '); ov(sfr); os(', ptr @psystem_llvm_sfr'); ol;
       if (ep^.op = 246{cuf}) and (ep^.rc in [0, 1]) then begin
-         v := newv; ep^.r1a := v;
+         if ep^.t2a <> 1 then ep^.r1a := newv;
+         v := ep^.r1a;
          oins; ov(v); os(' = call ')
       end else begin oins; os('call ') end;
       orettyp(ep^.rc, ep^.op = 12);
       os(' @'); oq(nm^); oc('(');
       oargs(ep^.pl, true, not cfn); oc(')'); ol;
-      if ep^.op = 246{cuf} then if ep^.rc in [2, 3] then ep^.r1a := p2i(sfr)
+      if ep^.op = 246{cuf} then if ep^.rc in [2, 3] then begin
+         if ep^.t2a <> 1 then ep^.r1a := newv;
+         oins; ov(ep^.r1a); os(' = ptrtoint ptr '); ov(sfr); os(' to i64'); ol
+      end;
+      if ep^.t2a = 1 then setdone(ep^.r1a);
+      1:
    end;
 
    { indirect call: cip/cif, the fat pointer in l }
    procedure genicall(ep: expptr);
+   label 2;
    var sfr, v, f, fr, a, b: integer;
    begin
+      if ep^.t2a = 1 then if calldone(ep^.r1a) then goto 2;
       genexp(ep^.sl);
       sfr := callsfr(ep);
       genpars(ep^.pl);
@@ -2045,19 +2080,27 @@ override procedure assemble;
       oins; os('store ptr '); ov(fr); os(', ptr @psystem_llvm_sl'); ol;
       oins; os('store ptr '); ov(sfr); os(', ptr @psystem_llvm_sfr'); ol;
       if (ep^.op = 247{cif}) and (ep^.rc in [0, 1]) then begin
-         v := newv; ep^.r1a := v;
+         if ep^.t2a <> 1 then ep^.r1a := newv;
+         v := ep^.r1a;
          oins; ov(v); os(' = call ')
       end else begin oins; os('call ') end;
       orettyp(ep^.rc, ep^.op = 113);
       oc(' '); ov(f); oc('(');
       oargs(ep^.pl, true, true); oc(')'); ol;
-      if ep^.op = 247{cif} then if ep^.rc in [2, 3] then ep^.r1a := p2i(sfr)
+      if ep^.op = 247{cif} then if ep^.rc in [2, 3] then begin
+         if ep^.t2a <> 1 then ep^.r1a := newv;
+         oins; ov(ep^.r1a); os(' = ptrtoint ptr '); ov(sfr); os(' to i64'); ol
+      end;
+      if ep^.t2a = 1 then setdone(ep^.r1a);
+      2:
    end;
 
    { vectored call: cuv/cvf, through a global holding the routine address }
    procedure genvcall(ep: expptr);
+   label 3;
    var sfr, v, a, f, fr: integer;
    begin
+      if ep^.t2a = 1 then if calldone(ep^.r1a) then goto 3;
       genexp(ep^.sl);
       sfr := callsfr(ep);
       genpars(ep^.pl);
@@ -2069,19 +2112,27 @@ override procedure assemble;
       oins; os('store ptr '); ov(fr); os(', ptr @psystem_llvm_sl'); ol;
       oins; os('store ptr '); ov(sfr); os(', ptr @psystem_llvm_sfr'); ol;
       if (ep^.op = 249{cvf}) and (ep^.rc in [0, 1]) then begin
-         v := newv; ep^.r1a := v;
+         if ep^.t2a <> 1 then ep^.r1a := newv;
+         v := ep^.r1a;
          oins; ov(v); os(' = call ')
       end else begin oins; os('call ') end;
       orettyp(ep^.rc, ep^.op = 27);
       oc(' '); ov(f); oc('(');
       oargs(ep^.pl, true, true); oc(')'); ol;
-      if ep^.op = 249{cvf} then if ep^.rc in [2, 3] then ep^.r1a := p2i(sfr)
+      if ep^.op = 249{cvf} then if ep^.rc in [2, 3] then begin
+         if ep^.t2a <> 1 then ep^.r1a := newv;
+         oins; ov(ep^.r1a); os(' = ptrtoint ptr '); ov(sfr); os(' to i64'); ol
+      end;
+      if ep^.t2a = 1 then setdone(ep^.r1a);
+      3:
    end;
 
    { system call }
    procedure callsp(ep: expptr; var sc: alfa; r: boolean);
+   label 4;
    var nm: packed array [1..20] of char; i, n, v: integer; isr: boolean; rt, nms: pstring;
    begin
+      if ep^.t2a = 1 then if calldone(ep^.r1a) then goto 4;
       genpars(ep^.pl);
       castovf(ep^.pl, false);
       for i := 1 to 20 do nm[i] := ' ';
@@ -2096,12 +2147,15 @@ override procedure assemble;
       oc('('); otypes(ep^.pl, true, false); oc(')');
       tmps := lbstr; nms := extract(nm, 1, n); declfn(nms^, rt^, tmps^); ll := 0;
       if r then begin
-         v := newv; ep^.r1a := v;
+         if ep^.t2a <> 1 then ep^.r1a := newv;
+         v := ep^.r1a;
          oins; ov(v); os(' = call ');
          if isr then os('double') else os('i64')
       end else begin oins; os('call void') end;
       os(' @'); oq(nms^); oc('(');
-      oargs(ep^.pl, true, false); oc(')'); ol
+      oargs(ep^.pl, true, false); oc(')'); ol;
+      if ep^.t2a = 1 then setdone(ep^.r1a);
+      4:
    end;
 
    { new/dispose with tag list: the parameters are (addr, size, tagcount,
@@ -2691,15 +2745,20 @@ override procedure assemble;
 
             {ccs}
             223: begin
-               { total size: base size times the template lengths, then a
+               { total size: the base size times the length, held in the
+                 second word for a one level container, or times the lengths
+                 read from the template it points to for more levels; then a
                  stack copy }
                a := newv;
                oins; ov(a); os(' = add i64 '); oi(ep^.q1); os(', 0'); ol;
-               b := ep^.l^.r2a;
-               for n := 1 to ep^.q do begin
-                  d := ld('i', i2p(b));
-                  a := bini('mul', a, d);
-                  b := binii('add', b, intsize)
+               if ep^.q = 1 then a := bini('mul', a, ep^.l^.r2a)
+               else begin
+                  b := ep^.l^.r2a;
+                  for n := 1 to ep^.q do begin
+                     d := ld('i', i2p(b));
+                     a := bini('mul', a, d);
+                     b := binii('add', b, intsize)
+                  end
                end;
                t := newv;
                oins; ov(t); os(' = alloca i8, i64 '); ov(a); os(', align 16'); ol;
@@ -3728,6 +3787,7 @@ begin (* main *)
    xjptbl := nil; intbl := false; tblcnt := 0; vn := 0; labn := 0; ll := 0;
    inpro := false; instrip := false; stripn := 0; curstrip := nil; striplst := nil;
    calcnt := 0; fncals := nil; fnstrips.first := nil; fnstrips.last := nil;
+   donelst := nil;
    write('P6 Pascal LLVM IR code generator vs. ', majorver:1, '.', minorver:1);
    if experiment then write('.x');
    writeln;
