@@ -2126,6 +2126,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             callalnsysv := true
           end;
           genexp(ep^.sl); { process sfr start link }
+          { The SFR is now on the stack. Track it, so that calls made while
+            the parameters are evaluated (a function nested in this call's
+            parameter list) see it and align correctly. Without this the
+            nested call reaches its callee 8 bytes off 16-byte alignment,
+            which faults in C code that uses aligned SSE stores (#624). }
+          stkadr := stkadr - ls;
           stkadrs := stkadr; { save stack track here }
           if windows then begin
             pshparwin(ep^.pl); { eval 1-4 l-r, stack 5+ r-l }
@@ -2175,6 +2181,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                       wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
           stkadr := stkadrs; { restore stack position }
+          { the SFR was removed above (result in register, or structure moved
+            to its temp); a set result stays on the stack in the SFR }
+          if ep^.rc <> 2 then stkadr := stkadr + ls;
           if callalnsysv then begin
             wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
             stkadr := stkadr + ptrsize
@@ -2195,6 +2204,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             callalnsysv := true
           end;
           genexp(ep^.sl); { process sfr start link }
+          { The SFR is now on the stack. Track it, so that calls made while
+            the parameters are evaluated (a function nested in this call's
+            parameter list) see it and align correctly. Without this the
+            nested call reaches its callee 8 bytes off 16-byte alignment,
+            which faults in C code that uses aligned SSE stores (#624). }
+          stkadr := stkadr - ls;
           stkadrs := stkadr; { save stack track here }
           if windows then pshparwin(ep^.pl) { eval 1-4 l-r, stack 5+ r-l }
           else pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
@@ -2237,6 +2252,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end;
           wrtins(' movq %r15,%rbp # restore our frame pointer');
           stkadr := stkadrs; { restore stack position }
+          { the SFR was removed above (result in register, or structure moved
+            to its temp); a set result stays on the stack in the SFR }
+          if ep^.rc <> 2 then stkadr := stkadr + ls;
           if callalnsysv then begin
             wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
             stkadr := stkadr + ptrsize
@@ -2257,6 +2275,12 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             callalnsysv := true
           end;
           genexp(ep^.sl); { process sfr start link }
+          { The SFR is now on the stack. Track it, so that calls made while
+            the parameters are evaluated (a function nested in this call's
+            parameter list) see it and align correctly. Without this the
+            nested call reaches its callee 8 bytes off 16-byte alignment,
+            which faults in C code that uses aligned SSE stores (#624). }
+          stkadr := stkadr - ls;
           stkadrs := stkadr; { save stack track here }
           if windows then begin
             pshparwin(ep^.pl); { eval 1-4 l-r, stack 5+ r-l }
@@ -2298,6 +2322,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                       wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
           stkadr := stkadrs; { restore stack position }
+          { the SFR was removed above (result in register, or structure moved
+            to its temp); a set result stays on the stack in the SFR }
+          if ep^.rc <> 2 then stkadr := stkadr + ls;
           if callalnsysv then begin
             wrtins(' addq $0,%rsp # remove call alignment', ptrsize);
             stkadr := stkadr + ptrsize
