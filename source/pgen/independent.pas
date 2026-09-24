@@ -260,6 +260,7 @@ maxalfa     = 10;      { maximum number of characters in alfa type }
 fillen      = 20000;   { maximum length of filenames }
 lablen      = 100000;  { label maximum length }
 varsqt      = 10;      { variable string quanta }
+maxvartab   = 100;     { variant logical table maximum entries }
 parfld      = 24;      { field length for intermediate parameters }
 maxtmp      = 20;      { maximum number of template dimensions }
 maxflen     = 200;     { maximum filename length }
@@ -383,6 +384,8 @@ spfpar = array [sctyp] of record
 end;
 labelst  = (entered,defined); (*label situation*)
 labelrg  = 0..maxlabel;       (*label range*)
+vartabinx = 1..maxvartab;     { variant logical table index }
+vartabty = array [vartabinx] of integer; { variant logical table }
 labelrec = record
                  val: address;
                  st: labelst;
@@ -1109,6 +1112,16 @@ begin
   end
 end;
 
+{ define a label in the output: a code label (pc) or a value label. The
+  default is the assembler form, a label or an equate; targets whose labels
+  are not assembler labels override. }
+virtual procedure deflabel(x: labelrg; pc: boolean);
+begin
+   write(prr, labeltab[x].ref^);
+   if pc then writeln(prr, ':')
+   else writeln(prr, ' = ', labeltab[x].val:1)
+end;
+
 procedure update(x: labelrg; pc: boolean); (*when a label definition lx is found*)
 begin
    if labeltab[x].st=defined then error('Duplicated label')
@@ -1117,9 +1130,7 @@ begin
      labeltab[x].val:= labelvalue;
      putlabel(x);
      labeltab[x].blk := blkstk;
-     write(prr, labeltab[x].ref^);
-     if pc then writeln(prr, ':') 
-     else writeln(prr, ' = ', labeltab[x].val:1);
+     deflabel(x, pc);
      schjmp(labeltab[x].ref^);
    end
 end;(*update*)
@@ -1532,6 +1543,44 @@ begin dwarf_fbreg := 0 end;
 virtual function dwarf_addr_size: integer;
 begin dwarf_addr_size := ptrsize end;
 
+{ source line marker for the debugger: x is the source line, pend marks the
+  first line after a routine's prologue. The default is the assembler .loc
+  directive; targets that carry line information another way override. }
+virtual procedure emitline(x: integer; pend: boolean);
+begin
+   write(prr, '        .loc 1 ', x:1, ' 1');
+   if pend then write(prr, ' prologue_end');
+   writeln(prr)
+end;
+
+{ source file declaration for the debugger: srcfil is the full path, n and
+  e the name and extension. The default opens the .debug_line section and
+  names the file to the assembler. }
+virtual procedure emitfile(view srcfil, n, e: string);
+begin
+   { the ELF section attributes are not accepted by the COFF assembler on
+     Windows, which uses "dr" (read-only data) }
+   if windows then
+     writeln(prr, '        .section .debug_line,"dr"')
+   else
+     writeln(prr, '        .section .debug_line,"",@progbits');
+   writeln(prr, '.Ldw_line_start:');
+   writeln(prr, '        .text');
+   writeln(prr, '        .file   "',n:*, '.', e:*, '"');
+   writeln(prr, '        .file   1 "',srcfil:*, '"')
+end;
+
+{ variant logical table: label x heads a table of vl entries. The default
+  defines the label and lays the table out in place as assembler words. }
+virtual procedure emitvartab(x: labelrg; view vt: vartabty; vl: integer);
+var vi: integer;
+begin
+   update(x, true);
+   write(prr, '        .quad   ', vl:1);
+   for vi := 1 to vl do write(prr, ',', vt[vi]:1);
+   writeln(prr)
+end;
+
 procedure errorcode;
 begin
 
@@ -1689,6 +1738,40 @@ begin
   writeln(prr, 'markep      = ', markep:10,      ' /* (old) maximum frame size */');
   writeln(prr, 'marksb      = ', marksb:10,      ' /* stack bottom */');
   writeln(prr, 'market      = ', market:10,      ' /* current ep */');
+end;
+
+{ output file header, what precedes the code. The default writes the
+  assembler equates the generated code and the runtime rely on: the header
+  file offsets and numbers, the error codes and the machine parameters, then
+  opens the code section. }
+virtual procedure emithdr;
+begin
+   writeln(prr, '# Header file locations');
+   writeln(prr, 'inputoff = 0');
+   writeln(prr, 'outputoff = 2');
+   writeln(prr, 'prdoff = 4');
+   writeln(prr, 'prroff = 6');
+   writeln(prr, 'erroroff = 8');
+   writeln(prr, 'listoff = 10');
+   writeln(prr, 'commandoff = 12');
+   writeln(prr);
+   writeln(prr, '# Logical file numbers for header files');
+   writeln(prr, 'inputfn = 1');
+   writeln(prr, 'outputfn = 2');
+   writeln(prr, 'prdfn = 3');
+   writeln(prr, 'prrfn = 4');
+   writeln(prr, 'errorfn = 5');
+   writeln(prr, 'listfn = 6');
+   writeln(prr, 'commandfn = 7');
+   writeln(prr);
+   errorcode;
+   writeln(prr);
+   mpb;
+   writeln(prr);
+   writeln(prr, '        .text');
+   writeln(prr, '#');
+   writeln(prr, '# Code section');
+   writeln(prr, '#')
 end;
 
 { write short block name with field }
@@ -1852,6 +1935,32 @@ begin
   end
 end;
 
+{ symbol definition: symbol sp of block bp, of kind k ('g' global, 'l'
+  local, 'p' parameter; other kinds define nothing). The default emits the
+  assembler equates the generated code and the debugger use, in the short
+  and long block-qualified forms. }
+virtual procedure emitsym(bp: pblock; sp: psymbol; k: char);
+var fl: integer;
+begin
+   if anyshort(bp) and (k in ['g','l','p']) then begin
+     wrtblks(bp, true, fl);
+     if k = 'g' then
+       writeln(prr, sp^.name^, ' = globals_start+', sp^.off:1)
+     else
+       writeln(prr, sp^.name^, ' = ', sp^.off:1)
+   end;
+   if k = 'g' then begin
+     write(prr, '        .globl   ');
+     wrtblks(bp, false, fl);
+     writeln(prr, sp^.name^);
+     wrtblks(bp, false, fl);
+     writeln(prr, sp^.name^, ' = globals_start+', sp^.off:1)
+   end else if k in ['l','p'] then begin
+     wrtblks(bp, false, fl);
+     writeln(prr, sp^.name^, ' = ', sp^.off:1)
+   end
+end;
+
 virtual procedure assemble;
 
 begin
@@ -1874,7 +1983,7 @@ procedure generate; (*generate segment of code*)
        sgn: boolean;
        sn2: labbuf;
        snl2: 1..lablen;
-       vt: array [1..100] of integer;
+       vt: vartabty;
        vi, vl: integer;
        ts: alfa;
        fl: integer;
@@ -1917,16 +2026,13 @@ begin
                getint(x); { get source line number }
                sline := x;
                if lindig then begin { gdb line diagnostic active }
-                 write(prr, '        .loc 1 ', x:1, ' 1'); { write debug line }
-                 if prologue_pending then begin
-                   { This is the first source line after a routine's prologue.
-                     Flag it so the debugger places routine breakpoints here,
-                     where parameters have already been stored to the frame,
-                     instead of at the routine entry where they read as garbage. }
-                   write(prr, ' prologue_end');
-                   prologue_pending := false
-                 end;
-                 writeln(prr)
+                 { the first source line after a routine's prologue is
+                   flagged so the debugger places routine breakpoints there,
+                   where parameters have already been stored to the frame,
+                   instead of at the routine entry where they read as
+                   garbage }
+                 emitline(x, prologue_pending);
+                 prologue_pending := false
                end
             end;
        'o': begin { option }
@@ -2084,23 +2190,7 @@ begin
              if sgn then ad := -ad;
              sp^.off := ad; getsds;
              sp^.digest := extract(sn, 1, len(sn));
-             if anyshort(blkstk) and (ch1 in ['g','l','p']) then begin
-               wrtblks(blkstk, true, fl); 
-               if ch1 = 'g' then 
-                 writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
-               else
-                 writeln(prr, sn2:snl2, ' = ', ad:1)
-             end;
-             if ch1 = 'g' then begin
-               write(prr, '        .globl   ');
-               wrtblks(blkstk, false, fl);
-               writeln(prr, sn2:snl2);
-               wrtblks(blkstk, false, fl); 
-               writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
-             end else if ch1 in ['l','p'] then begin
-               wrtblks(blkstk, false, fl); 
-               writeln(prr, sn2:snl2, ' = ', ad:1)
-             end;
+             emitsym(blkstk, sp, ch1);
              { place in block symbol list }
              sp^.next := blkstk^.symbols;
              blkstk^.symbols := sp
@@ -2112,11 +2202,7 @@ begin
              getnxt; parlab(x,ls); 
              getint(vl);
              for vi := 1 to vl do getint(vt[vi]);
-             update(x, true);
-             write(prr, '        .quad   ', vl:1);
-             for vi := 1 to vl do
-               write(prr, ',', vt[vi]:1);
-             writeln(prr)
+             emitvartab(x, vt, vl)
             end;
        't': begin { template }
              skpspc;
@@ -2240,18 +2326,8 @@ begin
              for i := 1 to max(srcfil) do
                if srcfil[i] = chr(92) then srcfil[i] := '/';
              if domrklin then begin
-             { place label at start of .debug_line for DW_AT_stmt_list }
-             { the ELF section attributes are not accepted by the COFF
-               assembler on Windows, which uses "dr" (read-only data) }
-             if windows then
-               writeln(prr, '        .section .debug_line,"dr"')
-             else
-               writeln(prr, '        .section .debug_line,"",@progbits');
-             writeln(prr, '.Ldw_line_start:');
-             writeln(prr, '        .text');
-             writeln(prr, '        .file   "',n:*, '.', e:*, '"');
-             writeln(prr, '        .file   1 "',srcfil:*, '"');
-             lindig := true; { set line diagnostic active for gdb }
+               emitfile(srcfil, n, e);
+               lindig := true { set line diagnostic active for gdb }
              end
            end;
       'z': begin { external descriptor }
@@ -2734,6 +2810,40 @@ begin
 end;
 
 { translate intermediate file }
+{ constants section, what follows the code. The default jumps over the
+  constants placed in the code section, writes the module name and the real
+  constants the generated code references, the constant tables from the
+  intermediate (gencst), then realigns and lands the jump. }
+virtual procedure emitcst;
+begin
+   writeln(prr, '#');
+   writeln(prr, '# Constants section');
+   writeln(prr, '#');
+   jmpfwd;
+   writeln(prr, 'modnam:');
+   write(prr, '        .string  "'); write(prr, modnam^); writeln(prr, '"');
+   writeln(prr, 'real_zero:');
+   writeln(prr, '        .double  0.0');
+   writeln(prr, 'real_int_max:');
+   writeln(prr, '        .double  9223372036854775807');
+   writeln(prr, 'real_int_min:');
+   writeln(prr, '        .double  -9223372036854775807');
+   gencst;
+   codealign;
+   writeln(prr, '1:')
+end;
+
+{ globals section: the zeroed area the program's globals occupy. }
+virtual procedure emitgbl;
+begin
+   writeln(prr, '        .bss');
+   writeln(prr, '#');
+   writeln(prr, '# Globals section');
+   writeln(prr, '#');
+   writeln(prr, 'globals_start:');
+   writeln(prr, '        .zero ', gblsiz:1)
+end;
+
 { *************************************************************************** }
 {                                                                             }
 {                         DWARF debug info generation                         }
@@ -3683,67 +3793,23 @@ begin
   end { if lindig }
 end; { gendwarf }
 
+{ debug information: the default emits the DWARF sections. }
+virtual procedure emitdbg;
+begin
+   gendwarf
+end;
+
+{ translate intermediate file }
 procedure xlate;
 
 begin (*xlate*)
-
    init;
-   writeln(prr, '# Header file locations');
-   writeln(prr, 'inputoff = 0');
-   writeln(prr, 'outputoff = 2');
-   writeln(prr, 'prdoff = 4');
-   writeln(prr, 'prroff = 6');
-   writeln(prr, 'erroroff = 8');
-   writeln(prr, 'listoff = 10');
-   writeln(prr, 'commandoff = 12');
-   writeln(prr);
-   writeln(prr, '# Logical file numbers for header files');
-   writeln(prr, 'inputfn = 1');
-   writeln(prr, 'outputfn = 2');
-   writeln(prr, 'prdfn = 3');
-   writeln(prr, 'prrfn = 4');
-   writeln(prr, 'errorfn = 5');
-   writeln(prr, 'listfn = 6');
-   writeln(prr, 'commandfn = 7');
-   writeln(prr);
-   errorcode;
-   writeln(prr);
-   mpb;
-   writeln(prr);
-   writeln(prr, '        .text');
-   writeln(prr, '#');
-   writeln(prr, '# Code section');
-   writeln(prr, '#');
-   generate;
-   writeln(prr, '#');
-   writeln(prr, '# Constants section');
-   writeln(prr, '#');
-   jmpfwd;
-   writeln(prr, 'modnam:');
-   write(prr, '        .string  "'); write(prr, modnam^); writeln(prr, '"');
-   writeln(prr, 'real_zero:');
-   writeln(prr, '        .double  0.0');
-   writeln(prr, 'real_int_max:');
-   writeln(prr, '        .double  9223372036854775807');
-   writeln(prr, 'real_int_min:');
-   writeln(prr, '        .double  -9223372036854775807');
-
-   gencst;
-
-   codealign;
-   writeln(prr, '1:');
-
-   writeln(prr, '        .bss');
-   writeln(prr, '#');
-   writeln(prr, '# Globals section');
-   writeln(prr, '#');
-   writeln(prr, 'globals_start:');
-   writeln(prr, '        .zero ', gblsiz:1);
-
-   gendwarf; { emit DWARF debug sections }
-
+   emithdr; { header, equates and code section start }
+   generate; { the code }
+   emitcst; { constants section }
+   emitgbl; { globals section }
+   emitdbg; { debug information }
    if dodmplab then dmplabs { Debug: dump label definitions }
-
 end; (*xlate*)
 
 procedure fndpow(var m: integer; p: integer; var d: integer);
