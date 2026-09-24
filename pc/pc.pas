@@ -2950,9 +2950,10 @@ create an "environment free" setup.
 
 copy <source> <destination>
 
-Copies the source file to the destination after a successful build. Used to
-place built products into the hosts tree. Paths are relative to the
-instruction file.
+Copies the source file to the destination after a successful build. Paths
+are relative to the instruction file. (The hosts tree is no longer filled
+this way: make hostinstall places the finished product set in the leaf it
+belongs in, see the makefile.)
 
 cc <command>
 
