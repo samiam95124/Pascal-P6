@@ -78,7 +78,18 @@ endif
 # for the cross compiled runtimes: the win64 runtime runs on windows/x86 and
 # the arm64 runtime on linux/arm, wherever they are built.
 #
-HOSTCELL=hosts/$(HOST)/$(ARCH)/$(BITS)
+# On glibc hosts (linux) the cell forks into one leaf per minimum glibc
+# requirement, glibc<major>.<minor>, because glibc is only backward
+# compatible: a product built against an older glibc runs on every newer
+# one and on no older one. The leaf a build belongs in is read from the
+# products themselves by tools/hostleaf.sh (the newest glibc symbol version
+# any of them references), at hostinstall time, once they exist; configure
+# restores from the newest leaf not above the running glibc. Other hosts
+# use the cell flat. HOSTLEAF is deliberately recursively expanded so it
+# is evaluated when hostinstall runs, not when this file is read.
+#
+HOSTLEAF=$(shell tools/hostleaf.sh $(addprefix bin/,$(HOSTBINS)))
+HOSTCELL=hosts/$(HOST)/$(ARCH)/$(BITS)$(if $(HOSTLEAF),/$(HOSTLEAF))
 WINCELL=hosts/windows/x86/bit64
 ARMCELL=hosts/linux/arm/bit64
 
@@ -243,8 +254,6 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	fi
 	ar rc $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
 		$(BUILD)/pgen/amd64/psystem_asm.o $(PSYSTEM_STDIO)
-	mkdir -p $(HOSTCELL)/libs
-	cp $(LIBS)/psystem.a $(HOSTCELL)/libs
 endif
 
 #
@@ -259,8 +268,6 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/main.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/main.asm
 	cp $(BUILD)/pgen/amd64/main.o $(LIBS)
-	mkdir -p $(HOSTCELL)/libs
-	cp $(BUILD)/pgen/amd64/main.o $(HOSTCELL)/libs
 
 ################################################################################
 #
@@ -726,8 +733,6 @@ $(LIBS)/services.a: $(AMI)/services.c \
 	ar rc $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
 		$(BUILD)/libs/services_wrapper.o $(BUILD)/libs/services.o \
 		$(BUILD)/libs/services_support.o $(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/libs
-	cp $(LIBS)/services.a $(HOSTCELL)/libs
 endif
 
 #
@@ -776,8 +781,6 @@ $(LIBS)/terminal.a: $(AMI)/terminal.c \
 		$(BUILD)/libs/terminal.o $(BUILD)/libs/term_services.o \
 		$(BUILD)/libs/system_event.o $(BUILD)/libs/config.o \
 		$(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/libs
-	cp $(LIBS)/terminal.a $(HOSTCELL)/libs
 endif
 
 #
@@ -826,8 +829,6 @@ $(LIBS)/graphics.a: $(AMI)/x11/graphics.c \
 		$(BUILD)/libs/graphics.o $(BUILD)/libs/graph_services.o \
 		$(BUILD)/libs/graph_system_event.o $(BUILD)/libs/graph_config.o \
 		$(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/libs
-	cp $(LIBS)/graphics.a $(HOSTCELL)/libs
 
 #
 # The "blonde" graphics archive for the graphics-hosted interpreter (pintg):
@@ -869,8 +870,6 @@ $(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c \
 		-o $(BUILD)/libs/widget_base.o -c $(PASCALP6)/amitk/portable/widget_base.c
 	$(CC) -r -nostdlib -o $(LIBS)/gnome_widgets.o \
 		$(BUILD)/libs/gnome_widgets.o $(BUILD)/libs/widget_base.o
-	mkdir -p $(HOSTCELL)/libs
-	cp $(LIBS)/gnome_widgets.o $(HOSTCELL)/libs
 endif
 
 #
@@ -911,8 +910,6 @@ $(LIBS)/sound.a: $(AMI)/sound.c $(AMI)/dumpsynthplug.c $(AMI)/fluidsynthplug.c \
 		$(BUILD)/libs/sound_wrapper.o $(BUILD)/libs/sound.o \
 		$(BUILD)/libs/dumpsynthplug.o $(BUILD)/libs/fluidsynthplug.o \
 		$(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/libs
-	cp $(LIBS)/sound.a $(HOSTCELL)/libs
 
 $(LIBS)/network.a: $(AMI)/network.c \
 	$(LIBS)/source/network_wrapper.asm \
@@ -935,8 +932,6 @@ $(LIBS)/network.a: $(AMI)/network.c \
 	ar rc $(LIBS)/network.a $(BUILD)/libs/network_wrapper_asm.o \
 		$(BUILD)/libs/network_wrapper.o $(BUILD)/libs/network_support.o \
 		$(BUILD)/libs/network.o $(BUILD)/libs/support.o
-	mkdir -p $(HOSTCELL)/libs
-	cp $(LIBS)/network.a $(HOSTCELL)/libs
 endif
 
 #
@@ -1005,8 +1000,6 @@ bin/cmach: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc \
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -o $(BUILD)/cmach64le \
 		$(SOURCE)/cmach/cmach.c $(CMACHEXTLIBS)
 	cp $(BUILD)/cmach64le $(PASCALP6)/bin/cmach
-	mkdir -p $(HOSTCELL)/bin
-	cp $(BUILD)/cmach64le $(HOSTCELL)/bin/cmach
 
 # Package-mode cmach objects: cmach.c compiled -DPACKAGE. The per-program deck is
 # now a separate program_code.o that pc links against (rather than #included into
@@ -1085,8 +1078,6 @@ bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
 		$(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/sound.a $(LIBS)/network.a \
 		$(PSYSTEM_STDIO) -lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm
 	cp $(BUILD)/cmacht64le $(PASCALP6)/bin/cmacht
-	mkdir -p $(HOSTCELL)/bin
-	cp $(BUILD)/cmacht64le $(HOSTCELL)/bin/cmacht
 endif
 
 cmachg: bin/cmachg
@@ -1132,8 +1123,6 @@ bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 		-lbrotlidec -lbrotlicommon -lexpat -luuid -lxcb -lXau -lXdmcp \
 		-Wl,--end-group
 	cp $(BUILD)/cmachg64le $(PASCALP6)/bin/cmachg
-	mkdir -p $(HOSTCELL)/bin
-	cp $(BUILD)/cmachg64le $(HOSTCELL)/bin/cmachg
 endif
 
 #
@@ -1147,16 +1136,17 @@ bin/spew: $(SOURCE)/spew.c
 	mkdir -p $(BUILD)
 	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
-	mkdir -p $(HOSTCELL)/bin
-	cp $(BUILD)/spew $(HOSTCELL)/bin/spew
 
 #
 # Snapshot the working binaries and libraries into the running host's
 # directory in the hosts tree. The Pascal-built tools (pcom, pgen, pint and
 # friends) are built with pc, not this makefile, so this is how they enter
 # the hosts tree; the C-built products are copied as well, giving a complete
-# restorable set. The configure script performs the reverse restore. Run
-# after a clean regression, before committing.
+# restorable set. This is the only path into the hosts tree: on linux the
+# destination is the glibc leaf the finished products belong in (see
+# HOSTLEAF), which is only known once they are all built. The configure
+# script performs the reverse restore. Run after a clean regression, before
+# committing.
 #
 HOSTBINS=cmach cmacht cmachg dif genobj hashtabr hashtabs parser passym pc \
 	pcom pgen pgen_amd64 pgen_arm64 pint pintt pintg pmach pmacht pmachg spew \
@@ -1176,7 +1166,7 @@ hostinstall:
 # Report the detected host characteristics.
 #
 whathost:
-	@echo "host: $(HOST) arch: $(ARCH) bits: $(BITS) -> $(HOSTCELL)"
+	@echo "host: $(HOST) arch: $(ARCH) bits: $(BITS) leaf: $(HOSTLEAF) -> $(HOSTCELL)"
 
 clean:
 	find . -name "*.pint" -type f -delete
