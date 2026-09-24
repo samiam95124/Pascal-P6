@@ -50,17 +50,17 @@ function checkexists {
 # The libraries are the ones the Ami models bind to, and that pc names on its
 # link lines: OpenSSL for network, ALSA and fluidsynth (with glib and pcre2)
 # for sound, X11 with XTest for graphics, and FreeType with FontConfig for
-# its fonts. The rest are the static closure of those, because Pascaline
-# links fully static: every transitive library has to be present, not just
-# the top one.
+# its fonts. The rest are the transitive closure of those, listed so that a
+# static build (pc -static, see --static below) finds every archive; the
+# default dynamic link needs only the top ones.
 #
 # Only pcre2 is named. glib 2.73 and on use pcre2, and the earlier glib of
 # Ubuntu 20.04 links its own pcre when glib is linked as a shared library,
 # so pcre (pcre1, which Ubuntu 26.04 no longer carries) is never needed.
 #
-# The development packages for ALSA and fluidsynth supply the headers only.
-# The distribution carries no static archive for either, so a fully static
-# link also needs tools/staticdeps/build.sh, which builds them.
+# The development packages for ALSA and fluidsynth supply the headers and
+# shared objects only. A static build also needs tools/staticdeps/build.sh,
+# which builds the archives; --static runs it.
 #
 DEPS="
 cmd;gcc;build-essential
@@ -186,9 +186,8 @@ function installdeps {
 
 #
 # Check that a static archive for the given library is on the linker's
-# search path, by linking a program that names it. This is what the build
-# does: Pascaline links fully static, so a library present only as a shared
-# object does not serve.
+# search path, by linking a program that names it statically. Used by
+# --static, where a library present only as a shared object does not serve.
 #
 function checkstatic {
 
@@ -251,6 +250,9 @@ do
         echo "--64:         Select 64 bit target"
         echo "--no-install: Only report the missing tools, libraries and"
         echo "              static archives, do not install or build them"
+        echo "--static:     Also provide the static ALSA and fluidsynth"
+        echo "              archives a static build (pc -static) links,"
+        echo "              building them from source if missing"
         echo
         exit 0
 
@@ -268,6 +270,11 @@ do
     then
 
         noinstall="1"
+
+    elif [ $var = "--static" ]
+    then
+
+        static="1"
 
     fi
 
@@ -336,17 +343,20 @@ else
 fi
 
 #
-# The static ALSA and fluidsynth archives the sound model links. No
-# distribution carries these -- libasound2-dev and libfluidsynth-dev install
-# the headers and the shared objects only -- so they are built from source
-# by tools/staticdeps/build.sh, which installs them in /usr/local/lib.
-# Without them the link of cmach, and of any program using the sound module,
-# fails with "cannot find -lasound" or "cannot find -lfluidsynth".
+# The static ALSA and fluidsynth archives a static build of the sound model
+# links (pc -static; the default Linux link is dynamic and uses the shared
+# objects). No distribution carries these -- libasound2-dev and
+# libfluidsynth-dev install the headers and the shared objects only -- so
+# they are built from source by tools/staticdeps/build.sh, which installs
+# them in /usr/local/lib. Without them a static link of cmach, or of any
+# program using the sound module, fails with "cannot find -lasound" or
+# "cannot find -lfluidsynth".
 #
-# The build is from the source of each project and takes some minutes, so it
-# is run only when an archive is actually missing.
+# The build fetches and compiles both projects and takes some minutes, and
+# its ALSA patch tracks a particular alsa-lib release, so it is run only on
+# request (--static) and only when an archive is actually missing.
 #
-if [ "$host" = "linux" ] && command -v gcc >/dev/null ; then
+if [ -n "$static" ] && [ "$host" = "linux" ] && command -v gcc >/dev/null ; then
 
     staticmiss=
     checkstatic asound

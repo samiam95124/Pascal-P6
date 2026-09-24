@@ -3,9 +3,15 @@
 #
 # Build and install the static external libraries for the Ami bindings.
 #
-# Pascaline links fully static. The sound binding needs ALSA and fluidsynth,
-# whose static libraries the distribution does not carry (the network
-# binding's OpenSSL static libraries ship with libssl-dev and need no work).
+# The default Linux link is dynamic and does not need these; they serve a
+# static build (pc -static), and configure runs this script only with
+# --static. The sound binding needs ALSA and fluidsynth, whose static
+# libraries the distribution does not carry (the network binding's OpenSSL
+# static libraries ship with libssl-dev and need no work).
+#
+# alsa-static.patch was written against alsa-lib 1.2.2 (the 2020-02-19
+# sources). Its src/conf.c hunk does not apply to 1.2.15 and later, so this
+# script fails on current distributions until the patch is refreshed.
 # This script builds both from source and installs the archives to
 # /usr/local/lib, where pc's link lines find them:
 #
