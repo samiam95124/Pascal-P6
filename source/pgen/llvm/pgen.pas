@@ -17,18 +17,21 @@
 *                                                                              *
 *   - Registers: LLVM allocates them. Expression trees are walked into SSA    *
 *     values, one per node result (two for fat pointer results).              *
-*   - The frame pointer chain: the x86 ENTER display is reproduced by passing *
-*     the caller's frame base as a hidden first argument; the callee copies   *
-*     the display entries it needs from it, exactly as ENTER does.            *
+*   - The frame pointer chain: the x86 ENTER display is reproduced from the   *
+*     caller's frame base, which the caller leaves in the runtime global      *
+*     psystem_llvm_sl just before the call; the callee copies the display     *
+*     entries it needs from it, exactly as ENTER does.                        *
 *   - Set and structure function results: the caller's result frame (SFR) is *
-*     an alloca passed as a hidden second argument; the callee maps the       *
-*     positive frame offsets pcom uses for it onto that pointer.              *
+*     an alloca whose address it leaves in psystem_llvm_sfr; the callee maps  *
+*     the positive frame offsets pcom uses for it onto that pointer. Globals  *
+*     rather than hidden arguments, so that the C thunks of the library      *
+*     modules and the generated routines share one signature.                 *
 *   - Exceptions and non-local goto: setjmp/longjmp in the C runtime          *
 *     (psystem_llvm.c), replacing the assembly throw/unwind and the frame     *
 *     pointer restores.                                                       *
-*   - Module initialization chain: the runtime calls the module entries in    *
-*     link order from a table the linker step supplies, replacing the         *
-*     fall-through into the next object.                                      *
+*   - Module initialization chain: each object registers its entry in the    *
+*     psystem_llvm_mods section; the runtime calls the entries in link       *
+*     order, replacing the fall-through into the next object.                 *
 *                                                                              *
 * Functions are buffered and written when complete, because the return type   *
 * of a routine is only known from its return instruction, and the frame size  *
@@ -51,7 +54,10 @@ label 99;
 
 const
 
-   maxll = 4000;   { line buffer length }
+   maxll = 40000;  { line buffer length: a routine name carries its type digest,
+                     which runs to thousands of characters for a record-heavy
+                     signature (the P2/P4 compilers), and an alias or declare
+                     line holds the whole name }
    maxpar = 128;   { maximum parameters of a routine }
    maxcase = 4000; { maximum case table entries }
    maxlvl = 32;    { maximum nesting level }
@@ -1486,6 +1492,11 @@ begin
    write(prr, '@modnam = private constant [ ', max(modnam^)+1:1, ' x i8 ] c"');
    for i := 1 to max(modnam^) do obyte(ord(modnam^[i]));
    writeln(prr, chr(92), '00"');
+   { the module's entry in the initialization chain: the runtime walks the
+     psystem_llvm_mods section in link order, which is the initialization
+     order pc established, calling each entry in turn }
+   writeln(prr, '@"psystem_llvm_mod.', modnam^, '" = global ptr @"', modnam^,
+                '", section "psystem_llvm_mods", align 8');
    cp := csttbl;
    while cp <> nil do begin
 

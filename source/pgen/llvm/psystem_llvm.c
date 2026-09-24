@@ -17,7 +17,8 @@
 *     the target frame and longjmps to it.                                    *
 *   - The module initialization chain. The generated module entries call the *
 *     next module in link order here instead of falling through into the next *
-*     object; the link step supplies the table.                               *
+*     object. Each object places its entry in the psystem_llvm_mods section,   *
+*     so the linker collects the chain in link order, no table is generated.  *
 *   - main.                                                                    *
 *                                                                              *
 *******************************************************************************/
@@ -53,7 +54,12 @@ unsigned char ExceptionBase[EXCEPTIONTOP+2];
 
 extern long psystem_errret;
 extern void psystem_errorv(const char* modnam, long line, long en);
-extern void (*psystem_llvm_modlist[])(void);
+/* the initialization chain: the linker concatenates the modules' entries
+   (section psystem_llvm_mods) in link order and provides the section bounds.
+   Weak, so a link without any entry (none in practice, the program is one)
+   resolves to an empty chain instead of failing. */
+extern void (*__start_psystem_llvm_mods[])(void) __attribute__((weak));
+extern void (*__stop_psystem_llvm_mods[])(void) __attribute__((weak));
 
 static int modidx = 0;
 
@@ -139,9 +145,13 @@ void psystem_llvm_ipj(unsigned char* frame, long key)
 /* call the next module in the initialization chain */
 void psystem_llvm_nextmod(void)
 {
-    void (*f)(void) = psystem_llvm_modlist[modidx];
+    void (*f)(void);
 
-    if (f) { modidx++; f(); }
+    if (&__start_psystem_llvm_mods[modidx] < __stop_psystem_llvm_mods) {
+        f = __start_psystem_llvm_mods[modidx];
+        modidx++;
+        f();
+    }
 }
 
 int main(int argc, char* argv[])

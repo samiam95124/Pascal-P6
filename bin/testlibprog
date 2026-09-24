@@ -79,6 +79,14 @@ if [ "$param1" = "--pgen" ]; then
    if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
    "$exe" > "$ob.lst" 2>/dev/null
 
+elif [ "$param1" = "--llvm" ]; then
+
+   # llvm: a native executable like pgen, through the LLVM IR code generator
+   # and clang
+   pc "$ob" -llvm -r > "$ob.err" 2>&1
+   if [ $? -ne 0 ]; then echo "*** testlibprog: $name compile failed"; exit 1; fi
+   "$exe" > "$ob.lst" 2>/dev/null
+
 elif [ "$param1" = "--pint" ]; then
 
    pc "$ob" -pint -r > "$ob.err" 2>&1

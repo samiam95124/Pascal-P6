@@ -599,6 +599,18 @@ The output .s file is then assembled and linked by gcc:
       source/pgen/amd64/main.asm \
       output.s -o executable -lm
 
+Other targets:
+--------------
+The same shared module (independent.pas) drives two more generators, each in
+its own directory with its own registers, mpb and endian modules:
+
+  source/pgen/arm64    aarch64 (arm64_sysv), a cross tool built as
+                       bin/pgen_arm64 and selected by the arm64_sysv tag in
+                       bin/pc.ins.
+  source/pgen/llvm     LLVM IR, built as bin/pgen_llvm and selected by
+                       pc -llvm; clang assembles and links. Consumes the
+                       amd64_sysv deck. See source/pgen/llvm/README.md.
+
 Bootstrap Notes:
 ----------------
 pgen is compiled by pcom and itself, forming a matched pair. When modifying

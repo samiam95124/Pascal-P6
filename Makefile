@@ -216,7 +216,8 @@ win64: $(LIBS)/win64/psystem.a $(LIBS)/win64/main.o $(LIBS)/win64/services.a \
 arm64: $(LIBS)/arm64/psystem.a $(LIBS)/arm64/main.o $(LIBS)/arm64/services.a
 
 all: bin/cmach bin/spew \
-	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/services.a \
+	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/llvm/main.o \
+	$(LIBS)/services.a \
 	$(LIBS)/terminal.a $(LIBS)/graphics.a source/graph/graphics.a \
 	$(LIBS)/gnome_widgets.o \
 	$(LIBS)/sound.a $(LIBS)/network.a \
@@ -268,6 +269,23 @@ main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/main.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/main.asm
 	cp $(BUILD)/pgen/amd64/main.o $(LIBS)
+
+#
+# Build main for the LLVM IR target: the C replacement for the assembly
+# startup and exception shims (main.asm, psystem.asm) of the amd64 target. The
+# LLVM target shares psystem.a with the amd64 target; only the entry object
+# differs, and it lives in libs/llvm ahead of the main library on the llvm
+# module path (see bin/pc.ins).
+#
+$(LIBS)/llvm/main.o: $(SOURCE)/pgen/llvm/psystem_llvm.c
+	@echo
+	@echo "Building main for llvm..."
+	@echo
+	mkdir -p $(BUILD)/llvm
+	mkdir -p $(LIBS)/llvm
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/llvm/main.o \
+		-c $(SOURCE)/pgen/llvm/psystem_llvm.c
+	cp $(BUILD)/llvm/main.o $(LIBS)/llvm
 
 ################################################################################
 #
@@ -1149,18 +1167,23 @@ bin/spew: $(SOURCE)/spew.c
 # committing.
 #
 HOSTBINS=cmach cmacht cmachg dif genobj hashtabr hashtabs parser passym pc \
-	pcom pgen pgen_amd64 pgen_arm64 pint pintt pintg pmach pmacht pmachg spew \
+	pcom pgen pgen_amd64 pgen_arm64 pgen_llvm pint pintt pintg pmach pmacht \
+	pmachg spew \
 	find_getpgm graphics_test management_test netprobe network_test \
 	services_test services_test1 sndprobe sound_test strings_test \
 	terminal_test widget_test \
 	backgammon breakout checkers chess conquest defenders pong
 HOSTLIBS=main.o parse.o psystem.a services.a strings.o terminal.a graphics.a \
 	sound.a network.a gnome_widgets.o
+# the LLVM target's entry object and prebuilt library modules (libs/llvm)
+HOSTLLVMLIBS=main.o parse.o strings.o
 
 hostinstall:
-	mkdir -p $(HOSTCELL)/bin $(HOSTCELL)/libs
+	mkdir -p $(HOSTCELL)/bin $(HOSTCELL)/libs $(HOSTCELL)/libs/llvm
 	for f in $(HOSTBINS); do cp bin/$$f $(HOSTCELL)/bin; done
 	for f in $(HOSTLIBS); do cp libs/$$f $(HOSTCELL)/libs; done
+	for f in $(HOSTLLVMLIBS); do \
+		if [ -f libs/llvm/$$f ]; then cp libs/llvm/$$f $(HOSTCELL)/libs/llvm; fi; done
 
 #
 # Report the detected host characteristics.
@@ -1196,6 +1219,7 @@ clean:
 	find . -name "*.p6o" -type f -delete
 	find . -name "*.mpp.pas" -type f -delete
 	find . -name "*.s" -type f -delete
+	find . -name "*.ll" -type f -delete
 	
 help:
 	@echo

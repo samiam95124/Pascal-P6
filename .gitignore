@@ -32,6 +32,7 @@ bin/pc
 bin/pcom
 bin/pgen
 bin/pgen_arm64
+bin/pgen_llvm
 bin/pint
 bin/pintg
 bin/pintt
@@ -51,3 +52,4 @@ libs/*.a
 libs/*.o
 libs/win64/
 libs/arm64/
+libs/llvm/

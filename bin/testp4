@@ -33,7 +33,7 @@ run --nolist $option --args="$(ob p4/standardp).p4 ${tmpd}temp4" --in=/dev/null 
 # comparison read as a pass
 if [ ! -f $(ob p4/pint).lst ]; then echo "*** FAIL (no listing)"; exit 1; fi
 strip $(ob p4/pint).lst ${tmpd}tmp1
-if [ "$option" = "--cmach" ] || [ "$option" = "--package" ] || [ "$option" = "--pgen" ]; then
+if [ "$option" = "--cmach" ] || [ "$option" = "--package" ] || [ "$option" = "--pgen" ] || [ "$option" = "--llvm" ]; then
     strip p4/standardpc.cmp ${tmpd}tmp2
 else
     strip p4/standardp.cmp ${tmpd}tmp2
