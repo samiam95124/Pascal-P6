@@ -1135,6 +1135,14 @@ begin
    end
 end;(*update*)
 
+{ echo the intermediate line just read into the output, as a comment. The
+  default is the assembler comment form; targets with another comment
+  syntax override. }
+virtual procedure emitecho;
+begin
+   writeln(prr, '# ', sline:6, ': ', iline:6, ': ', inplin:inplen)
+end;
+
 procedure getlin;
 var i: lininx;
 begin
@@ -1155,7 +1163,7 @@ begin
    inpinx := 1;
    iline := iline+1; { next intermediate line }
 !;writeln(sline:6, ': ', iline:6, ': ', inplin:inplen);
-   writeln(prr, '# ', sline:6, ': ', iline:6, ': ', inplin:inplen)
+   emitecho
  end
 end;
 
