@@ -423,10 +423,17 @@ if [[ $rc != 0 ]] ; then
 fi
 
 #
-# Restore the working binaries and libraries from the hosts tree
+# Restore the working binaries and libraries from the hosts tree.
+#
+# On glibc hosts the cell holds one leaf per minimum glibc requirement
+# (glibc<major>.<minor>); tools/hostleaf.sh picks the newest leaf not above
+# the running glibc, since a product built against an older glibc runs on
+# every newer one and on no older one. A cell without leaves is used flat.
 #
 hostcell="hosts/$host/$arch/bit$bits"
-echo "Set up for $host/$arch/bit$bits"
+hostcell=$(tools/hostleaf.sh --select "$hostcell")
+if [[ $? != 0 ]] ; then exit 1 ; fi
+echo "Set up for $host/$arch/bit$bits from $hostcell"
 
 if [ ! -d "$hostcell/bin" ] ; then
 
