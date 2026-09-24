@@ -254,6 +254,10 @@ do
         echo "              archives a static build (pc -static) links,"
         echo "              building them from source if missing"
         echo
+        echo "Exit status is 1 if anything is missing, could not be installed"
+        echo "or could not be built, so with --no-install it reports the state"
+        echo "of the host without changing it."
+        echo
         exit 0
 
     elif [ $var = "--32" ]
@@ -324,8 +328,15 @@ if [ "`id -u`" != "0" ] ; then
 
 fi
 
+#
+# Anything reported but not fatal on the spot (a dependency that could not
+# be installed, a build that failed) sets this, and the script exits 1 at
+# the end so a caller can rely on the status.
+#
+softfail=
+
 checkdeps cmd "$DEPS"
-installdeps
+installdeps || softfail="1"
 
 #
 # The library checks ask pkg-config, so they only mean anything once it is
@@ -334,11 +345,12 @@ installdeps
 if command -v pkg-config >/dev/null ; then
 
     checkdeps lib "$DEPS"
-    installdeps
+    installdeps || softfail="1"
 
 else
 
     echo "*** No pkg-config: the build libraries cannot be checked"
+    softfail="1"
 
 fi
 
@@ -383,13 +395,14 @@ if [ -n "$static" ] && [ "$host" = "linux" ] && command -v gcc >/dev/null ; then
         else
 
             checkdeps cmd "$SDEPS"
-            installdeps
+            installdeps || softfail="1"
             echo "Building static ALSA and fluidsynth from source. This takes"
             echo "some minutes and fetches both sources from the network."
             ./tools/staticdeps/build.sh
             if [[ $? != 0 ]] ; then
 
                 echo "*** Unable to build the static archives"
+                softfail="1"
 
             fi
 
@@ -417,6 +430,7 @@ if [[ $rc != 0 ]] ; then
     if [[ $rc != 0 ]] ; then
 
         echo "*** Unable to make flip"
+        softfail="1"
 
     fi
 
@@ -470,4 +484,10 @@ if [ -z "$PASCALP6" ] ; then
 
 fi
 
+if [ -n "$softfail" ] ; then
+
+    echo "*** Configure completed with errors"
+    exit 1
+
+fi
 echo "Configure completed!"
