@@ -2723,10 +2723,12 @@ override procedure assemble;
                   errif(icmpi('ult', ep^.r^.r1a, 1), ecInvalidContainerLevel);
                   errif(icmpi('ugt', ep^.r^.r1a, ep^.q), ecInvalidContainerLevel)
                end;
+               { the template holds one integer per level, outermost first
+                 (the layout cxc and ccs walk): level l of q is entry q-l }
                if ep^.q <> 1 then begin
                   t := newv;
                   oins; ov(t); os(' = sub i64 '); oi(ep^.q); os(', '); ov(ep^.r^.r1a); ol;
-                  a := binii('shl', t, 4);
+                  a := binii('mul', t, intsize);
                   b := bini('add', ep^.l^.r2a, a);
                   ep^.r1a := ld('i', i2p(b))
                end else ep^.r1a := ep^.l^.r2a

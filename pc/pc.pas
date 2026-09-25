@@ -2055,8 +2055,11 @@ begin
          putstr(ccname);
          if fstatic then putstr(' -static -g3') else putstr(' -g3');
          { the IR carries no target triple (it is the host's), which clang
-           notes as an override: silence that }
-         if fllvm then putstr(' -Wno-override-module');
+           notes as an override: silence that. The IR keeps every Pascal
+           variable in the frame and every expression value in a fresh SSA
+           value, which is what LLVM's optimizer is for: unoptimized it runs
+           slower than pgen's code, at -O2 about twice as fast. }
+         if fllvm then putstr(' -O2 -Wno-override-module');
          putchr(' ');
          putstr('-c');
          putchr(' ');

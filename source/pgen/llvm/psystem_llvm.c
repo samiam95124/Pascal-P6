@@ -48,6 +48,11 @@ void* psystem_llvm_sl;
 void* psystem_llvm_sfr;
 static expframe root;           /* the master frame */
 
+/* the location of the last system error thrown, for the master handler's
+   report: the frames carry only the vector */
+static const char* errmod = NULL;
+static long errline = 0;
+
 /* the vectors of the catchable system exceptions: a throw of system error en
    carries the address of entry en */
 unsigned char ExceptionBase[EXCEPTIONTOP+2];
@@ -69,9 +74,13 @@ static void master(long vec)
     long en;
     long base = (long)ExceptionBase;
 
-    if (vec >= base && vec <= base+EXCEPTIONTOP) en = vec-base;
-    else en = MASTEREXCEPTION;
-    psystem_errorv("<unknown>", 0, en);
+    if (vec >= base && vec <= base+EXCEPTIONTOP) {
+
+        /* a system error nothing caught: report it where it was raised */
+        en = vec-base;
+        psystem_errorv(errmod ? errmod : "<unknown>", errline, en);
+
+    } else psystem_errorv("<unknown>", 0, MASTEREXCEPTION);
     exit(1);
 }
 
@@ -124,6 +133,7 @@ void psystem_llvm_mse(long modnam, long line)
 /* a catchable system error, from psystem's error handling */
 void psystem_unwind(const char* modnam, int line, int en)
 {
+    errmod = modnam; errline = line;
     psystem_llvm_thw((long)&ExceptionBase[en]);
 }
 
