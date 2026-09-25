@@ -112,4 +112,7 @@ Limits, as of this writing:
 - No debug metadata yet: `emitline` writes line comments, not `!DILocation`.
 - `ctb` is not implemented.
 - The IR carries no target triple; pc passes `-Wno-override-module`.
-  Built and tested against clang 21 (Ubuntu 26.04).
+  Built and tested against clang 18 (Ubuntu 20.04) and clang 21 (Ubuntu 26.04).
+- The IR uses opaque pointers, so clang 15 or later is needed; an older
+  clang rejects every module ("expected type"). configure checks the
+  default clang and offers to upgrade one that is too old.
