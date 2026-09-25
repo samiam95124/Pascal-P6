@@ -44,8 +44,8 @@ static expframe* curexp = NULL; /* innermost frame */
    set by the caller just before the call, read by the callee at entry. They
    replace hidden arguments so that generated routines and the C thunks of
    the library modules share one signature. */
-void* psystem_llvm_sl;
-void* psystem_llvm_sfr;
+void* psystem_llvm_sl = NULL;
+void* psystem_llvm_sfr = NULL;
 static expframe root;           /* the master frame */
 
 /* the location of the last system error thrown, for the master handler's
@@ -54,8 +54,15 @@ static const char* errmod = NULL;
 static long errline = 0;
 
 /* the vectors of the catchable system exceptions: a throw of system error en
-   carries the address of entry en */
-unsigned char ExceptionBase[EXCEPTIONTOP+2];
+   carries the address of entry en.
+
+   Initialized, as are the two pointers above, so that these are definitions
+   and not tentative ones: a compiler that defaults to -fcommon (gcc before
+   10) makes a tentative definition a common symbol, and the linker then
+   searches psystem.a for a definition of ExceptionBase, finds the assembly
+   shim's, pulls in psystem_asm.o, and its psystem_thw and psystem_unwind
+   collide with the ones here. */
+unsigned char ExceptionBase[EXCEPTIONTOP+2] = {0};
 
 extern long psystem_errret;
 extern void psystem_errorv(const char* modnam, long line, long en);
