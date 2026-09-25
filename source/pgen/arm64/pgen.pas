@@ -2085,7 +2085,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if ep^.q <> 1 then begin
             wrtins(' mov %1, #^0 // get total lvl', ep^.q, ep^.t1);
             wrtins(' sub %1, %1, %2 // find tl-al', ep^.t1, ep^.r^.r1);
-            wrtins(' lsl %1, %1, #4 // *16 (long)', ep^.t1);
+            wrtins(' lsl %1, %1, #3 // *8 (one integer per level)', ep^.t1);
             wrtins(' add %1, %1, %2 // add to base template', ep^.t1, ep^.l^.r2);
             wrtins(' ldr %1, [%2] // load from template', ep^.r1, ep^.t1)
           end

@@ -2429,7 +2429,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           if ep^.q <> 1 then begin
             wrtins(' movq $0,%1 # get total lvl', ep^.q, ep^.t1);
             wrtins(' subq %1,%2 # find tl-al', ep^.r^.r1, ep^.t1);
-            wrtins(' salq $4,%1 # *16 (long)', ep^.t1);
+            wrtins(' salq $3,%1 # *8 (one integer per level)', ep^.t1);
             wrtins(' addq %1,%2 # add to base template', ep^.l^.r2, ep^.t1);
             wrtins(' movq (%1),%2 # add to base template', ep^.t1, ep^.r1)
           end
