@@ -176,7 +176,6 @@ if [ -n "$WINTREE" ]; then
 fi
 pc libs/source/strings -pint -r
 cp libs/source/strings.p6 libs
-llvmlib strings
 
 echo ""
 echo "**********************************************************************"
@@ -191,7 +190,6 @@ if [ -n "$WINTREE" ]; then
 fi
 pc libs/source/parse -pint -r
 cp libs/source/parse.p6 libs
-llvmlib parse
 
 #
 # Programs in Pascaline.
@@ -346,8 +344,9 @@ instprog "$bp/pgen" bin/pgen_llvm
 rm -rf "$bp"
 #
 # The prebuilt library modules for the LLVM target go to libs/llvm (pc's
-# llvm module path). They need clang; without it the LLVM target is not
-# usable and the modules are skipped.
+# llvm module path). Built here, after the generator they need exists.
+# They need clang; without it the LLVM target is not usable and the
+# modules are skipped.
 #
 if command -v clang >/dev/null 2>&1; then LLVMLIBS=1; else LLVMLIBS=""; fi
 #
@@ -369,6 +368,8 @@ function llvmlib {
    rm -rf "$bp"
 
 }
+llvmlib strings
+llvmlib parse
 compprog source/pint
 #
 # pintt is the same source built with the terminal module flavor first on
