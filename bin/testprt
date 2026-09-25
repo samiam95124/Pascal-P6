@@ -561,7 +561,7 @@ done
 # Strip compiler specific messages out and compare the entire listing
 #
 strip $rd/iso7185prt.lst ${tmpd}tmp1
-if [ "$option" = "--pgen" ]; then
+if [ "$option" = "--pgen" ] || [ "$option" = "--llvm" ]; then
 
     strip $sd/iso7185prt_pgen.cmp ${tmpd}tmp2
     diff -Bw ${tmpd}tmp1 ${tmpd}tmp2 > $rd/iso7185prt.dif

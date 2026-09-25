@@ -33,6 +33,7 @@ fi
 # --cmach    Generate the machine deck (to be run via cmach).
 # --package  Generate a unified executable (mach code plus interpreter).
 # --pgen     Generate a native executable for the current machine (default).
+# --llvm     Generate a native executable through the LLVM IR target (clang).
 # --noerrmsg Do not echo the .err file on completion (the file is still written).
 # --iso7185  Compile in ISO 7185 standard mode.
 # --out=<dir> Place generated products and the .err in <dir> (default: alongside
@@ -59,6 +60,7 @@ do
         --cmach)    mode=cmach ;;
         --package)  mode=package ;;
         --pgen)     mode=pgen ;;
+        --llvm)     mode=llvm ;;
         --noerrmsg) noerrmsg=1 ;;
         --iso7185)  pcflags="$pcflags -iso7185" ;;
         --list+|--list) listing=1 ;;  # listing on; redirected via --list= below

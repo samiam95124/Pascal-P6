@@ -86,6 +86,7 @@ do
     elif [ "$param" = "--cmach" ]; then backend="--cmach"
     elif [ "$param" = "--package" ]; then backend="--package"
     elif [ "$param" = "--pgen" ]; then backend="--pgen"
+    elif [ "$param" = "--llvm" ]; then backend="--llvm"
 
     elif [ "$param" = "--windows" ]; then
 
@@ -119,6 +120,7 @@ do
         echo "--cmach          Generate the machine deck and run it through cmach."
         echo "--package        Generate a packaged application and run it."
         echo "--pgen           Generate a native executable and run it."
+        echo "--llvm           Generate a native executable through LLVM IR and run it."
         echo "--windows        Cross compile to a Windows executable and run under wine."
         echo "--cmpfile <file> Compare against <file>.cmp instead of <program>.cmp."
         echo "--noerrmsg       Do not print a failure message on compile."

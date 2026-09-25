@@ -176,6 +176,7 @@ if [ -n "$WINTREE" ]; then
 fi
 pc libs/source/strings -pint -r
 cp libs/source/strings.p6 libs
+llvmlib strings
 
 echo ""
 echo "**********************************************************************"
@@ -190,6 +191,7 @@ if [ -n "$WINTREE" ]; then
 fi
 pc libs/source/parse -pint -r
 cp libs/source/parse.p6 libs
+llvmlib parse
 
 #
 # Programs in Pascaline.
@@ -321,6 +323,52 @@ if [ $? -ne 0 ]; then
 fi
 instprog "$bp/pgen" bin/pgen_arm64
 rm -rf "$bp"
+#
+# The LLVM IR code generator translates the amd64_sysv intermediate to LLVM
+# IR, which clang assembles and links (pc -llvm). Native, not a cross tool,
+# but like the arm64 generator it shares source/pgen/independent with the
+# amd64 generator under its own registers module, so it is built in a scratch
+# build path for the same reason.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building source/pgen/llvm/pgen as pgen_llvm..."
+echo "**********************************************************************"
+echo ""
+bp="build/llvm/exe"
+rm -rf "$bp"; mkdir -p "$bp"
+pc source/pgen/llvm/pgen -bp="$bp" -r $OPTIONS
+if [ $? -ne 0 ]; then
+   echo "*** Error: compile failed"
+   exit 1
+fi
+instprog "$bp/pgen" bin/pgen_llvm
+rm -rf "$bp"
+#
+# The prebuilt library modules for the LLVM target go to libs/llvm (pc's
+# llvm module path). They need clang; without it the LLVM target is not
+# usable and the modules are skipped.
+#
+if command -v clang >/dev/null 2>&1; then LLVMLIBS=1; else LLVMLIBS=""; fi
+#
+# llvmlib <module>: build libs/source/<module> through the LLVM target into
+# libs/llvm/<module>.o. Built in a scratch build path so the amd64 object
+# beside the source is left alone.
+#
+function llvmlib {
+
+   if [ -z "$LLVMLIBS" ]; then return; fi
+   local bp="build/llvm/libs"
+   rm -rf "$bp"; mkdir -p "$bp" libs/llvm
+   pc libs/source/$1 -llvm -bp="$bp" -r
+   if [ $? -ne 0 ]; then
+      echo "*** Error: compile failed"
+      exit 1
+   fi
+   cp "$bp/$1.o" libs/llvm
+   rm -rf "$bp"
+
+}
 compprog source/pint
 #
 # pintt is the same source built with the terminal module flavor first on

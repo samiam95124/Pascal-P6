@@ -179,6 +179,7 @@ var
 { compile for cmach (interpreter) }         fcmach, scmach:  boolean;
 { compile for package mode }               fpack, spack:   boolean;
 { compile for pgen mode (executable) }     fpgen, spgen:   boolean;
+{ pgen mode through the LLVM IR target }   fllvm, sllvm:   boolean;
 { these are "pass through" options, options meant for programs we execute }
 { generate coff symbols }                  fsymcof: boolean;
 { passthrough options: these have "set/not set indicators }
@@ -448,8 +449,11 @@ begin
       setflg('pmach', fpmach, spmach); { compile for pmach (interpreter) }
       setflg('cmach', fcmach, scmach); { compile for cmach (interpreter) }
       setflg('package', fpack, spack); { compile for package mode }
-      setflg('pgen', fpgen, spgen); { compile for package mode }
-      { output modes need to be exclusive }
+      setflg('pgen', fpgen, spgen); { compile for pgen mode (executable) }
+      setflg('llvm', fllvm, sllvm); { pgen mode through the LLVM IR target }
+      { output modes need to be exclusive. The llvm mode is the executable
+        (pgen) mode with the LLVM code generator and clang in place of pgen
+        and gcc, so it sets pgen mode as well. }
       if spint then begin fpint := true; fpmach := false; fcmach := false; 
                           fpack := false; fpgen := false end;
       if spmach then begin fpint := false; fpmach := true; fcmach := false; 
@@ -459,9 +463,11 @@ begin
       if spack then begin fpint := false; fpmach := false; fcmach := false; 
                           fpack := true; fpgen := false end;
       if spgen then begin fpint := false; fpmach := false; fcmach := false; 
-                          fpack := false; fpgen := true end;
+                          fpack := false; fpgen := true; fllvm := false end;
+      if sllvm then begin fpint := false; fpmach := false; fcmach := false; 
+                          fpack := false; fpgen := true; fllvm := true end;
       spint := false; spmach := false; scmach := false; spack := false; 
-      spgen := false;
+      spgen := false; sllvm := false;
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
@@ -2036,7 +2042,9 @@ begin
          putchr(' ');
          services.brknam(fns, p, n, e); { remove the extention and place .s }
          if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
-         services.maknam(fns, p, n, 's');
+         { the LLVM code generator writes IR (.ll), which clang assembles }
+         if fllvm then services.maknam(fns, p, n, 'll')
+         else services.maknam(fns, p, n, 's');
          services.fulnam(fns); { normalize it }
          putstr(fns);
          plcpass(false); { place pass through options }
@@ -2046,12 +2054,19 @@ begin
          clears(cmdbuf); { clear command buffer }
          putstr(ccname);
          if fstatic then putstr(' -static -g3') else putstr(' -g3');
+         { the IR carries no target triple (it is the host's), which clang
+           notes as an override: silence that. The IR keeps every Pascal
+           variable in the frame and every expression value in a fresh SSA
+           value, which is what LLVM's optimizer is for: unoptimized it runs
+           slower than pgen's code, at -O2 about twice as fast. }
+         if fllvm then putstr(' -O2 -Wno-override-module');
          putchr(' ');
          putstr('-c');
          putchr(' ');
-         services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+         services.brknam(fns, p, n, e); { remove the extention and place .s }
          if bldpth[1] <> ' ' then copy(p, bldpth); { #169 item 4 }
-         services.maknam(fns, p, n, 's');
+         if fllvm then services.maknam(fns, p, n, 'll')
+         else services.maknam(fns, p, n, 's');
          services.fulnam(fns); { normalize it }
          putstr(fns);
          putchr(' ');
@@ -2657,6 +2672,36 @@ begin
 
 end;
 
+{ find whether an object was built by the LLVM code generator: the generator
+  leaves its IR (.ll) beside the object, pgen its assembly (.s), and the
+  object came from whichever was written last. Neither present reads as a
+  pgen object (a prebuilt object without its generator output). }
+
+function llvmobj(view fn: string): boolean;
+
+var p, n, e: filnam;          { path components }
+    fl, fs:  filnam;          { the IR and assembly names }
+    ll, ls:  services.filptr; { their directory entries }
+    r:       boolean;
+
+begin
+
+   r := false;
+   services.brknam(fn, p, n, e);
+   services.maknam(fl, p, n, 'll');
+   services.maknam(fs, p, n, 's');
+   services.list(fl, ll);
+   if ll <> nil then begin
+
+      r := true;
+      services.list(fs, ls);
+      if ls <> nil then r := ll^.modify >= ls^.modify
+
+   end;
+   llvmobj := r
+
+end;
+
 { find the target code for the current build target }
 
 function tgtcode: integer;
@@ -2782,7 +2827,11 @@ begin
          { the object must match the target format and machine }
          services.brknam(fp^.name, p, n, e);
          services.maknam(fn, p, n, 'o');
-         if objtgt(fn) <> tgtcode then fp^.rebld := true
+         if objtgt(fn) <> tgtcode then fp^.rebld := true;
+         { an LLVM built object and a pgen built one do not interoperate
+           (frame layout, call conventions), so the object must come from the
+           selected code generator }
+         if llvmobj(fn) <> fllvm then fp^.rebld := true
 
       end;
       if fp^.inte <> nil then begin
@@ -2975,10 +3024,11 @@ exe here.
 end
 
 Conditional block: the instructions between begin and end apply only if the
-given tag is set. The tags are the hosts (linux, bsd, windows, mac) and the
+given tag is set. The tags are the hosts (linux, bsd, windows, mac), the
 calling conventions (amd64_sysv, win64, arm64_sysv), matching the host this
-pc runs on (or the host override flag) and the calling convention in force.
-Blocks nest.
+pc runs on (or the host override flag) and the calling convention in force,
+and llvm, set when the LLVM IR code generator is selected (-llvm). Blocks
+nest.
 
 *******************************************************************************}
 
@@ -3093,6 +3143,7 @@ begin
    else if compp(s, 'amd64_sysv') then act := famd64sysv
    else if compp(s, 'win64') then act := fwindows
    else if compp(s, 'arm64_sysv') then act := farm64sysv
+   else if compp(s, 'llvm') then act := fllvm
    else tagcon := false
 
 end;
@@ -3438,6 +3489,8 @@ begin
    spack := false;
    fpgen := true; { set executable mode by default }
    spgen := false;
+   fllvm := false; { set no LLVM IR target }
+   sllvm := false;
    { passthrough }
    fprtlabdef := false;  
    sprtlabdef := false;  
@@ -3551,6 +3604,7 @@ begin
       writeln('       -cmach               Compile for cmach (interpreter)');
       writeln('       -package             Compile for package mode');
       writeln('       -pgen                Compile for pgen mode (executable)');
+      writeln('       -llvm                Compile for pgen mode through LLVM IR (clang)');
       writeln('  -ktw -keepterminalwindow  Keep terminal window');
       writeln('  -sc  -symcoff             Generate COFF symbols');
       writeln('       -static -nstatic     Link static or dynamic (default: static on');
@@ -3628,6 +3682,16 @@ begin
      target uses win64; otherwise the convention this pc was built with
      applies. This must precede the instruction files, whose conditional
      blocks test the convention. }
+   { the LLVM IR target translates the amd64_sysv intermediate: it implies
+     that convention (the generated code runs on the host, so the target
+     machine of the deck does not matter to it) }
+   if fllvm then begin
+
+      if swindows or sarm64sysv then
+         error('The llvm target requires the amd64_sysv calling convention');
+      famd64sysv := true; samd64sysv := true
+
+   end;
    if fpgen and not samd64sysv and not swindows and not sarm64sysv then begin
 
       if hostid = 3 then begin fwindows := true; swindows := true end

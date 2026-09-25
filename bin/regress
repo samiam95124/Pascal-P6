@@ -31,6 +31,7 @@ fi
 # --cmach   Run only cmach mode."
 # --package Run in package mode."
 # --pgen    Run in pgen mode."
+# --llvm    Run in llvm mode (the LLVM IR target)."
 #
 ################################################################################
 
@@ -39,6 +40,7 @@ pmach="0"
 cmach="0"
 package=0
 pgen=0
+llvm=0
 full="0"
 windowsexe=0
 linear=0
@@ -277,6 +279,7 @@ function run_model {
         cmach)   NETTEST_PORTBASE=20 ;;
         package) NETTEST_PORTBASE=30 ;;
         pgen)    NETTEST_PORTBASE=40 ;;
+        llvm)    NETTEST_PORTBASE=50 ;;
     esac
     export NETTEST_PORTBASE
     echo "$prefix run ***************************************" > "$report"
@@ -316,6 +319,10 @@ do
 
         pgen=1
 
+    elif [ "$param" = "--llvm" ]; then
+
+        llvm=1
+
     elif [ "$param" = "--linear" ]; then
 
         # run the models one at a time with their output going straight to the
@@ -336,7 +343,7 @@ do
         echo ""
         echo "Execution:"
         echo ""
-        echo "regress [--full|--short|--pint|--pmach|--cmach|--package|--pgen]..."
+        echo "regress [--full|--short|--pint|--pmach|--cmach|--package|--pgen|--llvm]..."
         echo ""
         echo "Run the compiler through a few typical programs"
         echo "to a "gold" standard file. Each mode is cycled through in sequence."
@@ -350,6 +357,7 @@ do
         echo "--cmach   Run only cmach mode."
         echo "--package Run in package mode."
         echo "--pgen    Run in pgen mode."
+        echo "--llvm    Run in llvm mode (the LLVM IR target, needs clang)."
         echo "--windowsexe Run the toolchain from the windows host executables."
         echo "--linear  Run the models one at a time with live console output"
         echo "          (no parallel status display); slower but followable."
@@ -396,7 +404,24 @@ elif [ "$pmach" = "1" ]; then models="pmach"
 elif [ "$cmach" = "1" ]; then models="cmach"
 elif [ "$package" = "1" ]; then models="package"
 elif [ "$pgen" = "1" ]; then models="pgen"
-else models="pint pmach cmach package pgen"; fi
+elif [ "$llvm" = "1" ]; then models="llvm"
+else models="pint pmach cmach package pgen llvm"; fi
+
+#
+# The llvm model needs clang to assemble and link. Without it the model
+# drops from the default list; selecting it explicitly is an error.
+#
+if ! command -v clang >/dev/null 2>&1; then
+
+    if [ "$llvm" = "1" ]; then
+
+        echo "*** Error: the llvm model needs clang, which is not installed"
+        exit 1
+
+    fi
+    models="${models% llvm}"
+
+fi
 
 #
 # The windows tool set: compile and run pick up REGRESS_WINDOWSEXE (the same
@@ -413,7 +438,9 @@ if [ "$windowsexe" = "1" ]; then
         exit 1
 
     fi
-    if [ "$models" = "pint pmach cmach package pgen" ]; then
+    # (the llvm model is native only: no windows tool set builds it)
+    if [ "$models" = "pint pmach cmach package pgen llvm" ] || \
+       [ "$models" = "pint pmach cmach package pgen" ]; then
 
         models="pint pmach package pgen"
 
@@ -441,6 +468,7 @@ if [ "$linear" = "1" ]; then
             cmach)   run_model --cmach   cmach   ;;
             package) run_model --package package ;;
             pgen)    run_model --pgen    pgen    ;;
+            llvm)    run_model --llvm    llvm    ;;
         esac 2>&1 | tee "$WORK/$m.log"
     done
 
@@ -460,6 +488,7 @@ else
             cmach)   run_model --cmach   cmach   ;;
             package) run_model --package package ;;
             pgen)    run_model --pgen    pgen    ;;
+            llvm)    run_model --llvm    llvm    ;;
         esac > "$WORK/$m.log" 2>&1 &
         pids="$pids $!"
     done

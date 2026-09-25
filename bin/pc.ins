@@ -33,6 +33,18 @@ linux begin
    end
 end
 
+! LLVM IR target: the LLVM code generator with clang as assembler and linker.
+! Native (the generated code runs on the build host), so it needs no toolchain
+! beyond clang. Its runtime entry (main.o, the C replacement for the assembly
+! startup and exception shims) and the prebuilt library modules built through
+! it live in libs/llvm, ahead of the main library.
+llvm begin
+   cc "clang"
+   codegen "pgen_llvm"
+   modulepath "../libs/llvm"
+   exclude "../libs/llvm"
+end
+
 !
 ! Declare the main library and protect it from recompiles
 !

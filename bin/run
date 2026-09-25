@@ -89,8 +89,9 @@ do
         cmach=0
         pgen=0
 
-    elif [ "$param" = "--pgen" ]; then
+    elif [ "$param" = "--pgen" ] || [ "$param" = "--llvm" ]; then
     
+        # the llvm model is a native executable like pgen, run the same way
         pgen=1
         pint=0
         pmach=0
@@ -144,6 +145,7 @@ do
 		echo "--cmach  Generate mach code and run the result through cmach."
 		echo "--pint   Generate mach code and run the result through pint."
         echo "--pgen   Run binary code {default)."
+        echo "--llvm   Run binary code built through the LLVM IR target."
         echo "--windows Run a Windows cross-compiled executable under wine."
         echo "--windowsexe Run the interpreters from the windows host cell."
 		echo "--nolist Do not output listing."

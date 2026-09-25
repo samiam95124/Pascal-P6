@@ -74,6 +74,16 @@ elif [ "$1" = "--pgen" ]; then
         $PASCALP6/source/pgen/amd64/main.asm $(ob p5/source/pint).s -o $(ob p5/source/pint) -lm
 	$(ob p5/source/pint) $(ob p5/source/iso7185pat).p5 ${tmpd}temp $options < $(ob p5/source/pint).inp > $(ob p5/source/iso7185pat).lst
 
+elif [ "$1" = "--llvm" ]; then
+
+    # the LLVM IR target: the same run as pgen, through pgen_llvm and clang
+    # with the LLVM runtime entry (libs/llvm/main.o) in place of the assembly
+    echo "Running llvm test..."
+    pgen_llvm $(ob p5/source/pint.mpp).p6 $(ob p5/source/pint).ll -amd64_sysv+
+    clang -g -Wno-override-module -o $(ob p5/source/pint) $PASCALP6/libs/llvm/main.o \
+        $(ob p5/source/pint).ll $PASCALP6/libs/psystem.a -lm -lpthread
+	$(ob p5/source/pint) $(ob p5/source/iso7185pat).p5 ${tmpd}temp $options < $(ob p5/source/pint).inp > $(ob p5/source/iso7185pat).lst
+
 else
 
     echo "Running pint test..."
