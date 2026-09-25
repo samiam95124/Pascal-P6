@@ -137,8 +137,10 @@ begin
 end;
 
 { find random number between 0 and N (linear congruential generator, since
-  the runtime exposes no rand primitive; scaled with mod to avoid 32-bit
-  multiply overflow) }
+  the runtime exposes no rand primitive). The state is 31 bits: a limit below
+  that is reduced with mod, a full scale limit (the maxint scaled angles and
+  colors of the graphics API) is reached by scaling the state up to it, in
+  integer arithmetic so that nothing overflows (limit+1 would, at maxint). }
 
 function randn(limit: integer): integer;
 
@@ -148,7 +150,8 @@ begin
    randstate := (randstate*1103515245+12345) mod i32max;
    if randstate < 0 then randstate := randstate+i32max;
    if limit <= 0 then randn := 0
-   else randn := randstate mod (limit+1)
+   else if limit < i32max then randn := randstate mod (limit+1)
+   else randn := randstate*(limit div i32max)
 
 end;
 
