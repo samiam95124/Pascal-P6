@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Thu Sep 24 03:41:19 AM UTC 2026
+Fri Sep 25 05:32:06 AM UTC 2026
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/test_results/pint/hello.dif
@@ -138,15 +138,42 @@ network_test run
 0 libs/tests/test_results/pgen/network_test.dif
 services_test run
 0 libs/tests/test_results/pgen/services_test.dif
+llvm run ***************************************
+0 sample_programs/test_results/llvm/hello.dif
+0 sample_programs/test_results/llvm/roman.dif
+0 sample_programs/test_results/llvm/match.dif
+0 sample_programs/test_results/llvm/prime.dif
+0 sample_programs/test_results/llvm/qsort.dif
+0 sample_programs/test_results/llvm/fbench.dif
+0 sample_programs/test_results/llvm/drystone.dif
+0 sample_programs/test_results/llvm/startrek.dif
+0 sample_programs/test_results/llvm/basics.dif
+0 standard_tests/test_results/llvm/iso7185pat.dif
+Pascal-s run
+0 sample_programs/test_results/llvm/pascals.dif
+Pascal-P2 run
+0 p2/test_results/llvm/roman.dif
+Pascal-P4 run
+0 p4/test_results/llvm/standardp.dif
+PRT run
+0 standard_tests/test_results/llvm/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/test_results/llvm/pascaline.dif
+strings_test run
+0 libs/tests/test_results/llvm/strings_test.dif
+network_test run
+0 libs/tests/test_results/llvm/network_test.dif
+services_test run
+0 libs/tests/test_results/llvm/services_test.dif
 
 Total differences: 0
 Fails: 0
-Thu Sep 24 03:44:36 AM UTC 2026
+Fri Sep 25 05:35:29 AM UTC 2026
 Files sha256sum ***************************************
 Source files
 346646101ec7d1c08371f8416f2632130f4cd4fffb522d12aac0505f1e211571  -
 batch files
-deea1d564d368b2bbbc500d96edb1be83e2227de3073b84715a884c79ac21c28  -
+dfb3de5543f183db42e06e00b229e73e3db1ec3fcd733ea354c732964c3e5060  -
 P2 files
 abb5a8a00d377dbcf7c793f9f399fb51e017f2e27ecab9607e4cace253472cfb  -
 p4 files
@@ -156,4 +183,4 @@ Sample program test files
 standard test files
 dfebd148fc9f3cf0359273ff261325253c260f785fd66a8cbae7cdc57ef3632d  -
 other files
-e24a2ed9a221f5f6da99a249ab6edf64ab9e2da46f3c3f03c2753494bf1f846f  -
+d8ef7f31e911fa396b18f260213d3b537eb289f8ef22feb3e3211a8f9e1f6360  -
