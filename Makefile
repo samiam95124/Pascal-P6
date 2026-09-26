@@ -219,7 +219,7 @@ all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/llvm/main.o \
 	$(LIBS)/services.a \
 	$(LIBS)/terminal.a $(LIBS)/graphics.a source/graph/graphics.a \
-	$(LIBS)/gnome_widgets.o \
+	$(LIBS)/graphics.link $(LIBS)/widgets.o \
 	$(LIBS)/sound.a $(LIBS)/network.a \
 	$(BUILD)/cmach/cmach_package.o $(BUILD)/cmach/cmach_package_min.o
 
@@ -807,24 +807,154 @@ endif
 # Graphics is a superset of terminal (text surface + graphical surface +
 # windowing + widgets). It is built from components into an archive graphics.a,
 # the same way as terminal.a but with graphics.c and its font dependencies.
-# graphics.c renders through X11/FreeType/FontConfig, so it is compiled with
-# those include paths and programs that use graphics.a must link
-# -lXtst -lX11 -lfreetype -lfontconfig (in addition to the usual -lm -lpthread).
-# The X11 backend lives in amitk/linux/x11 and finds the shared linux headers
+# graphics.c renders through FreeType/FontConfig onto one of two display
+# backends, selected at build time (the same knob as amitk's own Makefile):
+#
+#     GRAPHICS_BACKEND=x11      Xlib, amitk/linux/x11/graphics.c. Also runs
+#                               under Wayland through Xwayland.
+#     GRAPHICS_BACKEND=wayland  native Wayland, amitk/linux/wayland: graphics.c
+#                               over pdisplay (the Wayland display, rasterizer
+#                               and input), the xdg-shell protocol glue and the
+#                               desktop decorations (window frames and menus).
+#
+# Unset, it follows the running session: a Wayland display present selects the
+# Wayland backend, else X11. Both backends find the shared linux headers
 # through -I$(AMI).
 #
+# The desktop look is a second knob. The Wayland decorations and the portable
+# widget set each come in a GNOME and a KDE Plasma flavor:
+#
+#     DESKTOP=gnome    the GNOME (Adwaita) decorations and widgets
+#     DESKTOP=kde      the KDE Plasma (Breeze) decorations and widgets
+#                      (plasma is accepted as a synonym)
+#     DESKTOP=both     link both flavors; the one whose desktop is running
+#                      registers itself at load (GNOME takes any desktop
+#                      that is not KDE), as amitk's own test programs do
+#
+# Unset, it follows the running session: XDG_CURRENT_DESKTOP naming KDE
+# selects kde, anything else gnome. A single flavor is compiled with
+# AMI_DESKTOP_FORCE so it registers whatever desktop the program later runs
+# on: the build's choice is the program's look. Under X11 the knob only
+# selects the widget set (the X11 backend draws no frames of its own).
+#
+# Programs that use graphics.a must link the backend's system libraries
+# (GRAPHSYSLIBS below) plus -lfreetype -lfontconfig and the usual -lm
+# -lpthread. pc reads the backend's set from libs/graphics.link, written
+# next to the archive here, so the driver follows whichever backend was
+# built; the cmachg link below uses GRAPHSYSLIBS directly.
+#
+ifndef GRAPHICS_BACKEND
+    ifneq ($(WAYLAND_DISPLAY),)
+        GRAPHICS_BACKEND=wayland
+    else
+        GRAPHICS_BACKEND=x11
+    endif
+endif
+ifeq ($(filter x11 wayland,$(GRAPHICS_BACKEND)),)
+    $(error GRAPHICS_BACKEND must be x11 or wayland, not "$(GRAPHICS_BACKEND)")
+endif
+ifndef DESKTOP
+    ifneq ($(findstring KDE,$(XDG_CURRENT_DESKTOP)),)
+        DESKTOP=kde
+    else
+        DESKTOP=gnome
+    endif
+endif
+ifeq ($(DESKTOP),plasma)
+    DESKTOP=kde
+endif
+ifeq ($(filter gnome kde both,$(DESKTOP)),)
+    $(error DESKTOP must be gnome, kde or both, not "$(DESKTOP)")
+endif
+
+# the backend's source, extra archive members and system libraries. The X11
+# system set is the static closure of x11 xext xtst (pkg-config --static);
+# the Wayland set that of wayland-client wayland-cursor xkbcommon.
+AMIWL=$(AMI)/wayland
+ifeq ($(GRAPHICS_BACKEND),wayland)
+    GRAPHSRC=$(AMIWL)/graphics.c
+    GRAPHSRCDEPS=$(AMIWL)/graphics_i.h $(AMIWL)/pdisplay.h $(AMIWL)/pdisplay.c \
+	$(AMIWL)/wlproto/xdg-shell-protocol.c \
+	$(AMIWL)/wlproto/xdg-shell-client-protocol.h \
+	$(AMIWL)/gnome/decorations.c $(AMIWL)/plasma/decorations.c
+    GRAPHBACKOBJS=$(BUILD)/libs/graph_pdisplay.o \
+	$(BUILD)/libs/graph_xdg_shell.o
+    ifneq ($(filter gnome both,$(DESKTOP)),)
+        GRAPHBACKOBJS+=$(BUILD)/libs/graph_gnome_decorations.o
+    endif
+    ifneq ($(filter kde both,$(DESKTOP)),)
+        GRAPHBACKOBJS+=$(BUILD)/libs/graph_plasma_decorations.o
+    endif
+    GRAPHSYSLIBS=-lwayland-cursor -lwayland-client -lxkbcommon -lrt -lffi -lpthread
+else
+    GRAPHSRC=$(AMI)/x11/graphics.c
+    GRAPHSRCDEPS=
+    GRAPHBACKOBJS=
+    GRAPHSYSLIBS=-lXtst -lXi -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp
+endif
+# the widget packages the desktop selects, and the flag that makes a single
+# package register unconditionally
+ifeq ($(DESKTOP),both)
+    WIDGETPKGS=gnome_widgets plasma_widgets
+    DESKTOPDEF=
+else ifeq ($(DESKTOP),kde)
+    WIDGETPKGS=plasma_widgets
+    DESKTOPDEF=-DAMI_DESKTOP_FORCE
+else
+    WIDGETPKGS=gnome_widgets
+    DESKTOPDEF=-DAMI_DESKTOP_FORCE
+endif
+# pdisplay carries the rasterizer's pixel loops, worth 2x-24x at -O3 (see
+# amitk's Makefile); empty it to step through that file
+PDISPLAY_OPT ?= -O3
+
 GRAPHCFG=$(shell pkg-config --cflags freetype2 fontconfig)
 GRAPHCPP=$(CPPFLAGS64LE) -DSTDIO_BYPASS -I$(AMILIBC) -I$(AMIINC) -I$(LIBS)/source \
 	$(GRAPHCFG)
 ifneq ($(AMITK),)
-$(LIBS)/graphics.a: $(AMI)/x11/graphics.c \
+#
+# The backend and desktop are make variables, which a rebuild does not see
+# change. This stamp records them and is rewritten only when they differ from
+# the recorded ones, so a knob change (and nothing else) remakes the archives
+# and the widget object that depend on it.
+#
+GRAPHSTAMP=$(BUILD)/libs/graphics.backend
+.PHONY: graphics_backend_force
+graphics_backend_force:
+$(GRAPHSTAMP): graphics_backend_force
+	@mkdir -p $(BUILD)/libs
+	@if [ "$$(cat $@ 2>/dev/null)" != "$(GRAPHICS_BACKEND) $(DESKTOP)" ]; then \
+	    echo "$(GRAPHICS_BACKEND) $(DESKTOP)" > $@; fi
+
+# the Wayland backend's members beyond graphics.c (built only when selected;
+# the X11 backend is graphics.c alone)
+$(BUILD)/libs/graph_pdisplay.o: $(AMIWL)/pdisplay.c $(AMIWL)/pdisplay.h \
+	$(AMIWL)/wlproto/xdg-shell-client-protocol.h $(GRAPHSTAMP)
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(GRAPHCPP) $(PDISPLAY_OPT) -I$(AMI) \
+		-o $@ -c $(AMIWL)/pdisplay.c
+$(BUILD)/libs/graph_xdg_shell.o: $(AMIWL)/wlproto/xdg-shell-protocol.c $(GRAPHSTAMP)
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(GRAPHCPP) -o $@ -c $(AMIWL)/wlproto/xdg-shell-protocol.c
+$(BUILD)/libs/graph_gnome_decorations.o: $(AMIWL)/gnome/decorations.c \
+	$(AMIWL)/graphics_i.h $(AMIWL)/pdisplay.h $(GRAPHSTAMP)
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(GRAPHCPP) $(DESKTOPDEF) -I$(AMI) \
+		-o $@ -c $(AMIWL)/gnome/decorations.c
+$(BUILD)/libs/graph_plasma_decorations.o: $(AMIWL)/plasma/decorations.c \
+	$(AMIWL)/graphics_i.h $(AMIWL)/pdisplay.h $(GRAPHSTAMP)
+	mkdir -p $(BUILD)/libs
+	$(CC) $(CFLAGS) $(GRAPHCPP) $(DESKTOPDEF) -I$(AMI) \
+		-o $@ -c $(AMIWL)/plasma/decorations.c
+
+$(LIBS)/graphics.a: $(GRAPHSRC) $(GRAPHSRCDEPS) $(GRAPHBACKOBJS) $(GRAPHSTAMP) \
 	$(LIBS)/source/graphics_wrapper.asm \
 	$(LIBS)/source/graphics_wrapper.c \
 	$(LIBS)/source/graphics_support.c \
 	$(LIBS)/source/support.h \
 	$(BUILD)/libs/support.o
 	@echo
-	@echo "Building graphics..."
+	@echo "Building graphics ($(GRAPHICS_BACKEND), $(DESKTOP) desktop)..."
 	@echo
 	mkdir -p $(BUILD)/libs
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
@@ -834,7 +964,9 @@ $(LIBS)/graphics.a: $(AMI)/x11/graphics.c \
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(BUILD)/libs/graphics_wrapper.o -c $(LIBS)/source/graphics_wrapper.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) -I$(AMI) \
-		-o $(BUILD)/libs/graphics.o -c $(AMI)/x11/graphics.c
+		-o $(BUILD)/libs/graphics_core.o -c $(GRAPHSRC)
+	$(CC) -r -nostdlib -o $(BUILD)/libs/graphics.o \
+		$(BUILD)/libs/graphics_core.o $(GRAPHBACKOBJS)
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(BUILD)/libs/graph_services.o -c $(AMI)/services.c
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
@@ -849,6 +981,14 @@ $(LIBS)/graphics.a: $(AMI)/x11/graphics.c \
 		$(BUILD)/libs/support.o
 
 #
+# The system libraries the archive's backend needs, for pc. One line, the
+# same set cmachg links below; pc appends it to a windowed program's link
+# in place of its built-in X11 set when the file is present.
+#
+$(LIBS)/graphics.link: $(GRAPHSTAMP)
+	echo "$(GRAPHSYSLIBS)" > $(LIBS)/graphics.link
+
+#
 # The "blonde" graphics archive for the graphics-hosted interpreter (pintg):
 # graphics.c compiled with NOSTDWIN, which skips binding stdin/stdout to an
 # automatic main window. The model does nothing until an openwin call, so the
@@ -860,7 +1000,9 @@ $(LIBS)/graphics.a: $(AMI)/x11/graphics.c \
 source/graph/graphics.a: $(LIBS)/graphics.a
 	mkdir -p source/graph
 	$(CC) $(CFLAGS) $(GRAPHCPP) -I$(AMI) -DNOSTDWIN \
-		-o $(BUILD)/libs/graphics_blonde.o -c $(AMI)/x11/graphics.c
+		-o $(BUILD)/libs/graphics_blonde_core.o -c $(GRAPHSRC)
+	$(CC) -r -nostdlib -o $(BUILD)/libs/graphics_blonde.o \
+		$(BUILD)/libs/graphics_blonde_core.o $(GRAPHBACKOBJS)
 	rm -f source/graph/graphics.a
 	ar rc source/graph/graphics.a $(BUILD)/libs/graphics_wrapper_asm.o \
 		$(BUILD)/libs/graphics_wrapper.o $(BUILD)/libs/graphics_support.o \
@@ -869,25 +1011,30 @@ source/graph/graphics.a: $(LIBS)/graphics.a
 		$(BUILD)/libs/support.o
 
 #
-# Gnome widgets, the portable widget set drawn with the graphics API. It
-# overrides the graphics widget stubs from a constructor and exports no
-# symbols, so it cannot be pulled from an archive by an undefined reference;
-# pc links it as an explicit object in windowed programs. Built with the same
-# flags as graphics.o (STDIO_BYPASS: it prints to Ami-stdio FILEs).
+# Widgets, the portable widget set drawn with the graphics API, in the flavor
+# (or flavors) DESKTOP selects: gnome_widgets, plasma_widgets or both. A
+# package overrides the graphics widget stubs from a constructor and exports
+# no symbols, so it cannot be pulled from an archive by an undefined
+# reference; pc links widgets.o as an explicit object in windowed programs.
+# Built with the same flags as graphics.o (STDIO_BYPASS: it prints to
+# Ami-stdio FILEs).
 #
 # widget_base, the common support under the widget packages, is partially
-# linked into the same object. pc places gnome_widgets.o after graphics.a on
-# the link line, so an archive member it needed would already be passed over.
+# linked into the same object. pc places widgets.o after graphics.a on the
+# link line, so an archive member it needed would already be passed over.
 #
-$(LIBS)/gnome_widgets.o: $(PASCALP6)/amitk/portable/gnome_widgets.c \
-	$(PASCALP6)/amitk/portable/widget_base.c
+$(LIBS)/widgets.o: $(addprefix $(PASCALP6)/amitk/portable/,$(addsuffix .c,$(WIDGETPKGS))) \
+	$(PASCALP6)/amitk/portable/widget_base.c $(GRAPHSTAMP)
 	mkdir -p $(BUILD)/libs
-	$(CC) $(CFLAGS) $(GRAPHCPP) \
-		-o $(BUILD)/libs/gnome_widgets.o -c $(PASCALP6)/amitk/portable/gnome_widgets.c
+	for p in $(WIDGETPKGS); do \
+		$(CC) $(CFLAGS) $(GRAPHCPP) $(DESKTOPDEF) \
+			-o $(BUILD)/libs/$$p.o -c $(PASCALP6)/amitk/portable/$$p.c || exit 1; \
+	done
 	$(CC) $(CFLAGS) $(GRAPHCPP) \
 		-o $(BUILD)/libs/widget_base.o -c $(PASCALP6)/amitk/portable/widget_base.c
-	$(CC) -r -nostdlib -o $(LIBS)/gnome_widgets.o \
-		$(BUILD)/libs/gnome_widgets.o $(BUILD)/libs/widget_base.o
+	$(CC) -r -nostdlib -o $(LIBS)/widgets.o \
+		$(addprefix $(BUILD)/libs/,$(addsuffix .o,$(WIDGETPKGS))) \
+		$(BUILD)/libs/widget_base.o
 endif
 
 #
@@ -959,7 +1106,8 @@ endif
 #
 ifeq ($(AMITK),)
 $(LIBS)/psystem.a $(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/graphics.a \
-source/graph/graphics.a $(LIBS)/gnome_widgets.o $(LIBS)/sound.a $(LIBS)/network.a:
+source/graph/graphics.a $(LIBS)/graphics.link $(LIBS)/widgets.o $(LIBS)/sound.a \
+$(LIBS)/network.a:
 	@test -f "$@" || { \
 	  echo "*** Error: $@ is missing and the amitk (Petit-Ami) sources are not"; \
 	  echo "*** present to build it. Releases ship these prebuilt; a git checkout"; \
@@ -1125,7 +1273,7 @@ bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 	cp $(BUILD)/win64/cmachg.exe $(WINCELL)/bin/cmachg.exe
 else
 bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
-		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/gnome_widgets.o \
+		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/widgets.o \
 		$(LIBS)/sound.a $(LIBS)/network.a $(LIBS)/psystem.a
 	@echo
 	@echo "Building cmachg (graphics flavor)..."
@@ -1134,11 +1282,11 @@ bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -DGRAPHICS -o $(BUILD)/cmachg64le \
 		$(SOURCE)/cmach/cmach.c $(CMACHSYNTH) \
 		-Wl,--start-group \
-		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/gnome_widgets.o \
+		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/widgets.o \
 		$(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
 		-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm \
-		-lfontconfig -lfreetype -lXtst -lXi -lXfixes -lXext -lX11 -lpng -lz -lbz2 \
-		-lbrotlidec -lbrotlicommon -lexpat -luuid -lxcb -lXau -lXdmcp \
+		-lfontconfig -lfreetype $(GRAPHSYSLIBS) -lpng -lz -lbz2 \
+		-lbrotlidec -lbrotlicommon -lexpat -luuid \
 		-Wl,--end-group
 	cp $(BUILD)/cmachg64le $(PASCALP6)/bin/cmachg
 endif
@@ -1174,7 +1322,7 @@ HOSTBINS=cmach cmacht cmachg dif genobj hashtabr hashtabs parser passym pc \
 	terminal_test widget_test \
 	backgammon breakout checkers chess conquest defenders pong
 HOSTLIBS=main.o parse.o psystem.a services.a strings.o terminal.a graphics.a \
-	sound.a network.a gnome_widgets.o
+	graphics.link sound.a network.a widgets.o
 # the LLVM target's entry object and prebuilt library modules (libs/llvm)
 HOSTLLVMLIBS=main.o parse.o strings.o
 
@@ -1243,4 +1391,21 @@ help:
 	@echo "whathost      Report the detected host, architecture and bit length."
 	@echo
 	@echo "clean         Clean intermediate/temp files from tree."
+	@echo
+	@echo Options, given as make variables:
+	@echo
+	@echo "GRAPHICS_BACKEND=x11|wayland"
+	@echo "              Display backend of the graphics library (linux). Defaults"
+	@echo "              to the running session: wayland when WAYLAND_DISPLAY is"
+	@echo "              set, else x11. Recorded in libs/graphics.link for pc."
+	@echo
+	@echo "DESKTOP=gnome|kde|both"
+	@echo "              Desktop look: the window decorations (wayland) and the"
+	@echo "              widget set. Defaults to the running session: kde when"
+	@echo "              XDG_CURRENT_DESKTOP names KDE, else gnome. both links"
+	@echo "              the two and the running desktop picks at load."
+	@echo
+	@echo "PDISPLAY_OPT=..."
+	@echo "              Optimizer for the Wayland rasterizer, default -O3; empty"
+	@echo "              it to step through pdisplay.c."
 	@echo

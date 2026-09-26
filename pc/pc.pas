@@ -2193,6 +2193,11 @@ var p, n, e: filnam;  { path components }
     cmstdio: filnam;  { win64 cmach Ami stdio object (windows package) }
     toolfn:  filnam;  { toolchain command holder }
     numstr:  filnam;  { number to string conversion holder }
+    lnkfil:  filnam;  { graphics backend link libraries file }
+    grlibs:  linbuf;  { graphics backend system libraries }
+    lf:      text;    { graphics link libraries file }
+    li:      integer; { index for grlibs }
+    lc:      char;    { character from the link libraries file }
 
 { place output character }
 
@@ -2474,15 +2479,40 @@ begin { dolink }
          writeln('*** pc: Error: support module "%"', psystem);
       if windowed and not fwindows then begin
 
-         { find the widgets module. It overrides the graphics widget stubs from
-           a constructor and exports no symbols, so it cannot be force-linked
-           from an archive; it is linked as an explicit object. Windows is
-           excluded: its graphics model carries a native widget set, so the
-           portable widget package is not used there. }
-         copy(widgets, 'gnome_widgets');
+         { find the widgets module (the portable widget set in the desktop
+           flavor the Makefile's DESKTOP knob selected). It overrides the
+           graphics widget stubs from a constructor and exports no symbols,
+           so it cannot be force-linked from an archive; it is linked as an
+           explicit object. Windows is excluded: its graphics model carries a
+           native widget set, so the portable widget package is not used
+           there. }
+         copy(widgets, 'widgets');
          fndfil(widgets, true);
          if not exists(widgets) then { not found }
-            error('Support module "%" not found', widgets)
+            error('Support module "%" not found', widgets);
+         { The system libraries of the display backend graphics.a was built
+           for. The Makefile records them, one line, in libs/graphics.link
+           beside the archive (its GRAPHSYSLIBS: the X11 or the Wayland
+           closure). Without the file the X11 set is assumed, which is what
+           every tree before the file carried. }
+         copy(grlibs, '-lXtst -lXi -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp');
+         services.maknam(lnkfil, pgmpath, '../libs/graphics', 'link');
+         services.fulnam(lnkfil);
+         if exists(lnkfil) then begin
+
+            assign(lf, lnkfil);
+            reset(lf);
+            clears(grlibs);
+            li := 1;
+            while not eof(lf) and not eoln(lf) do begin
+
+               read(lf, lc);
+               if li < maxlin then begin grlibs[li] := lc; li := li+1 end
+
+            end;
+            close(lf)
+
+         end
 
       end;
       if fverb then begin
@@ -2540,13 +2570,15 @@ begin { dolink }
       putstr(psystem);
       putchr(' ');
       putstr('-lm -lpthread');
-      { The graphics window library renders through X11/FreeType/FontConfig
-        (Linux). A fully static link needs their entire transitive closure;
-        the set below is 'pkg-config --static --libs x11 xext xtst freetype2
-        fontconfig' plus -ldl. These must follow the archives that use them.
-        The X11 graphics model injects synthetic input through XTest (which
-        brings Xi and Xfixes); newer FreeType decompresses through bzip2 and
-        brotli. }
+      { The graphics window library renders through FreeType/FontConfig onto
+        its display backend, X11 or Wayland (Linux). A fully static link
+        needs their entire transitive closure: the backend's set is the one
+        read from libs/graphics.link above ('pkg-config --static --libs' of
+        x11 xext xtst, or of wayland-client wayland-cursor xkbcommon), the
+        font set below that of freetype2 fontconfig plus -ldl. These must
+        follow the archives that use them. The X11 graphics model injects
+        synthetic input through XTest (which brings Xi and Xfixes); newer
+        FreeType decompresses through bzip2 and brotli. }
       if windowed then begin putchr(' ');
          if fwindows then
             { The Windows graphics model renders through GDI and picks files
@@ -2555,7 +2587,7 @@ begin { dolink }
               the joystick calls and the multimedia frame timer. }
             putstr('-lgdi32 -lcomdlg32 -lwinmm')
          else begin
-            putstr('-lXtst -lXi -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp');
+            putstr(grlibs);
             putchr(' ');
             putstr('-lfontconfig -luuid -lexpat -lfreetype -lpng16 -lbz2');
             putchr(' ');
