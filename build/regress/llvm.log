@@ -1,0 +1,323 @@
+Testing sample_programs/hello...
+Running sample_programs/hello...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:35 sample_programs/test_results/llvm/hello.dif
+PASS
+Testing sample_programs/roman...
+Running sample_programs/roman...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:35 sample_programs/test_results/llvm/roman.dif
+PASS
+Testing sample_programs/match...
+Running sample_programs/match...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:35 sample_programs/test_results/llvm/match.dif
+PASS
+Testing sample_programs/prime...
+Running sample_programs/prime...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:35 sample_programs/test_results/llvm/prime.dif
+PASS
+Testing sample_programs/qsort...
+Running sample_programs/qsort...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:35 sample_programs/test_results/llvm/qsort.dif
+PASS
+Testing sample_programs/fbench...
+Running sample_programs/fbench...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:35 sample_programs/test_results/llvm/fbench.dif
+PASS
+Testing sample_programs/drystone...
+Running sample_programs/drystone...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:35 sample_programs/test_results/llvm/drystone.dif
+PASS
+Testing sample_programs/startrek...
+Running sample_programs/startrek...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:36 sample_programs/test_results/llvm/startrek.dif
+PASS
+Testing sample_programs/basics...
+Running sample_programs/basics...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:36 sample_programs/test_results/llvm/basics.dif
+PASS
+Testing standard_tests/iso7185pat...
+Running standard_tests/iso7185pat...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:36 standard_tests/test_results/llvm/iso7185pat.dif
+PASS
+Testing sample_programs/pascals...
+Running sample_programs/pascals...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:36 sample_programs/test_results/llvm/pascals.dif
+PASS
+Testing Pascal-P2...
+Errors in program: 0
+Running with pgen
+Errors in program: 0
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 p2/test_results/llvm/roman.dif
+PASS
+Testing Pascal-P4...
+Errors in program: 0
+Running with pgen
+Errors in program: 0
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 p4/test_results/llvm/standardp.dif
+PASS
+Testing PRT...
+Running tests
+Running standard_tests/iso7185prt1702A...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1702A.dif
+PASS
+Running standard_tests/iso7185prt1702b...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1702b.dif
+PASS
+Running standard_tests/iso7185prt1702c...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 59 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1702c.dif
+Running standard_tests/iso7185prt1702d...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1702d.dif
+PASS
+Running standard_tests/iso7185prt1703...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 101 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1703.dif
+Running standard_tests/iso7185prt1704...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 100 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1704.dif
+Running standard_tests/iso7185prt1705...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1705.dif
+PASS
+Running standard_tests/iso7185prt1706a...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1706a.dif
+PASS
+Running standard_tests/iso7185prt1706b...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1706b.dif
+PASS
+Running standard_tests/iso7185prt1708...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1708.dif
+PASS
+Running standard_tests/iso7185prt1709...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1709.dif
+PASS
+Running standard_tests/iso7185prt1710...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1710.dif
+PASS
+Running standard_tests/iso7185prt1712...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1712.dif
+PASS
+Running standard_tests/iso7185prt1713...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1713.dif
+PASS
+Running standard_tests/iso7185prt1714...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1714.dif
+PASS
+Running standard_tests/iso7185prt1715...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1715.dif
+PASS
+Running standard_tests/iso7185prt1716...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1716.dif
+PASS
+Running standard_tests/iso7185prt1719...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1719.dif
+PASS
+Running standard_tests/iso7185prt1720...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1720.dif
+PASS
+Running standard_tests/iso7185prt1721...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1721.dif
+PASS
+Running standard_tests/iso7185prt1722...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1722.dif
+PASS
+Running standard_tests/iso7185prt1723...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1723.dif
+PASS
+Running standard_tests/iso7185prt1724...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 99 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1724.dif
+Running standard_tests/iso7185prt1727...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 59 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1727.dif
+Running standard_tests/iso7185prt1728...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1728.dif
+PASS
+Running standard_tests/iso7185prt1730...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 59 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1730.dif
+Running standard_tests/iso7185prt1731...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1731.dif
+PASS
+Running standard_tests/iso7185prt1732...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1732.dif
+PASS
+Running standard_tests/iso7185prt1733...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1733.dif
+PASS
+Running standard_tests/iso7185prt1734...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1734.dif
+PASS
+Running standard_tests/iso7185prt1735...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1735.dif
+PASS
+Running standard_tests/iso7185prt1736...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1736.dif
+PASS
+Running standard_tests/iso7185prt1737...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1737.dif
+PASS
+Running standard_tests/iso7185prt1738...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1738.dif
+PASS
+Running standard_tests/iso7185prt1739...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1739.dif
+PASS
+Running standard_tests/iso7185prt1740...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1740.dif
+PASS
+Running standard_tests/iso7185prt1741...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1741.dif
+PASS
+Running standard_tests/iso7185prt1743...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 69 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1743.dif
+Running standard_tests/iso7185prt1744...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1744.dif
+PASS
+Running standard_tests/iso7185prt1745...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1745.dif
+PASS
+Running standard_tests/iso7185prt1746A...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1746A.dif
+PASS
+Running standard_tests/iso7185prt1746b...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1746b.dif
+PASS
+Running standard_tests/iso7185prt1750...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1750.dif
+PASS
+Running standard_tests/iso7185prt1751...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1751.dif
+PASS
+Running standard_tests/iso7185prt1754...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1754.dif
+PASS
+Running standard_tests/iso7185prt1755...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1755.dif
+PASS
+Running standard_tests/iso7185prt1756...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1756.dif
+PASS
+Running standard_tests/iso7185prt1757...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1757.dif
+PASS
+Running standard_tests/iso7185prt1758a...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1758a.dif
+PASS
+Running standard_tests/iso7185prt1758b...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1758b.dif
+PASS
+Running standard_tests/iso7185prt1800...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 60 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1800.dif
+Running standard_tests/iso7185prt1811...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 107 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1811.dif
+Running standard_tests/iso7185prt1828...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1828.dif
+PASS
+Running standard_tests/iso7185prt1834...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1834.dif
+PASS
+Running standard_tests/iso7185prt1839...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1839.dif
+PASS
+Running standard_tests/iso7185prt1840...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1840.dif
+PASS
+Running standard_tests/iso7185prt1850...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1850.dif
+PASS
+Running standard_tests/iso7185prt1851...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 51 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1851.dif
+Running standard_tests/iso7185prt1852...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1852.dif
+PASS
+Running standard_tests/iso7185prt1909...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 0 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1909.dif
+PASS
+Running standard_tests/iso7185prt1918...
+Running with pgen
+-rw-rw-r-- 1 samiam samiam 94 Sep 25 17:37 standard_tests/test_results/llvm/iso7185prt1918.dif
+Creating combined listing
+Creating error accounting listings
+creating compile time difference list
+creating runtime difference list
+Adding program compile and runs
+*** Error: Missing standard_tests/iso7185prt_pgen.cmp file
+diff: standard_tests/test_results/llvm/tmp2: No such file or directory
+0 standard_tests/test_results/llvm/iso7185prt.dif
+Testing Pascaline...
+Errors in program: 0
+Running with pgen
+0 pascaline.dif
+PASS
+Testing strings_test...
+0 libs/tests/test_results/llvm/strings_test.dif
+Testing network_test...
+0 libs/tests/test_results/llvm/network_test.dif
+Testing services_test...
+0 libs/tests/test_results/llvm/services_test.dif
