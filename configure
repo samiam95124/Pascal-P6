@@ -49,10 +49,12 @@ function checkexists {
 #
 # The libraries are the ones the Ami models bind to, and that pc names on its
 # link lines: OpenSSL for network, ALSA and fluidsynth (with glib and pcre2)
-# for sound, X11 with XTest for graphics, and FreeType with FontConfig for
-# its fonts. The rest are the transitive closure of those, listed so that a
-# static build (pc -static, see --static below) finds every archive; the
-# default dynamic link needs only the top ones.
+# for sound, X11 with XTest or Wayland with xkbcommon for graphics (the
+# Makefile's GRAPHICS_BACKEND, defaulting to the running session's display),
+# and FreeType with FontConfig for its fonts. The rest are the transitive
+# closure of those, listed so that a static build (pc -static, see --static
+# below) finds every archive; the default dynamic link needs only the top
+# ones.
 #
 # Only pcre2 is named. glib 2.73 and on use pcre2, and the earlier glib of
 # Ubuntu 20.04 links its own pcre when glib is linked as a shared library,
@@ -82,6 +84,10 @@ pkg;xfixes;libxfixes-dev
 pkg;xcb;libxcb1-dev
 pkg;xau;libxau-dev
 pkg;xdmcp;libxdmcp-dev
+pkg;wayland-client;libwayland-dev
+pkg;wayland-cursor;libwayland-dev
+pkg;xkbcommon;libxkbcommon-dev
+pkg;libffi;libffi-dev
 pkg;freetype2;libfreetype-dev
 pkg;fontconfig;libfontconfig1-dev
 pkg;libpng;libpng-dev

@@ -50,6 +50,7 @@ bin/widget_test
 bin/*.exe
 libs/*.a
 libs/*.o
+libs/graphics.link
 libs/win64/
 libs/arm64/
 libs/llvm/
