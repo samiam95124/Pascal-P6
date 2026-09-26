@@ -355,6 +355,130 @@ else
 fi
 
 #
+# The LLVM target (pc -llvm) writes textual LLVM IR with opaque pointers,
+# which clang 15 and later read; an older clang rejects every module it is
+# handed ("expected type"). clang is optional: with none on the path the
+# LLVM target is unavailable, bin/build and regress leave it out, and
+# nothing is asked. With one that is too old the build would fail partway
+# through instead, so the newest clang the host has installed, or failing
+# that the newest its package lists carry, is offered as an upgrade:
+# installed if need be, and made the default clang through
+# update-alternatives (bin/pc.ins names the driver "clang"). Declining ends
+# configure, since the tree does not build with that clang on the path.
+#
+CLANGMIN=15
+
+# Major version of the given clang command, empty if it does not run.
+function clangmajor {
+
+    $1 --version 2>/dev/null | sed -n '1s/.*version \([0-9][0-9]*\)\..*/\1/p'
+
+}
+
+if [ "$host" = "linux" ] && command -v clang >/dev/null ; then
+
+    clangver=`clangmajor clang`
+    if [ -z "$clangver" ] || [ "$clangver" -lt $CLANGMIN ] ; then
+
+        echo "*** clang $clangver is too old for the LLVM target (pc -llvm),"
+        echo "    which needs clang $CLANGMIN or later"
+
+        # The newest versioned clang on the path, else the newest apt carries
+        newclang=
+        newinst=
+        for c in `compgen -c clang- | grep -E '^clang-[0-9]+$' | sort -uVr` ; do
+
+            if [ ${c#clang-} -ge $CLANGMIN ] ; then
+
+                newclang=$c
+                newinst="1"
+                break
+
+            fi
+
+        done
+        if [ -z "$newclang" ] && [ -n "$aptget" ] ; then
+
+            newclang=`apt-cache search --names-only '^clang-[0-9]+$' 2>/dev/null | \
+                      cut -d' ' -f1 | sort -Vr | head -1`
+            if [ -n "$newclang" ] && [ ${newclang#clang-} -lt $CLANGMIN ] ; then
+
+                newclang=
+
+            fi
+
+        fi
+        if [ -z "$newclang" ] ; then
+
+            echo "*** No clang $CLANGMIN or later is available to upgrade to"
+            exit 1
+
+        fi
+        clanglink=`command -v clang`
+        clangprio=${newclang#clang-}0
+        if [ -n "$noinstall" ] ; then
+
+            echo "Upgrade with:"
+            if [ -z "$newinst" ] ; then
+
+                echo "    $sudo apt-get install -y $newclang"
+
+            fi
+            echo "    $sudo update-alternatives --install $clanglink clang" \
+                 "/usr/bin/$newclang $clangprio"
+            softfail="1"
+
+        else
+
+            echo -n "Make $newclang the default clang? [y/n] "
+            read -r answer
+            case $answer in
+
+                [yY]*) ;;
+                *)     echo "*** Configure aborted: the LLVM target needs" \
+                            "clang $CLANGMIN or later"
+                       exit 1 ;;
+
+            esac
+            if [ -z "$newinst" ] ; then
+
+                missing=" $newclang"
+                if ! installdeps ; then
+
+                    echo "*** Unable to install $newclang"
+                    exit 1
+
+                fi
+
+            fi
+            $sudo update-alternatives --install $clanglink clang \
+                `command -v $newclang` $clangprio
+            if [[ $? != 0 ]] ; then
+
+                echo "*** Unable to make $newclang the default clang"
+                exit 1
+
+            fi
+            clangver=`clangmajor clang`
+            if [ -z "$clangver" ] || [ "$clangver" -lt $CLANGMIN ] ; then
+
+                echo "*** clang is still version $clangver after the upgrade"
+                exit 1
+
+            fi
+            echo "clang is now version $clangver"
+
+        fi
+
+    fi
+
+elif [ "$host" = "linux" ] ; then
+
+    echo "No clang: the LLVM target (pc -llvm) will not be available"
+
+fi
+
+#
 # The static ALSA and fluidsynth archives a static build of the sound model
 # links (pc -static; the default Linux link is dynamic and uses the shared
 # objects). No distribution carries these -- libasound2-dev and
