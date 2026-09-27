@@ -2638,8 +2638,32 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       pshexps(n-1);
       frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull);
       dmptre(ep); genexp(ep);
-      wrtins(' pushq %1 # place on stack', ep^.r1)
+      wrtins(' pushq %1 # place on stack', ep^.r1);
+      stkadr := stkadr-intsize
     end
+  end;
+
+  { Align the stack for a vector system call (vip, vis, vin). The dimension
+    list pushed by pshexps sits at the top of stack and is addressed there, so
+    any padding goes below it. The alignment is found at run time: these
+    instructions appear both in routine bodies and in initializer code strips,
+    which are entered by call and so start 8 bytes off the routine's
+    alignment, so the static stack tracking cannot tell. A call reaching the C
+    callee 8 bytes off 16 byte alignment faults in code using aligned SSE
+    stores (glibc malloc). rax is not a parameter register, and the saved stack
+    pointer is restored without touching rax, which holds the result. }
+  procedure alnvec;
+  begin
+    wrtins(' movq %rsp,%rax # save stack pointer');
+    wrtins(' andq $0xfffffffffffffff0,%rsp # align for system call');
+    wrtins(' pushq %rax # save original stack pointer');
+    wrtins(' pushq %rax # keep alignment')
+  end;
+
+  { remove vector system call alignment }
+  procedure dalnvec;
+  begin
+    wrtins(' movq 8(%rsp),%rsp # restore stack pointer')
   end;
 
 begin { assemble } 
@@ -3722,8 +3746,11 @@ begin { assemble }
       wrtins(' movq $0,%1 # load # levels', q, argr(1));
       wrtins(' movq $0,%1 # base element size', q1, argr(2));
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
+      alnvec;
       wrtcps(' call psystem_vip # fill template and allocate variable');
+      dalnvec;
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
+      stkadr := stkadr+q*intsize;
       deltre(ep);
       botstk
     end;
@@ -3739,9 +3766,13 @@ begin { assemble }
       wrtins(' movq $0,%1 # base element size', q1, argr(2));
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
       wrtins(' pushq %1 # save variable address', argr(3));
+      stkadr := stkadr-intsize;
+      alnvec;
       wrtcps(' call psystem_vis # fill template and allocate variable');
+      dalnvec;
       wrtins(' popq %1 # restore variable address', argr(3));
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
+      stkadr := stkadr+intsize+q*intsize;
       wrtins(' popq %rbx # get return address');
       wrtins(' subq %rax,%rsp # allocate vector on stack', q*intsize);
       wrtins(' movq %rsp,(%1) # set variable address', argr(3));
@@ -3761,8 +3792,11 @@ begin { assemble }
       wrtins(' movq $0,%1 # load # levels', q, argr(1));
       wrtins(' movq $0,%1 # base element size', q1, argr(2));
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
+      alnvec;
       wrtcps(' call psystem_vin # fill template and allocate variable');
+      dalnvec;
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
+      stkadr := stkadr+q*intsize;
       deltre(ep);
       botstk
     end;
