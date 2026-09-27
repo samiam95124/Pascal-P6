@@ -2083,8 +2083,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins('1:')
           end;
           if ep^.q <> 1 then begin
-            wrtins(' mov %1, #^0 // get total lvl', ep^.q, ep^.t1);
-            wrtins(' sub %1, %1, %2 // find tl-al', ep^.t1, ep^.r^.r1);
+            { the template holds the dimensions first to last: level l is
+              entry l-1 }
+            wrtins(' sub %1, %2, #1 // find level-1', ep^.t1, ep^.r^.r1);
             wrtins(' lsl %1, %1, #3 // *8 (one integer per level)', ep^.t1);
             wrtins(' add %1, %1, %2 // add to base template', ep^.t1, ep^.l^.r2);
             wrtins(' ldr %1, [%2] // load from template', ep^.r1, ep^.t1)
@@ -2304,9 +2305,9 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     below it. psystem_vin reads the dimensions as a contiguous long array, so
     they are packed 8 bytes apart into a 16 byte aligned block (as callnwldsl
     does for its tag list; pshexps lays entries 16 apart, which will not do).
-    The first dimension popped (nearest the template) goes to the highest slot,
-    matching the push order the AMD64 backend produces: al[0] is the last
-    dimension popped. }
+    The first dimension popped (the last dimension) goes to the lowest slot:
+    psystem_vin reads the list from the last dimension to the first, as the
+    AMD64 and LLVM backends pass it (#657). }
   procedure callvin;
   var frereg: regset; ep, ep2: expptr; i, alloc: integer; stkadrs: integer;
   begin
@@ -2320,7 +2321,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     for i := 1 to q do begin
       frereg := allreg; popstk(ep2); assreg(ep2, frereg, rgnull, rgnull);
       dmptre(ep2); genexp(ep2);
-      wrtins(' str %1, [sp, #^0] // place dimension', (q-i)*intsize, ep2^.r1);
+      wrtins(' str %1, [sp, #^0] // place dimension', (i-1)*intsize, ep2^.r1);
       deltre(ep2)
     end;
     assreg(ep, allreg, rgx2, rgnull); dmptre(ep); genexp(ep); { template -> x2 }

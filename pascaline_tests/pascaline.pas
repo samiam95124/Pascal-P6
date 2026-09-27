@@ -239,8 +239,8 @@ var x, y: integer;
 begin
 
    ca[5, 5] := 123;
-   for x := max(ca, 2) downto 1 do
-      begin for y := max(ca, 1) downto 1 do write(ca[x, y]:4); writeln end
+   for x := max(ca, 1) downto 1 do
+      begin for y := max(ca, 2) downto 1 do write(ca[x, y]:4); writeln end
 
 end;
 
@@ -253,8 +253,8 @@ var x, y: integer;
 begin
 
    ca[5, 5] := 123;
-   for x := max(ca, 2) downto 1 do
-      begin for y := max(ca, 1) downto 1 do write(ca[x, y]:4); writeln end
+   for x := max(ca, 1) downto 1 do
+      begin for y := max(ca, 2) downto 1 do write(ca[x, y]:4); writeln end
 
 end;
 
@@ -266,8 +266,8 @@ var x, y: integer;
 
 begin
 
-   for x := max(ca, 2) downto 1 do
-      begin for y := max(ca, 1) downto 1 do write(ca[x, y]:4); writeln end
+   for x := max(ca, 1) downto 1 do
+      begin for y := max(ca, 2) downto 1 do write(ca[x, y]:4); writeln end
 
 end;
 
@@ -386,6 +386,39 @@ begin
    m2 := m1;
    for x := 10 downto 1 do
       begin for y := 10 downto 1 do write(m2[x, y]:4); writeln end
+
+end;
+
+{ #657: containers whose dimensions differ. max() levels count from the
+  first dimension, and each index is checked and scaled against its own
+  dimension. Tested on a stack (vis) and a dynamic (vin) container. }
+
+procedure parvar5(x, y, z: integer);
+
+type m3 = array of array of array of integer;
+
+var m(x, y, z): m3;
+    p: ^m3;
+    i, j, k, bad: integer;
+
+begin
+
+   write(max(m, 1):1, ' ', max(m, 2):1, ' ', max(m, 3):1);
+   for i := 1 to x do for j := 1 to y do for k := 1 to z do
+      m[i, j, k] := i*100+j*10+k;
+   bad := 0;
+   for i := 1 to x do for j := 1 to y do for k := 1 to z do
+      if m[i, j, k] <> i*100+j*10+k then bad := bad+1;
+   write(' ', m[1, y, z]:1, ' ', m[x, 1, 1]:1, ' ', bad:1, ' ');
+   new(p, x, y, z);
+   write(max(p^, 1):1, ' ', max(p^, 2):1, ' ', max(p^, 3):1);
+   for i := 1 to x do for j := 1 to y do for k := 1 to z do
+      p^[i, j, k] := i*100+j*10+k;
+   bad := 0;
+   for i := 1 to x do for j := 1 to y do for k := 1 to z do
+      if p^[i, j, k] <> i*100+j*10+k then bad := bad+1;
+   write(' ', p^[1, y, z]:1, ' ', p^[x, 1, 1]:1, ' ', bad:1);
+   dispose(p)
 
 end;
 
@@ -1311,6 +1344,10 @@ begin
    writeln('  30  29  28  27  26  25  24  23  22  21');
    writeln('  20  19  18  17  16  15  14  13  12  11');
    writeln('  10   9   8   7   6   5   4   3   2   1');
+
+   write('mdc5: ');
+   parvar5(2, 3, 4);
+   writeln(' s/b 2 3 4 134 211 0 2 3 4 134 211 0');
 
 {*******************************************************************************
 
