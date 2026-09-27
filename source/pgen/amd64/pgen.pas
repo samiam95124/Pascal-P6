@@ -59,6 +59,7 @@ const shadowsize = 32; { Windows x64 caller allocated shadow space }
   not start at a code label. }
 var inbody: boolean; { between a routine's mst and its return }
     strip:  boolean; { in an initializer code strip }
+    stkadr: integer; { stack address tracking, 0 is 16 byte aligned }
 
 override procedure abort;
 
@@ -93,12 +94,19 @@ end;
   return address on every call, and to remove it afterwards. The shadow
   space is a multiple of 16 bytes, so stack alignment is unchanged. }
 procedure wrtcps(view si: string);
+var aln: boolean;
 begin
+  { A call reaching the C callee 8 bytes off 16 byte alignment faults in code
+    using aligned SSE stores. These calls take no stack arguments, so the pad
+    can go right above the call. }
+  aln := stkadr mod 16 <> 0;
+  if aln then wrtins(' subq $0,%rsp # align for system call', adrsize);
   if windows then
     wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
   wrtins(si);
   if windows then
-    wrtins(' addq $0,%rsp # remove shadow space', shadowsize)
+    wrtins(' addq $0,%rsp # remove shadow space', shadowsize);
+  if aln then wrtins(' addq $0,%rsp # remove alignment', adrsize)
 end;
 
 { Write return epilogue: restore the protected registers, undo the frame
@@ -201,8 +209,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       cstp: cstptr;
       ep, ep2, ep3, ep4, ep5: expptr;
       r1: reg; sp, sp2: pstring; def, def2: boolean; val, val2: integer;
-      stkadr: integer; { stack address tracking }
-      aln: boolean; { vector system call alignment pad placed }
       blk: pblock; { block reference }
 
   procedure getreg(var r: reg; var rf: regset);
@@ -2663,28 +2669,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     end
   end;
 
-  { Align the stack for a vector system call (vip, vis, vin). The dimension
-    list pushed by pshexps sits at the top of stack and is addressed there, so
-    any padding goes below it. A call reaching the C callee 8 bytes off 16
-    byte alignment faults in code using aligned SSE stores (glibc malloc). }
-  procedure alnvec(var aln: boolean);
-  begin
-    aln := stkadr mod 16 <> 0;
-    if aln then begin
-      wrtins(' subq $0,%rsp # align for system call', adrsize);
-      stkadr := stkadr-adrsize
-    end
-  end;
-
-  { remove vector system call alignment }
-  procedure dalnvec(aln: boolean);
-  begin
-    if aln then begin
-      wrtins(' addq $0,%rsp # remove alignment', adrsize);
-      stkadr := stkadr+adrsize
-    end
-  end;
-
 begin { assemble } 
   refer(dmplst); { diagnostics }
   refer(dmptmp);
@@ -3774,9 +3758,7 @@ begin { assemble }
       wrtins(' movq $0,%1 # load # levels', q, argr(1));
       wrtins(' movq $0,%1 # base element size', q1, argr(2));
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
-      alnvec(aln);
       wrtcps(' call psystem_vip # fill template and allocate variable');
-      dalnvec(aln);
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
       stkadr := stkadr+q*intsize;
       deltre(ep);
@@ -3795,9 +3777,7 @@ begin { assemble }
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
       wrtins(' pushq %1 # save variable address', argr(3));
       stkadr := stkadr-intsize;
-      alnvec(aln);
       wrtcps(' call psystem_vis # fill template and allocate variable');
-      dalnvec(aln);
       wrtins(' popq %1 # restore variable address', argr(3));
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
       stkadr := stkadr+intsize+q*intsize;
@@ -3820,9 +3800,7 @@ begin { assemble }
       wrtins(' movq $0,%1 # load # levels', q, argr(1));
       wrtins(' movq $0,%1 # base element size', q1, argr(2));
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
-      alnvec(aln);
       wrtcps(' call psystem_vin # fill template and allocate variable');
-      dalnvec(aln);
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
       stkadr := stkadr+q*intsize;
       deltre(ep);
