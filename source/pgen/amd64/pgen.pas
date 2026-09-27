@@ -51,6 +51,16 @@ label 99;
 
 const shadowsize = 32; { Windows x64 caller allocated shadow space }
 
+{ Code strip tracking. Initializer code strips sit outside any routine body,
+  start at a code label and end with ret. They are entered by call from an
+  aligned routine body, so the stack starts 8 bytes below the body's
+  alignment, and assemble sets the stack tracking to match. Module startup
+  code sits outside any routine body too, but is entered aligned and does
+  not start at a code label. }
+var inbody: boolean; { between a routine's mst and its return }
+    strip:  boolean; { in an initializer code strip }
+    stkadr: integer; { stack address tracking, 0 is 16 byte aligned }
+
 override procedure abort;
 
 begin
@@ -84,12 +94,19 @@ end;
   return address on every call, and to remove it afterwards. The shadow
   space is a multiple of 16 bytes, so stack alignment is unchanged. }
 procedure wrtcps(view si: string);
+var aln: boolean;
 begin
+  { A call reaching the C callee 8 bytes off 16 byte alignment faults in code
+    using aligned SSE stores. These calls take no stack arguments, so the pad
+    can go right above the call. }
+  aln := stkadr mod 16 <> 0;
+  if aln then wrtins(' subq $0,%rsp # align for system call', adrsize);
   if windows then
     wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
   wrtins(si);
   if windows then
-    wrtins(' addq $0,%rsp # remove shadow space', shadowsize)
+    wrtins(' addq $0,%rsp # remove shadow space', shadowsize);
+  if aln then wrtins(' addq $0,%rsp # remove alignment', adrsize)
 end;
 
 { Write return epilogue: restore the protected registers, undo the frame
@@ -122,6 +139,16 @@ begin
   end;
   wrtins(' addq $0,%rsp # remove frame data', marksize);
   if not windows then writeln(prr, '        .cfi_def_cfa rsp, 8')
+end;
+
+{ define a label in the output. A code label outside a routine body starts
+  an initializer code strip. }
+override procedure deflabel(x: labelrg; pc: boolean);
+begin
+  write(prr, labeltab[x].ref^);
+  if pc then writeln(prr, ':')
+  else writeln(prr, ' = ', labeltab[x].val:1);
+  if pc and not inbody then strip := true
 end;
 
 override procedure preamble;
@@ -182,7 +209,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       cstp: cstptr;
       ep, ep2, ep3, ep4, ep5: expptr;
       r1: reg; sp, sp2: pstring; def, def2: boolean; val, val2: integer;
-      stkadr: integer; { stack address tracking }
       blk: pblock; { block reference }
 
   procedure getreg(var r: reg; var rf: regset);
@@ -2638,7 +2664,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       pshexps(n-1);
       frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull);
       dmptre(ep); genexp(ep);
-      wrtins(' pushq %1 # place on stack', ep^.r1)
+      wrtins(' pushq %1 # place on stack', ep^.r1);
+      stkadr := stkadr-intsize
     end
   end;
 
@@ -2646,7 +2673,10 @@ begin { assemble }
   refer(dmplst); { diagnostics }
   refer(dmptmp);
   refer(parp); { variation not used at present }
-  p := 0;  q := 0;  q1 := 0; q2 := 0; q3 := 0; q4 := 0; op := 0; stkadr := 0;
+  p := 0;  q := 0;  q1 := 0; q2 := 0; q3 := 0; q4 := 0; op := 0;
+  { a code strip is entered by call, so its stack starts off the return
+    address below alignment }
+  if strip then stkadr := -adrsize else stkadr := 0;
   getname(name);
   { note this search removes the top instruction from use }
   while (instab[op].instr<>name) and (op < maxins) do op := op+1;
@@ -3308,6 +3338,7 @@ begin { assemble }
       tmpoff := -(p+1)*ptrsize;
       tmpspc := 0; { clear temps }
       stkadr := 0;
+      inbody := true; strip := false; { routine body starts }
       { note ep is unused at this time }
       botstk;
       { the prologue is now complete (frame established, parameter registers
@@ -3535,12 +3566,14 @@ begin { assemble }
     22: begin
       frereg := allreg;
       wrtins(' ret      ');
+      strip := false; { end of code strip }
       botstk
     end;
 
     {retp,retm}
     14,237: begin parq;
       frereg := allreg;
+      inbody := false; { routine body ends }
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtrestore;
       wrtins(' popq %rcx # get return address');
@@ -3559,6 +3592,7 @@ begin { assemble }
     {reti,reta,retx,retc,retb}
     128,132,204,130,131: begin parq;
       frereg := allreg;
+      inbody := false; { routine body ends }
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       { load function result from register pad before frame teardown }
       if windows then
@@ -3584,6 +3618,7 @@ begin { assemble }
     {retr}
     129: begin parq;
       frereg := allreg;
+      inbody := false; { routine body ends }
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       { load function result from register pad before frame teardown }
       if windows then
@@ -3608,6 +3643,7 @@ begin { assemble }
     {rets}
     236: begin parq;
       frereg := allreg;
+      inbody := false; { routine body ends }
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       { restore protected registers }
       wrtrestore;
@@ -3724,6 +3760,7 @@ begin { assemble }
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
       wrtcps(' call psystem_vip # fill template and allocate variable');
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
+      stkadr := stkadr+q*intsize;
       deltre(ep);
       botstk
     end;
@@ -3739,11 +3776,13 @@ begin { assemble }
       wrtins(' movq $0,%1 # base element size', q1, argr(2));
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
       wrtins(' pushq %1 # save variable address', argr(3));
+      stkadr := stkadr-intsize;
       wrtcps(' call psystem_vis # fill template and allocate variable');
       wrtins(' popq %1 # restore variable address', argr(3));
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
+      stkadr := stkadr+intsize+q*intsize;
       wrtins(' popq %rbx # get return address');
-      wrtins(' subq %rax,%rsp # allocate vector on stack', q*intsize);
+      wrtins(' subq %rax,%rsp # allocate vector on stack');
       wrtins(' movq %rsp,(%1) # set variable address', argr(3));
       wrtins(' andq $0xfffffffffffffff0,%rsp # align stack');
       wrtins(' pushq %rbx # replace return address');
@@ -3763,6 +3802,7 @@ begin { assemble }
       wrtins(' movq %rsp,%1 # load array dimension list', argr(4));
       wrtcps(' call psystem_vin # fill template and allocate variable');
       wrtins(' addq $0,%rsp # dump dimensions from stack', q*intsize);
+      stkadr := stkadr+q*intsize;
       deltre(ep);
       botstk
     end;
@@ -3960,6 +4000,8 @@ end; (*assemble*)
 begin (* main *)
 
   proginit; { perform independent init }
+
+  inbody := false; strip := false;
 
   convreq := true; { require a calling convention selection (SYS V/Windows) }
 
