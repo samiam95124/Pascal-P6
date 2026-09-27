@@ -2418,14 +2418,18 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             one of them, hold it in the scratch across the chain }
           if (ep^.l^.r1 = rgrax) or (ep^.l^.r1 = rgrdx) then
             wrtins(' movq %1,%2 # save base across multiply', ep^.l^.r1, ep^.t2);
-          wrtins(' movq $0,%1 # get # levels-1', ep^.q-1, ep^.t1);
+          { walk the templates from the last level down to the first. mulq
+            writes the high half of the product to rdx, so the template
+            pointer is held in the scratch, and the template base ends the
+            walk (#655) }
           wrtins(' movq $0,%rax # get base element size', ep^.q1);
-          wrtins(' movq %1,%rdx # copy template address', ep^.l^.r2);
+          wrtins(' leaq ^0(%1),%2 # index last template', (ep^.q-1)*intsize,
+                 ep^.l^.r2, ep^.t1);
           wrtins('1:');
-          wrtins(' addq $0,%rdx # next template location', intsize);
-          wrtins(' mulq (%rdx) # add template to size');
-          wrtins(' subq $0,%1 # count down levels', 1, ep^.t1);
-          wrtins(' jnz 1b # loop over templates');
+          wrtins(' mulq (%1) # add template to size', ep^.t1);
+          wrtins(' subq $0,%1 # back one template location', intsize, ep^.t1);
+          wrtins(' cmpq %1,%2 # check first template passed', ep^.l^.r2, ep^.t1);
+          wrtins(' jne 1b # loop over templates');
           wrtins(' addq $0,%1 # advance template slot', intsize, ep^.l^.r2);
           wrtins(' mulq %1 # find index*size', ep^.r^.r1);
           if (ep^.l^.r1 = rgrax) or (ep^.l^.r1 = rgrdx) then begin
