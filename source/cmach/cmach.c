@@ -3572,8 +3572,9 @@ void sinins()
                    for (i = 1; i <= q; i++)
                      { q1 = q1*getint(ad2); ad2 = ad2+INTSIZE; }
                    newspc(q1+q*INTSIZE, &ad2); putadr(ad, ad2);
+                   ad2 = ad2+q*INTSIZE;
                    for (i = 1; i <= q; i++)
-                     { popint(i1); putint(ad2, i1); ad2 = ad2+INTSIZE; }
+                     { popint(i1); ad2 = ad2-INTSIZE; putint(ad2, i1); }
                    break;
     case pi_lcp: popadr(ad); pshadr(ad+PTRSIZE); pshadr(getadr(ad)); break;
     case pi_cps: popadr(ad1); popint(i1); popadr(ad2); popint(i2);
@@ -3619,7 +3620,7 @@ void sinins()
                        if (q > 1) popadr(ad); else popint(i1);
                        if (i < 1 || i > q) errorv(INVALIDCONTAINERLEVEL);
                        if (q == 1) i = i1;
-                       else i = getint(ad+(q-i)*INTSIZE);
+                       else i = getint(ad+(i-1)*INTSIZE);
                        pshint(i);
                       break;
     case pi_vdp:

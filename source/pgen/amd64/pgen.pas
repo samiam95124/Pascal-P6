@@ -2457,8 +2457,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins('1:')
           end;
           if ep^.q <> 1 then begin
-            wrtins(' movq $0,%1 # get total lvl', ep^.q, ep^.t1);
-            wrtins(' subq %1,%2 # find tl-al', ep^.r^.r1, ep^.t1);
+            { the template holds the dimensions first to last: level l is
+              entry l-1 }
+            wrtins(' movq %1,%2 # get level', ep^.r^.r1, ep^.t1);
+            wrtins(' decq %1 # find level-1', ep^.t1);
             wrtins(' salq $3,%1 # *8 (one integer per level)', ep^.t1);
             wrtins(' addq %1,%2 # add to base template', ep^.l^.r2, ep^.t1);
             wrtins(' movq (%1),%2 # add to base template', ep^.t1, ep^.r1)
@@ -2660,13 +2662,17 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     getadr(q); getadr(q1)
   end;
 
-  { evaluate and push n arguments depth first }
+  { evaluate and push the n dimensions of a vector initialize. The last
+    dimension is on top of the expression stack. It is pushed last, so the
+    list at the top of the stack runs from the last dimension to the first,
+    the order psystem_vip, vis and vin read it (#657) }
   procedure pshexps(n: integer);
   var ep: expptr; frereg: regset;
   begin
     if n > 0 then begin
+      popstk(ep);
       pshexps(n-1);
-      frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull);
+      frereg := allreg; assreg(ep, frereg, rgnull, rgnull);
       dmptre(ep); genexp(ep);
       wrtins(' pushq %1 # place on stack', ep^.r1);
       stkadr := stkadr-intsize

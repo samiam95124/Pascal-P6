@@ -5559,7 +5559,7 @@ begin
                        if q > 1 then popadr(ad) else popint(i1);
                        if (i < 1) or (i > q) then errorv(InvalidContainerLevel);
                        if q = 1 then i := i1
-                       else i := getint(ad+(q-i)*intsize);
+                       else i := getint(ad+(i-1)*intsize);
                        pshint(i)
                  end;
     pi_vdp,
