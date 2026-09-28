@@ -157,5 +157,15 @@ if [ "$name" = "services_test" ]; then
 else
    dif -w "$ob.lst.s" "$ob.cmp.s" > "$ob.dif"
 fi
+difrc=$?
 rm -f "$ob.lst.s" "$ob.cmp.s"
+# dif exits 0 (same) or 1 (differences or an error, with a message in the
+# .dif). Anything else means dif itself died, likely with no output, and the
+# empty .dif would read as a pass (issue #659). A non-zero exit with an empty
+# .dif is equally unreliable. Put the reason in the .dif so the test fails.
+if [ $difrc -gt 1 ]; then
+   echo "*** dif failed with exit status $difrc" >> "$ob.dif"
+elif [ $difrc -ne 0 ] && [ ! -s "$ob.dif" ]; then
+   echo "*** dif exited with status $difrc but gave no output" >> "$ob.dif"
+fi
 wc -l "$ob.dif"
