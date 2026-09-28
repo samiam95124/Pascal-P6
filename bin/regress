@@ -231,22 +231,27 @@ function do_regress {
         testp6 $option
         dotestresult standard_tests build iso7185pat
 
+        #
+        # Self compiles via interpreter are slow and no longer
+        # necessary since Pascal-P6 always self compiles to binaries.
+        #
+
         echo "Running self compile..."
         #
         # Run pcom self compile \(note this runs on P5/P6 only\)
         #
-        echo "pcom self compile" >> "$report"
-        setout build
-        cpcoms $option
-        dotestresult source build pcom.mpp
+        # echo "pcom self compile" >> "$report"
+        # setout build
+        # cpcoms $option
+        # dotestresult source build pcom.mpp
 
         #
         # Run pint self compile \(note this runs on P5/P6 only\)
         #
-        echo "pint self compile" >> "$report"
-        setout build
-        cpints $option
-        dotestresult standard_tests build iso7185pats
+        # echo "pint self compile" >> "$report"
+        # setout build
+        # cpints $option
+        # dotestresult standard_tests build iso7185pats
 
 	fi
 
