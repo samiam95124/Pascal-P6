@@ -58,6 +58,11 @@ function checkexists {
 # Ubuntu 20.04 links its own pcre when glib is linked as a shared library,
 # so pcre (pcre1, which Ubuntu 26.04 no longer carries) is never needed.
 #
+# OpenSSL links statically into every program (#661), so its static closure
+# is needed too: zstd (with zlib, above) for OpenSSL 3, and jitterentropy
+# where OpenSSL was built with it, which is checked separately below since
+# older releases do not carry that package.
+#
 # The development packages for ALSA and fluidsynth supply the headers and
 # shared objects only. A static build also needs tools/staticdeps/build.sh,
 # which builds the archives; --static runs it.
@@ -86,6 +91,7 @@ pkg;freetype2;libfreetype-dev
 pkg;fontconfig;libfontconfig1-dev
 pkg;libpng;libpng-dev
 pkg;zlib;zlib1g-dev
+pkg;libzstd;libzstd-dev
 pkg;expat;libexpat1-dev
 pkg;uuid;uuid-dev
 pkg;libbrotlidec;libbrotli-dev
@@ -355,6 +361,26 @@ else
 fi
 
 #
+# OpenSSL is linked statically (#661). Where OpenSSL was built with the
+# jitterentropy source (OpenSSL 3 on the newer releases), its static
+# closure names libjitterentropy.a, which only libjitterentropy3-dev
+# supplies. Older releases neither need nor carry that package, so it is
+# asked for only when pkg-config names it.
+#
+if [ "$host" = "linux" ] && command -v pkg-config >/dev/null && \
+   pkg-config --static --libs libcrypto 2>/dev/null | grep -q jitterentropy ; then
+
+    if [ ! -f "$(gcc -print-file-name=libjitterentropy.a 2>/dev/null)" ] ; then
+
+        echo "*** Missing libjitterentropy.a, from package libjitterentropy3-dev"
+        missing=" libjitterentropy3-dev"
+        installdeps || softfail="1"
+
+    fi
+
+fi
+
+#
 # The LLVM target (pc -llvm) writes textual LLVM IR with opaque pointers,
 # which clang 15 and later read; an older clang rejects every module it is
 # handed ("expected type"). clang is optional: with none on the path the
@@ -583,6 +609,20 @@ fi
 cp $hostcell/bin/* bin 2>/dev/null
 cp -r $hostcell/libs/* libs 2>/dev/null
 rm -f bin/.gitkeep libs/.gitkeep
+
+#
+# The OpenSSL link for pc (#661): the static archives with the dependency
+# set this host's OpenSSL needs, found by tools/openssllink.sh. It depends on
+# the host, not the leaf, so it is written here rather than restored. If the
+# static link cannot be made, the script warns and gives the shared
+# libraries, and programs then depend on this host's OpenSSL soname.
+#
+if [ "$host" = "linux" ] ; then
+
+    tools/openssllink.sh > libs/openssl.link
+    echo "OpenSSL links as: $(cat libs/openssl.link)"
+
+fi
 
 #
 # The asset-loading games (chess, conquest, backgammon) find their data in

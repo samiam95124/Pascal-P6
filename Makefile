@@ -1005,8 +1005,14 @@ CMACHSYNTH=-Wl,-u,getparamfluid -Wl,-u,getparamdump
 # nothing references statically (e.g. the virtual rawmidi plugin) would be left
 # out of the link and lose its registration -> "_snd_rawmidi_virtual_open is not
 # defined inside [builtin]" at runtime.
+# OpenSSL links statically (#661), so the linux interpreters do not depend on
+# the OpenSSL soname of the host they run on: tools/openssllink.sh gives the
+# static archives with the dependency set this host's OpenSSL needs (or, with
+# a warning, the shared libraries if the static link cannot be made). It is
+# expanded where used, so only the linux links run it.
+SSLLIBS=$(shell $(PASCALP6)/tools/openssllink.sh)
 CMACHEXTLIBS=$(CMACHSYNTH) $(LIBS)/services.a $(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
-	-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm
+	$(SSLLIBS) -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm
 
 cmach: bin/cmach
 bin/cmach: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern.inc \
@@ -1094,7 +1100,7 @@ bin/cmacht: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_term.inc \
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) $(CMACHEXT) -DTERMINAL -o $(BUILD)/cmacht64le \
 		$(SOURCE)/cmach/cmach.c $(CMACHSYNTH) \
 		$(LIBS)/services.a $(LIBS)/terminal.a $(LIBS)/sound.a $(LIBS)/network.a \
-		$(PSYSTEM_STDIO) -lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm
+		$(PSYSTEM_STDIO) $(SSLLIBS) -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm
 	cp $(BUILD)/cmacht64le $(PASCALP6)/bin/cmacht
 endif
 
@@ -1136,7 +1142,7 @@ bin/cmachg: $(SOURCE)/cmach/cmach.c $(SOURCE)/cmach/extern_graph.inc \
 		-Wl,--start-group \
 		$(LIBS)/services.a source/graph/graphics.a $(LIBS)/gnome_widgets.o \
 		$(LIBS)/sound.a $(LIBS)/network.a $(PSYSTEM_STDIO) \
-		-lssl -lcrypto -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm \
+		$(SSLLIBS) -Wl,--whole-archive -lasound -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm \
 		-lfontconfig -lfreetype -lXtst -lXi -lXfixes -lXext -lX11 -lpng -lz -lbz2 \
 		-lbrotlidec -lbrotlicommon -lexpat -luuid -lxcb -lXau -lXdmcp \
 		-Wl,--end-group

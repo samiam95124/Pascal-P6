@@ -140,6 +140,17 @@ if [ $? -ne 0 ]; then
 fi
 
 #
+# The OpenSSL link pc uses for native linux programs (#661): the static
+# archives with the dependency set this host's OpenSSL needs. configure
+# writes it too; it is rewritten here so a build always links OpenSSL the
+# way this host can.
+#
+if [ "$(uname -s)" = "Linux" ]; then
+   tools/openssllink.sh > libs/openssl.link
+   echo "OpenSSL links as: $(cat libs/openssl.link)"
+fi
+
+#
 # Build dummy decks to satisfy pc builds.
 #
 echo ""
