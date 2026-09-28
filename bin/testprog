@@ -221,7 +221,23 @@ run --nolist $windowsoption $options $backend $progfile
 strip $(ob $progfile).lst ${tmpd}tmp1
 strip $cmpfile.cmp ${tmpd}tmp2
 dif -w ${tmpd}tmp1 ${tmpd}tmp2 > $(ob $progfile).dif
+difrc=$?
 rm -f ${tmpd}tmp1 ${tmpd}tmp2
+#
+# dif exits 0 (same) or 1 (differences or an error, with a message in the
+# .dif). Anything else means dif itself died, likely with no output, and the
+# empty .dif would read as a pass (issue #659). A non-zero exit with an empty
+# .dif is equally unreliable. Put the reason in the .dif so the test fails.
+#
+if [ $difrc -gt 1 ]; then
+
+    echo "*** dif failed with exit status $difrc" >> $(ob $progfile).dif
+
+elif [ $difrc -ne 0 ] && [ ! -s $(ob $progfile).dif ]; then
+
+    echo "*** dif exited with status $difrc but gave no output" >> $(ob $progfile).dif
+
+fi
 ls -l $(ob $progfile).dif | grep ".dif"
 
 # pass if the diff file is empty
