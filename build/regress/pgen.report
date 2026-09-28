@@ -25,3 +25,11 @@ network_test run
 0 libs/tests/test_results/pgen/network_test.dif
 services_test run
 0 libs/tests/test_results/pgen/services_test.dif
+Pascal-P5 run
+*** standard_tests/iso7185pat: compile/run fail
+Pascal-P6 run
+*** standard_tests/iso7185pat: compile/run fail
+pcom self compile
+*** source/pcom.mpp: compile/run fail
+pint self compile
+*** standard_tests/iso7185pats: compile/run fail
