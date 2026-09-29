@@ -53,3 +53,6 @@ libs/*.o
 libs/win64/
 libs/arm64/
 libs/llvm/
+# The OpenSSL link for pc, written for the host by configure and bin/build
+# (tools/openssllink.sh, #661)
+libs/openssl.link

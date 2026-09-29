@@ -2220,6 +2220,42 @@ begin
 
 end;
 
+{ Place the OpenSSL libraries of a native linux link. OpenSSL is linked
+  statically, so a program does not depend on the OpenSSL soname of the host
+  it runs on (#661). The static archives need a dependency set that differs
+  between OpenSSL builds, so configure and the build script find it for this
+  host (tools/openssllink.sh) and write it to libs/openssl.link. Without that
+  file, link the shared libraries as before. }
+procedure putssl;
+
+var f:    text;    { link file }
+    fn:   filnam;  { link file name }
+    c:    char;    { character holder }
+    done: boolean; { end of line found }
+    any:  boolean; { anything placed }
+
+begin
+
+   any := false;
+   services.maknam(fn, pgmpath, '../libs/openssl', 'link');
+   services.fulnam(fn);
+   if exists(fn) then begin
+
+      assign(f, fn);
+      reset(f);
+      { eof is tested apart from eoln, as eoln at the end of the file is an
+        error }
+      done := eof(f);
+      while not done do
+         if eoln(f) then done := true
+         else begin read(f, c); putchr(c); any := true; done := eof(f) end;
+      close(f)
+
+   end;
+   if not any then putstr('-lssl -lcrypto')
+
+end;
+
 { concatenate list of files to output file }
 procedure catfils(view sfl, dfn: string);
 
@@ -2406,7 +2442,8 @@ begin { dolink }
             putstr(sndarch); putchr(' ');
             putstr(netarch); putchr(' ');
             putstr(psstdio); putchr(' ');
-            putstr('-lssl -lcrypto -Wl,--whole-archive -lasound');
+            putssl; { OpenSSL, static }
+            putstr(' -Wl,--whole-archive -lasound');
             putstr(' -Wl,--no-whole-archive -L/usr/local/lib -lfluidsynth');
             putstr(' -lglib-2.0 -lpcre2-8 -lstdc++ -lpthread -ldl -lm');
             excact(cmdbuf) { execute command buffer action }
@@ -2599,8 +2636,11 @@ begin { dolink }
               build of OpenSSL, whose static libraries pull in Winsock (ws2_32)
               and the certificate/crypto system libraries (crypt32, gdi32). }
             putstr('-lssl -lcrypto -lws2_32 -lcrypt32 -lgdi32')
-         else
+         else if farm64sysv then
+            { the arm64 cross link uses the cross toolchain's OpenSSL, which
+              libs/openssl.link (found for the host) does not describe }
             putstr('-lssl -lcrypto -lpthread -ldl')
+         else begin putssl; putstr(' -lpthread -ldl') end
          end;
       excact(cmdbuf) { execute command buffer action }
 
