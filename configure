@@ -5,7 +5,8 @@
 #
 # Sets up the complete Pascal-p6 project: determines the host, architecture
 # and bit length this machine presents, checks the external tools and
-# libraries the build needs and installs the missing ones (building the
+# libraries the build needs and installs the missing ones with apt-get or
+# dnf, whichever the host has (building the
 # static ALSA and fluidsynth archives that no distribution carries), then
 # restores the working bin and libs directories from the matching directory
 # of the hosts tree. The hostinstall make target performs the reverse
@@ -34,7 +35,7 @@ function checkexists {
 # The external tools and libraries the build needs, beyond the base shell
 # utilities. Each entry is:
 #
-#     <check>;<target>;<package>
+#     <check>;<target>;<deb package>;<rpm package>
 #
 # where <check> is one of:
 #
@@ -45,7 +46,11 @@ function checkexists {
 #     hdr    the target is a header file that must be present, for a library
 #            that installs no pkg-config file
 #
-# and <package> is the Debian/Ubuntu package that supplies it.
+# and the packages are the ones that supply it: the Debian/Ubuntu package,
+# installed with apt-get, and the RHEL/Rocky/Fedora package, installed with
+# dnf. On RHEL and Rocky some of these are in the CRB and EPEL repositories
+# (libXdmcp-devel and fluidsynth-devel), which installdeps enables if the
+# first install fails.
 #
 # The libraries are the ones the Ami models bind to, and that pc names on its
 # link lines: OpenSSL for network, ALSA and fluidsynth (with glib and pcre2)
@@ -68,34 +73,34 @@ function checkexists {
 # which builds the archives; --static runs it.
 #
 DEPS="
-cmd;gcc;build-essential
-cmd;g++;build-essential
-cmd;make;build-essential
-cmd;ar;binutils
-cmd;pkg-config;pkg-config
-cmd;zip;zip
-pkg;openssl;libssl-dev
-pkg;alsa;libasound2-dev
-pkg;fluidsynth;libfluidsynth-dev
-pkg;glib-2.0;libglib2.0-dev
-pkg;libpcre2-8;libpcre2-dev
-pkg;x11;libx11-dev
-pkg;xext;libxext-dev
-pkg;xtst;libxtst-dev
-pkg;xi;libxi-dev
-pkg;xfixes;libxfixes-dev
-pkg;xcb;libxcb1-dev
-pkg;xau;libxau-dev
-pkg;xdmcp;libxdmcp-dev
-pkg;freetype2;libfreetype-dev
-pkg;fontconfig;libfontconfig1-dev
-pkg;libpng;libpng-dev
-pkg;zlib;zlib1g-dev
-pkg;libzstd;libzstd-dev
-pkg;expat;libexpat1-dev
-pkg;uuid;uuid-dev
-pkg;libbrotlidec;libbrotli-dev
-hdr;/usr/include/bzlib.h;libbz2-dev
+cmd;gcc;build-essential;gcc
+cmd;g++;build-essential;gcc-c++
+cmd;make;build-essential;make
+cmd;ar;binutils;binutils
+cmd;pkg-config;pkg-config;pkgconf-pkg-config
+cmd;zip;zip;zip
+pkg;openssl;libssl-dev;openssl-devel
+pkg;alsa;libasound2-dev;alsa-lib-devel
+pkg;fluidsynth;libfluidsynth-dev;fluidsynth-devel
+pkg;glib-2.0;libglib2.0-dev;glib2-devel
+pkg;libpcre2-8;libpcre2-dev;pcre2-devel
+pkg;x11;libx11-dev;libX11-devel
+pkg;xext;libxext-dev;libXext-devel
+pkg;xtst;libxtst-dev;libXtst-devel
+pkg;xi;libxi-dev;libXi-devel
+pkg;xfixes;libxfixes-dev;libXfixes-devel
+pkg;xcb;libxcb1-dev;libxcb-devel
+pkg;xau;libxau-dev;libXau-devel
+pkg;xdmcp;libxdmcp-dev;libXdmcp-devel
+pkg;freetype2;libfreetype-dev;freetype-devel
+pkg;fontconfig;libfontconfig1-dev;fontconfig-devel
+pkg;libpng;libpng-dev;libpng-devel
+pkg;zlib;zlib1g-dev;zlib-devel
+pkg;libzstd;libzstd-dev;libzstd-devel
+pkg;expat;libexpat1-dev;expat-devel
+pkg;uuid;uuid-dev;libuuid-devel
+pkg;libbrotlidec;libbrotli-dev;brotli-devel
+hdr;/usr/include/bzlib.h;libbz2-dev;bzip2-devel
 "
 
 #
@@ -105,10 +110,10 @@ hdr;/usr/include/bzlib.h;libbz2-dev
 # tarball. The compiler and make it also needs are in DEPS above.
 #
 SDEPS="
-cmd;cmake;cmake
-cmd;wget;wget
-cmd;patch;patch
-cmd;bzip2;bzip2
+cmd;cmake;cmake;cmake
+cmd;wget;wget;wget
+cmd;patch;patch;patch
+cmd;bzip2;bzip2;bzip2
 "
 
 #
@@ -116,19 +121,26 @@ cmd;bzip2;bzip2
 # present, and leave the packages that supply them in "missing". The class
 # is "cmd" for the programs and "lib" for the libraries, which are checked
 # in that order because the library checks run through pkg-config, itself
-# one of the programs.
+# one of the programs. The package named is the one in the format of the
+# host's package manager.
 #
 function checkdeps {
 
-    local ent kind target package
+    local ent kind target debpkg rpmpkg package
 
     missing=
     for ent in $2 ; do
 
-        kind=${ent%%;*}
-        target=${ent#*;}
-        package=${target##*;}
-        target=${target%%;*}
+        IFS=';' read -r kind target debpkg rpmpkg <<< "$ent"
+        if [ "$pkgfmt" = "rpm" ] ; then
+
+            package=$rpmpkg
+
+        else
+
+            package=$debpkg
+
+        fi
 
         case $kind in
 
@@ -159,9 +171,11 @@ function checkdeps {
 }
 
 #
-# Install the packages left in "missing" by checkdeps. A failed install is
-# most often stale package lists, so that is updated and the install tried
-# once more before giving up.
+# Install the packages left in "missing" by checkdeps, with the host's
+# package manager. A failed install is most often, with apt-get, stale
+# package lists, and with dnf on RHEL and Rocky, a package in the CRB or
+# EPEL repository, which a fresh install has not enabled. So that is put
+# right and the install tried once more before giving up.
 #
 function installdeps {
 
@@ -171,22 +185,40 @@ function installdeps {
 
     fi
 
-    if [ -z "$aptget" ] || [ -n "$noinstall" ] ; then
+    if [ -z "$pkgmgr" ] || [ -n "$noinstall" ] ; then
 
-        echo "Install these with: $sudo apt-get install -y$missing"
+        echo "Install these with: $sudo ${pkgmgr:-apt-get} install -y$missing"
+        if [ "$pkgmgr" = "dnf" ] ; then
+
+            echo "On RHEL and Rocky, some are in the CRB and EPEL repositories:"
+            echo "    $sudo dnf config-manager --set-enabled crb"
+            echo "    $sudo dnf install -y epel-release"
+
+        fi
         return 1
 
     fi
 
     echo "Installing:$missing"
-    if $sudo apt-get install -y $missing ; then
+    if $sudo $pkgmgr install -y $missing ; then
 
         return 0
 
     fi
 
-    echo "Install failed, updating package lists and retrying"
-    $sudo apt-get update && $sudo apt-get install -y $missing
+    if [ "$pkgmgr" = "dnf" ] ; then
+
+        echo "Install failed, enabling the CRB and EPEL repositories and retrying"
+        $sudo dnf config-manager --set-enabled crb && \
+            $sudo dnf install -y epel-release && \
+            $sudo dnf install -y $missing
+
+    else
+
+        echo "Install failed, updating package lists and retrying"
+        $sudo apt-get update && $sudo apt-get install -y $missing
+
+    fi
 
 }
 
@@ -311,15 +343,21 @@ checkexists ls
 
 #
 # Check the external tools and libraries, and install what is missing.
-# Installing needs apt-get, so on a host without it the check reports and
-# the install is left to hand. Root installs directly, anyone else through
-# sudo.
+# Installing needs apt-get (Debian, Ubuntu) or dnf (RHEL, Rocky, Fedora),
+# and the package names follow the one found, so on a host with neither the
+# check reports the Debian names and the install is left to hand. Root
+# installs directly, anyone else through sudo.
 #
-aptget=
-sudo=
+pkgmgr=
+pkgfmt="deb"
 if command -v apt-get >/dev/null ; then
 
-    aptget="1"
+    pkgmgr="apt-get"
+
+elif command -v dnf >/dev/null ; then
+
+    pkgmgr="dnf"
+    pkgfmt="rpm"
 
 fi
 if [ "`id -u`" != "0" ] ; then
@@ -364,7 +402,7 @@ fi
 # OpenSSL is linked statically (#661). Where OpenSSL was built with the
 # jitterentropy source (OpenSSL 3 on the newer releases), its static
 # closure names libjitterentropy.a, which only libjitterentropy3-dev
-# supplies. Older releases neither need nor carry that package, so it is
+# (jitterentropy-devel on RHEL and Rocky) supplies. Older releases neither need nor carry that package, so it is
 # asked for only when pkg-config names it.
 #
 if [ "$host" = "linux" ] && command -v pkg-config >/dev/null && \
@@ -372,8 +410,14 @@ if [ "$host" = "linux" ] && command -v pkg-config >/dev/null && \
 
     if [ ! -f "$(gcc -print-file-name=libjitterentropy.a 2>/dev/null)" ] ; then
 
-        echo "*** Missing libjitterentropy.a, from package libjitterentropy3-dev"
-        missing=" libjitterentropy3-dev"
+        jitterpkg="libjitterentropy3-dev"
+        if [ "$pkgfmt" = "rpm" ] ; then
+
+            jitterpkg="jitterentropy-devel"
+
+        fi
+        echo "*** Missing libjitterentropy.a, from package $jitterpkg"
+        missing=" $jitterpkg"
         installdeps || softfail="1"
 
     fi
@@ -423,7 +467,7 @@ if [ "$host" = "linux" ] && command -v clang >/dev/null ; then
             fi
 
         done
-        if [ -z "$newclang" ] && [ -n "$aptget" ] ; then
+        if [ -z "$newclang" ] && [ "$pkgmgr" = "apt-get" ] ; then
 
             newclang=`apt-cache search --names-only '^clang-[0-9]+$' 2>/dev/null | \
                       cut -d' ' -f1 | sort -Vr | head -1`
@@ -447,7 +491,7 @@ if [ "$host" = "linux" ] && command -v clang >/dev/null ; then
             echo "Upgrade with:"
             if [ -z "$newinst" ] ; then
 
-                echo "    $sudo apt-get install -y $newclang"
+                echo "    $sudo $pkgmgr install -y $newclang"
 
             fi
             echo "    $sudo update-alternatives --install $clanglink clang" \
