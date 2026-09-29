@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Sun 27 Sep 2026 11:55:09 PM PDT
+Mon 28 Sep 2026 01:12:33 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/test_results/pint/hello.dif
@@ -30,14 +30,6 @@ services_test run
 0 libs/tests/test_results/pint/services_test.dif
 Debug test run
 0 pascaline_tests/test_results/pint/debug_test.dif
-Pascal-P5 run
-*** standard_tests/iso7185pat: compile/run fail
-Pascal-P6 run
-*** standard_tests/iso7185pat: compile/run fail
-pcom self compile
-*** source/pcom.mpp: compile/run fail
-pint self compile
-*** standard_tests/iso7185pats: compile/run fail
 pmach run ***************************************
 0 sample_programs/test_results/pmach/hello.dif
 0 sample_programs/test_results/pmach/roman.dif
@@ -65,14 +57,6 @@ network_test run
 0 libs/tests/test_results/pmach/network_test.dif
 services_test run
 0 libs/tests/test_results/pmach/services_test.dif
-Pascal-P5 run
-*** standard_tests/iso7185pat: compile/run fail
-Pascal-P6 run
-*** standard_tests/iso7185pat: compile/run fail
-pcom self compile
-*** source/pcom.mpp: compile/run fail
-pint self compile
-*** standard_tests/iso7185pats: compile/run fail
 cmach run ***************************************
 0 sample_programs/test_results/cmach/hello.dif
 0 sample_programs/test_results/cmach/roman.dif
@@ -100,14 +84,6 @@ network_test run
 0 libs/tests/test_results/cmach/network_test.dif
 services_test run
 0 libs/tests/test_results/cmach/services_test.dif
-Pascal-P5 run
-*** standard_tests/iso7185pat: compile/run fail
-Pascal-P6 run
-*** standard_tests/iso7185pat: compile/run fail
-pcom self compile
-*** source/pcom.mpp: compile/run fail
-pint self compile
-*** standard_tests/iso7185pats: compile/run fail
 package run ***************************************
 0 sample_programs/test_results/package/hello.dif
 0 sample_programs/test_results/package/roman.dif
@@ -135,14 +111,6 @@ network_test run
 0 libs/tests/test_results/package/network_test.dif
 services_test run
 0 libs/tests/test_results/package/services_test.dif
-Pascal-P5 run
-*** standard_tests/iso7185pat: compile/run fail
-Pascal-P6 run
-*** standard_tests/iso7185pat: compile/run fail
-pcom self compile
-*** source/pcom.mpp: compile/run fail
-pint self compile
-*** standard_tests/iso7185pats: compile/run fail
 pgen run ***************************************
 0 sample_programs/test_results/pgen/hello.dif
 0 sample_programs/test_results/pgen/roman.dif
@@ -170,14 +138,6 @@ network_test run
 0 libs/tests/test_results/pgen/network_test.dif
 services_test run
 0 libs/tests/test_results/pgen/services_test.dif
-Pascal-P5 run
-*** standard_tests/iso7185pat: compile/run fail
-Pascal-P6 run
-*** standard_tests/iso7185pat: compile/run fail
-pcom self compile
-*** source/pcom.mpp: compile/run fail
-pint self compile
-*** standard_tests/iso7185pats: compile/run fail
 llvm run ***************************************
 0 sample_programs/test_results/llvm/hello.dif
 0 sample_programs/test_results/llvm/roman.dif
@@ -205,24 +165,15 @@ network_test run
 0 libs/tests/test_results/llvm/network_test.dif
 services_test run
 0 libs/tests/test_results/llvm/services_test.dif
-Pascal-P5 run
-*** standard_tests/iso7185pat: compile/run fail
-Pascal-P6 run
-*** standard_tests/iso7185pat: compile/run fail
-pcom self compile
-*** source/pcom.mpp: compile/run fail
-pint self compile
-*** standard_tests/iso7185pats: compile/run fail
 
 Total differences: 0
-Fails: 24
-*** Regression fails
-Sun 27 Sep 2026 11:58:42 PM PDT
+Fails: 0
+Mon 28 Sep 2026 01:15:31 PM PDT
 Files sha256sum ***************************************
 Source files
 fda2d41fd70a893baf7f9aba3452494434b8343c4efbd19f0a4ea8ef157ff1c2  -
 batch files
-f86091f30240293d23dec6b12b5d3e0378e3067cba0092a35789344142a05846  -
+63bdc0ee80d22b620fdb052a170a9429ecabb18f925e1c05fabf440efacab194  -
 P2 files
 abb5a8a00d377dbcf7c793f9f399fb51e017f2e27ecab9607e4cace253472cfb  -
 p4 files
@@ -232,4 +183,4 @@ Sample program test files
 standard test files
 dfebd148fc9f3cf0359273ff261325253c260f785fd66a8cbae7cdc57ef3632d  -
 other files
-2fe8fc4988e7f8276661b9d1fcb1a8ccf097ad2e1199e955fd729fc21fd0f146  -
+746e3299c1693d49792c9d34d40e3114aa7673ca0f038c502fa0d7c2f2bbf5f5  -
