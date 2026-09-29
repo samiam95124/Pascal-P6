@@ -50,8 +50,18 @@ else
          "programs link it shared and depend on its soname. The static link" \
          "($static) failed with:" >&2
     grep -m 3 -i "cannot find\|undefined" "$tmp/probe.log" >&2
-    echo "*** Install the missing static archives (see configure) and rerun" \
-         "configure." >&2
+    if ! command -v apt-get > /dev/null && command -v dnf > /dev/null; then
+
+        # RHEL, Rocky and Fedora package no static OpenSSL archives at all
+        echo "*** This distribution does not package the static OpenSSL" \
+             "archives, so the shared link is expected here." >&2
+
+    else
+
+        echo "*** Install the missing static archives (see configure) and" \
+             "rerun configure." >&2
+
+    fi
     echo "$dynamic"
 
 fi
