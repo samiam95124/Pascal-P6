@@ -32,6 +32,13 @@
 *   - Module initialization chain: each object registers its entry in the    *
 *     psystem_llvm_mods section; the runtime calls the entries in link       *
 *     order, replacing the fall-through into the next object.                 *
+*   - Scalar variables: what LLVM is to keep in a register must be a         *
+*     variable of its own, not bytes of the frame (whose address escapes     *
+*     into the display) or of the globals area. The scalar locals,           *
+*     parameters and temporaries of a routine each get an alloca, the        *
+*     scalar globals of a module a global each. What is addressed by offset  *
+*     stays where pcom put it: the structures, and the locals a nested       *
+*     routine reaches through the display.                                    *
 *                                                                              *
 * Functions are buffered and written when complete, because the return type   *
 * of a routine is only known from its return instruction, and the frame size  *
@@ -88,6 +95,12 @@ const
    vfb   = -1; { the frame base pointer %fb }
    vsfr  = -2; { the result frame pointer %sfr }
    vnull = -3; { the null pointer }
+   vnone = -4; { no value }
+   vslot = -16; { below this a frame slot name: vslot+q is %lvN for the
+                  frame offset q = -N }
+
+   maxorg = 4096; { entries of the pointer origin table }
+   maxgbh = 1024; { entries of the global offset tables }
 
 type
 
@@ -109,6 +122,36 @@ type
       next: stripptr
    end;
    parsymtab = array [1..maxpar] of psymbol;
+   { the class of a frame symbol: a scalar (a word or less), the two words
+     of a fat pointer, or a structure, addressed by offset }
+   symcls = (scscalar, scpair, scstruct);
+   fsymptr = ^fsymety;
+   fsymety = record off: integer; cls: symcls; next: fsymptr end;
+   { a frame slot: a frame offset the code of a block accesses, and how }
+   slotptr = ^slotety;
+   slotety = record
+      off: integer;        { frame offset }
+      di, dr, db: boolean; { loaded or stored as a quad, a real, a byte }
+      adr: boolean;        { its address is taken }
+      opq: integer;        { bytes accessed in place: a set, a fat pointer }
+      own: boolean;        { accessed by the code of the block }
+      nst: boolean;        { accessed by a nested routine }
+      kind: char;          { where it lives: 'i', 'r', 'b' an alloca of that
+                             type, ' ' the frame }
+      next: slotptr
+   end;
+   { the frame of a block: its symbols and slots }
+   binfptr = ^binfety;
+   binfety = record
+      blk: pblock;    { the block }
+      syms: fsymptr;  { its frame symbols }
+      slots: slotptr; { the frame slots its code accesses }
+      sjmp: boolean;  { it has a try block }
+      next: binfptr
+   end;
+   { a global defined as a variable of its own }
+   gsymptr = ^gsymety;
+   gsymety = record off: integer; name: pstring; next: gsymptr end;
 
 var
 
@@ -154,6 +197,13 @@ var
    fnstrips: linelst; { the strip code spliced into this function }
    donelst: calptr;  { shared call results produced in this function }
    tmps: pstring;    { scratch string }
+   binflst: binfptr; { the frames of the blocks }
+   gsymtab: array [0..maxgbh-1] of gsymptr; { the globals that are variables
+                                               of their own, by offset }
+   gbyttab: array [0..maxgbh-1] of calptr; { the offsets accessed in the
+                                              globals area }
+   orgtab: array [0..maxorg-1] of record v, p: integer end; { the pointer
+                        an i64 value of the function was made from }
 
 {******************************************************************************
 
@@ -262,6 +312,7 @@ begin
    if v = vfb then os('%fb')
    else if v = vsfr then os('%sfr')
    else if v = vnull then os('null')
+   else if v < vslot then begin os('%lv'); oi(vslot-v) end
    else if instrip then begin os('%s'); oi(stripn); oc('_'); oi(v) end
    else begin os('%v'); oi(v) end
 
@@ -668,15 +719,264 @@ begin
 
 end;
 
-{ address of a global as a pointer value }
-function gbladr(q: integer): integer;
+{******************************************************************************
 
-var v: integer;
+Frame slots
+
+Each frame offset the code of a block accesses is a slot. A slot that can be
+is given an alloca of its own in place of its frame bytes, which lets LLVM
+keep it in a register: the frame's address escapes, into the display and to
+every callee, so nothing in the frame itself can be promoted. The code of the
+block addresses a slot by name, %lvN for the frame offset -N, and the name is
+defined in the prologue, written when the routine is complete, as either the
+alloca or the address of the frame bytes. Everything that decides between the
+two is known by then: the nested routines precede the body of their parent.
+
+A slot stays in the frame when:
+
+  - a nested routine accesses it (through the display, by frame offset);
+  - it lies in a structure: from the offset of an array, record, set, file
+    or container symbol up to the next symbol;
+  - it is accessed in more than one way (as a quad and as a byte, or in place
+    as a set or a fat pointer), or its bytes overlap another slot's;
+  - its address is taken and no scalar symbol names it (a temporary, whose
+    extent is not known);
+  - the routine has a try block or is the target of a non-local goto. A
+    longjmp back into the routine must find each variable as the code
+    between left it, which holds for memory and not for a register.
+
+******************************************************************************}
+
+{ the frame of a block, made if new }
+function binfof(bp: pblock): binfptr;
+
+var bi, fi: binfptr;
 
 begin
 
+   fi := nil; bi := binflst;
+   while (bi <> nil) and (fi = nil) do begin
+      if bi^.blk = bp then fi := bi;
+      bi := bi^.next
+   end;
+   if fi = nil then begin
+      new(fi); fi^.blk := bp; fi^.syms := nil; fi^.slots := nil;
+      fi^.sjmp := false; fi^.next := binflst; binflst := fi
+   end;
+   binfof := fi
+
+end;
+
+{ the slot of a frame offset, or nil }
+function fndslot(bi: binfptr; q: integer): slotptr;
+
+var sp, fp: slotptr;
+
+begin
+
+   fp := nil; sp := bi^.slots;
+   while (sp <> nil) and (fp = nil) do begin
+      if sp^.off = q then fp := sp;
+      sp := sp^.next
+   end;
+   fndslot := fp
+
+end;
+
+{ note an access to frame offset q of block bp. k is 'i', 'r' or 'b' for a
+  load or store of a quad, a real or a byte, 'a' for its address taken, 's'
+  and 'p' for a set and a fat pointer accessed in place. own is false for an
+  access from a nested routine. }
+procedure noteslot(bp: pblock; q: integer; k: char; own: boolean);
+
+var sp: slotptr; bi: binfptr;
+
+begin
+
+   bi := binfof(bp); sp := fndslot(bi, q);
+   if sp = nil then begin
+      new(sp); sp^.off := q; sp^.di := false; sp^.dr := false; sp^.db := false;
+      sp^.adr := false; sp^.opq := 0; sp^.own := false; sp^.nst := false;
+      sp^.kind := ' '; sp^.next := bi^.slots; bi^.slots := sp
+   end;
+   case k of
+      'i': sp^.di := true;
+      'r': sp^.dr := true;
+      'b': sp^.db := true;
+      'a': sp^.adr := true;
+      's': if sp^.opq < setsize then sp^.opq := setsize;
+      'p': if sp^.opq < 2*ptrsize then sp^.opq := 2*ptrsize
+   end;
+   if own then sp^.own := true else sp^.nst := true
+
+end;
+
+{ the symbol a frame offset belongs to: the nearest at or below it, or nil }
+function symat(bi: binfptr; q: integer): fsymptr;
+
+var fp, np: fsymptr;
+
+begin
+
+   np := nil; fp := bi^.syms;
+   while fp <> nil do begin
+      if fp^.off <= q then begin
+         if np = nil then np := fp
+         else if fp^.off > np^.off then np := fp
+      end;
+      fp := fp^.next
+   end;
+   symat := np
+
+end;
+
+{ the frame bytes the accesses to a slot cover }
+function slotext(bi: binfptr; sp: slotptr): integer;
+
+var e: integer; fp: fsymptr;
+
+begin
+
+   e := 1;
+   if sp^.di or sp^.dr then e := intsize;
+   if sp^.opq > e then e := sp^.opq;
+   if sp^.adr then begin
+      { the address of a fat pointer parameter is that of both its words }
+      fp := symat(bi, sp^.off);
+      if fp <> nil then if (fp^.cls = scpair) and (fp^.off = sp^.off) then
+         if e < 2*ptrsize then e := 2*ptrsize
+   end;
+   slotext := e
+
+end;
+
+{ decide where the slots of the routine being written live: bi is the frame
+  of its block }
+procedure plcslots(bi: binfptr);
+
+var sp, tp: slotptr; fp: fsymptr; n, sz, padbot, i: integer; k: char;
+    keep, named: boolean;
+
+{ a parameter arrives in its slot: the slot must take the word as it comes }
+procedure parslot(off: integer; c: parclass);
+
+var sp: slotptr;
+
+begin
+
+   sp := fndslot(bi, off);
+   if sp <> nil then case c of
+      pcint:  if sp^.kind = 'r' then sp^.kind := ' ';
+      pcreal: if sp^.kind <> 'r' then sp^.kind := ' ';
+      pcpair: if sp^.kind <> 'i' then sp^.kind := ' '
+   end
+
+end;
+
+begin
+
+   padbot := -(8*fnlvl+padsize);
+   keep := bi^.sjmp or (ipjlst <> nil);
+   sp := bi^.slots;
+   while sp <> nil do begin
+
+      k := ' ';
+      n := ord(sp^.di)+ord(sp^.dr)+ord(sp^.db);
+      if not keep and sp^.own and not sp^.nst and (sp^.opq = 0) and (n = 1) then begin
+
+         if sp^.di then k := 'i' else if sp^.dr then k := 'r' else k := 'b';
+         if k = 'b' then sz := 1 else sz := intsize;
+         { the display is not a variable }
+         if sp^.off+sz > -8*fnlvl then k := ' ';
+         named := false;
+         fp := symat(bi, sp^.off);
+         if fp <> nil then case fp^.cls of
+            scscalar: named := fp^.off = sp^.off;
+            scpair: ;
+            { the structure runs up to the next symbol, or to the register
+              pads }
+            scstruct: if sp^.off < padbot then k := ' '
+         end;
+         { an address taken is that of the slot alone only where a scalar
+           symbol says so }
+         if sp^.adr and not named then k := ' ';
+         tp := bi^.slots;
+         while tp <> nil do begin
+            if tp <> sp then
+               if (tp^.off < sp^.off+sz) and (sp^.off < tp^.off+slotext(bi, tp)) then
+                  k := ' ';
+            tp := tp^.next
+         end
+
+      end;
+      sp^.kind := k;
+      sp := sp^.next
+
+   end;
+   for i := 1 to fnparn do begin
+      parslot(fnparoff[i], fnparc[i]);
+      if fnparc[i] = pcpair then parslot(fnparoff[i]+ptrsize, pcpair)
+   end
+
+end;
+
+{ address of a frame location for an access of kind k (see noteslot): the
+  slot name for the routine's own frame, the frame bytes for an outer one,
+  which pins the slot there }
+function slotadr(p, q: integer; k: char): integer;
+
+var bp: pblock;
+
+begin
+
+   bp := nil;
+   if not fnstrip and (q < 0) then bp := blkatlvl(p);
+   if bp = nil then slotadr := locadr(p, q)
+   else begin
+
+      noteslot(bp, q, k, p = fnlvl);
+      if p = fnlvl then slotadr := vslot+q else slotadr := locadr(p, q)
+
+   end
+
+end;
+
+{ clear the global offset tables }
+procedure clrgbl;
+
+var i: integer;
+
+begin
+
+   for i := 0 to maxgbh-1 do begin gsymtab[i] := nil; gbyttab[i] := nil end
+
+end;
+
+{ address of a global as a pointer value: the variable of its own at that
+  offset, or the offset in the globals area, noted as accessed there }
+function gbladr(q: integer): integer;
+
+var v: integer; gp, fp: gsymptr; cp: calptr; f: boolean;
+
+begin
+
+   fp := nil; gp := gsymtab[q mod maxgbh];
+   while (gp <> nil) and (fp = nil) do begin
+      if gp^.off = q then fp := gp;
+      gp := gp^.next
+   end;
    v := newv;
-   oins; ov(v); os(' = getelementptr i8, ptr @globals_start, i64 '); oi(q); ol;
+   if fp <> nil then begin
+      oins; ov(v); os(' = getelementptr i8, ptr @'); oq(fp^.name^); os(', i64 0'); ol
+   end else begin
+      f := false; cp := gbyttab[q mod maxgbh];
+      while (cp <> nil) and not f do begin f := cp^.k = q; cp := cp^.next end;
+      if not f then begin
+         new(cp); cp^.k := q;
+         cp^.next := gbyttab[q mod maxgbh]; gbyttab[q mod maxgbh] := cp
+      end;
+      oins; ov(v); os(' = getelementptr i8, ptr @globals_start, i64 '); oi(q); ol
+   end;
    gbladr := v
 
 end;
@@ -695,6 +995,34 @@ begin
 
 end;
 
+{ Pointer origins. Addresses are i64 values in the expression trees, and
+  become pointers where they are used. An inttoptr hides from LLVM which
+  object the address lies in, so that a store through it may touch any
+  variable whose address is known anywhere; the pointer an address was made
+  from is remembered here, and used again in place of a conversion back. The
+  table is a cache over the value numbers of the function: a lost entry costs
+  only the conversion. }
+
+procedure clrorg;
+
+var i: integer;
+
+begin
+
+   for i := 0 to maxorg-1 do orgtab[i].v := 0
+
+end;
+
+{ the pointer an i64 value was made from, or vnone }
+function orgof(v: integer): integer;
+
+begin
+
+   orgof := vnone;
+   if v > 0 then if orgtab[v mod maxorg].v = v then orgof := orgtab[v mod maxorg].p
+
+end;
+
 { pointer from an i64 value }
 function i2p(x: integer): integer;
 
@@ -702,8 +1030,13 @@ var v: integer;
 
 begin
 
-   v := newv;
-   oins; ov(v); os(' = inttoptr i64 '); ov(x); os(' to ptr'); ol;
+   v := orgof(x);
+   if v = vnone then begin
+
+      v := newv;
+      oins; ov(v); os(' = inttoptr i64 '); ov(x); os(' to ptr'); ol
+
+   end;
    i2p := v
 
 end;
@@ -717,6 +1050,7 @@ begin
 
    v := newv;
    oins; ov(v); os(' = ptrtoint ptr '); ov(x); os(' to i64'); ol;
+   orgtab[v mod maxorg].v := v; orgtab[v mod maxorg].p := x;
    p2i := v
 
 end;
@@ -832,7 +1166,9 @@ begin
    oins; os('br i1 '); ov(c); os(', '); olab(lf^); os(', '); olab(lc^); ol; term;
    defblk(lf^);
    emiterr(code);
-   oins; os('br '); olab(lc^); ol; term;
+   { the error does not return: without this LLVM must assume every check
+     may come back having changed each global }
+   oins; os('unreachable'); ol; term;
    defblk(lc^)
 
 end;
@@ -917,7 +1253,8 @@ begin
    vn := 0;
    ipjlst := nil;
    fncals := nil; fnstrips.first := nil; fnstrips.last := nil;
-   donelst := nil
+   donelst := nil;
+   clrorg
 
 end;
 
@@ -953,7 +1290,41 @@ end;
   the result frame pointer, the parameter spills and the non-local goto table }
 procedure wrtprologue;
 
-var neg, pos, k, n: integer; ip: ipjptr;
+var neg, pos, k, n: integer; ip: ipjptr; bi: binfptr; sp: slotptr;
+
+{ store parameter k, or word sfx ('a', 'b') of it if a fat pointer, of type
+  i64 or double, in the slot at its frame offset }
+procedure spill(k: integer; sfx: char; off: integer; isr: boolean);
+
+var sp: slotptr; kd: char;
+
+procedure opar;
+begin write(prr, '%p', k:1); if sfx <> ' ' then write(prr, sfx) end;
+
+procedure oty;
+begin if isr then write(prr, 'double ') else write(prr, 'i64 ') end;
+
+begin
+
+   kd := ' ';
+   if bi <> nil then begin
+      sp := fndslot(bi, off);
+      if sp <> nil then if sp^.own then kd := sp^.kind
+   end;
+   if kd = ' ' then begin
+      write(prr, '  %ps', k:1); if sfx <> ' ' then write(prr, sfx);
+      writeln(prr, ' = getelementptr i8, ptr %fb, i64 ', off:1);
+      write(prr, '  store '); oty; opar;
+      write(prr, ', ptr %ps', k:1); if sfx <> ' ' then write(prr, sfx);
+      writeln(prr)
+   end else if kd = 'b' then begin
+      write(prr, '  %pt', k:1, ' = trunc i64 '); opar; writeln(prr, ' to i8');
+      writeln(prr, '  store i8 %pt', k:1, ', ptr %lv', -off:1)
+   end else begin
+      write(prr, '  store '); oty; opar; writeln(prr, ', ptr %lv', -off:1)
+   end
+
+end;
 
 begin
 
@@ -973,6 +1344,34 @@ begin
         variables, among others, rely on it }
       writeln(prr, '  call void @llvm.memset.p0.i64(ptr %frame, i8 0, i64 ', neg+pos:1, ', i1 false)');
       writeln(prr, '  %fb = getelementptr i8, ptr %frame, i64 ', neg:1);
+      { the slots: an alloca each, cleared as the frame is, or the address
+        of the frame bytes }
+      bi := nil;
+      if fnblk <> nil then begin
+         bi := binfof(fnblk);
+         plcslots(bi);
+         sp := bi^.slots;
+         while sp <> nil do begin
+            if sp^.own then begin
+               write(prr, '  %lv', -sp^.off:1, ' = ');
+               if sp^.kind = ' ' then
+                  writeln(prr, 'getelementptr i8, ptr %fb, i64 ', sp^.off:1)
+               else if sp^.kind = 'r' then begin
+                  writeln(prr, 'alloca double, align 8');
+                  writeln(prr, '  store double 0.0, ptr %lv', -sp^.off:1)
+               end else if (sp^.kind = 'b') and not sp^.adr then begin
+                  writeln(prr, 'alloca i8, align 1');
+                  writeln(prr, '  store i8 0, ptr %lv', -sp^.off:1)
+               end else begin
+                  { a byte whose address is taken gets a whole word, should
+                    the holder of the address access more than the byte }
+                  writeln(prr, 'alloca i64, align 8');
+                  writeln(prr, '  store i64 0, ptr %lv', -sp^.off:1)
+               end
+            end;
+            sp := sp^.next
+         end
+      end;
       { display: copy the caller's entries below ours, then ours }
       for k := 1 to fnlvl-1 do begin
          writeln(prr, '  %dl', k:1, ' = getelementptr i8, ptr %sl, i64 ', -8*k:1);
@@ -988,21 +1387,11 @@ begin
       { parameters into the frame slots they belong in }
       for k := 1 to fnparn do case fnparc[k] of
 
-         pcint: begin
-            writeln(prr, '  %ps', k:1, ' = getelementptr i8, ptr %fb, i64 ', fnparoff[k]:1);
-            writeln(prr, '  store i64 %p', k:1, ', ptr %ps', k:1)
-         end;
-
-         pcreal: begin
-            writeln(prr, '  %ps', k:1, ' = getelementptr i8, ptr %fb, i64 ', fnparoff[k]:1);
-            writeln(prr, '  store double %p', k:1, ', ptr %ps', k:1)
-         end;
-
+         pcint:  spill(k, ' ', fnparoff[k], false);
+         pcreal: spill(k, ' ', fnparoff[k], true);
          pcpair: begin
-            writeln(prr, '  %ps', k:1, 'a = getelementptr i8, ptr %fb, i64 ', fnparoff[k]:1);
-            writeln(prr, '  store i64 %p', k:1, 'a, ptr %ps', k:1, 'a');
-            writeln(prr, '  %ps', k:1, 'b = getelementptr i8, ptr %fb, i64 ', fnparoff[k]+8:1);
-            writeln(prr, '  store i64 %p', k:1, 'b, ptr %ps', k:1, 'b')
+            spill(k, 'a', fnparoff[k], false);
+            spill(k, 'b', fnparoff[k]+8, false)
          end
 
       end;
@@ -1323,27 +1712,60 @@ end;
 
 override procedure emitsym(bp: pblock; sp: psymbol; k: char);
 
-var fl: integer;
+var c: char; fp: fsymptr; bi: binfptr; gp: gsymptr; cp: calptr; f: boolean;
 
 begin
 
-   { global symbols are exported as aliases into the globals area, under the
-     long block-qualified name that other modules reference }
-   if k = 'g' then begin
+   c := ' ';
+   if sp^.digest <> nil then if max(sp^.digest^) > 0 then c := sp^.digest^[1];
+   { global symbols are exported under the long block-qualified name that
+     other modules reference. A scalar is a global of its own, which LLVM can
+     tell apart from every other variable; the rest are aliases into the
+     globals area, where the code addresses them by offset. }
+   if (k = 'g') and (bp <> nil) then begin
 
-      ll := 0;
-      os('@'); oc('"');
-      fl := 0;
       { the long name: module.symbol }
-      if bp <> nil then begin os(bp^.name^); oc('.') end;
-      os(sp^.name^); oc('"');
-      os(' = alias i8, ptr getelementptr (i8, ptr @globals_start, i64 ');
-      oi(sp^.off); oc(')');
+      ll := 0; os(bp^.name^); oc('.'); os(sp^.name^);
+      tmps := lbstr; ll := 0;
+      { a scalar already accessed in the globals area stays there }
+      f := false; cp := gbyttab[sp^.off mod maxgbh];
+      while (cp <> nil) and not f do begin f := cp^.k = sp^.off; cp := cp^.next end;
+      os('@'); oq(tmps^);
+      if (c in ['i', 'n', 'b', 'c', 'p', 'x']) and not f then begin
+
+         { a subrange or enumeration gets a word, whatever pcom gave it:
+           the accesses fix the width used }
+         if c = 'n' then os(' = global double 0.0, align 8')
+         else if c in ['b', 'c'] then os(' = global i8 0, align 1')
+         else os(' = global i64 0, align 8');
+         new(gp); gp^.off := sp^.off; gp^.name := tmps;
+         gp^.next := gsymtab[sp^.off mod maxgbh]; gsymtab[sp^.off mod maxgbh] := gp
+
+      end else begin
+
+         os(' = alias i8, ptr getelementptr (i8, ptr @globals_start, i64 ');
+         oi(sp^.off); oc(')')
+
+      end;
       { module level text, whatever is being generated }
       writeln(prr, lbuf:ll); ll := 0;
       { record the name as defined }
-      os(bp^.name^); oc('.'); os(sp^.name^);
-      tmps := lbstr; addname(defsyms, tmps^); ll := 0
+      addname(defsyms, tmps^)
+
+   end else if ((k = 'l') or (k = 'p')) and (bp <> nil) then begin
+
+      { a frame symbol: its class decides which slots may leave the frame }
+      new(fp); fp^.off := sp^.off; fp^.cls := scstruct;
+      if k = 'p' then begin
+         { a parameter in the register pads or the overflow area is a word
+           (an address, for a structure passed by reference), or two for a
+           fat pointer; below them it is the local copy of a structure }
+         if sp^.off >= -(8*bp^.lvl+padsize) then begin
+            if parclassof(sp) = pcpair then fp^.cls := scpair
+            else fp^.cls := scscalar
+         end
+      end else if c in ['i', 'n', 'b', 'c', 'p', 'x'] then fp^.cls := scscalar;
+      bi := binfof(bp); fp^.next := bi^.syms; bi^.syms := fp
 
    end
 
@@ -1580,7 +2002,7 @@ begin
    writeln(prr, 'declare double @llvm.fabs.f64(double)');
    writeln(prr, 'declare i64 @llvm.lrint.i64.f64(double)');
    writeln(prr, 'declare i32 @_setjmp(ptr) returns_twice');
-   writeln(prr, 'declare void @psystem_errore(i64, i64, i64)');
+   writeln(prr, 'declare void @psystem_errore(i64, i64, i64) cold noreturn');
    writeln(prr, 'declare void @psystem_llvm_nextmod()');
    writeln(prr, 'declare void @psystem_llvm_bge(ptr)');
    writeln(prr, 'declare void @psystem_llvm_ede()');
@@ -1670,7 +2092,7 @@ override procedure assemble;
        ep, ep2, ep3, ep4, ep5: expptr;
        sp, sp2: pstring; def, def2: boolean; val, val2: integer;
        blk: pblock; { block reference }
-       ip: ipjptr; v2, v3: integer; cp: calptr;
+       ip: ipjptr; v2, v3: integer; cp: calptr; bi: binfptr;
        ro: record case boolean of
              true:  (rv: real);
              false: (iv: integer)
@@ -1853,6 +2275,29 @@ override procedure assemble;
       v := newv;
       oins; ov(v); os(' = '); os(op); os(' i64 '); ov(a); os(', '); oi(b); ol;
       binii := v
+   end;
+
+   { address plus an offset: on the pointer the address was made from,
+     where that is known, so that LLVM sees which object the result is in }
+   function adda(a, x: integer): integer;
+   var p, g: integer;
+   begin
+      p := orgof(a);
+      if p = vnone then adda := bini('add', a, x)
+      else begin
+         g := newv;
+         oins; ov(g); os(' = getelementptr i8, ptr '); ov(p); os(', i64 '); ov(x); ol;
+         adda := p2i(g)
+      end
+   end;
+
+   function addai(a: integer; x: integer): integer;
+   var p: integer;
+   begin
+      p := orgof(a);
+      if p = vnone then addai := binii('add', a, x)
+      else if x = 0 then addai := a
+      else addai := p2i(gep(p, x))
    end;
 
    function binr(view op: string; a, b: integer): integer;
@@ -2208,7 +2653,7 @@ override procedure assemble;
       if ep <> nil then begin
          genexp(ep^.al);
          if not (ep^.op in [113{cip}, 247{cif}, 12{cup}, 246{cuf}, 27{cuv}, 249{cvf}, 15{csp},
-                            188{cke}, 248{mpc}]) then
+                            188{cke}, 248{mpc}, 225{ldp}]) then
             genexp(ep^.l);
          if not (ep^.op in [12, 246, 113, 247, 27, 249, 15, 248]) then begin
             genexp(ep^.r); genexp(ep^.x1)
@@ -2216,15 +2661,15 @@ override procedure assemble;
          case ep^.op of
 
             {lodi,loda}
-            0,105: ep^.r1a := ld('i', locadr(ep^.p, ep^.q));
+            0,105: ep^.r1a := ld('i', slotadr(ep^.p, ep^.q, 'i'));
             {lodx,lodb,lodc}
-            193,108,109: ep^.r1a := ld('b', locadr(ep^.p, ep^.q));
+            193,108,109: ep^.r1a := ld('b', slotadr(ep^.p, ep^.q, 'b'));
             {lodr}
-            106: ep^.r1a := ld('r', locadr(ep^.p, ep^.q));
+            106: ep^.r1a := ld('r', slotadr(ep^.p, ep^.q, 'r'));
             {lods}
-            107: ep^.r1a := p2i(locadr(ep^.p, ep^.q));
+            107: ep^.r1a := p2i(slotadr(ep^.p, ep^.q, 's'));
             {lda}
-            4: ep^.r1a := p2i(locadr(ep^.p, ep^.q));
+            4: ep^.r1a := p2i(slotadr(ep^.p, ep^.q, 'a'));
 
             {adi}
             28: if dochkovf then ep^.r1a := chkarith('sadd', ep^.l^.r1a, ep^.r^.r1a)
@@ -2247,7 +2692,7 @@ override procedure assemble;
 
             {lip}
             120: begin
-               a := locadr(ep^.p, ep^.q);
+               a := slotadr(ep^.p, ep^.q, 'p');
                ep^.r1a := ld('i', a);
                ep^.r2a := ld('i', gep(a, ptrsize))
             end;
@@ -2275,7 +2720,7 @@ override procedure assemble;
             {ixa}
             16: begin
                t := binii('mul', ep^.r^.r1a, ep^.q);
-               ep^.r1a := bini('add', ep^.l^.r1a, t)
+               ep^.r1a := adda(ep^.l^.r1a, t)
             end;
 
             {swp}
@@ -2301,14 +2746,14 @@ override procedure assemble;
             {indb,indc,indx}
             88,89,198: ep^.r1a := ld('b', gep(i2p(ep^.l^.r1a), ep^.q));
             {inds}
-            87: if ep^.q <> 0 then ep^.r1a := binii('add', ep^.l^.r1a, ep^.q)
+            87: if ep^.q <> 0 then ep^.r1a := addai(ep^.l^.r1a, ep^.q)
                 else ep^.r1a := ep^.l^.r1a;
 
             {inci,incb,incc,incx}
             10,93,94,201: if dochkovf then ep^.r1a := chkarithi('sadd', ep^.l^.r1a, ep^.q)
                           else ep^.r1a := binii('add', ep^.l^.r1a, ep^.q);
             {inca}
-            90: ep^.r1a := binii('add', ep^.l^.r1a, ep^.q);
+            90: ep^.r1a := addai(ep^.l^.r1a, ep^.q);
             {deci,decb,decc,decx}
             57,103,104,202: if dochkovf then ep^.r1a := chkarithi('ssub', ep^.l^.r1a, ep^.q)
                             else ep^.r1a := binii('sub', ep^.l^.r1a, ep^.q);
@@ -2324,7 +2769,7 @@ override procedure assemble;
             {mdc}
             254: begin
                ep^.r2a := ep^.l^.r1a;
-               ep^.r1a := binii('add', ep^.l^.r1a, ep^.q)
+               ep^.r1a := addai(ep^.l^.r1a, ep^.q)
             end;
 
             {ckvi,ckvb,ckvc,ckvx}
@@ -2475,7 +2920,7 @@ override procedure assemble;
 
             {lcp}
             135: begin
-               ep^.r2a := binii('add', ep^.l^.r1a, ptrsize);
+               ep^.r2a := addai(ep^.l^.r1a, ptrsize);
                ep^.r1a := ld('i', i2p(ep^.l^.r1a))
             end;
 
@@ -2685,7 +3130,7 @@ override procedure assemble;
                t := binii('sub', ep^.r^.r1a, 1);
                if dodbgchk then errif(icmp('uge', t, ep^.l^.r2a), ecValueOutOfRange);
                a := binii('mul', t, ep^.q);
-               ep^.r1a := bini('add', ep^.l^.r1a, a)
+               ep^.r1a := adda(ep^.l^.r1a, a)
             end;
 
             {cxc}
@@ -2701,13 +3146,13 @@ override procedure assemble;
                oins; ov(a); os(' = add i64 '); oi(ep^.q1); os(', 0'); ol;
                b := ep^.l^.r2a;
                for n := 1 to ep^.q-1 do begin
-                  b := binii('add', b, intsize);
+                  b := addai(b, intsize);
                   d := ld('i', i2p(b));
                   a := bini('mul', a, d)
                end;
-               ep^.r2a := binii('add', ep^.l^.r2a, intsize);
+               ep^.r2a := addai(ep^.l^.r2a, intsize);
                c := bini('mul', a, t);
-               ep^.r1a := bini('add', ep^.l^.r1a, c)
+               ep^.r1a := adda(ep^.l^.r1a, c)
             end;
 
             {lft}
@@ -2728,7 +3173,7 @@ override procedure assemble;
                if ep^.q <> 1 then begin
                   t := binii('sub', ep^.r^.r1a, 1);
                   a := binii('mul', t, intsize);
-                  b := bini('add', ep^.l^.r2a, a);
+                  b := adda(ep^.l^.r2a, a);
                   ep^.r1a := ld('i', i2p(b))
                end else ep^.r1a := ep^.l^.r2a
             end;
@@ -2769,7 +3214,7 @@ override procedure assemble;
                   for n := 1 to ep^.q do begin
                      d := ld('i', i2p(b));
                      a := bini('mul', a, d);
-                     b := binii('add', b, intsize)
+                     b := addai(b, intsize)
                   end
                end;
                t := newv;
@@ -2780,7 +3225,15 @@ override procedure assemble;
             end;
 
             {ldp}
-            225: begin
+            225: if (ep^.l^.op = 4{lda}) and (ep^.l^.p = fnlvl) then begin
+               { a fat pointer of the routine's own frame (a container
+                 parameter): the two words are slots, loaded as such, where
+                 the address of the pair would pin both in the frame }
+               genexp(ep^.l^.al);
+               ep^.r1a := ld('i', slotadr(ep^.l^.p, ep^.l^.q, 'i'));
+               ep^.r2a := ld('i', slotadr(ep^.l^.p, ep^.l^.q+intsize, 'i'))
+            end else begin
+               genexp(ep^.l);
                ep^.r2a := ld('i', gep(i2p(ep^.l^.r1a), intsize));
                ep^.r1a := ld('i', i2p(ep^.l^.r1a))
             end;
@@ -2803,7 +3256,7 @@ override procedure assemble;
    { copy a set to a frame location }
    procedure setlocal(p, q: integer; s: integer);
    begin
-      memcpy(p2i(locadr(p, q)), s, setsize)
+      memcpy(p2i(slotadr(p, q, 's')), s, setsize)
    end;
 
    { start an initializer strip region at the pending labels }
@@ -2815,7 +3268,7 @@ override procedure assemble;
       new(sp); sp^.blk := blkstk; sp^.pro.first := nil; sp^.pro.last := nil;
       sp^.body.first := nil; sp^.body.last := nil; sp^.calsites := nil;
       sp^.next := striplst; striplst := sp;
-      curstrip := sp; stripn := stripn+1; instrip := true; vn := 0;
+      curstrip := sp; stripn := stripn+1; instrip := true; vn := 0; clrorg;
       blkopen := false;
       { the strip runs in the frame of the block's routine }
       fnstrip := false;
@@ -3313,21 +3766,21 @@ begin { assemble }
       {stri,stra}
       2,70: begin parpq;
          popstk(ep); attach(ep); genexp(ep);
-         st('i', ep^.r1a, locadr(p, q));
+         st('i', ep^.r1a, slotadr(p, q, 'i'));
          deltre(ep)
       end;
 
       {strx,strb,strc}
       195,73,74: begin parpq;
          popstk(ep); attach(ep); genexp(ep);
-         st('b', ep^.r1a, locadr(p, q));
+         st('b', ep^.r1a, slotadr(p, q, 'b'));
          deltre(ep)
       end;
 
       {strr}
       71: begin parpq;
          popstk(ep); attach(ep); genexp(ep);
-         st('r', ep^.r1a, locadr(p, q));
+         st('r', ep^.r1a, slotadr(p, q, 'r'));
          deltre(ep)
       end;
 
@@ -3343,7 +3796,7 @@ begin { assemble }
          { the vector of the current exception frame }
          v := newv;
          oins; ov(v); os(' = call i64 @psystem_llvm_curvec()'); ol;
-         st('i', v, locadr(p, q))
+         st('i', v, slotadr(p, q, 'i'))
       end;
 
       {mst}
@@ -3521,8 +3974,11 @@ begin { assemble }
 
       {reti,reta,retx,retc,retb}
       128,132,204,130,131: begin parq;
-         v := ld('i', gep(vfb, -(fnlvl*ptrsize+7*ptrsize)));
-         if op in [204, 130, 131] then v := binii('and', v, 255);
+         { the result slot, read as it was stored: a byte for the byte
+           types }
+         if op in [204, 130, 131] then
+            v := ld('b', slotadr(fnlvl, -(fnlvl*ptrsize+7*ptrsize), 'b'))
+         else v := ld('i', slotadr(fnlvl, -(fnlvl*ptrsize+7*ptrsize), 'i'));
          oins; os('ret i64 '); ov(v); ol; term;
          fndone := true; fnretk := 1;
          botstk; deltmp
@@ -3530,7 +3986,7 @@ begin { assemble }
 
       {retr}
       129: begin parq;
-         v := ld('r', gep(vfb, -(fnlvl*ptrsize+7*ptrsize)));
+         v := ld('r', slotadr(fnlvl, -(fnlvl*ptrsize+7*ptrsize), 'r'));
          oins; os('ret double '); ov(v); ol; term;
          fndone := true; fnretk := 2;
          botstk; deltmp
@@ -3699,6 +4155,7 @@ begin { assemble }
       207: begin labelsearch(def, val, sp, blk);
          { an exception frame in the prologue, registered, then the setjmp
            whose second return lands on the handler }
+         if blkstk <> nil then begin bi := binfof(blkstk); bi^.sjmp := true end;
          v := alloca(256, 'exception frame');
          oins; os('call void @psystem_llvm_bge(ptr '); ov(v); oc(')'); ol;
          v2 := newv;
@@ -3800,6 +4257,7 @@ begin (* main *)
    inpro := false; instrip := false; stripn := 0; curstrip := nil; striplst := nil;
    calcnt := 0; fncals := nil; fnstrips.first := nil; fnstrips.last := nil;
    donelst := nil;
+   binflst := nil; clrgbl; clrorg;
    write('P6 Pascal LLVM IR code generator vs. ', majorver:1, '.', minorver:1);
    if experiment then write('.x');
    writeln;
