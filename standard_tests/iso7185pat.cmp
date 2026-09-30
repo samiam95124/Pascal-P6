@@ -1269,6 +1269,8 @@ Set60: false s/b false
 Set61: 11 s/b 11
 set62:  true s/b true
 set63: 1000000001 s/b 1000000001
+set64: 0101001100 0101000000 1001110010 s/b 0101001100 0101000000 1001110010
+set65: a_c_ef____ _b_____hi_ s/b a_c_ef____ _b_____hi_
 Set local 1:   true false s/b  true false
 Set local 2:   true  true s/b  true  true
 Set local 3:  false  true s/b false  true

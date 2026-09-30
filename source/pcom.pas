@@ -7241,8 +7241,8 @@ end;
                       begin
                         if cstpart <> [ ] then
                           begin new(lvp,pset); pshcst(lvp);
-                            lvp^.pval := cstpart;
                             lvp^.cclass := pset;
+                            lvp^.pval := cstpart;
                             if cstptrix = cstoccmax then error(254)
                             else
                               begin cstptrix := cstptrix + 1;
