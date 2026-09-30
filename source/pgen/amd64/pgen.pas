@@ -863,12 +863,14 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
       {cip}
       113: begin
-        asscall; asspar(ep, ep^.pn); assreg(ep^.l, rf, rgnull, rgnull)
+        { r10 carries the static link to the routine called: keep the
+          procedure value out of it }
+        asscall; resreg(rgr10); asspar(ep, ep^.pn); assreg(ep^.l, rf, rgnull, rgnull)
       end;
 
       {cif}
       247: begin
-        asscall; resreg(rgr15);
+        asscall; resreg(rgr10);
         if windows then
           if ep^.rc = 3 then begin dstreg(rgrsi); dstreg(rgrdi) end;
         if ep^.rc = 1 then begin
@@ -2164,6 +2166,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' subq $0,%rsp # allocate shadow space', shadowsize)
           end else
             pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
+          { the static link: our frame base, from which the routine called
+            builds its display. r10 is the static chain register, which no
+            argument uses, so a C routine called this way ignores it. }
+          wrtins(' movq %rbp,%r10 # pass static link');
           if ep^.blk <> nil then begin
             write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc;
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl);
@@ -2242,8 +2248,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           genexp(ep^.l); { load procedure address }
           if windows then
             wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
-          wrtins(' movq %rbp,%r15 # move our frame pointer to preserved register');
-          wrtins(' movq ^0(%1),%rbp # set callee frame pointer', 1*ptrsize, ep^.l^.r1);
+          { the static link is the frame the procedure value carries }
+          wrtins(' movq ^0(%1),%r10 # pass static link', 1*ptrsize, ep^.l^.r1);
           wrtins(' call *(%1) # call indirect', ep^.l^.r1);
           { remove overflow parameters pushed by caller, and shadow space }
           if windows then
@@ -2276,7 +2282,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
                     if ep^.sl^.lb <> nil then
                       wrtins(' addq $s,%rsp # remove SFR', ep^.sl^.lb^)
           end;
-          wrtins(' movq %r15,%rbp # restore our frame pointer');
           stkadr := stkadrs; { restore stack position }
           { the SFR was removed above (result in register, or structure moved
             to its temp); a set result stays on the stack in the SFR }
@@ -2313,6 +2318,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' subq $0,%rsp # allocate shadow space', shadowsize)
           end else
             pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
+          wrtins(' movq %rbp,%r10 # pass static link');
           if ep^.qs <> nil then wrtins(' call *@s(%rip) # call vectored', ep^.qs^)
           else wrtins(' call *@g(%rip) # call vectored', ep^.q);
           { remove overflow parameters pushed by caller, and shadow space }
@@ -3261,7 +3267,6 @@ begin { assemble }
         end;
       if not windows then writeln(prr, '        .cfi_startproc');
       frereg := allreg;
-      { We limit to the enter instruction }
       if p >= 32 then error('Too many nested levels');
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' pushq $0 # place current ep');
@@ -3270,11 +3275,20 @@ begin { assemble }
       if not windows then writeln(prr, '        .cfi_adjust_cfa_offset 8');
       wrtins(' pushq $0 # place previous ep');
       if not windows then writeln(prr, '        .cfi_adjust_cfa_offset 8');
-      wrtins(' enterq $1,$0 # enter frame', p+1);
+      { the frame and its display: what ENTER builds, from the static link
+        the caller passes in r10 (its frame base) instead of from rbp. The
+        entries of the outer levels are copied from the caller's display,
+        then our own base is placed as the entry of this level. A level 1
+        routine copies nothing and needs no link. }
+      wrtins(' pushq %rbp # save frame pointer');
+      wrtins(' movq %rsp,%rbp # set frame');
       if not windows then begin
         writeln(prr, '        .cfi_def_cfa rbp, 40');
         writeln(prr, '        .cfi_offset rbp, -40')
       end;
+      for i := 1 to p do
+        wrtins(' pushq ^0(%r10) # copy display entry from static link', -i*ptrsize);
+      wrtins(' pushq %rbp # place display entry for this level');
       if windows then begin
         { save integer parameter registers to known frame slots.
           The Windows convention has 4 positional parameter slots. Push in

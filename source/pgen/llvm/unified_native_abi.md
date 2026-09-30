@@ -19,7 +19,7 @@ runtime contract in `psystem_llvm.c`:
 
 | Protocol | AMD64 generator | LLVM target |
 |---|---|---|
-| Static link and display | `enterq` copies the display out of the dynamic caller's rbp frame | caller passes its frame base in r10 (the `nest` parameter); the callee's prologue copies entries 1..level-1 from it and stores its own base as entry level |
+| Static link and display | caller passes its frame base in r10; the prologue copies entries 1..level-1 from it and pushes its own base as entry level (was: `enterq` out of the dynamic caller's rbp frame) | caller passes its frame base in r10 (the `nest` parameter); the callee's prologue copies entries 1..level-1 from it and stores its own base as entry level |
 | Structured function result | caller pushes result space on the stack; callee addresses it at positive rbp offsets | caller allocates the result and leaves its address at offset `sfoslot` of the frame r10 names; callee fetches it from there and keeps it at frame offset `sfrslot` |
 | Exceptions | three words pushed on the stack plus the globals `psystem_expadr`, `psystem_expstk`, `psystem_expmrk`; a throw reloads rsp and rbp and jumps | chain of C frames, `bge` registers one and `_setjmp`s, `thw` longjmps to the innermost, `mse` rethrows to the enclosing |
 | Non-local goto | load rbp from the display entry, reload rsp from the mark, jump | table of (label, jmp_buf) in the target frame; `psystem_llvm_ipj` finds it through the display entry |
@@ -27,7 +27,8 @@ runtime contract in `psystem_llvm.c`:
 
 The first two rows are as of #650, which moved the LLVM target off the
 process globals `psystem_llvm_sl` and `psystem_llvm_sfr` onto rules 2 and 3
-below.
+below, and of work item 3, which moved the AMD64 generator onto rule 2. The
+static link row no longer differs; the rest still do.
 
 Any one of these is enough to forbid mixing, which is why pc records the
 generator of every object (`llvmobj`), rebuilds across generators, and keeps a
@@ -128,11 +129,14 @@ pgen mode before the next. Interoperation is testable only once all agree.
    in assembly (the case table jump needs its fixed length) and is not
    duplicated anywhere. `ExceptionBase` is defined once, in the shim.
 
-3. **Static link in r10.** AMD64: `movq %rbp,%r10` before each call; replace
-   `enterq` with the explicit display copy through r10 (`enterq` with a
-   nesting level is microcoded, so expect a small win, not a cost). LLVM
-   (done, #650): a leading `ptr nest` parameter on every Pascal routine, the
-   frame base passed in it at every call; `pacall` loads r10.
+3. **Static link in r10.** Done on both sides. AMD64: `movq %rbp,%r10`
+   before each direct and vectored call, the procedure value's frame into
+   r10 for an indirect one (rbp is no longer swapped for the call);
+   `enterq` replaced by `pushq %rbp; movq %rsp,%rbp`, a `pushq -8k(%r10)`
+   per outer level, and `pushq %rbp` for the level's own entry. LLVM
+   (#650): a leading `ptr nest` parameter on every Pascal routine, the frame
+   base passed in it at every call. `pacall` loads r10, and still rbp for
+   objects from before this step; that goes when none is linked any more.
 
 4. **Result pointer in the caller's frame.** Both generators store the
    result address to the header slot before the call and read it through
