@@ -19,11 +19,15 @@ runtime contract in `psystem_llvm.c`:
 
 | Protocol | AMD64 generator | LLVM target |
 |---|---|---|
-| Static link and display | `enterq` copies the display out of the dynamic caller's rbp frame | caller stores its frame base in the global `psystem_llvm_sl`; the callee's prologue copies entries 1..level-1 from it and stores its own base as entry level |
-| Structured function result | caller pushes result space on the stack; callee addresses it at positive rbp offsets | caller allocates the result and publishes its address in the global `psystem_llvm_sfr`; callee keeps it at frame offset `sfrslot` |
+| Static link and display | `enterq` copies the display out of the dynamic caller's rbp frame | caller passes its frame base in r10 (the `nest` parameter); the callee's prologue copies entries 1..level-1 from it and stores its own base as entry level |
+| Structured function result | caller pushes result space on the stack; callee addresses it at positive rbp offsets | caller allocates the result and leaves its address at offset `sfoslot` of the frame r10 names; callee fetches it from there and keeps it at frame offset `sfrslot` |
 | Exceptions | three words pushed on the stack plus the globals `psystem_expadr`, `psystem_expstk`, `psystem_expmrk`; a throw reloads rsp and rbp and jumps | chain of C frames, `bge` registers one and `_setjmp`s, `thw` longjmps to the innermost, `mse` rethrows to the enclosing |
 | Non-local goto | load rbp from the display entry, reload rsp from the mark, jump | table of (label, jmp_buf) in the target frame; `psystem_llvm_ipj` finds it through the display entry |
 | Module chain | each object falls through the end of its text into the next; `main.asm` calls the first | each object registers its entry in the `psystem_llvm_mods` section; `psystem_llvm_nextmod` walks the section in link order |
+
+The first two rows are as of #650, which moved the LLVM target off the
+process globals `psystem_llvm_sl` and `psystem_llvm_sfr` onto rules 2 and 3
+below.
 
 Any one of these is enough to forbid mixing, which is why pc records the
 generator of every object (`llvmobj`), rebuilds across generators, and keeps a
@@ -63,18 +67,24 @@ arm64 generators inherit.
    The caller loads r10 with its frame base immediately before the call; the
    callee's prologue copies display entries 1..level-1 from the frame r10
    names and stores its own base as entry level, exactly the copy `enterq`
-   and the LLVM prologue perform today. Level-1 routines copy nothing, which
-   is why C callbacks into level-1 Pascal routines need no static link.
+   and the LLVM prologue perform today. Only the program or module block
+   itself (level 1) copies nothing: a routine declared at the outer level is
+   level 2 and copies entry 1, so every entry into Pascal code needs a valid
+   static link. C code enters a Pascal procedure through `pacall`
+   (`libs/source/support.c`), which loads r10 with the display of the
+   procedure value alongside rbp, and so serves both generators.
    The Windows x64 convention also uses r10 for the static chain.
 
 3. **The structured result address lives in the caller's frame.** Only one
    `nest` parameter exists, so the result pointer does not get a register of
    its own. The caller stores the address of the result area into a fixed
-   slot of its own frame immediately before the call; the callee reads it at
-   that offset from the frame base r10 names. The slot is in the frame header
-   the generators own (the LLVM target already reserves `sfrslot` there), so
-   pcom's layout does not change. The globals `psystem_llvm_sl` and
-   `psystem_llvm_sfr` disappear.
+   slot of the frame r10 names immediately before the call (its own frame,
+   or for a call through a procedure value the frame that value carries);
+   the callee reads it at that offset from r10. The slot is frame offset 16
+   (`sfoslot`), in the frame header the generators own, where the AMD64 frame
+   has the saved frame pointer, mark and return address, so pcom's layout
+   does not change. A callee fetches it only if its result frame is accessed:
+   the program block is entered with no static link.
 
 4. **Exceptions are setjmp/longjmp frames in the shared C shim, and the
    chain head is thread-local.** `bge` reserves a frame in the routine's
@@ -120,14 +130,13 @@ pgen mode before the next. Interoperation is testable only once all agree.
 
 3. **Static link in r10.** AMD64: `movq %rbp,%r10` before each call; replace
    `enterq` with the explicit display copy through r10 (`enterq` with a
-   nesting level is microcoded, so expect a small win, not a cost). LLVM:
-   add a leading `ptr nest` parameter to every Pascal routine and pass the
-   frame base in it at every call; drop the `psystem_llvm_sl` load and
-   store.
+   nesting level is microcoded, so expect a small win, not a cost). LLVM
+   (done, #650): a leading `ptr nest` parameter on every Pascal routine, the
+   frame base passed in it at every call; `pacall` loads r10.
 
 4. **Result pointer in the caller's frame.** Both generators store the
    result address to the header slot before the call and read it through
-   r10 in the prologue; drop `psystem_llvm_sfr`. The AMD64 generator may keep
+   r10 in the prologue (LLVM: done, #650). The AMD64 generator may keep
    allocating the result area on the stack; only how its address reaches the
    callee changes.
 

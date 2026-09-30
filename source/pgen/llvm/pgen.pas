@@ -18,14 +18,15 @@
 *   - Registers: LLVM allocates them. Expression trees are walked into SSA    *
 *     values, one per node result (two for fat pointer results).              *
 *   - The frame pointer chain: the x86 ENTER display is reproduced from the   *
-*     caller's frame base, which the caller leaves in the runtime global      *
-*     psystem_llvm_sl just before the call; the callee copies the display     *
-*     entries it needs from it, exactly as ENTER does.                        *
+*     caller's frame base, the static link, which arrives in the static      *
+*     chain register (r10: the nest parameter of every routine); the callee  *
+*     copies the display entries it needs from it, exactly as ENTER does. A  *
+*     C routine called the same way ignores the register.                    *
 *   - Set and structure function results: the caller's result frame (SFR) is *
-*     an alloca whose address it leaves in psystem_llvm_sfr; the callee maps  *
-*     the positive frame offsets pcom uses for it onto that pointer. Globals  *
-*     rather than hidden arguments, so that the C thunks of the library      *
-*     modules and the generated routines share one signature.                 *
+*     an alloca whose address it leaves in a slot of the frame the static    *
+*     link names; the callee maps the positive frame offsets pcom uses for   *
+*     the result onto that pointer. Nothing on the call path is shared       *
+*     between threads.                                                        *
 *   - Exceptions and non-local goto: setjmp/longjmp in the C runtime          *
 *     (psystem_llvm.c), replacing the assembly throw/unwind and the frame     *
 *     pointer restores.                                                       *
@@ -89,11 +90,12 @@ const
    padsize = 104;  { 7*8 + 6*8 }
    ovfbase = 40;   { first overflow parameter frame offset }
    sfrslot = 0;    { frame offset holding the result frame pointer }
+   sfoslot = 16;   { frame offset where the result frame pointer of a call is
+                     left for the routine called }
    ipjslot = 8;    { frame offset holding the non-local goto table pointer }
 
    { pseudo value numbers }
    vfb   = -1; { the frame base pointer %fb }
-   vsfr  = -2; { the result frame pointer %sfr }
    vnull = -3; { the null pointer }
    vnone = -4; { no value }
    vslot = -16; { below this a frame slot name: vslot+q is %lvN for the
@@ -147,6 +149,7 @@ type
       syms: fsymptr;  { its frame symbols }
       slots: slotptr; { the frame slots its code accesses }
       sjmp: boolean;  { it has a try block }
+      sfru: boolean;  { its result frame is accessed }
       next: binfptr
    end;
    { a global defined as a variable of its own }
@@ -310,7 +313,6 @@ procedure ov(v: integer);
 begin
 
    if v = vfb then os('%fb')
-   else if v = vsfr then os('%sfr')
    else if v = vnull then os('null')
    else if v < vslot then begin os('%lv'); oi(vslot-v) end
    else if instrip then begin os('%s'); oi(stripn); oc('_'); oi(v) end
@@ -578,7 +580,10 @@ The frame base %fb points at the top of the negative area, where the AMD64
 frame pointer would. Display entry k (the frame base of level k) is at
 %fb-8k, the current level's own entry included. Positive offsets from ovfbase
 are the overflow parameters (copied into the frame) and, past them, the
-caller's result frame, reached through the pointer saved at sfrslot.
+caller's result frame, reached through the pointer saved at sfrslot. Below
+ovfbase the positive offsets are the frame header, where the AMD64 frame has
+the saved frame pointer, mark and return address: sfrslot, ipjslot, and
+sfoslot, where a caller leaves the result frame pointer of the call it makes.
 
 ******************************************************************************}
 
@@ -698,10 +703,12 @@ begin
 
 end;
 
+function binfof(bp: pblock): binfptr; forward;
+
 { address of a frame location as a pointer value }
 function locadr(p, q: integer): integer;
 
-var b, v, a, ovf: integer;
+var b, v, a, ovf: integer; bp: pblock; bi: binfptr;
 
 begin
 
@@ -709,7 +716,10 @@ begin
    if p = fnlvl then ovf := fnovf else ovf := blkovf(blkatlvl(p));
    if q >= ovfbase+ovf then begin
 
-      { the result frame: through the pointer saved in the frame }
+      { the result frame: through the pointer saved in the frame, which the
+        prologue of that routine fetches only when it is told here to }
+      bp := blkatlvl(p);
+      if bp <> nil then begin bi := binfof(bp); bi^.sfru := true end;
       a := gep(b, sfrslot);
       v := newv;
       oins; ov(v); os(' = load ptr, ptr '); ov(a); ol;
@@ -748,7 +758,7 @@ A slot stays in the frame when:
 ******************************************************************************}
 
 { the frame of a block, made if new }
-function binfof(bp: pblock): binfptr;
+function binfof{(bp: pblock): binfptr};
 
 var bi, fi: binfptr;
 
@@ -761,7 +771,7 @@ begin
    end;
    if fi = nil then begin
       new(fi); fi^.blk := bp; fi^.syms := nil; fi^.slots := nil;
-      fi^.sjmp := false; fi^.next := binflst; binflst := fi
+      fi^.sjmp := false; fi^.sfru := false; fi^.next := binflst; binflst := fi
    end;
    binfof := fi
 
@@ -1266,10 +1276,11 @@ var k: integer;
 
 begin
 
-   oc('(');
+   { the static link leads: the frame base of the caller }
+   if named then os('(ptr nest %sl') else os('(ptr');
    for k := 1 to fnparn do begin
 
-      if k > 1 then os(', ');
+      os(', ');
       case fnparc[k] of
          pcint:  begin os('i64'); if named then begin os(' %p'); oi(k) end end;
          pcreal: begin os('double'); if named then begin os(' %p'); oi(k) end end;
@@ -1330,10 +1341,6 @@ begin
 
    if not fnstrip then begin
 
-      { the caller's frame and result frame arrive through the runtime, so
-        the signature stays plain: C thunks and Pascal routines alike }
-      writeln(prr, '  %sl = load ptr, ptr @psystem_llvm_sl');
-      writeln(prr, '  %sfr = load ptr, ptr @psystem_llvm_sfr');
       neg := 8*fnlvl+padsize+128;
       if fnlcl <> nil then neg := neg+labelvalof(fnlcl);
       { round to 16 }
@@ -1381,9 +1388,16 @@ begin
       end;
       writeln(prr, '  %dd', fnlvl:1, ' = getelementptr i8, ptr %fb, i64 ', -8*fnlvl:1);
       writeln(prr, '  store ptr %fb, ptr %dd', fnlvl:1);
-      { result frame pointer }
-      writeln(prr, '  %sfs = getelementptr i8, ptr %fb, i64 ', sfrslot:1);
-      writeln(prr, '  store ptr %sfr, ptr %sfs');
+      { result frame pointer: the caller left it in the frame the static
+        link names. Fetched only by a routine whose result frame is accessed,
+        so that one entered without a static link (the program block, from
+        the module entry) does not follow it. }
+      if bi <> nil then if bi^.sfru then begin
+         writeln(prr, '  %sfo = getelementptr i8, ptr %sl, i64 ', sfoslot:1);
+         writeln(prr, '  %sfr = load ptr, ptr %sfo');
+         writeln(prr, '  %sfs = getelementptr i8, ptr %fb, i64 ', sfrslot:1);
+         writeln(prr, '  store ptr %sfr, ptr %sfs')
+      end;
       { parameters into the frame slots they belong in }
       for k := 1 to fnparn do case fnparc[k] of
 
@@ -2010,8 +2024,6 @@ begin
    writeln(prr, 'declare i64 @psystem_llvm_curvec()');
    writeln(prr, 'declare void @psystem_llvm_ipj(ptr, i64)');
    writeln(prr, '@psystem_iso7185 = external global i64');
-   writeln(prr, '@psystem_llvm_sl = external global ptr');
-   writeln(prr, '@psystem_llvm_sfr = external global ptr');
    np := declst;
    while np <> nil do begin
       if not innames(defsyms, np^.name^) then
@@ -2473,6 +2485,21 @@ override procedure assemble;
       if ep <> nil then isc := ep^.etyp in [1, 2]
    end;
 
+   { Every user call passes the static link fr, the frame base the routine
+     called builds its display from, as the nest argument: it travels in the
+     static chain register (r10), which carries no argument, so a C routine
+     called this way is unaffected. The result frame of the call is left in
+     the frame the link names, where the prologue of the routine finds it. }
+   procedure passsfr(fr, sfr: integer);
+   var a: integer;
+   begin
+      if sfr <> vnull then begin
+         if fr = vnull then error('Structured result call outside a routine');
+         a := gep(fr, sfoslot);
+         oins; os('store ptr '); ov(sfr); os(', ptr '); ov(a); ol
+      end
+   end;
+
    { user call: cup/cuf }
    procedure gencall(ep: expptr);
    label 1;
@@ -2491,21 +2518,20 @@ override procedure assemble;
          ll := 0;
          orettyp(ep^.rc, ep^.op = 12);
          rt := lbstr; ll := 0;
-         oc('(');
-         otypes(ep^.pl, true, not cfn);
+         os('(ptr nest');
+         otypes(ep^.pl, false, not cfn);
          oc(')');
          tmps := lbstr; declfn(nm^, rt^, tmps^); ll := 0
       end;
-      oins; os('store ptr '); ov(fr); os(', ptr @psystem_llvm_sl'); ol;
-      oins; os('store ptr '); ov(sfr); os(', ptr @psystem_llvm_sfr'); ol;
+      passsfr(fr, sfr);
       if (ep^.op = 246{cuf}) and (ep^.rc in [0, 1]) then begin
          if ep^.t2a <> 1 then ep^.r1a := newv;
          v := ep^.r1a;
          oins; ov(v); os(' = call ')
       end else begin oins; os('call ') end;
       orettyp(ep^.rc, ep^.op = 12);
-      os(' @'); oq(nm^); oc('(');
-      oargs(ep^.pl, true, not cfn); oc(')'); ol;
+      os(' @'); oq(nm^); os('(ptr nest '); ov(fr);
+      oargs(ep^.pl, false, not cfn); oc(')'); ol;
       if ep^.op = 246{cuf} then if ep^.rc in [2, 3] then begin
          if ep^.t2a <> 1 then ep^.r1a := newv;
          oins; ov(ep^.r1a); os(' = ptrtoint ptr '); ov(sfr); os(' to i64'); ol
@@ -2533,16 +2559,15 @@ override procedure assemble;
       b := gep(a, ptrsize);
       fr := newv;
       oins; ov(fr); os(' = load ptr, ptr '); ov(b); ol;
-      oins; os('store ptr '); ov(fr); os(', ptr @psystem_llvm_sl'); ol;
-      oins; os('store ptr '); ov(sfr); os(', ptr @psystem_llvm_sfr'); ol;
+      passsfr(fr, sfr);
       if (ep^.op = 247{cif}) and (ep^.rc in [0, 1]) then begin
          if ep^.t2a <> 1 then ep^.r1a := newv;
          v := ep^.r1a;
          oins; ov(v); os(' = call ')
       end else begin oins; os('call ') end;
       orettyp(ep^.rc, ep^.op = 113);
-      oc(' '); ov(f); oc('(');
-      oargs(ep^.pl, true, true); oc(')'); ol;
+      oc(' '); ov(f); os('(ptr nest '); ov(fr);
+      oargs(ep^.pl, false, true); oc(')'); ol;
       if ep^.op = 247{cif} then if ep^.rc in [2, 3] then begin
          if ep^.t2a <> 1 then ep^.r1a := newv;
          oins; ov(ep^.r1a); os(' = ptrtoint ptr '); ov(sfr); os(' to i64'); ol
@@ -2565,16 +2590,15 @@ override procedure assemble;
       f := newv;
       oins; ov(f); os(' = load ptr, ptr '); ov(a); ol;
       fr := frameof(fnlvl);
-      oins; os('store ptr '); ov(fr); os(', ptr @psystem_llvm_sl'); ol;
-      oins; os('store ptr '); ov(sfr); os(', ptr @psystem_llvm_sfr'); ol;
+      passsfr(fr, sfr);
       if (ep^.op = 249{cvf}) and (ep^.rc in [0, 1]) then begin
          if ep^.t2a <> 1 then ep^.r1a := newv;
          v := ep^.r1a;
          oins; ov(v); os(' = call ')
       end else begin oins; os('call ') end;
       orettyp(ep^.rc, ep^.op = 27);
-      oc(' '); ov(f); oc('(');
-      oargs(ep^.pl, true, true); oc(')'); ol;
+      oc(' '); ov(f); os('(ptr nest '); ov(fr);
+      oargs(ep^.pl, false, true); oc(')'); ol;
       if ep^.op = 249{cvf} then if ep^.rc in [2, 3] then begin
          if ep^.t2a <> 1 then ep^.r1a := newv;
          oins; ov(ep^.r1a); os(' = ptrtoint ptr '); ov(sfr); os(' to i64'); ol

@@ -125,6 +125,11 @@ procedure from C we set %rbp to the display, place the single argument in %rdi
 (Pascaline's first parameter register under the amd64 SysV convention) and call
 the code. %rbp is saved and restored so the C caller is unaffected.
 
+A procedure built through the LLVM target cannot read %rbp: it takes the
+display in the static chain register, %r10 (the nest parameter). pacall loads
+both, since it cannot tell which generator built the procedure. %r10 is caller
+saved and carries no argument, so the AMD64 generator's code ignores it.
+
 ********************************************************************************/
 
 #if defined(__aarch64__)
@@ -175,6 +180,7 @@ __asm__ (
 "    push %rbp\n"           /* preserve C frame pointer */
 "    mov  %rdi, %rax\n"     /* %rax = code address */
 "    mov  %rsi, %rbp\n"     /* %rbp = display (static link) */
+"    mov  %rsi, %r10\n"     /* %r10 = the same, for LLVM built code */
 "    mov  %rdx, %rdi\n"     /* %rdi = argument (Pascaline param 1) */
 "    call *%rax\n"          /* enter the Pascaline procedure */
 "    pop  %rbp\n"           /* restore C frame pointer */

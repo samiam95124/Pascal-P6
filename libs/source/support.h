@@ -88,8 +88,9 @@ char*   cstrz(char* s, int l);            /* counted string -> zero-terminated *
 
 /*
  * Call a Pascaline procedure from C. A Pascaline procedure value is a pair
- * (code address, display pointer); pacall sets %rbp to the display, passes arg
- * in %rdi, and enters code.
+ * (code address, display pointer); pacall sets %rbp to the display (and, on
+ * amd64 SysV, %r10, where LLVM built code takes it), passes arg in %rdi, and
+ * enters code.
  */
 void pacall(void* code, void* display, void* arg);
 
