@@ -4141,6 +4141,27 @@ begin
    sry := 10;
    for i := 1 to 10 do if i in [srx,sry] then write('1') else write('0');
    writeln(' s/b 1000000001');
+   { constant and variable members in one constructor }
+   write('set64: ');
+   x := 4;
+   sta := [2, x, 7..8];
+   for i := 1 to 10 do if i in sta then write('1') else write('0');
+   write(' ');
+   sta := [x, 2];
+   for i := 1 to 10 do if i in sta then write('1') else write('0');
+   write(' ');
+   sta := [x..x+2, 9, 1];
+   for i := 1 to 10 do if i in sta then write('1') else write('0');
+   writeln(' s/b 0101001100 0101000000 1001110010');
+   write('set65: ');
+   ci := 'c';
+   csta := ['a', ci, 'e'..'f'];
+   for ci := 'a' to 'j' do if ci in csta then write(ci) else write('_');
+   write(' ');
+   ci := 'h';
+   csta := [ci, succ(ci), 'b'];
+   for ci := 'a' to 'j' do if ci in csta then write(ci) else write('_');
+   writeln(' s/b a_c_ef____ _b_____hi_');
 
 
    { Sets types: operation battery through every access-path context }
