@@ -66,6 +66,28 @@ real registers) are plain arguments spilled into the frame at the offsets
 pcom assigned above the mark. The frame is zeroed at entry (file variables
 must start closed).
 
+**Scalar variables.** The frame's address escapes (into the display, and to
+every callee), so LLVM can promote nothing in it to a register. Each frame
+offset the routine's code accesses is therefore a named slot, `%lvN` for
+offset -N, defined in the prologue as either an `alloca` of its own, which
+mem2reg promotes, or the address of the frame bytes. The prologue is written
+when the routine is complete, after its nested routines, so the choice is
+made with everything known. A slot stays in the frame when a nested routine
+reaches it through the display, when it lies in a structure (array, record,
+set, file, container), when it is accessed in more than one way, when its
+address is taken and no scalar symbol names it, or when the routine has a try
+block or is the target of a non-local goto (a longjmp back into the routine
+must find its variables in memory). Scalar locals, value and reference
+parameters, the two words of a container parameter, the function result and
+the for-loop and with temporaries are what leaves the frame. A scalar whose
+address is taken (passed by reference) keeps its own alloca, which LLVM
+treats conservatively.
+
+**Addresses.** An address is an `i64` in the expression trees. The pointer
+it was made from is remembered, and address arithmetic (`ixa`, `inc`, `cxs`)
+is done on that pointer with `getelementptr`, so that LLVM knows which object
+a store lands in; an `inttoptr` would let it touch any variable.
+
 **Static links and structured results.** The x86 ENTER display is rebuilt
 from the caller's frame base, which the caller stores in the runtime global
 `psystem_llvm_sl` just before each call; the callee loads it in its prologue
@@ -86,7 +108,9 @@ are setjmp/longjmp frames in `psystem_llvm.c`: `bge` registers a frame and
 rethrows to the enclosing one. Non-local goto: a routine that is the target of
 one keeps a table of (label, jmp_buf) in its frame, and the goto finds it
 through the target's display entry (`psystem_llvm_ipj`). Checks use the
-`llvm.*.with.overflow` intrinsics and branch to `psystem_errore`.
+`llvm.*.with.overflow` intrinsics and branch to `psystem_errore`, declared
+`noreturn`: the check then costs a compare and a branch, and does not make
+LLVM reload every global after it.
 
 **Module chain.** An object cannot fall through into the next one. Each module
 registers its entry in the `psystem_llvm_mods` section; the linker
@@ -95,9 +119,12 @@ established, and `psystem_llvm_nextmod` walks them. Module initializer strips
 (`cal` between routines) are spliced into their owning routine with a local
 return dispatch.
 
-**Constants.** Strings, sets, templates and constant tables are private
-globals; the module's globals are one zero-initialized byte array, with each
-global symbol an alias at its offset.
+**Constants and globals.** Strings, sets, templates and constant tables are
+private globals. A module's scalar globals (integer, real, boolean, char,
+enumeration, subrange, pointer) are each a global of their own under the
+exported name `module.symbol`, so LLVM can tell them apart from each other
+and from the arrays. The rest live in one zero-initialized byte array at the
+offsets pcom assigned, each symbol an alias at its offset.
 
 ## Status
 
