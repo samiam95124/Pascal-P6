@@ -6,11 +6,15 @@
 # Sets up the complete Pascal-p6 project: determines the host, architecture
 # and bit length this machine presents, checks the external tools and
 # libraries the build needs and installs the missing ones with apt-get or
-# dnf, whichever the host has (building the
-# static ALSA and fluidsynth archives that no distribution carries), then
-# restores the working bin and libs directories from the matching directory
-# of the hosts tree. The hostinstall make target performs the reverse
-# snapshot.
+# dnf, whichever the host has (building the static ALSA and fluidsynth
+# archives that no distribution carries), then restores the working bin and
+# libs directories from the matching directory of the hosts tree. The
+# hostinstall make target performs the reverse snapshot.
+#
+# On Windows the build runs in an MSYS2 shell with the mingw64 toolchain. The
+# Ami models there bind to the Win32 system libraries (gdi32, winmm, winsock),
+# which the toolchain supplies, so only the tools and OpenSSL are checked, and
+# nothing is installed: MSYS2 packages are installed by hand with pacman.
 #
 ################################################################################
 
@@ -117,6 +121,24 @@ cmd;bzip2;bzip2;bzip2
 "
 
 #
+# The Windows host equivalent of DEPS, in the same format, with the MSYS2
+# pacman package in the third field. The compiler, binutils and pkg-config
+# are the mingw64 ones (the products are native Windows executables); make
+# and zip are the MSYS2 shell tools. OpenSSL is the one library named: the
+# network model links -lssl -lcrypto (see WINCMACHLIBS in the makefile). The
+# Win32 import libraries the other models link come with the toolchain.
+#
+WINDEPS="
+cmd;gcc;mingw-w64-x86_64-gcc
+cmd;g++;mingw-w64-x86_64-gcc
+cmd;make;make
+cmd;ar;mingw-w64-x86_64-binutils
+cmd;pkg-config;mingw-w64-x86_64-pkgconf
+cmd;zip;zip
+pkg;openssl;mingw-w64-x86_64-openssl
+"
+
+#
 # Find the dependencies of the given class in the given table that are not
 # present, and leave the packages that supply them in "missing". The class
 # is "cmd" for the programs and "lib" for the libraries, which are checked
@@ -187,6 +209,12 @@ function installdeps {
 
     if [ -z "$pkgmgr" ] || [ -n "$noinstall" ] ; then
 
+        if [ "$host" = "windows" ] ; then
+
+            echo "Install these from an MSYS2 shell with: pacman -S --needed$missing"
+            return 1
+
+        fi
         echo "Install these with: $sudo ${pkgmgr:-apt-get} install -y$missing"
         if [ "$pkgmgr" = "dnf" ] ; then
 
@@ -348,9 +376,19 @@ checkexists ls
 # check reports the Debian names and the install is left to hand. Root
 # installs directly, anyone else through sudo.
 #
+# On Windows the table is WINDEPS, there is no package manager to run (MSYS2
+# packages are installed by hand with pacman, which needs no root), and the
+# Linux library list does not apply.
+#
 pkgmgr=
 pkgfmt="deb"
-if command -v apt-get >/dev/null ; then
+deps="$DEPS"
+if [ "$host" = "windows" ] ; then
+
+    deps="$WINDEPS"
+    noinstall="1"
+
+elif command -v apt-get >/dev/null ; then
 
     pkgmgr="apt-get"
 
@@ -360,7 +398,7 @@ elif command -v dnf >/dev/null ; then
     pkgfmt="rpm"
 
 fi
-if [ "`id -u`" != "0" ] ; then
+if [ "$host" != "windows" ] && [ "`id -u`" != "0" ] ; then
 
     sudo="sudo"
     if ! command -v sudo >/dev/null ; then
@@ -379,7 +417,7 @@ fi
 #
 softfail=
 
-checkdeps cmd "$DEPS"
+checkdeps cmd "$deps"
 installdeps || softfail="1"
 
 #
@@ -388,7 +426,7 @@ installdeps || softfail="1"
 #
 if command -v pkg-config >/dev/null ; then
 
-    checkdeps lib "$DEPS"
+    checkdeps lib "$deps"
     installdeps || softfail="1"
 
 else
