@@ -88,15 +88,23 @@ it was made from is remembered, and address arithmetic (`ixa`, `inc`, `cxs`)
 is done on that pointer with `getelementptr`, so that LLVM knows which object
 a store lands in; an `inttoptr` would let it touch any variable.
 
-**Static links and structured results.** The x86 ENTER display is rebuilt
-from the caller's frame base, which the caller stores in the runtime global
-`psystem_llvm_sl` just before each call; the callee loads it in its prologue
-and copies the display entries it needs. Set and structure function results
-live in the caller's result frame, an `alloca` whose address goes in
-`psystem_llvm_sfr` the same way; the callee maps the positive frame offsets
-pcom uses for the result onto it. Globals rather than hidden arguments: the
-generated routines then have the same signature as the C thunks of the library
-modules, which the deck cannot tell apart from Pascal externals.
+**Static links and structured results.** Every Pascal routine takes a
+leading `ptr nest` parameter, the static link: the frame base of its caller,
+which LLVM passes in the static chain register (r10 on x86-64). The prologue
+rebuilds the x86 ENTER display from it, copying the entries of the outer
+levels. r10 carries no argument and is caller-saved, so the C thunks of the
+library modules, which the deck cannot tell apart from Pascal externals, are
+called the same way and ignore it. C code that enters a Pascal procedure
+(`pacall` in `libs/source/support.c`, the event callbacks) loads r10 with the
+display of the procedure value.
+
+Set and structure function results live in the caller's result frame, an
+`alloca`. The caller leaves its address at offset `sfoslot` of the frame the
+static link names, just before the call, and the callee's prologue fetches it
+from there; it then maps the positive frame offsets pcom uses for the result
+onto it. Only a routine whose result frame is accessed fetches it, so the
+program block, entered from the module entry with no static link, does not
+follow a null one. Nothing on the call path is shared between threads.
 
 **Values.** Expression trees become SSA values, one per node result (two for
 fat pointers), all `i64` or `double`. Duplicated call nodes (`duptre`) share
