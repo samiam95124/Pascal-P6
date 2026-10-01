@@ -50,10 +50,17 @@ uses endian,      { endian mode }
 label 99;
 
 const shadowsize = 32; { Windows x64 caller allocated shadow space }
+      maxpar = 128;    { maximum parameters of a routine }
       ipjslot = 8;     { frame offset of the non-local goto table pointer }
       jmpbufsz = 64;   { bytes of a psystem_setjmp buffer }
       expfrmsz = 80;   { bytes of an exception frame: the buffer, the
                          enclosing frame, the vector (psystem_exc.h) }
+      ovfbase = 40;    { frame offset of the first overflow parameter: past
+                         the header and the return address }
+      sfoslot = 16;    { frame offset where a caller leaves the result frame
+                         pointer for the routine it calls }
+      resslot = 24;    { frame offset where a routine keeps its own result
+                         frame pointer }
 
 { Code strip tracking. Initializer code strips sit outside any routine body,
   start at a code label and end with ret. They are entered by call from an
@@ -129,6 +136,69 @@ begin
   while ip <> nil do begin if ip^.lvl = l then n := n+1; ip := ip^.next end;
   ipjcount := n
 end;
+
+{ Structured function results. pcom places a set or structure result at
+  positive frame offsets past the overflow parameters, as if the caller had
+  pushed it above the return address, which this generator did. The caller
+  now allocates the area where it likes (on its stack here, in a frame slot
+  of the LLVM target), and leaves its address at sfoslot of the frame the
+  static link names; the callee's prologue copies it to resslot and
+  addresses the result through it. A routine's own level reads resslot of
+  its frame, a nested routine that of the display entry. Every routine
+  above level 1 copies the slot, since the deck does not say which
+  functions return a structure; what a routine without one copies is
+  never read. The windows flavor keeps the stack placement. }
+
+{ the block at a given level in the current chain }
+function blkatlvl(p: integer): pblock;
+var bp, fp: pblock;
+begin
+  fp := nil; bp := blkstk;
+  while bp <> nil do begin
+    if bp^.lvl = p then fp := bp;
+    bp := bp^.next
+  end;
+  blkatlvl := fp
+end;
+
+{ the overflow parameter bytes of a block: its parameters past the six
+  integer and six real register slots, counted in declaration order (the
+  block's list was built by prepending). Reals are one real slot, fat
+  pointers (procedure parameters, containers) two integer slots, anything
+  else one. }
+function blkovf(bp: pblock): integer;
+var sp: psymbol; n, k, ipc, fpc, ovf: integer; c: char;
+    tab: array [1..maxpar] of psymbol;
+begin
+  ovf := 0; ipc := 0; fpc := 0; n := 0;
+  if bp <> nil then begin
+    sp := bp^.symbols;
+    while sp <> nil do begin
+      if sp^.styp = stparam then begin
+        if n >= maxpar then error('Too many parameters');
+        n := n+1; tab[n] := sp
+      end;
+      sp := sp^.next
+    end;
+    for k := n downto 1 do begin
+      c := ' ';
+      if tab[k]^.digest <> nil then
+        if max(tab[k]^.digest^) > 0 then c := tab[k]^.digest^[1];
+      if c = 'n' then begin fpc := fpc+1; if fpc > 6 then ovf := ovf+8 end
+      else if (c = 'q') or (c = 'v') then begin
+        ipc := ipc+2; if ipc > 6 then ovf := ovf+16
+      end else begin ipc := ipc+1; if ipc > 6 then ovf := ovf+8 end
+    end
+  end;
+  blkovf := ovf
+end;
+
+{ is frame offset q of level p in the result frame }
+function inres(p, q: integer): boolean;
+begin
+  inres := (not windows) and (q >= ovfbase+blkovf(blkatlvl(p)))
+end;
+
 
 override procedure abort;
 
@@ -327,6 +397,20 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       r1: reg; sp, sp2: pstring; def, def2: boolean; val, val2: integer;
       blk: pblock; { block reference }
       ipjn, ipjt, ipjs: integer; ip: ipjptr; { non-local goto table }
+      roff: integer; { result frame offset }
+
+  { the base of a result frame access to (p, q) into register r: the pointer
+    kept at resslot of the frame of level p; returns the offset into the
+    result frame }
+  procedure resbase(p, q: integer; r: reg; var off: integer);
+  begin
+    if p <> blkstk^.lvl then
+      wrtins(' movq ^0(%rbp),%1 # get display pointer', -p*ptrsize, r)
+    else
+      wrtins(' movq %rbp,%1 # frame base', r);
+    wrtins(' movq ^0(%1),%1 # result frame pointer', resslot, r);
+    off := q-ovfbase-blkovf(blkatlvl(p))
+  end;
 
   procedure getreg(var r: reg; var rf: regset);
   var i: 1..maxintreg;
@@ -504,7 +588,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       {lodr}
       106: begin ep^.r1 := r1;
         if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-        if ep^.p <> blkstk^.lvl then getreg(ep^.t1, rf)
+        if (ep^.p <> blkstk^.lvl) or inres(ep^.p, ep^.q) then getreg(ep^.t1, rf)
       end;
 
       {lods}
@@ -1488,7 +1572,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {lodi,loda}
         0,105: begin
-          if ep^.p <> blkstk^.lvl then begin
+          if inres(ep^.p, ep^.q) then begin
+            resbase(ep^.p, ep^.q, ep^.r1, roff);
+            wrtins(' movq ^0(%1),%1 # fetch result qword', roff, ep^.r1)
+          end else if ep^.p <> blkstk^.lvl then begin
             wrtins(' movq ^0(%rbp),%1 # get display pointer', ep^.q1, ep^.r1);
             wrtins(' movq @l(%1),%1 # fetch local qword', ep^.q, ep^.p, ep^.r1)
           end else
@@ -1497,7 +1584,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {lodx,lodb,lodc}
         193,108,109: begin
-          if ep^.p <> blkstk^.lvl then begin
+          if inres(ep^.p, ep^.q) then begin
+            resbase(ep^.p, ep^.q, ep^.r1, roff);
+            wrtins(' movzx ^0(%1),%1 # fetch result byte', roff, ep^.r1)
+          end else if ep^.p <> blkstk^.lvl then begin
             wrtins(' movq ^0(%rbp),%1 # get display pointer', ep^.q1, ep^.r1);
             wrtins(' movzx @l(%1),%1 # fetch local byte', ep^.q, ep^.p, ep^.r1)
           end else
@@ -1506,7 +1596,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {lodr}
         106: begin
-          if ep^.p <> blkstk^.lvl then begin
+          if inres(ep^.p, ep^.q) then begin
+            resbase(ep^.p, ep^.q, ep^.t1, roff);
+            wrtins(' movsd ^0(%1),%2 # fetch result real', roff, ep^.t1, ep^.r1)
+          end else if ep^.p <> blkstk^.lvl then begin
             wrtins(' movq ^0(%rbp),%1 # get display pointer', ep^.q1, ep^.t1);
             wrtins(' movsd @l(%1),%2 # fetch local real', ep^.q, ep^.p, ep^.t1, ep^.r1)
           end else
@@ -1515,7 +1608,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {lods}
         107: begin
-          if ep^.p <> blkstk^.lvl then begin
+          if inres(ep^.p, ep^.q) then begin
+            resbase(ep^.p, ep^.q, ep^.r1, roff);
+            wrtins(' leaq ^0(%1),%1 # index result set', roff, ep^.r1)
+          end else if ep^.p <> blkstk^.lvl then begin
             wrtins(' movq ^0(%rbp),%1 # get display pointer', ep^.q1, ep^.r1);
             wrtins(' leaq @l(%1),%1 # index local set', ep^.q, ep^.p, ep^.r1)
           end else
@@ -1524,7 +1620,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
 
         {lda}
         4: begin
-          if ep^.p <> blkstk^.lvl then begin
+          if inres(ep^.p, ep^.q) then begin
+            resbase(ep^.p, ep^.q, ep^.r1, roff);
+            wrtins(' leaq ^0(%1),%1 # index result', roff, ep^.r1)
+          end else if ep^.p <> blkstk^.lvl then begin
             wrtins(' movq ^0(%rbp),%1 # get display pointer', ep^.q1, ep^.r1);
             wrtins(' lea @l(%1),%1 # index local', ep^.q, ep^.r1)
           end else
@@ -2287,6 +2386,13 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             builds its display. r10 is the static chain register, which no
             argument uses, so a C routine called this way ignores it. }
           wrtins(' movq %rbp,%r10 # pass static link');
+          { a set or structure result: the area is on our stack above the
+            overflow parameters; its address goes where the routine's
+            prologue looks for it, in the frame the static link names }
+          if (ep^.op = 246{cuf}) and (ep^.rc in [2, 3]) and not windows then begin
+            wrtins(' leaq ^0(%rsp),%rax # result frame', ps);
+            wrtins(' movq %rax,^0(%r10) # pass it', sfoslot)
+          end;
           if ep^.blk <> nil then begin
             write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc;
             wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl);
@@ -2367,6 +2473,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
             wrtins(' subq $0,%rsp # allocate shadow space', shadowsize);
           { the static link is the frame the procedure value carries }
           wrtins(' movq ^0(%1),%r10 # pass static link', 1*ptrsize, ep^.l^.r1);
+          if (ep^.op = 247{cif}) and (ep^.rc in [2, 3]) and not windows then begin
+            wrtins(' leaq ^0(%rsp),%rax # result frame', ps);
+            wrtins(' movq %rax,^0(%r10) # pass it', sfoslot)
+          end;
           wrtins(' call *(%1) # call indirect', ep^.l^.r1);
           { remove overflow parameters pushed by caller, and shadow space }
           if windows then
@@ -2436,6 +2546,10 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           end else
             pshparsysv(ep^.pl); { eval 1-6 l-r, stack 7+ r-l }
           wrtins(' movq %rbp,%r10 # pass static link');
+          if (ep^.op = 249{cvf}) and (ep^.rc in [2, 3]) and not windows then begin
+            wrtins(' leaq ^0(%rsp),%rax # result frame', ps);
+            wrtins(' movq %rax,^0(%r10) # pass it', sfoslot)
+          end;
           if ep^.qs <> nil then wrtins(' call *@s(%rip) # call vectored', ep^.qs^)
           else wrtins(' call *@g(%rip) # call vectored', ep^.q);
           { remove overflow parameters pushed by caller, and shadow space }
@@ -3299,11 +3413,15 @@ begin { assemble }
     {stri,stra}
     2,70: begin parpq;
       frereg := allreg;
-      popstk(ep); attach(ep); if p <> blkstk^.lvl then getreg(r1, frereg); 
+      popstk(ep); attach(ep);
+      if (p <> blkstk^.lvl) or inres(p, q) then getreg(r1, frereg); 
       assreg(ep, frereg, rgnull, rgnull); 
       dmptre(ep); genexp(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      if p <> blkstk^.lvl then begin
+      if inres(p, q) then begin
+        resbase(p, q, r1, roff);
+        wrtins(' movq %1,^0(%2) # store result qword', roff, ep^.r1, r1)
+      end else if p <> blkstk^.lvl then begin
         wrtins(' movq ^0(%rbp),%1 # get display pointer', -p*ptrsize, r1);
         wrtins(' movq %1,@l(%2) # store qword', q, p, ep^.r1, r1)
       end else 
@@ -3313,11 +3431,15 @@ begin { assemble }
 
     {strx,strb,strc} 
     195,73,74: begin parpq;
-      frereg := allreg; if p <> blkstk^.lvl then getreg(r1, frereg);
+      frereg := allreg;
+      if (p <> blkstk^.lvl) or inres(p, q) then getreg(r1, frereg);
       popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); 
       dmptre(ep); genexp(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      if p <> blkstk^.lvl then begin
+      if inres(p, q) then begin
+        resbase(p, q, r1, roff);
+        wrtins(' movb %1l,^0(%2) # store result byte', roff, ep^.r1, r1)
+      end else if p <> blkstk^.lvl then begin
         wrtins(' movq ^0(%rbp),%1 # get display pointer', -p*ptrsize, r1);
         wrtins(' movb %1l,@l(%2) # store byte', q, p, ep^.r1, r1)
       end else
@@ -3327,11 +3449,15 @@ begin { assemble }
 
     {strr}
     71: begin parpq;
-      frereg := allreg; if p <> blkstk^.lvl then getreg(r1, frereg);
+      frereg := allreg;
+      if (p <> blkstk^.lvl) or inres(p, q) then getreg(r1, frereg);
       popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); 
       dmptre(ep); genexp(ep); 
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      if p <> blkstk^.lvl then begin
+      if inres(p, q) then begin
+        resbase(p, q, r1, roff);
+        wrtins(' movsd %1,^0(%2) # store result real', roff, ep^.r1, r1)
+      end else if p <> blkstk^.lvl then begin
         wrtins(' movq ^0(%rbp),%1 # get display pointer', -p*ptrsize, r1);
         wrtins(' movsd %1,@l(%2) # store real', q, p, ep^.r1, r1)
       end else
@@ -3344,11 +3470,16 @@ begin { assemble }
       frereg := allreg; popstk(ep); attach(ep); assreg(ep, frereg, rgrsi, rgnull);
       dmptre(ep); genexp(ep);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      if p <> blkstk^.lvl then
-        wrtins(' movq ^0(%rbp),%rdi # get display pointer', -p*ptrsize)
-      else
-        wrtins(' movq %rbp,%rdi # get display pointer', -p*ptrsize);
-      wrtins(' leaq @l(%rdi),%rdi # index destination', q, p);
+      if inres(p, q) then begin
+        resbase(p, q, rgrdi, roff);
+        wrtins(' leaq ^0(%rdi),%rdi # index result destination', roff)
+      end else begin
+        if p <> blkstk^.lvl then
+          wrtins(' movq ^0(%rbp),%rdi # get display pointer', -p*ptrsize)
+        else
+          wrtins(' movq %rbp,%rdi # get display pointer', -p*ptrsize);
+        wrtins(' leaq @l(%rdi),%rdi # index destination', q, p)
+      end;
       wrtins(' movsq # move set');
       wrtins(' movsq');
       wrtins(' movsq');
@@ -3409,6 +3540,12 @@ begin { assemble }
       for i := 1 to p do
         wrtins(' pushq ^0(%r10) # copy display entry from static link', -i*ptrsize);
       wrtins(' pushq %rbp # place display entry for this level');
+      { the result frame pointer the caller left in its frame; the program
+        block is entered without a static link and has no result }
+      if (p > 0) and not windows then begin
+        wrtins(' movq ^0(%r10),%rax # result frame pointer from the caller', sfoslot);
+        wrtins(' movq %rax,^0(%rbp) # keep it', resslot)
+      end;
       if windows then begin
         { save integer parameter registers to known frame slots.
           The Windows convention has 4 positional parameter slots. Push in
