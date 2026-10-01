@@ -22,14 +22,14 @@ runtime contract in `psystem_llvm.c`:
 | Static link and display | caller passes its frame base in r10; the prologue copies entries 1..level-1 from it and pushes its own base as entry level (was: `enterq` out of the dynamic caller's rbp frame) | caller passes its frame base in r10 (the `nest` parameter); the callee's prologue copies entries 1..level-1 from it and stores its own base as entry level |
 | Structured function result | caller pushes result space on the stack; callee addresses it at positive rbp offsets | caller allocates the result and leaves its address at offset `sfoslot` of the frame r10 names; callee fetches it from there and keeps it at frame offset `sfrslot` |
 | Exceptions | three words pushed on the stack plus the globals `psystem_expadr`, `psystem_expstk`, `psystem_expmrk`; a throw reloads rsp and rbp and jumps | chain of C frames, `bge` registers one and `_setjmp`s, `thw` longjmps to the innermost, `mse` rethrows to the enclosing |
-| Non-local goto | load rbp from the display entry, reload rsp from the mark, jump | table of (label, jmp_buf) in the target frame; `psystem_llvm_ipj` finds it through the display entry |
+| Non-local goto | linux: as the LLVM target (windows: load rbp from the display entry, reload rsp from the mark, jump) | table of (label, jmp_buf) in the target frame, pointer at frame offset 8; `psystem_llvm_ipj` (psystem_goto.c, in psystem.a) finds it through the display entry |
 | Module chain | linux: as the LLVM target, through the section (windows: each object still falls through the end of its text into the next, `main.asm` runs into the first) | each object registers its entry in the `psystem_llvm_mods` section; `psystem_llvm_nextmod` (psystem_mods.c, in psystem.a) walks the section in link order |
 
 The first two rows are as of #650, which moved the LLVM target off the
 process globals `psystem_llvm_sl` and `psystem_llvm_sfr` onto rules 2 and 3
-below, and of work items 1 and 3, which moved the AMD64 generator onto
-rules 6 and 2 on linux. The static link and module chain rows no longer
-differ there; the rest still do.
+below, and of work items 1, 3 and 5, which moved the AMD64 generator onto
+rules 6, 2 and 5 on linux. The static link, module chain and non-local goto
+rows no longer differ there; exceptions and the structured result still do.
 
 Any one of these is enough to forbid mixing, which is why pc records the
 generator of every object (`llvmobj`), rebuilds across generators, and keeps a
@@ -149,8 +149,15 @@ pgen mode before the next. Interoperation is testable only once all agree.
    allocating the result area on the stack; only how its address reaches the
    callee changes.
 
-5. **Non-local goto.** AMD64: build the table and `_setjmp` at target labels
-   in routines that own them; `ipj` becomes the shim call.
+5. **Non-local goto.** Done on linux. AMD64: the prologue of a routine that
+   owns a target keeps the table and the jump buffers between the aligned
+   frame and the saved registers, pointer at frame offset 8, and arms each
+   target with `_setjmp` after the pushes, where the stack is as the body
+   leaves it at a label; `ipj` loads the owner's frame from the display and
+   calls `psystem_llvm_ipj` (`psystem_goto.c`, shared). The stack mark at
+   offset 16, which only the old `ipj` read, is no longer stored on linux,
+   so offset 16 is free for item 4 and the LLVM target's `sfoslot` can stay
+   where it is. Windows keeps the frame pointer and stack mark reload.
 
 6. **Tooling.** pc drops `llvmobj` and the cross-generator rebuild; the
    `llvm` block in `bin/pc.ins` loses its module path and exclude;

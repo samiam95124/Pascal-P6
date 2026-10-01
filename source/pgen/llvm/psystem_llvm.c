@@ -12,9 +12,10 @@
 *     frame. The outermost frame is the master handler in main.               *
 *   - The system exception vectors: system errors that programs may catch are *
 *     thrown as the addresses of ExceptionBase[en].                            *
-*   - Non-local goto. A routine that is the target of one carries a table of  *
-*     (label number, jmp_buf) in its frame; the goto finds the entry through  *
-*     the target frame and longjmps to it.                                    *
+*   - Non-local goto: psystem_goto.c, in psystem.a, shared with the AMD64     *
+*     target. A routine that is the target of one carries a table of (label  *
+*     number, jmp_buf) in its frame; the goto finds the entry through the     *
+*     target frame and longjmps to it.                                        *
 *   - main. The module initialization chain it starts (psystem_mods.c, in    *
 *     psystem.a) is shared with the AMD64 target: each object places its      *
 *     entry in the psystem_llvm_mods section, the linker collects the chain   *
@@ -128,21 +129,6 @@ void psystem_unwind(const char* modnam, int line, int en)
 {
     errmod = modnam; errline = line;
     psystem_llvm_thw((long)&ExceptionBase[en]);
-}
-
-/* non-local goto to label key of the routine owning frame */
-void psystem_llvm_ipj(unsigned char* frame, long key)
-{
-    long* t = *(long**)(frame+8);
-    long n, k;
-
-    if (t) {
-        n = t[0];
-        for (k = 0; k < n; k++)
-            if (t[1+2*k] == key) longjmp(*(jmp_buf*)t[2+2*k], 1);
-    }
-    fprintf(stderr, "*** Non-local goto target not found\n");
-    exit(1);
 }
 
 int main(int argc, char* argv[])

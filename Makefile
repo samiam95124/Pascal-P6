@@ -239,6 +239,7 @@ all: bin/cmach bin/spew \
 ifneq ($(AMITK),)
 $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	$(SOURCE)/pgen/psystem_mods.c \
+	$(SOURCE)/pgen/psystem_goto.c \
 	$(SOURCE)/pgen/amd64/psystem.asm \
 	$(AMILIBC)/stdio.c
 	@echo
@@ -250,6 +251,8 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 		-c $(SOURCE)/pgen/psystem.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem_mods.o \
 		-c $(SOURCE)/pgen/psystem_mods.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem_goto.o \
+		-c $(SOURCE)/pgen/psystem_goto.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/psystem_asm.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/psystem.asm
 	if [ -n "$(PSYSTEM_STDIO)" ]; then \
@@ -258,7 +261,7 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	fi
 	rm -f $(LIBS)/psystem.a
 	ar rc $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
-		$(BUILD)/pgen/psystem_mods.o \
+		$(BUILD)/pgen/psystem_mods.o $(BUILD)/pgen/psystem_goto.o \
 		$(BUILD)/pgen/amd64/psystem_asm.o $(PSYSTEM_STDIO)
 endif
 
