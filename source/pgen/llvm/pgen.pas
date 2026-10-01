@@ -27,8 +27,9 @@
 *     link names; the callee maps the positive frame offsets pcom uses for   *
 *     the result onto that pointer. Nothing on the call path is shared       *
 *     between threads.                                                        *
-*   - Exceptions and non-local goto: setjmp/longjmp in the C runtime          *
-*     (psystem_llvm.c), replacing the assembly throw/unwind and the frame     *
+*   - Exceptions and non-local goto: setjmp/longjmp frames through the C      *
+*     runtime shim shared with the AMD64 target (psystem_exc.c,               *
+*     psystem_goto.c), replacing the assembly throw/unwind and the frame      *
 *     pointer restores.                                                       *
 *   - Module initialization chain: each object registers its entry in the    *
 *     psystem_llvm_mods section; the runtime calls the entries in link       *
@@ -1421,7 +1422,7 @@ begin
          writeln(prr, '  store i64 ', n:1, ', ptr %ipt');
          n := 0; ip := ipjlst;
          while ip <> nil do begin
-            writeln(prr, '  %ipj', n:1, ' = alloca [ 208 x i8 ], align 16');
+            writeln(prr, '  %ipj', n:1, ' = alloca [ 64 x i8 ], align 16');
             writeln(prr, '  %ipe', n:1, ' = getelementptr i8, ptr %ipt, i64 ', 8+n*16:1);
             writeln(prr, '  store i64 ', ip^.key:1, ', ptr %ipe', n:1);
             writeln(prr, '  %ipf', n:1, ' = getelementptr i8, ptr %ipt, i64 ', 16+n*16:1);
@@ -1441,7 +1442,7 @@ begin
    if not fnstrip and (ipjlst <> nil) then begin
       n := 0; ip := ipjlst;
       while ip <> nil do begin
-         writeln(prr, '  %ipr', n:1, ' = call i32 @_setjmp(ptr %ipj', n:1, ')');
+         writeln(prr, '  %ipr', n:1, ' = call i32 @psystem_setjmp(ptr %ipj', n:1, ')');
          writeln(prr, '  %ipc', n:1, ' = icmp ne i32 %ipr', n:1, ', 0');
          writeln(prr, '  br i1 %ipc', n:1, ', label %"', ip^.name^, '", label %"ipj.next', n:1, '"');
          writeln(prr, '"ipj.next', n:1, '":');
@@ -2015,13 +2016,13 @@ begin
    writeln(prr, 'declare { i64, i1 } @llvm.smul.with.overflow.i64(i64, i64)');
    writeln(prr, 'declare double @llvm.fabs.f64(double)');
    writeln(prr, 'declare i64 @llvm.lrint.i64.f64(double)');
-   writeln(prr, 'declare i32 @_setjmp(ptr) returns_twice');
+   writeln(prr, 'declare i32 @psystem_setjmp(ptr) returns_twice');
    writeln(prr, 'declare void @psystem_errore(i64, i64, i64) cold noreturn');
    writeln(prr, 'declare void @psystem_llvm_nextmod()');
-   writeln(prr, 'declare void @psystem_llvm_bge(ptr)');
-   writeln(prr, 'declare void @psystem_llvm_ede()');
-   writeln(prr, 'declare void @psystem_llvm_mse(i64, i64)');
-   writeln(prr, 'declare i64 @psystem_llvm_curvec()');
+   writeln(prr, 'declare void @psystem_bge(ptr)');
+   writeln(prr, 'declare void @psystem_ede()');
+   writeln(prr, 'declare void @psystem_mse(i64, i64) noreturn');
+   writeln(prr, 'declare i64 @psystem_curvec()');
    writeln(prr, 'declare void @psystem_llvm_ipj(ptr, i64)');
    writeln(prr, '@psystem_iso7185 = external global i64');
    np := declst;
@@ -3819,7 +3820,7 @@ begin { assemble }
       253: begin parpq;
          { the vector of the current exception frame }
          v := newv;
-         oins; ov(v); os(' = call i64 @psystem_llvm_curvec()'); ol;
+         oins; ov(v); os(' = call i64 @psystem_curvec()'); ol;
          st('i', v, slotadr(p, q, 'i'))
       end;
 
@@ -4180,10 +4181,10 @@ begin { assemble }
          { an exception frame in the prologue, registered, then the setjmp
            whose second return lands on the handler }
          if blkstk <> nil then begin bi := binfof(blkstk); bi^.sjmp := true end;
-         v := alloca(256, 'exception frame');
-         oins; os('call void @psystem_llvm_bge(ptr '); ov(v); oc(')'); ol;
+         v := alloca(80, 'exception frame');
+         oins; os('call void @psystem_bge(ptr '); ov(v); oc(')'); ol;
          v2 := newv;
-         oins; ov(v2); os(' = call i32 @_setjmp(ptr '); ov(v); oc(')'); ol;
+         oins; ov(v2); os(' = call i32 @psystem_setjmp(ptr '); ov(v); oc(')'); ol;
          v3 := newv;
          oins; ov(v3); os(' = icmp ne i32 '); ov(v2); os(', 0'); ol;
          genlab('try', sp2);
@@ -4194,13 +4195,13 @@ begin { assemble }
 
       {ede}
       208: begin
-         oins; os('call void @psystem_llvm_ede()'); ol;
+         oins; os('call void @psystem_ede()'); ol;
          botstk
       end;
 
       {mse}
       209: begin
-         oins; os('call void @psystem_llvm_mse(i64 ptrtoint (ptr @modnam to i64), i64 '); oline; oc(')'); ol;
+         oins; os('call void @psystem_mse(i64 ptrtoint (ptr @modnam to i64), i64 '); oline; oc(')'); ol;
          oins; os('unreachable'); ol; term;
          botstk
       end;

@@ -50,12 +50,13 @@ shared; their wrappers are called with the plain Pascal signature.
     mpb.pas           machine parameter block (as amd64)
     endian.pas        endian mode (as amd64)
     pgen.ins          module path for the build
-    psystem_llvm.c    the runtime pieces the amd64 target keeps in assembly
-                      (main.asm, psystem.asm), in C: main, the exception
-                      frames, non-local goto
 
-`psystem_llvm.c` builds to `libs/llvm/main.o` (Makefile `$(LIBS)/llvm/main.o`,
-part of `all`). The generator builds to `bin/pgen_llvm` (`bin/build`).
+The runtime pieces the target needs in C are shared with the amd64 target on
+linux and live in `source/pgen`: `main.c` (the program entry), `psystem_exc.c`
+(the exception frames), `psystem_goto.c` (non-local goto) and
+`psystem_mods.c` (the module chain), all in `psystem.a` except the entry,
+which builds to `libs/main.o` and `libs/llvm/main.o` (Makefile `main`). The
+generator builds to `bin/pgen_llvm` (`bin/build`).
 
 ## How it differs from the AMD64 generator
 
@@ -111,11 +112,15 @@ fat pointers), all `i64` or `double`. Duplicated call nodes (`duptre`) share
 one call result.
 
 **Control.** Labels are basic blocks; case tables become `switch`. Exceptions
-are setjmp/longjmp frames in `psystem_llvm.c`: `bge` registers a frame and
-`_setjmp`s, `thw` longjmps to the innermost frame with the vector, `mse`
-rethrows to the enclosing one. Non-local goto: a routine that is the target of
-one keeps a table of (label, jmp_buf) in its frame, and the goto finds it
-through the target's display entry (`psystem_llvm_ipj`). Checks use the
+are setjmp/longjmp frames through the shared shim (`psystem_exc.c`): `bge`
+reserves a frame in the routine, links it as the innermost of the thread and
+sets its jump buffer with `psystem_setjmp`, `thw` longjmps to the innermost
+frame with the vector, `mse` rethrows to the enclosing one. The pointer to
+the innermost frame is thread-local in the shim; the generated code never
+touches it. Non-local goto: a routine that is the target of one keeps a table
+of (label, jump buffer) in its frame, and the goto finds it through the
+target's display entry (`psystem_llvm_ipj`), dropping the exception frames
+it leaves. Checks use the
 `llvm.*.with.overflow` intrinsics and branch to `psystem_errore`, declared
 `noreturn`: the check then costs a compare and a branch, and does not make
 LLVM reload every global after it.

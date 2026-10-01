@@ -240,6 +240,7 @@ ifneq ($(AMITK),)
 $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	$(SOURCE)/pgen/psystem_mods.c \
 	$(SOURCE)/pgen/psystem_goto.c \
+	$(SOURCE)/pgen/psystem_exc.c $(SOURCE)/pgen/psystem_exc.h \
 	$(SOURCE)/pgen/amd64/psystem.asm \
 	$(AMILIBC)/stdio.c
 	@echo
@@ -253,6 +254,8 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 		-c $(SOURCE)/pgen/psystem_mods.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem_goto.o \
 		-c $(SOURCE)/pgen/psystem_goto.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem_exc.o \
+		-c $(SOURCE)/pgen/psystem_exc.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/psystem_asm.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/psystem.asm
 	if [ -n "$(PSYSTEM_STDIO)" ]; then \
@@ -262,38 +265,30 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	rm -f $(LIBS)/psystem.a
 	ar rc $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
 		$(BUILD)/pgen/psystem_mods.o $(BUILD)/pgen/psystem_goto.o \
+		$(BUILD)/pgen/psystem_exc.o \
 		$(BUILD)/pgen/amd64/psystem_asm.o $(PSYSTEM_STDIO)
 endif
 
 #
-# Build main for AMD64, the program stack startup shim.
+# Build main for linux, the program entry (source/pgen/main.c): the master
+# exception frame and the module chain. One object serves the AMD64 and the
+# LLVM targets; it is placed in libs and in libs/llvm (the llvm module path,
+# see bin/pc.ins) until the two module paths are folded together. The
+# assembly main (main.asm) remains the windows entry.
 #
-main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/amd64/main.asm
+main $(BUILD)/pgen/amd64/main.o: $(SOURCE)/pgen/main.c $(SOURCE)/pgen/psystem_exc.h
 	@echo
 	@echo "Building main..."
 	@echo
 	mkdir -p $(BUILD)/pgen
 	mkdir -p $(BUILD)/pgen/amd64
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/main.o \
-		-c -x assembler $(SOURCE)/pgen/amd64/main.asm
+		-c $(SOURCE)/pgen/main.c
 	cp $(BUILD)/pgen/amd64/main.o $(LIBS)
 
-#
-# Build main for the LLVM IR target: the C replacement for the assembly
-# startup and exception shims (main.asm, psystem.asm) of the amd64 target. The
-# LLVM target shares psystem.a with the amd64 target; only the entry object
-# differs, and it lives in libs/llvm ahead of the main library on the llvm
-# module path (see bin/pc.ins).
-#
-$(LIBS)/llvm/main.o: $(SOURCE)/pgen/llvm/psystem_llvm.c
-	@echo
-	@echo "Building main for llvm..."
-	@echo
-	mkdir -p $(BUILD)/llvm
+$(LIBS)/llvm/main.o: $(BUILD)/pgen/amd64/main.o
 	mkdir -p $(LIBS)/llvm
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/llvm/main.o \
-		-c $(SOURCE)/pgen/llvm/psystem_llvm.c
-	cp $(BUILD)/llvm/main.o $(LIBS)/llvm
+	cp $(BUILD)/pgen/amd64/main.o $(LIBS)/llvm
 
 ################################################################################
 #

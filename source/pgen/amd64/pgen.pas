@@ -51,7 +51,9 @@ label 99;
 
 const shadowsize = 32; { Windows x64 caller allocated shadow space }
       ipjslot = 8;     { frame offset of the non-local goto table pointer }
-      jmpbufsz = 208;  { bytes of a jmp_buf, rounded to 16 }
+      jmpbufsz = 64;   { bytes of a psystem_setjmp buffer }
+      expfrmsz = 80;   { bytes of an exception frame: the buffer, the
+                         enclosing frame, the vector (psystem_exc.h) }
 
 { Code strip tracking. Initializer code strips sit outside any routine body,
   start at a code label and end with ret. They are entered by call from an
@@ -3359,8 +3361,11 @@ begin { assemble }
       frereg := allreg-[rgrax];
       getreg(r1, frereg); 
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' popq %rax # get exception vector'); 
-      wrtins(' pushq %rax # replace'); 
+      if windows then begin
+        wrtins(' popq %rax # get exception vector'); 
+        wrtins(' pushq %rax # replace')
+      end else
+        wrtcps(' call psystem_curvec # get exception vector');
       if p <> blkstk^.lvl then begin
         wrtins(' movq ^0(%rbp),%1 # get display pointer', -p*ptrsize, r1);
         wrtins(' movq %rax,@l(%1) # store qword', q, p, r1)
@@ -3504,7 +3509,7 @@ begin { assemble }
           if ip^.lvl = p+1 then begin
             wrtins(' movq ^0(%rbp),%rax # non-local goto table', ipjslot);
             wrtins(' leaq ^0(%rax),%rdi # jump buffer', ipjt+jmpbufsz*i);
-            wrtins(' call _setjmp # arm the non-local goto target');
+            wrtins(' call psystem_setjmp # arm the non-local goto target');
             wrtins(' testl %eax,%eax # entered by the goto');
             wrtins(' jnz @s # to its label', ip^.name^);
             i := i+1
@@ -4016,53 +4021,75 @@ begin { assemble }
     {bge}
     207: begin labelsearch(def, val, sp, blk);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' pushq psystem_expadr(%rip) # save current exception frame');
-      wrtins(' pushq psystem_expstk(%rip)');
-      wrtins(' pushq psystem_expmrk(%rip)');          
-      wrtins(' pushq $0 # place dummy vector');
-      wrtins(' leaq @s(%rip),%rax # place new exception frame', sp^);
-      wrtins(' movq %rax,psystem_expadr(%rip)');
-      wrtins(' movq %rsp,psystem_expstk(%rip)');
-      wrtins(' movq %rbp,psystem_expmrk(%rip)');
+      if windows then begin
+        wrtins(' pushq psystem_expadr(%rip) # save current exception frame');
+        wrtins(' pushq psystem_expstk(%rip)');
+        wrtins(' pushq psystem_expmrk(%rip)');          
+        wrtins(' pushq $0 # place dummy vector');
+        wrtins(' leaq @s(%rip),%rax # place new exception frame', sp^);
+        wrtins(' movq %rax,psystem_expadr(%rip)');
+        wrtins(' movq %rsp,psystem_expstk(%rip)');
+        wrtins(' movq %rbp,psystem_expmrk(%rip)')
+      end else begin
+        { the exception frame on the stack, linked as the innermost by the
+          shim, which keeps that link per thread; then its jump buffer set,
+          whose second return is the handler }
+        wrtins(' subq $0,%rsp # exception frame', expfrmsz);
+        wrtins(' movq %rsp,%rdi # the frame');
+        wrtcps(' call psystem_bge # link it as the innermost');
+        wrtins(' movq %rsp,%rdi # its jump buffer');
+        wrtcps(' call psystem_setjmp # arm it');
+        wrtins(' testl %eax,%eax # thrown to');
+        wrtins(' jnz @s # to the handler', sp^)
+      end;
       botstk
     end;        
 
     {ede}
     208: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' popq %rax # Dispose vector');
-      wrtins(' popq psystem_expmrk(%rip) # restore previous exception frame');
-      wrtins(' popq psystem_expstk(%rip)');
-      wrtins(' popq psystem_expadr(%rip)');
+      if windows then begin
+        wrtins(' popq %rax # Dispose vector');
+        wrtins(' popq psystem_expmrk(%rip) # restore previous exception frame');
+        wrtins(' popq psystem_expstk(%rip)');
+        wrtins(' popq psystem_expadr(%rip)')
+      end else begin
+        wrtcps(' call psystem_ede # unlink the frame');
+        wrtins(' addq $0,%rsp # remove exception frame', expfrmsz)
+      end;
       botstk
     end;
 
     {mse}
     209: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' popq %rdx # get error vector');
-      wrtins(' popq psystem_expmrk(%rip) # restore previous exception frame');
-      wrtins(' popq psystem_expstk(%rip)');
-      wrtins(' popq psystem_expadr(%rip)');
-      wrtins(' movq psystem_expadr(%rip),%rax');
-
-      wrtins(' orq %rax,%rax');
-      wrtins(' jnz 1f # skip if less or equal');
-      wrtins('1:');
-      wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
-      wrtins(' movq $0,%1 # load line number', sline, argr(2));
-      { the error vector rides in rdx, which is argument 3 in the SYS V
-        convention; the Windows convention takes it in r8 }
-      if windows then
+      if windows then begin
+        wrtins(' popq %rdx # get error vector');
+        wrtins(' popq psystem_expmrk(%rip) # restore previous exception frame');
+        wrtins(' popq psystem_expstk(%rip)');
+        wrtins(' popq psystem_expadr(%rip)');
+        wrtins(' movq psystem_expadr(%rip),%rax');
+        wrtins(' orq %rax,%rax');
+        wrtins(' jnz 1f # skip if less or equal');
+        wrtins('1:');
+        wrtins(' leaq modnam(%rip),%1 # load module name', argr(1));
+        wrtins(' movq $0,%1 # load line number', sline, argr(2));
+        { the error vector rides in rdx, which is argument 3 in the SYS V
+          convention; the Windows convention takes it in r8 }
         wrtins(' movq %rdx,%r8 # place error vector argument');
-{??? Why didn't this stop unhandled exceptions ???}
-      wrtcps(' call psystem_errorv # process error');
-
-      wrtins(' movq psystem_expmrk(%rip),%rbp # throw to new frame');
-      wrtins(' popq psystem_expstk(%rip)');
-      wrtins(' popq psystem_expadr(%rip)');
-      wrtins(' popq %rax # dump dummy vector for this frame');
-      wrtins(' pushq %rdx # set new vector');
+        wrtcps(' call psystem_errorv # process error');
+        wrtins(' movq psystem_expmrk(%rip),%rbp # throw to new frame');
+        wrtins(' popq psystem_expstk(%rip)');
+        wrtins(' popq psystem_expadr(%rip)');
+        wrtins(' popq %rax # dump dummy vector for this frame');
+        wrtins(' pushq %rdx # set new vector')
+      end else begin
+        { no handler matched: the shim unlinks the frame and rethrows to
+          the enclosing one, or to the master handler; it does not return }
+        wrtins(' leaq modnam(%rip),%rdi # load module name');
+        wrtins(' movq $0,%rsi # load line number', sline);
+        wrtcps(' call psystem_mse # rethrow to the enclosing frame')
+      end;
       botstk
     end;
 
