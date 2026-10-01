@@ -193,6 +193,52 @@ override procedure postamble;
 begin
 end;
 
+{ The end of the module's code, after the end labels that the initializer
+  strip calls to reach the modules after this one. On linux the modules are
+  chained through the psystem_llvm_mods section (psystem_mods.c): the end
+  label calls the next entry through psystem_llvm_nextmod and returns, so
+  the initializer strip resumes with its finalizer when the modules after
+  it have run. The stack is aligned for the C call from whatever the strip
+  left, since a strip is entered by call. On windows the chain is still the
+  fall through: the jump lands at the end of this object's text, which is
+  the next object's entry. }
+override procedure jmpfwd;
+begin
+  if windows then writeln(prr, '        jmp     1f')
+  else begin
+    writeln(prr, '        pushq   %rbx');
+    writeln(prr, '        movq    %rsp,%rbx');
+    writeln(prr, '        andq    $0xfffffffffffffff0,%rsp');
+    writeln(prr, '        call    psystem_llvm_nextmod');
+    writeln(prr, '        movq    %rbx,%rsp');
+    writeln(prr, '        popq    %rbx');
+    writeln(prr, '        ret')
+  end
+end;
+
+{ the globals section, and on linux the module's entry in the initialization
+  chain: the linker concatenates the psystem_llvm_mods entries in link order }
+override procedure emitgbl;
+begin
+   writeln(prr, '        .bss');
+   writeln(prr, '#');
+   writeln(prr, '# Globals section');
+   writeln(prr, '#');
+   writeln(prr, 'globals_start:');
+   writeln(prr, '        .zero ', gblsiz:1);
+   if not windows then begin
+     writeln(prr, '#');
+     writeln(prr, '# Module initialization chain entry');
+     writeln(prr, '#');
+     writeln(prr, '        .section psystem_llvm_mods,"aw",@progbits');
+     writeln(prr, '        .align  8');
+     writeln(prr, '        .globl  psystem_llvm_mod.', modnam^);
+     writeln(prr, 'psystem_llvm_mod.', modnam^, ':');
+     writeln(prr, '        .quad   ', modnam^);
+     writeln(prr, '        .text')
+   end
+end;
+
 { AMD64 DWARF register number for frame base (rbp = 6) }
 override function dwarf_fbreg: integer;
 begin dwarf_fbreg := 6 end;

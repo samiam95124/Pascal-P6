@@ -52,7 +52,7 @@ shared; their wrappers are called with the plain Pascal signature.
     pgen.ins          module path for the build
     psystem_llvm.c    the runtime pieces the amd64 target keeps in assembly
                       (main.asm, psystem.asm), in C: main, the exception
-                      frames, non-local goto, the module chain
+                      frames, non-local goto
 
 `psystem_llvm.c` builds to `libs/llvm/main.o` (Makefile `$(LIBS)/llvm/main.o`,
 part of `all`). The generator builds to `bin/pgen_llvm` (`bin/build`).
@@ -123,7 +123,9 @@ LLVM reload every global after it.
 **Module chain.** An object cannot fall through into the next one. Each module
 registers its entry in the `psystem_llvm_mods` section; the linker
 concatenates the entries in link order, which is the initialization order pc
-established, and `psystem_llvm_nextmod` walks them. Module initializer strips
+established, and `psystem_llvm_nextmod` walks them. The walker is
+`source/pgen/psystem_mods.c`, in `psystem.a`: the amd64 target chains its
+modules the same way on linux. Module initializer strips
 (`cal` between routines) are spliced into their owning routine with a local
 return dispatch.
 

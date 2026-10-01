@@ -23,12 +23,13 @@ runtime contract in `psystem_llvm.c`:
 | Structured function result | caller pushes result space on the stack; callee addresses it at positive rbp offsets | caller allocates the result and leaves its address at offset `sfoslot` of the frame r10 names; callee fetches it from there and keeps it at frame offset `sfrslot` |
 | Exceptions | three words pushed on the stack plus the globals `psystem_expadr`, `psystem_expstk`, `psystem_expmrk`; a throw reloads rsp and rbp and jumps | chain of C frames, `bge` registers one and `_setjmp`s, `thw` longjmps to the innermost, `mse` rethrows to the enclosing |
 | Non-local goto | load rbp from the display entry, reload rsp from the mark, jump | table of (label, jmp_buf) in the target frame; `psystem_llvm_ipj` finds it through the display entry |
-| Module chain | each object falls through the end of its text into the next; `main.asm` calls the first | each object registers its entry in the `psystem_llvm_mods` section; `psystem_llvm_nextmod` walks the section in link order |
+| Module chain | linux: as the LLVM target, through the section (windows: each object still falls through the end of its text into the next, `main.asm` runs into the first) | each object registers its entry in the `psystem_llvm_mods` section; `psystem_llvm_nextmod` (psystem_mods.c, in psystem.a) walks the section in link order |
 
 The first two rows are as of #650, which moved the LLVM target off the
 process globals `psystem_llvm_sl` and `psystem_llvm_sfr` onto rules 2 and 3
-below, and of work item 3, which moved the AMD64 generator onto rule 2. The
-static link row no longer differs; the rest still do.
+below, and of work items 1 and 3, which moved the AMD64 generator onto
+rules 6 and 2 on linux. The static link and module chain rows no longer
+differ there; the rest still do.
 
 Any one of these is enough to forbid mixing, which is why pc records the
 generator of every object (`llvmobj`), rebuilds across generators, and keeps a
@@ -118,10 +119,14 @@ arm64 generators inherit.
 Each step is converted in the AMD64 generator and regressed on its own in
 pgen mode before the next. Interoperation is testable only once all agree.
 
-1. **Module chain and main.** Emit the section entry and the `nextmod` call;
-   splice the initializer strips; drop `main.asm` and build the C main for
-   both targets. This step alone removes the duplicated startup code and the
-   `psystem_thw`/`psystem_unwind` symbol collision class.
+1. **Module chain and main.** Done on linux: the AMD64 generator emits the
+   section entry, and the module end label calls `psystem_llvm_nextmod`
+   (now `psystem_mods.c` in `psystem.a`, shared) and returns instead of
+   falling through; `main.asm` calls `nextmod` instead of running into the
+   first object. Windows keeps the fall through until a PE equivalent of
+   the section bounds is chosen (`$`-sorted sections are the usual one).
+   `main.asm` itself stays: it holds the master exception handler, which
+   goes with item 2, and the C main becomes common then.
 
 2. **Exceptions.** Replace the pushes in `bge`/`ede`/`mse` with the shim
    calls and `_setjmp`; make the chain head thread-local in the shim; remove

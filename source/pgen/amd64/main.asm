@@ -2,8 +2,14 @@
 #
 # psystem main shim
 #
-# Provides the main entry point for the psystem module stack. Should be placed
-# before the start of all modules.
+# Provides the main entry point for the psystem module stack.
+#
+# On linux the modules are reached through the initialization chain of
+# psystem_mods.c (in psystem.a): each object places its entry in the
+# psystem_llvm_mods section, the linker collects them in link order, and
+# psystem_llvm_nextmod calls the first; each entry calls the next. On windows
+# the chain is the fall through: this object must be placed before all the
+# modules, and the label at its end runs into the first module's entry.
 #
 # The main module creates what is called a "master exception" level. Any 
 # exception as thrown will "unwind" by going to each exception level in turn,
@@ -30,7 +36,13 @@ main:
         movq    %rax,psystem_expadr(%rip)
         movq    %rsp,psystem_expstk(%rip)   # set frame parameters                                      
         movq    %rbp,psystem_expmrk(%rip) 
+.ifdef WINDOWS
         call     3f                          # execute next module in sequence
+.else
+        subq    $8,%rsp                      # align stack for the C call
+        call    psystem_llvm_nextmod         # execute the first module
+        addq    $8,%rsp
+.endif
         movq    psystem_errret(%rip),%rax    # get program error return code
         ret                                  # exit to operating system
 #
@@ -60,7 +72,7 @@ main_fault:
 modnam:
     .string "<unknown>"
 #
-# Execute next module in sequence
+# Execute next module in sequence (windows: the first module follows)
 #
 3:
         
