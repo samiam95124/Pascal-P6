@@ -15,11 +15,10 @@
 *   - Non-local goto. A routine that is the target of one carries a table of  *
 *     (label number, jmp_buf) in its frame; the goto finds the entry through  *
 *     the target frame and longjmps to it.                                    *
-*   - The module initialization chain. The generated module entries call the *
-*     next module in link order here instead of falling through into the next *
-*     object. Each object places its entry in the psystem_llvm_mods section,   *
-*     so the linker collects the chain in link order, no table is generated.  *
-*   - main.                                                                    *
+*   - main. The module initialization chain it starts (psystem_mods.c, in    *
+*     psystem.a) is shared with the AMD64 target: each object places its      *
+*     entry in the psystem_llvm_mods section, the linker collects the chain   *
+*     in link order, and psystem_llvm_nextmod walks it.                        *
 *                                                                              *
 *******************************************************************************/
 
@@ -59,14 +58,8 @@ unsigned char ExceptionBase[EXCEPTIONTOP+2] = {0};
 
 extern long psystem_errret;
 extern void psystem_errorv(const char* modnam, long line, long en);
-/* the initialization chain: the linker concatenates the modules' entries
-   (section psystem_llvm_mods) in link order and provides the section bounds.
-   Weak, so a link without any entry (none in practice, the program is one)
-   resolves to an empty chain instead of failing. */
-extern void (*__start_psystem_llvm_mods[])(void) __attribute__((weak));
-extern void (*__stop_psystem_llvm_mods[])(void) __attribute__((weak));
-
-static int modidx = 0;
+/* the initialization chain walker: psystem_mods.c, in psystem.a */
+extern void psystem_llvm_nextmod(void);
 
 /* an exception reached the master frame: report and exit */
 static void master(long vec)
@@ -150,18 +143,6 @@ void psystem_llvm_ipj(unsigned char* frame, long key)
     }
     fprintf(stderr, "*** Non-local goto target not found\n");
     exit(1);
-}
-
-/* call the next module in the initialization chain */
-void psystem_llvm_nextmod(void)
-{
-    void (*f)(void);
-
-    if (&__start_psystem_llvm_mods[modidx] < __stop_psystem_llvm_mods) {
-        f = __start_psystem_llvm_mods[modidx];
-        modidx++;
-        f();
-    }
 }
 
 int main(int argc, char* argv[])
