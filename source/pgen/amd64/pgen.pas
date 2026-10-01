@@ -50,6 +50,8 @@ uses endian,      { endian mode }
 label 99;
 
 const shadowsize = 32; { Windows x64 caller allocated shadow space }
+      ipjslot = 8;     { frame offset of the non-local goto table pointer }
+      jmpbufsz = 208;  { bytes of a jmp_buf, rounded to 16 }
 
 { Code strip tracking. Initializer code strips sit outside any routine body,
   start at a code label and end with ret. They are entered by call from an
@@ -60,6 +62,71 @@ const shadowsize = 32; { Windows x64 caller allocated shadow space }
 var inbody: boolean; { between a routine's mst and its return }
     strip:  boolean; { in an initializer code strip }
     stkadr: integer; { stack address tracking, 0 is 16 byte aligned }
+
+{ Non-local goto. A label that is the target of a goto from a nested routine
+  is armed with a setjmp in the prologue of the routine that owns it: the
+  prologue keeps a table of (label key, jmp_buf) in the frame, its pointer
+  at ipjslot, and the goto finds the owner's activation through the display
+  and longjmps to the entry (psystem_llvm_ipj, shared with the LLVM target).
+  The nested routines precede their parent, so every goto into a routine has
+  been seen when its prologue is written; a target is pending from the goto
+  until the label is defined, and every routine of the target's level opened
+  meanwhile arms it (a routine that is not the owner arms an entry nothing
+  uses). The windows flavor keeps the frame pointer and stack mark reload. }
+type ipjptr = ^ipjety;
+     ipjety = record name: pstring; key, lvl: integer; next: ipjptr end;
+var ipjpend: ipjptr; { the goto targets pending definition }
+
+{ the number of a label modnam.N }
+function labelkey(s: pstring): integer;
+var i, v: integer;
+begin
+  v := 0; i := 1;
+  while i <= max(s^) do begin
+    if s^[i] = '.' then v := 0
+    else if s^[i] in ['0'..'9'] then v := v*10+ord(s^[i])-ord('0');
+    i := i+1
+  end;
+  labelkey := v
+end;
+
+{ note a goto target: the label, owned by the routine at level p }
+procedure noteipj(sp: pstring; p: integer);
+var ip: ipjptr; f: boolean;
+begin
+  f := false; ip := ipjpend;
+  while ip <> nil do begin
+    if compcp(ip^.name^, sp^) then f := true;
+    ip := ip^.next
+  end;
+  if not f then begin
+    new(ip); ip^.name := sp; ip^.key := labelkey(sp); ip^.lvl := p;
+    ip^.next := ipjpend; ipjpend := ip
+  end
+end;
+
+{ a label defined: it is no longer pending }
+procedure claimipj(view s: string);
+var ip, lp, np: ipjptr;
+begin
+  ip := ipjpend; lp := nil;
+  while ip <> nil do begin
+    np := ip^.next;
+    if compcp(ip^.name^, s) then begin
+      if lp = nil then ipjpend := np else lp^.next := np
+    end else lp := ip;
+    ip := np
+  end
+end;
+
+{ the pending targets of the routines at level l }
+function ipjcount(l: integer): integer;
+var ip: ipjptr; n: integer;
+begin
+  n := 0; ip := ipjpend;
+  while ip <> nil do begin if ip^.lvl = l then n := n+1; ip := ip^.next end;
+  ipjcount := n
+end;
 
 override procedure abort;
 
@@ -148,7 +215,8 @@ begin
   write(prr, labeltab[x].ref^);
   if pc then writeln(prr, ':')
   else writeln(prr, ' = ', labeltab[x].val:1);
-  if pc and not inbody then strip := true
+  if pc and not inbody then strip := true;
+  if pc then claimipj(labeltab[x].ref^)
 end;
 
 override procedure preamble;
@@ -256,6 +324,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       ep, ep2, ep3, ep4, ep5: expptr;
       r1: reg; sp, sp2: pstring; def, def2: boolean; val, val2: integer;
       blk: pblock; { block reference }
+      ipjn, ipjt, ipjs: integer; ip: ipjptr; { non-local goto table }
 
   procedure getreg(var r: reg; var rf: regset);
   var i: 1..maxintreg;
@@ -3382,9 +3451,33 @@ begin { assemble }
       wrtins(' pushq $0 # push 0 word for locals');
       wrtins(' jmp 1b # loop', 7);
       wrtins('2:', lclspc^);
-      wrtins(' movq %rsp,^0(%rbp) # set bottom of stack', marksb);
+      if windows then
+        wrtins(' movq %rsp,^0(%rbp) # set bottom of stack', marksb);
       { note there is no way to know locals space in advance }
       wrtins(' andq $0xfffffffffffffff0,%rsp # align stack');
+      { the non-local goto table and jump buffers, below the aligned frame
+        and above the saved registers, so that the epilogue's pops find
+        them where they are; armed after the pushes, where the stack is as
+        the body leaves it at a label }
+      ipjn := 0;
+      if not windows then ipjn := ipjcount(p+1);
+      if ipjn > 0 then begin
+        ipjt := ((8+16*ipjn+15) div 16)*16; { table bytes, rounded }
+        ipjs := ipjt+jmpbufsz*ipjn;
+        wrtins(' subq $0,%rsp # non-local goto table and jump buffers', ipjs);
+        wrtins(' movq %rsp,^0(%rbp) # non-local goto table pointer', ipjslot);
+        wrtins(' movq $0,(%rsp) # table entries', ipjn);
+        i := 0; ip := ipjpend;
+        while ip <> nil do begin
+          if ip^.lvl = p+1 then begin
+            wrtins(' movq $0,^1(%rsp) # label key', ip^.key, 8+16*i);
+            wrtins(' leaq ^0(%rsp),%rax # its jump buffer', ipjt+jmpbufsz*i);
+            wrtins(' movq %rax,^0(%rsp)', 16+16*i);
+            i := i+1
+          end;
+          ip := ip^.next
+        end
+      end;
       if windows then begin
         { save protected registers and keep aligned. The Windows convention
           adds rsi and rdi to the callee saved set. }
@@ -3404,6 +3497,20 @@ begin { assemble }
         wrtins(' pushq %r14');
         wrtins(' pushq %r15');
         wrtins(' pushq %r15 # second push aligns')
+      end;
+      if ipjn > 0 then begin
+        i := 0; ip := ipjpend;
+        while ip <> nil do begin
+          if ip^.lvl = p+1 then begin
+            wrtins(' movq ^0(%rbp),%rax # non-local goto table', ipjslot);
+            wrtins(' leaq ^0(%rax),%rdi # jump buffer', ipjt+jmpbufsz*i);
+            wrtins(' call _setjmp # arm the non-local goto target');
+            wrtins(' testl %eax,%eax # entered by the goto');
+            wrtins(' jnz @s # to its label', ip^.name^);
+            i := i+1
+          end;
+          ip := ip^.next
+        end
       end;
       tmpoff := -(p+1)*ptrsize;
       tmpspc := 0; { clear temps }
@@ -3606,10 +3713,21 @@ begin { assemble }
     {ipj}
     112: begin getlvl(p); labelsearch(def, val, sp, blk);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
-      wrtins(' movq ^0(%rbp),%rbp # get frame pointer for target', -p*ptrsize);
-      wrtins(' movq ^0(%rbp),%rsp # get stack for target', marksb);
-      wrtins(' andq $0xfffffffffffffff0,%rsp # align stack');
-      wrtins(' jmp @s # goto jump target', sp^);
+      if windows then begin
+        wrtins(' movq ^0(%rbp),%rbp # get frame pointer for target', -p*ptrsize);
+        wrtins(' movq ^0(%rbp),%rsp # get stack for target', marksb);
+        wrtins(' andq $0xfffffffffffffff0,%rsp # align stack');
+        wrtins(' jmp @s # goto jump target', sp^)
+      end else begin
+        { the frame of the routine that owns the label, through the display,
+          and the label's key: the runtime longjmps to the entry its table
+          holds for it }
+        noteipj(sp, p);
+        frereg := allreg;
+        wrtins(' movq ^0(%rbp),%rdi # frame of the routine owning the label', -p*ptrsize);
+        wrtins(' movq $0,%rsi # label key', labelkey(sp));
+        wrtcps(' call psystem_llvm_ipj # non-local goto')
+      end;
       botstk 
     end;
 
@@ -4071,7 +4189,7 @@ begin (* main *)
 
   proginit; { perform independent init }
 
-  inbody := false; strip := false;
+  inbody := false; strip := false; ipjpend := nil;
 
   convreq := true; { require a calling convention selection (SYS V/Windows) }
 
