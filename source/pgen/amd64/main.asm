@@ -2,14 +2,13 @@
 #
 # psystem main shim
 #
-# Provides the main entry point for the psystem module stack.
-#
-# On linux the modules are reached through the initialization chain of
-# psystem_mods.c (in psystem.a): each object places its entry in the
-# psystem_llvm_mods section, the linker collects them in link order, and
-# psystem_llvm_nextmod calls the first; each entry calls the next. On windows
-# the chain is the fall through: this object must be placed before all the
-# modules, and the label at its end runs into the first module's entry.
+# Provides the main entry point for the psystem module stack on windows. The
+# linux entry is the C main (source/pgen/main.c), which starts the module
+# chain of psystem_mods.c and holds the master exception frame of the
+# exception shim (psystem_exc.c); this file keeps the older mechanisms for
+# windows: the chain is the fall through, so this object must be placed
+# before all the modules and the label at its end runs into the first
+# module's entry, and the master exception handler is the one below.
 #
 # The main module creates what is called a "master exception" level. Any 
 # exception as thrown will "unwind" by going to each exception level in turn,

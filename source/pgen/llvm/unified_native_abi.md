@@ -15,21 +15,23 @@ from the other and its arguments arrive correctly.
 What forbids mixing is five protocols that live outside the call signature.
 The AMD64 generator implements each by manipulating rbp and rsp directly.
 LLVM code cannot do that, so the LLVM target replaced each with a small
-runtime contract in `psystem_llvm.c`:
+runtime contract in the C shim (`source/pgen/psystem_exc.c`,
+`psystem_goto.c`, `psystem_mods.c`, `main.c`, shared by both targets on
+linux):
 
 | Protocol | AMD64 generator | LLVM target |
 |---|---|---|
 | Static link and display | caller passes its frame base in r10; the prologue copies entries 1..level-1 from it and pushes its own base as entry level (was: `enterq` out of the dynamic caller's rbp frame) | caller passes its frame base in r10 (the `nest` parameter); the callee's prologue copies entries 1..level-1 from it and stores its own base as entry level |
 | Structured function result | caller pushes result space on the stack; callee addresses it at positive rbp offsets | caller allocates the result and leaves its address at offset `sfoslot` of the frame r10 names; callee fetches it from there and keeps it at frame offset `sfrslot` |
-| Exceptions | three words pushed on the stack plus the globals `psystem_expadr`, `psystem_expstk`, `psystem_expmrk`; a throw reloads rsp and rbp and jumps | chain of C frames, `bge` registers one and `_setjmp`s, `thw` longjmps to the innermost, `mse` rethrows to the enclosing |
+| Exceptions | linux: as the LLVM target (windows: three words pushed on the stack plus the globals `psystem_expadr`, `psystem_expstk`, `psystem_expmrk`; a throw reloads rsp and rbp and jumps) | a frame of 80 bytes reserved at `bge`, linked as the innermost of the thread by the shim and set with `psystem_setjmp`; `thw` longjmps to the innermost, `mse` rethrows to the enclosing; the innermost pointer is thread-local |
 | Non-local goto | linux: as the LLVM target (windows: load rbp from the display entry, reload rsp from the mark, jump) | table of (label, jmp_buf) in the target frame, pointer at frame offset 8; `psystem_llvm_ipj` (psystem_goto.c, in psystem.a) finds it through the display entry |
 | Module chain | linux: as the LLVM target, through the section (windows: each object still falls through the end of its text into the next, `main.asm` runs into the first) | each object registers its entry in the `psystem_llvm_mods` section; `psystem_llvm_nextmod` (psystem_mods.c, in psystem.a) walks the section in link order |
 
 The first two rows are as of #650, which moved the LLVM target off the
 process globals `psystem_llvm_sl` and `psystem_llvm_sfr` onto rules 2 and 3
-below, and of work items 1, 3 and 5, which moved the AMD64 generator onto
-rules 6, 2 and 5 on linux. The static link, module chain and non-local goto
-rows no longer differ there; exceptions and the structured result still do.
+below, and of work items 1, 2, 3 and 5, which moved the AMD64 generator
+onto rules 6, 4, 2 and 5 on linux. Only the structured result row still
+differs there; windows is on the older mechanisms throughout.
 
 Any one of these is enough to forbid mixing, which is why pc records the
 generator of every object (`llvmobj`), rebuilds across generators, and keeps a
@@ -125,14 +127,25 @@ pgen mode before the next. Interoperation is testable only once all agree.
    falling through; `main.asm` calls `nextmod` instead of running into the
    first object. Windows keeps the fall through until a PE equivalent of
    the section bounds is chosen (`$`-sorted sections are the usual one).
-   `main.asm` itself stays: it holds the master exception handler, which
-   goes with item 2, and the C main becomes common then.
+   `main.asm` now serves windows only; `main.c` is the linux entry of
+   both targets (item 2).
 
-2. **Exceptions.** Replace the pushes in `bge`/`ede`/`mse` with the shim
-   calls and `_setjmp`; make the chain head thread-local in the shim; remove
-   the throw and unwind routines from `psystem.asm`. `psystem_caseerror` stays
-   in assembly (the case table jump needs its fixed length) and is not
-   duplicated anywhere. `ExceptionBase` is defined once, in the shim.
+2. **Exceptions.** Done on linux. `bge` reserves the 80 byte frame on the
+   stack, calls `psystem_bge` to link it and `psystem_setjmp` to arm it;
+   `ede` calls `psystem_ede`; `mse` calls `psystem_mse`, which rethrows to
+   the enclosing frame (the AMD64 sequence used to report an unhandled
+   exception there); `sev` reads `psystem_curvec`. The innermost pointer,
+   and the module and line of the last system error, are `_Thread_local` in
+   `psystem_exc.c`, so each thread has its own chain. The jump buffer is the
+   shim's own, `psystem_setjmp`/`psystem_longjmp` in `psystem.asm`, eight
+   words, used by the exception frames and the non-local goto targets of
+   both generators; no C library jump buffer or unwinder is involved. The
+   non-local goto drops the frames of the activations it leaves
+   (`psystem_popto`). `main.c` holds the master frame for both targets;
+   `main.asm` and the throw and unwind of `psystem.asm` serve windows only.
+   `psystem_caseerror` stays in assembly (the case table jump needs its
+   fixed length), passing the error number now. `ExceptionBase` is defined
+   once, in the shim.
 
 3. **Static link in r10.** Done on both sides. AMD64: `movq %rbp,%r10`
    before each direct and vectored call, the procedure value's frame into
