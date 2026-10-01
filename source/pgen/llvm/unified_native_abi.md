@@ -22,16 +22,18 @@ linux):
 | Protocol | AMD64 generator | LLVM target |
 |---|---|---|
 | Static link and display | caller passes its frame base in r10; the prologue copies entries 1..level-1 from it and pushes its own base as entry level (was: `enterq` out of the dynamic caller's rbp frame) | caller passes its frame base in r10 (the `nest` parameter); the callee's prologue copies entries 1..level-1 from it and stores its own base as entry level |
-| Structured function result | caller pushes result space on the stack; callee addresses it at positive rbp offsets | caller allocates the result and leaves its address at offset `sfoslot` of the frame r10 names; callee fetches it from there and keeps it at frame offset `sfrslot` |
+| Structured function result | linux: as the LLVM target, the area still on the caller's stack (windows: pushed on the stack, addressed at positive rbp offsets) | caller allocates the result and leaves its address at offset `sfoslot` (16) of the frame r10 names; callee fetches it from there and addresses the result through it |
 | Exceptions | linux: as the LLVM target (windows: three words pushed on the stack plus the globals `psystem_expadr`, `psystem_expstk`, `psystem_expmrk`; a throw reloads rsp and rbp and jumps) | a frame of 80 bytes reserved at `bge`, linked as the innermost of the thread by the shim and set with `psystem_setjmp`; `thw` longjmps to the innermost, `mse` rethrows to the enclosing; the innermost pointer is thread-local |
 | Non-local goto | linux: as the LLVM target (windows: load rbp from the display entry, reload rsp from the mark, jump) | table of (label, jmp_buf) in the target frame, pointer at frame offset 8; `psystem_llvm_ipj` (psystem_goto.c, in psystem.a) finds it through the display entry |
 | Module chain | linux: as the LLVM target, through the section (windows: each object still falls through the end of its text into the next, `main.asm` runs into the first) | each object registers its entry in the `psystem_llvm_mods` section; `psystem_llvm_nextmod` (psystem_mods.c, in psystem.a) walks the section in link order |
 
 The first two rows are as of #650, which moved the LLVM target off the
 process globals `psystem_llvm_sl` and `psystem_llvm_sfr` onto rules 2 and 3
-below, and of work items 1, 2, 3 and 5, which moved the AMD64 generator
-onto rules 6, 4, 2 and 5 on linux. Only the structured result row still
-differs there; windows is on the older mechanisms throughout.
+below, and of work items 1 to 5, which moved the AMD64 generator onto the
+same contracts on linux. No row differs there any more: objects from the
+two generators link and call each other (strings_test built by one against
+strings.o built by the other passes both ways). Windows is on the older
+mechanisms throughout.
 
 Any one of these is enough to forbid mixing, which is why pc records the
 generator of every object (`llvmobj`), rebuilds across generators, and keeps a
@@ -156,11 +158,15 @@ pgen mode before the next. Interoperation is testable only once all agree.
    base passed in it at every call. `pacall` loads r10, and still rbp for
    objects from before this step; that goes when none is linked any more.
 
-4. **Result pointer in the caller's frame.** Both generators store the
-   result address to the header slot before the call and read it through
-   r10 in the prologue (LLVM: done, #650). The AMD64 generator may keep
-   allocating the result area on the stack; only how its address reaches the
-   callee changes.
+4. **Result pointer in the caller's frame.** Done on linux. The AMD64
+   caller keeps allocating the area on its stack (`sfr`), and just before
+   the call stores its address (`leaq ps(%rsp)`, ps the overflow parameter
+   bytes above it) at offset 16 of the frame r10 names; the callee's
+   prologue copies `16(%r10)` to its private slot at offset 24 and every
+   access at or past `ovfbase` plus its overflow bytes goes through that
+   pointer. Every routine above level 1 copies the slot, since the deck does
+   not say which functions return a structure; an unused copy is one load
+   and one store. The LLVM side (#650) was already in this form.
 
 5. **Non-local goto.** Done on linux. AMD64: the prologue of a routine that
    owns a target keeps the table and the jump buffers between the aligned
