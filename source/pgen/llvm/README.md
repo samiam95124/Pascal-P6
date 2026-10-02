@@ -18,10 +18,14 @@ calling convention, and optimization.
     testprog --llvm <program>   one test program
 
 `-llvm` is the executable (pgen) mode with the LLVM code generator and clang
-in place of pgen and gcc. The instruction file (`bin/pc.ins`) selects them
-under the `llvm` tag:
+in place of pgen and gcc. It is the default: the instruction file
+(`bin/pc.ins`) selects it with the `llvm` instruction, and `-pgen` on the
+command line selects the native generator instead. The tools for the mode
+are set under the `llvm` tag:
 
-    llvm begin
+    llvm
+    ...
+    begin llvm
        cc "clang"
        codegen "pgen_llvm"
        modulepath "../libs/llvm"

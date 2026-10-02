@@ -180,6 +180,7 @@ var
 { compile for package mode }               fpack, spack:   boolean;
 { compile for pgen mode (executable) }     fpgen, spgen:   boolean;
 { pgen mode through the LLVM IR target }   fllvm, sllvm:   boolean;
+{ an output mode came from the command line } smode:          boolean;
 { these are "pass through" options, options meant for programs we execute }
 { generate coff symbols }                  fsymcof: boolean;
 { passthrough options: these have "set/not set indicators }
@@ -466,6 +467,9 @@ begin
                           fpack := false; fpgen := true; fllvm := false end;
       if sllvm then begin fpint := false; fpmach := false; fcmach := false; 
                           fpack := false; fpgen := true; fllvm := true end;
+      { the command line outranks the instruction files: an llvm or nllvm
+        instruction there applies only when no mode came from here }
+      if spint or spmach or scmach or spack or spgen or sllvm then smode := true;
       spint := false; spmach := false; scmach := false; spack := false; 
       spgen := false; sllvm := false;
       { keep terminal window for graphical window application }
@@ -3059,7 +3063,18 @@ exeext <extension>
 Sets the executable file extension (default none). The windows targets set
 exe here.
 
-<tag> begin
+llvm
+nllvm
+
+Selects, or deselects, the LLVM IR target as the executable mode: the LLVM
+code generator and clang in place of pgen and gcc, as the -llvm option does.
+A mode given on the command line (-pint, -pgen, -llvm, ...) outranks this,
+so the instruction sets the default. llvm must precede any "begin llvm"
+block it is to enable, since blocks are evaluated as the file is read; nllvm
+also restores the default tools (gcc, pgen) that such a block replaced, so
+it belongs before any target block that sets its own.
+
+begin <tag>
 ...
 end
 
@@ -3067,8 +3082,8 @@ Conditional block: the instructions between begin and end apply only if the
 given tag is set. The tags are the hosts (linux, bsd, windows, mac), the
 calling conventions (amd64_sysv, win64, arm64_sysv), matching the host this
 pc runs on (or the host override flag) and the calling convention in force,
-and llvm, set when the LLVM IR code generator is selected (-llvm). Blocks
-nest.
+and llvm, set when the LLVM IR code generator is selected (-llvm, or the
+llvm instruction). Blocks nest.
 
 *******************************************************************************}
 
@@ -3189,14 +3204,13 @@ begin
 end;
 
 { skip an inactive conditional block, tracking nested blocks. Enters with the
-  position after the block header's "begin"; consumes lines through the
-  matching "end" line. }
+  position after the block header's tag; consumes lines through the matching
+  "end" line. }
 
 procedure skipblk;
 
 var lvl: integer; { block nesting level }
-    w:   filnam;  { word holders }
-    w2:  filnam;
+    w:   filnam;  { word holder }
     err: boolean; { parsing error }
 
 begin
@@ -3214,19 +3228,7 @@ begin
          if not err then begin
 
             if compp(w, 'end') then lvl := lvl-1
-            else begin
-
-               { a nested conditional block header is "<tag> begin" }
-               lskpspc(inshan);
-               if not parse.endlin(inshan) then begin
-
-                  parse.parlab(inshan, w2, err);
-                  if not err then
-                     if compp(w2, 'begin') then lvl := lvl+1
-
-               end
-
-            end
+            else if compp(w, 'begin') then lvl := lvl+1 { a nested block }
 
          end
 
@@ -3406,15 +3408,39 @@ begin
             if condlvl > 0 then condlvl := condlvl-1
             else inserr('"end" without conditional block')
 
-         end else if tagcon(cmd, tagact) then begin
+         end else if compp(cmd, 'begin') then begin
 
-            { conditional block header: <tag> begin }
+            { conditional block header: begin <tag> }
             lskpspc(inshan); { skip spaces }
-            parse.parlab(inshan, fn, err); { get keyword }
-            if err then inserr('"begin" expected');
-            if not compp(fn, 'begin') then inserr('"begin" expected');
+            parse.parlab(inshan, fn, err); { get the tag }
+            if err then inserr('Tag expected');
+            if not tagcon(fn, tagact) then inserr('No such tag');
             if tagact then condlvl := condlvl+1 { active: process contents }
             else skipblk { inactive: skip to matching end }
+
+         end else if compp(cmd, 'llvm') then begin
+
+            { the LLVM IR target as the executable mode, unless the command
+              line chose a mode. The target translates the amd64_sysv
+              intermediate, so it implies that convention, as on the command
+              line; a block that follows in the file sees the flag set. }
+            if not smode then begin
+               if fwindows or farm64sysv then
+                  inserr('The llvm target requires the amd64_sysv calling convention');
+               fpint := false; fpmach := false; fcmach := false; fpack := false;
+               fpgen := true; fllvm := true;
+               famd64sysv := true; samd64sysv := true
+            end
+
+         end else if compp(cmd, 'nllvm') then begin
+
+            { back to the native code generator, unless the command line
+              chose a mode: the flag, and the tools an llvm block may have
+              set }
+            if not smode then begin
+               fllvm := false;
+               copy(ccname, 'gcc'); copy(cgname, 'pgen')
+            end
 
          end else inserr('No such instruction');
          parse.skpspc(inshan); { skip trailing spaces }
@@ -3530,6 +3556,7 @@ begin
    fpgen := true; { set executable mode by default }
    spgen := false;
    fllvm := false; { set no LLVM IR target }
+   smode := false; { no output mode from the command line yet }
    sllvm := false;
    { passthrough }
    fprtlabdef := false;  

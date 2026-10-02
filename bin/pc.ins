@@ -5,6 +5,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !
+! The default executable mode: the LLVM IR target, the LLVM code generator
+! with clang as assembler and linker. A mode on the command line (-pgen for
+! the native code generator, -pint, ...) outranks this. It precedes the
+! "begin llvm" block below, which it enables.
+llvm
+
+!
 ! Cross compilation targets. Each target selects its toolchain and places the
 ! prebuilt target libraries (from the hosts tree) ahead of the main library on
 ! the module path: module headers (.pas) are found across all paths, but the
@@ -14,8 +21,8 @@
 !
 
 ! Windows x64 target (runs on Windows or under Wine)
-windows begin
-   win64 begin
+begin windows
+   begin win64
       cc "x86_64-w64-mingw32-gcc"
       exeext "exe"
       modulepath "../hosts/windows/x86/bit64/libs"
@@ -24,8 +31,8 @@ windows begin
 end
 
 ! arm64 linux target (runs on arm64 linux or under qemu-aarch64)
-linux begin
-   arm64_sysv begin
+begin linux
+   begin arm64_sysv
       cc "aarch64-linux-gnu-gcc"
       codegen "pgen_arm64"
       modulepath "../hosts/linux/arm/bit64/libs"
@@ -35,10 +42,9 @@ end
 
 ! LLVM IR target: the LLVM code generator with clang as assembler and linker.
 ! Native (the generated code runs on the build host), so it needs no toolchain
-! beyond clang. Its runtime entry (main.o, the C replacement for the assembly
-! startup and exception shims) and the prebuilt library modules built through
-! it live in libs/llvm, ahead of the main library.
-llvm begin
+! beyond clang. Its runtime entry (main.o) and the prebuilt library modules
+! built through it live in libs/llvm, ahead of the main library.
+begin llvm
    cc "clang"
    codegen "pgen_llvm"
    modulepath "../libs/llvm"
