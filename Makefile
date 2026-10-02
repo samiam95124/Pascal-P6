@@ -215,6 +215,62 @@ win64: $(LIBS)/win64/psystem.a $(LIBS)/win64/main.o $(LIBS)/win64/services.a \
 
 arm64: $(LIBS)/arm64/psystem.a $(LIBS)/arm64/main.o $(LIBS)/arm64/services.a
 
+#
+# The runtimes of the LLVM target's cross machines: psystem and the program
+# entry, built with clang for each target and placed in the llvm directory of
+# the machine's hosts tree leaf, where pc's "begin llvm" machine blocks find
+# them (bin/pc.ins). The link is static against the target's cross glibc
+# (the libc6-dev-*-cross packages), so the products run under qemu-user
+# with nothing else installed. regress_qemu builds and runs the conformance
+# test on each.
+#
+# llvmrt(arch,bits,name,wordsize,cc): name is the triple, naming the build
+# directory and the report; cc is the clang command for the machine, as pc's
+# machine block gives it (bin/pc.ins), without -static.
+#
+# riscv32 has no Ubuntu cross toolchain: its cc names a prebuilt
+# riscv32-ilp32d glibc toolchain from toolchains.bootlin.com installed as
+# /opt/riscv32-linux-gnu (its relocate-sdk.sh run after the move), used by
+# clang through --gcc-toolchain and --sysroot under the toolchain's own
+# triple, so that clang finds its linker.
+#
+LLVMRT_SRC=$(SOURCE)/pgen/psystem.c $(SOURCE)/pgen/psystem_mods.c \
+	$(SOURCE)/pgen/psystem_goto.c $(SOURCE)/pgen/psystem_exc.c \
+	$(SOURCE)/pgen/psystem_jmp.c $(SOURCE)/pgen/main.c \
+	$(SOURCE)/pgen/psystem_exc.h
+RISCV32_TC=/opt/riscv32-linux-gnu
+RISCV32_CC=clang --target=riscv32-buildroot-linux-gnu \
+	--gcc-toolchain=$(RISCV32_TC) \
+	--sysroot=$(RISCV32_TC)/riscv32-buildroot-linux-gnu/sysroot
+define LLVMRT
+hosts/linux/$(1)/bit$(2)/libs/llvm/psystem.a: $(LLVMRT_SRC)
+	@echo
+	@echo "Building the LLVM runtime for $(3)..."
+	@echo
+	mkdir -p $(BUILD)/llvm/$(3) hosts/linux/$(1)/bit$(2)/libs/llvm
+	for f in psystem psystem_mods psystem_goto psystem_exc psystem_jmp main; do \
+		$(5) -O2 -g3 -DWRDSIZ$(4) -DLENDIAN -DPASCALINE \
+			-DNOPRDPRR -DNOHEADER -I$(SOURCE)/pgen \
+			-o $(BUILD)/llvm/$(3)/$$$$f.o -c $(SOURCE)/pgen/$$$$f.c || exit 1; \
+	done
+	rm -f hosts/linux/$(1)/bit$(2)/libs/llvm/psystem.a
+	ar rc hosts/linux/$(1)/bit$(2)/libs/llvm/psystem.a \
+		$(BUILD)/llvm/$(3)/psystem.o $(BUILD)/llvm/$(3)/psystem_mods.o \
+		$(BUILD)/llvm/$(3)/psystem_goto.o $(BUILD)/llvm/$(3)/psystem_exc.o \
+		$(BUILD)/llvm/$(3)/psystem_jmp.o
+	cp $(BUILD)/llvm/$(3)/main.o hosts/linux/$(1)/bit$(2)/libs/llvm
+endef
+$(eval $(call LLVMRT,arm,64,aarch64-linux-gnu,64,clang --target=aarch64-linux-gnu))
+$(eval $(call LLVMRT,riscv,64,riscv64-linux-gnu,64,clang --target=riscv64-linux-gnu))
+$(eval $(call LLVMRT,x86,32,i686-linux-gnu,32,clang --target=i686-linux-gnu))
+$(eval $(call LLVMRT,arm,32,arm-linux-gnueabihf,32,clang --target=arm-linux-gnueabihf))
+$(eval $(call LLVMRT,riscv,32,riscv32-linux-gnu,32,$(RISCV32_CC)))
+llvmrt: hosts/linux/arm/bit64/libs/llvm/psystem.a \
+	hosts/linux/riscv/bit64/libs/llvm/psystem.a \
+	hosts/linux/x86/bit32/libs/llvm/psystem.a \
+	hosts/linux/arm/bit32/libs/llvm/psystem.a \
+	hosts/linux/riscv/bit32/libs/llvm/psystem.a
+
 all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/llvm/main.o \
 	$(LIBS)/services.a \
@@ -241,6 +297,7 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	$(SOURCE)/pgen/psystem_mods.c \
 	$(SOURCE)/pgen/psystem_goto.c \
 	$(SOURCE)/pgen/psystem_exc.c $(SOURCE)/pgen/psystem_exc.h \
+	$(SOURCE)/pgen/psystem_jmp.c \
 	$(SOURCE)/pgen/amd64/psystem.asm \
 	$(AMILIBC)/stdio.c
 	@echo
@@ -256,6 +313,8 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 		-c $(SOURCE)/pgen/psystem_goto.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem_exc.o \
 		-c $(SOURCE)/pgen/psystem_exc.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem_jmp.o \
+		-c $(SOURCE)/pgen/psystem_jmp.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/psystem_asm.o \
 		-c -x assembler $(SOURCE)/pgen/amd64/psystem.asm
 	if [ -n "$(PSYSTEM_STDIO)" ]; then \
@@ -265,7 +324,7 @@ $(LIBS)/psystem.a: $(SOURCE)/pgen/psystem.c \
 	rm -f $(LIBS)/psystem.a
 	ar rc $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
 		$(BUILD)/pgen/psystem_mods.o $(BUILD)/pgen/psystem_goto.o \
-		$(BUILD)/pgen/psystem_exc.o \
+		$(BUILD)/pgen/psystem_exc.o $(BUILD)/pgen/psystem_jmp.o \
 		$(BUILD)/pgen/amd64/psystem_asm.o $(PSYSTEM_STDIO)
 endif
 
@@ -1176,7 +1235,8 @@ bin/spew: $(SOURCE)/spew.c
 # committing.
 #
 HOSTBINS=cmach cmacht cmachg dif genobj hashtabr hashtabs parser passym pc \
-	pcom pgen pgen_amd64 pgen_arm64 pgen_llvm pint pintt pintg pmach pmacht \
+	pcom pcom32 pgen pgen_amd64 pgen_arm64 pgen_llvm pgen_llvm32 pint pintt pintg \
+	pmach pmacht \
 	pmachg spew \
 	find_getpgm graphics_test management_test netprobe network_test \
 	services_test services_test1 sndprobe sound_test strings_test \

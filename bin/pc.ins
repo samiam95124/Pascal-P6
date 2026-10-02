@@ -41,12 +41,64 @@ begin linux
 end
 
 ! LLVM IR target: the LLVM code generator with clang as assembler and linker.
-! Native (the generated code runs on the build host), so it needs no toolchain
-! beyond clang. Its runtime entry (main.o) and the prebuilt library modules
-! built through it live in libs/llvm, ahead of the main library.
+! On the build host it needs no toolchain beyond clang. Its runtime entry
+! (main.o) and the prebuilt library modules built through it live in
+! libs/llvm, ahead of the main library.
+!
+! The cross machines (-arm -bit64, -riscv -bit64, ...) run the same code
+! generator, with clang targeting the machine and linking static against its
+! cross glibc; their runtimes (psystem.a, main.o, built by make llvmrt) live
+! in the llvm directory of the machine's hosts tree leaf, ahead of the host
+! runtime. The products run under qemu-user (regress_qemu).
+! The 32 bit machines (-bit32) use the 32 bit model: 4 byte integers
+! and pointers, so they compile with pcom32 and generate with pgen_llvm32,
+! the same sources built with the 32 bit machine parameter block
+! (source/mpb32). The code generator is named first so that the 32 bit
+! blocks can replace it.
+!
 begin llvm
-   cc "clang"
    codegen "pgen_llvm"
+   begin arm
+      begin bit64
+         cc "clang --target=aarch64-linux-gnu -static"
+         modulepath "../hosts/linux/arm/bit64/libs/llvm"
+         exclude "../hosts/linux/arm/bit64/libs/llvm"
+      end
+      begin bit32
+         cc "clang --target=arm-linux-gnueabihf -static"
+         compiler "pcom32"
+         codegen "pgen_llvm32"
+         modulepath "../hosts/linux/arm/bit32/libs/llvm"
+         exclude "../hosts/linux/arm/bit32/libs/llvm"
+      end
+   end
+   begin riscv
+      begin bit64
+         cc "clang --target=riscv64-linux-gnu -static"
+         modulepath "../hosts/linux/riscv/bit64/libs/llvm"
+         exclude "../hosts/linux/riscv/bit64/libs/llvm"
+      end
+      begin bit32
+         ! no Ubuntu cross toolchain: a prebuilt riscv32-ilp32d glibc
+         ! toolchain (toolchains.bootlin.com) installed as
+         ! /opt/riscv32-linux-gnu, see the makefile's llvmrt
+         cc "clang --target=riscv32-buildroot-linux-gnu --gcc-toolchain=/opt/riscv32-linux-gnu --sysroot=/opt/riscv32-linux-gnu/riscv32-buildroot-linux-gnu/sysroot -static"
+         compiler "pcom32"
+         codegen "pgen_llvm32"
+         modulepath "../hosts/linux/riscv/bit32/libs/llvm"
+         exclude "../hosts/linux/riscv/bit32/libs/llvm"
+      end
+   end
+   begin x86
+      cc "clang"
+      begin bit32
+         cc "clang --target=i686-linux-gnu -static"
+         compiler "pcom32"
+         codegen "pgen_llvm32"
+         modulepath "../hosts/linux/x86/bit32/libs/llvm"
+         exclude "../hosts/linux/x86/bit32/libs/llvm"
+      end
+   end
    modulepath "../libs/llvm"
    exclude "../libs/llvm"
 end

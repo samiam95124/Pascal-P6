@@ -15,10 +15,11 @@
 #include <stdlib.h>
 #include "psystem_exc.h"
 
-/* non-local goto to label key of the routine owning frame */
+/* non-local goto to label key of the routine owning frame; the table pointer
+   sits in the frame's second word (ipjslot), a word being a pointer wide */
 void psystem_llvm_ipj(unsigned char* frame, long key)
 {
-    long* t = *(long**)(frame+8);
+    long* t = *(long**)(frame+sizeof(void*));
     long n, k;
 
     if (t) {

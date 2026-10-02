@@ -52,8 +52,8 @@ label 99;
 const shadowsize = 32; { Windows x64 caller allocated shadow space }
       maxpar = 128;    { maximum parameters of a routine }
       ipjslot = 8;     { frame offset of the non-local goto table pointer }
-      jmpbufsz = 64;   { bytes of a psystem_setjmp buffer }
-      expfrmsz = 80;   { bytes of an exception frame: the buffer, the
+      jmpbufsz = 256;  { bytes of a psystem_setjmp buffer (psystem_exc.h) }
+      expfrmsz = 272;  { bytes of an exception frame: the buffer, the
                          enclosing frame, the vector (psystem_exc.h) }
       ovfbase = 40;    { frame offset of the first overflow parameter: past
                          the header and the return address }

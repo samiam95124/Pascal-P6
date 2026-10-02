@@ -11,12 +11,16 @@
 #ifndef PSYSTEM_EXC_H
 #define PSYSTEM_EXC_H
 
-/* A jump buffer as psystem_setjmp fills it: rbx, rbp, r12, r13, r14, r15,
-   rsp, return address. 64 bytes. */
-#define PSYSTEM_JMPWORDS 8
+/* A jump buffer as psystem_setjmp fills it (psystem_jmp.c): the callee
+   preserved registers, the stack pointer and the return address of the
+   target. 256 bytes on every target, whatever its word size (riscv with D
+   needs 208, its doubles sitting past the 14 integer registers at a fixed
+   112 on both widths), the size the generators reserve. */
+#define PSYSTEM_JMPBYTES 256
+#define PSYSTEM_JMPWORDS (PSYSTEM_JMPBYTES/sizeof(long))
 
 /* An exception frame: the jump buffer first, so that the frame's address is
-   the buffer's; then the enclosing frame and the vector thrown to it. 80
+   the buffer's; then the enclosing frame and the vector thrown to it. 272
    bytes, which the generators reserve (16 aligned) at bge. */
 typedef struct psystem_expframe {
     long jb[PSYSTEM_JMPWORDS];
@@ -24,7 +28,7 @@ typedef struct psystem_expframe {
     long vector;
 } psystem_expframe;
 
-/* the register save and restore (psystem.asm) */
+/* the register save and restore (psystem_jmp.c) */
 int  psystem_setjmp(void* jb) __attribute__((returns_twice));
 void psystem_longjmp(void* jb, long v) __attribute__((noreturn));
 
