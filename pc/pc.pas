@@ -256,6 +256,7 @@ slistfil:    boolean;
 { host identifier (psystem_host code) }    hostid:  integer;
 { C compiler/linker driver command }       ccname:  filnam;
 { code generator command }                 cgname:  filnam;
+{ compiler command }                       cpname:  filnam;
 { executable file extension }              exeext:  filnam;
 { windows executable stack reserve, bytes } stksiz:  integer;
 { stack reserve was set on the command line } sstksiz: boolean;
@@ -2006,7 +2007,7 @@ begin
       { build pcom x x command }
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
-      toolnam(w, 'pcom'); { form compiler command }
+      toolnam(w, cpname); { form compiler command }
       putstr(w);
       putchr(' ');
       putstr(fns);
@@ -3080,6 +3081,13 @@ codegen <command>
 Sets the code generator command (default pgen). A cross target that uses a
 different code generator binary sets it here.
 
+compiler <command>
+
+Sets the compiler command (default pcom). A target with another machine
+model sets it here: the 32 bit targets compile with pcom32, the compiler
+built with the 32 bit machine parameter block (4 byte integers and
+pointers), and generate with pgen_llvm32.
+
 exeext <extension>
 
 Sets the executable file extension (default none). The windows targets set
@@ -3400,6 +3408,13 @@ begin
             parfilstr(fn); { get command }
             copy(cgname, fn)
 
+         end else if compp(cmd, 'compiler') then begin
+
+            { set the compiler command }
+            lskpspc(inshan); { skip spaces }
+            parfilstr(fn); { get command }
+            copy(cpname, fn)
+
          end else if compp(cmd, 'exeext') then begin
 
             { set the executable file extension }
@@ -3469,7 +3484,7 @@ begin
               set }
             if not smode then begin
                fllvm := false;
-               copy(ccname, 'gcc'); copy(cgname, 'pgen')
+               copy(ccname, 'gcc'); copy(cgname, 'pgen'); copy(cpname, 'pcom')
             end
 
          end else inserr('No such instruction');
@@ -3662,6 +3677,7 @@ begin
    hostid := 0; { set host unknown }
    copy(ccname, 'gcc'); { set default C compiler/linker driver }
    copy(cgname, 'pgen'); { set default code generator }
+   copy(cpname, 'pcom'); { set default compiler }
    clears(exeext); { set no executable extension }
    stksiz := stacksizedef; { set default windows stack reserve }
    sstksiz := false; { stack reserve not set on command line }

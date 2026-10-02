@@ -19,9 +19,21 @@
 #   arm64     clang, gcc-aarch64-linux-gnu, libc6-dev-arm64-cross, qemu-aarch64
 #   riscv64   clang, gcc-riscv64-linux-gnu, libc6-dev-riscv64-cross,
 #             qemu-riscv64
-#   x86_32    not yet: the 32 bit model (mpb32 pcom, 32 bit pgen_llvm,
-#   arm32     WRDSIZ32 psystem) is not built
-#   riscv32   not yet: as above, and no riscv32 linux toolchain is packaged
+#   x86_32    clang, gcc-i686-linux-gnu, libc6-dev-i386-cross, qemu-i386
+#   arm32     clang, gcc-arm-linux-gnueabihf, libc6-dev-armhf-cross, qemu-arm
+#   riscv32   clang, qemu-riscv32, and a prebuilt riscv32-ilp32d glibc
+#             toolchain from toolchains.bootlin.com installed as
+#             /opt/riscv32-linux-gnu (Ubuntu packages none; see the
+#             makefile's llvmrt for the install)
+#
+# The 32 bit machines use the 32 bit model (4 byte integers and pointers):
+# pc's -bit32 blocks compile with pcom32 and generate with pgen_llvm32, the
+# compiler and LLVM generator built with the 32 bit machine parameter block
+# (bin/build makes them beside the 64 bit tools). The conformance test
+# prints maxint and the integer bit length, which differ by model; the golden
+# file holds the 64 bit model's, so those two lines are set aside in the
+# comparison for the 32 bit machines (they are checked for the 32 bit
+# values here instead).
 #
 # The cross runtimes come from "make llvmrt", into the llvm directory of each
 # machine's hosts tree leaf (hosts/linux/<arch>/bit<bits>/libs/llvm), where
@@ -89,7 +101,7 @@ machine_libc() {
         riscv64) echo "/usr/riscv64-linux-gnu/lib/libc.a" ;;
         x86_32)  echo "/usr/i686-linux-gnu/lib/libc.a" ;;
         arm32)   echo "/usr/arm-linux-gnueabihf/lib/libc.a" ;;
-        riscv32) echo "/usr/riscv32-linux-gnu/lib/libc.a" ;;
+        riscv32) echo "/opt/riscv32-linux-gnu/riscv32-buildroot-linux-gnu/sysroot/usr/lib/libc.a" ;;
     esac
 }
 
@@ -120,7 +132,7 @@ for m in $machines; do
     runtime=$(machine_runtime $m)
     libc=$(machine_libc $m)
     dir=$work/$m
-    rm -rf "$dir"; mkdir -p "$dir"
+    rm -rf "$dir"; mkdir -p "$dir"; : > "$dir/iso7185pat.dif"
 
     echo "===================== $m ====================="
     #
@@ -155,7 +167,23 @@ for m in $machines; do
     ( cd "$dir" && timeout 600 $qemu ./iso7185pat < iso7185pat.inp > iso7185pat.lst 2>&1 )
     strip "$dir/iso7185pat.lst" "$dir/tmp1"
     strip $test.cmp "$dir/tmp2"
-    dif -w "$dir/tmp1" "$dir/tmp2" > "$dir/iso7185pat.dif"
+    case "$opts" in
+        *-bit32*)
+            #
+            # the 32 bit model: check the model lines, then drop them from
+            # both sides
+            #
+            if ! grep -q "^Maxint: 2147483647\$" "$dir/tmp1" ||
+               ! grep -q "^Bit length of integer without sign bit appears to be: 31\$" "$dir/tmp1"
+            then
+                echo "*** 32 bit model: maxint or bit length wrong" > "$dir/iso7185pat.dif"
+                grep "^Maxint:\|^Bit length" "$dir/tmp1" >> "$dir/iso7185pat.dif"
+            fi
+            sed -i '/^Maxint: /d; /^Bit length of integer without sign bit/d' \
+                "$dir/tmp1" "$dir/tmp2"
+            ;;
+    esac
+    dif -w "$dir/tmp1" "$dir/tmp2" >> "$dir/iso7185pat.dif"
     difrc=$?
     rm -f "$dir/tmp1" "$dir/tmp2"
     if [ $difrc -gt 1 ]; then

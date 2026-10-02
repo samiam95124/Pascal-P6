@@ -147,19 +147,36 @@ offsets pcom assigned, each symbol an alias at its offset.
 
 ## Cross machines
 
-The IR carries no machine assumptions beyond the 64 bit model of the
-`amd64_sysv` deck, so the same generator serves other 64 bit machines: clang
-targets them, and the runtime is C. `pc -arm -bit64` and `pc -riscv -bit64`
-select them (`-x86 -bit64` is the host); the machine blocks of `bin/pc.ins`
-set `clang --target=...` with a static link against the machine's cross glibc
-(the `gcc-<triple>` and `libc6-dev-<arch>-cross` packages), and take the
+The IR carries no machine assumptions beyond the machine parameter block
+the generator was built with, so the same generator serves other machines:
+clang targets them, and the runtime is C. `pc -arm -bit64`, `pc -riscv
+-bit64`, `pc -x86 -bit32`, `pc -arm -bit32` and `pc -riscv -bit32` select
+them (`-x86 -bit64` is the host); the machine blocks of `bin/pc.ins` set
+`clang --target=...` with a static link against the machine's cross glibc
+(the `gcc-<triple>` and `libc6-dev-<arch>-cross` packages; riscv32 has
+none, so it uses a prebuilt riscv32-ilp32d glibc toolchain from
+toolchains.bootlin.com installed as `/opt/riscv32-linux-gnu`), and take the
 runtime from the llvm directory of the machine's hosts tree leaf, which
 `make llvmrt` builds. The register save and restore behind the exception
 frames and the non-local goto is `psystem_jmp.c`, one assembly body per
-machine. `regress_qemu` builds the ISO 7185 conformance test for every
-machine and runs it under `qemu-user`; it passes on x86-64, arm64 and
-riscv64. The 32 bit machines wait on the 32 bit model (`mpb32` pcom, a 32 bit
-generator, `WRDSIZ32` psystem), and riscv32 on a linux toolchain.
+machine.
+
+The model follows the machine's word: integers and pointers are 4 bytes on
+a 32 bit machine, reals 8 on both. The 32 bit machines compile with
+`pcom32` and generate with `pgen_llvm32`, the same sources built with the
+32 bit machine parameter block (`-mp=source/mpb32`; `bin/build` makes
+them), and link the `WRDSIZ32` runtime. In the generator the integer type is
+`i64` in every template and `os` substitutes `i32` in the 32 bit build; the
+frame pads are sized from the block (the result slot and the real saves are
+real wide, so the two pads differ there), and the mixed value overflow
+parameters of the 64 bit model (a real passed in an integer slot) do not
+arise, a real not fitting a word.
+
+`regress_qemu` builds the ISO 7185 conformance test for every machine and
+runs it under `qemu-user`; it passes on all six. The test prints maxint and
+the integer bit length, which the 32 bit machines report as 2147483647 and
+31 against the 64 bit golden file; the script checks those two lines for
+the 32 bit values and sets them aside in the comparison.
 
 ## Status
 

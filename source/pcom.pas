@@ -5257,7 +5257,7 @@ end;
                       dplmt := marksize+ptrsize+adrsize+parmspc7(pflist);
                       if fcp^.idtype <> nil then
                         if not (fcp^.idtype^.form in [records, arrays, power]) then
-                          dplmt := -((pflev+1)*ptrsize + 7*ptrsize)
+                          dplmt := -((pflev+1)*ptrsize + 6*ptrsize+realsize)
                     end else if windows then begin
                       { as amd64_sysv, but the overflow parameters sit above
                         the caller allocated 32 byte shadow space and the
@@ -8844,7 +8844,7 @@ end;
             (*reverse pointers and reserve local cells for copies of multiple
              values*)
             if amd64_sysv then
-              lc := -level*ptrsize - 13*ptrsize { reserve int+float+result reg save slots }
+              lc := -level*ptrsize - (6*ptrsize+7*realsize) { reserve int+float+result reg save slots }
             else if windows then
               lc := -level*ptrsize - 9*ptrsize { reserve int+float+result reg save slots }
             else if arm64_sysv then
@@ -8871,7 +8871,7 @@ end;
             fpar := lcp3
           end else begin fpar := nil;
             if amd64_sysv then
-              lc := -level*ptrsize - 13*ptrsize
+              lc := -level*ptrsize - (6*ptrsize+7*realsize)
             else if windows then
               lc := -level*ptrsize - 9*ptrsize
             else if arm64_sysv then
@@ -9023,6 +9023,10 @@ end;
         Function result slot: rbp - lev*8 - 7*8 (rax save)
         Float saves (up to 6): rbp - lev*8 - 7*8 - fpc*8
         Overflow params: ascending from marksize+ptrsize+adrsize = 40
+        In terms of the machine parameters (the 32 bit model has 4 byte
+        words and 8 byte reals): the result slot is a real wide, so the
+        float saves start at lev*ptrsize+6*ptrsize+realsize and are
+        realsize apart; the whole pad is 6*ptrsize+7*realsize.
         Float params are independent (separate xmm pad area). }
       p := plst; ipc := 0; fpc := 0;
       off := marksize+ptrsize+adrsize; { = 40, for stacked overflow params }
@@ -9034,7 +9038,7 @@ end;
             fpc := fpc+1; inreg := true;
             if p^.klass = vars then
               if not p^.isloc then
-                p^.vaddr := -(lev*ptrsize + 7*ptrsize + fpc*ptrsize)
+                p^.vaddr := -(lev*ptrsize + 6*ptrsize+realsize + fpc*realsize)
           end
         end else begin
           { determine number of register slots needed }
@@ -10550,7 +10554,7 @@ end;
                       { float parameter }
                       fpc := fpc+1;
                       if fpc <= 6 then
-                        llc1 := -(level*ptrsize + 7*ptrsize + fpc*ptrsize)
+                        llc1 := -(level*ptrsize + 6*ptrsize+realsize + fpc*realsize)
                       else begin
                         alignu(parmptr, amd64_sysvoff);
                         llc1 := amd64_sysvoff;

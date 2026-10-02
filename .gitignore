@@ -30,9 +30,11 @@ bin/pasfmt
 bin/passym
 bin/pc
 bin/pcom
+bin/pcom32
 bin/pgen
 bin/pgen_arm64
 bin/pgen_llvm
+bin/pgen_llvm32
 bin/pint
 bin/pintg
 bin/pintt
@@ -56,3 +58,5 @@ libs/llvm/
 # The OpenSSL link for pc, written for the host by configure and bin/build
 # (tools/openssllink.sh, #661)
 libs/openssl.link
+build/qemu/
+build/llvm/

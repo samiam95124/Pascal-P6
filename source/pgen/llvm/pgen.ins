@@ -2,10 +2,13 @@
 !
 ! Instruction file for pgen (LLVM IR target)
 !
-! The target specific modules (registers, mpb, endian) are found here, the
-! shared modules (independent) one level up, and the common library above
-! that.
+! The target specific modules (registers, endian) are found here, the shared
+! modules (independent) one level up, and the common library above that. The
+! machine parameter block comes from source/mpb64, the 64 bit model, unless
+! the command line names another first: the 32 bit model generator
+! (pgen_llvm32) is this same source built with -mp=source/mpb32, the
+! command line module path being searched before these.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-modulepath "..;../.."
+modulepath "..;../..;../../mpb64"

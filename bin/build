@@ -354,6 +354,43 @@ fi
 instprog "$bp/pgen" bin/pgen_llvm
 rm -rf "$bp"
 #
+# The 32 bit model tools: the compiler and the LLVM code generator built
+# with the 32 bit machine parameter block (source/mpb32: 4 byte integers
+# and pointers, 8 byte reals) in place of the 64 bit one. pc's -bit32
+# machine blocks (bin/pc.ins) run them for the 32 bit cross machines
+# (x86, arm and riscv under qemu, see regress_qemu). The command line
+# module path is searched first, so -mp puts the 32 bit block ahead of
+# the one the instruction files name.
+#
+echo ""
+echo "**********************************************************************"
+echo "Building source/pcom (32 bit model) as pcom32..."
+echo "**********************************************************************"
+echo ""
+bp="build/pcom32"
+rm -rf "$bp"; mkdir -p "$bp"
+pc source/pcom -mp=source/mpb32 -bp="$bp" -r $OPTIONS
+if [ $? -ne 0 ]; then
+   echo "*** Error: compile failed"
+   exit 1
+fi
+instprog "$bp/pcom" bin/pcom32
+rm -rf "$bp"
+echo ""
+echo "**********************************************************************"
+echo "Building source/pgen/llvm/pgen (32 bit model) as pgen_llvm32..."
+echo "**********************************************************************"
+echo ""
+bp="build/llvm/exe32"
+rm -rf "$bp"; mkdir -p "$bp"
+pc source/pgen/llvm/pgen -mp=source/mpb32 -bp="$bp" -r $OPTIONS
+if [ $? -ne 0 ]; then
+   echo "*** Error: compile failed"
+   exit 1
+fi
+instprog "$bp/pgen" bin/pgen_llvm32
+rm -rf "$bp"
+#
 # The prebuilt library modules for the LLVM target go to libs/llvm (pc's
 # llvm module path). Built here, after the generator they need exists.
 # They need clang; without it the LLVM target is not usable and the

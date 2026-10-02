@@ -13,8 +13,11 @@
 
 /* A jump buffer as psystem_setjmp fills it (psystem_jmp.c): the callee
    preserved registers, the stack pointer and the return address of the
-   target. 256 bytes, enough for every target (riscv64 with D needs 208). */
-#define PSYSTEM_JMPWORDS 32
+   target. 256 bytes on every target, whatever its word size (riscv with D
+   needs 208, its doubles sitting past the 14 integer registers at a fixed
+   112 on both widths), the size the generators reserve. */
+#define PSYSTEM_JMPBYTES 256
+#define PSYSTEM_JMPWORDS (PSYSTEM_JMPBYTES/sizeof(long))
 
 /* An exception frame: the jump buffer first, so that the frame's address is
    the buffer's; then the enclosing frame and the vector thrown to it. 272

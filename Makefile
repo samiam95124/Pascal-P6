@@ -224,12 +224,24 @@ arm64: $(LIBS)/arm64/psystem.a $(LIBS)/arm64/main.o $(LIBS)/arm64/services.a
 # with nothing else installed. regress_qemu builds and runs the conformance
 # test on each.
 #
-# llvmrt(arch,bits,triple,wordsize)
+# llvmrt(arch,bits,name,wordsize,cc): name is the triple, naming the build
+# directory and the report; cc is the clang command for the machine, as pc's
+# machine block gives it (bin/pc.ins), without -static.
+#
+# riscv32 has no Ubuntu cross toolchain: its cc names a prebuilt
+# riscv32-ilp32d glibc toolchain from toolchains.bootlin.com installed as
+# /opt/riscv32-linux-gnu (its relocate-sdk.sh run after the move), used by
+# clang through --gcc-toolchain and --sysroot under the toolchain's own
+# triple, so that clang finds its linker.
 #
 LLVMRT_SRC=$(SOURCE)/pgen/psystem.c $(SOURCE)/pgen/psystem_mods.c \
 	$(SOURCE)/pgen/psystem_goto.c $(SOURCE)/pgen/psystem_exc.c \
 	$(SOURCE)/pgen/psystem_jmp.c $(SOURCE)/pgen/main.c \
 	$(SOURCE)/pgen/psystem_exc.h
+RISCV32_TC=/opt/riscv32-linux-gnu
+RISCV32_CC=clang --target=riscv32-buildroot-linux-gnu \
+	--gcc-toolchain=$(RISCV32_TC) \
+	--sysroot=$(RISCV32_TC)/riscv32-buildroot-linux-gnu/sysroot
 define LLVMRT
 hosts/linux/$(1)/bit$(2)/libs/llvm/psystem.a: $(LLVMRT_SRC)
 	@echo
@@ -237,7 +249,7 @@ hosts/linux/$(1)/bit$(2)/libs/llvm/psystem.a: $(LLVMRT_SRC)
 	@echo
 	mkdir -p $(BUILD)/llvm/$(3) hosts/linux/$(1)/bit$(2)/libs/llvm
 	for f in psystem psystem_mods psystem_goto psystem_exc psystem_jmp main; do \
-		clang --target=$(3) -O2 -g3 -DWRDSIZ$(4) -DLENDIAN -DPASCALINE \
+		$(5) -O2 -g3 -DWRDSIZ$(4) -DLENDIAN -DPASCALINE \
 			-DNOPRDPRR -DNOHEADER -I$(SOURCE)/pgen \
 			-o $(BUILD)/llvm/$(3)/$$$$f.o -c $(SOURCE)/pgen/$$$$f.c || exit 1; \
 	done
@@ -248,10 +260,16 @@ hosts/linux/$(1)/bit$(2)/libs/llvm/psystem.a: $(LLVMRT_SRC)
 		$(BUILD)/llvm/$(3)/psystem_jmp.o
 	cp $(BUILD)/llvm/$(3)/main.o hosts/linux/$(1)/bit$(2)/libs/llvm
 endef
-$(eval $(call LLVMRT,arm,64,aarch64-linux-gnu,64))
-$(eval $(call LLVMRT,riscv,64,riscv64-linux-gnu,64))
+$(eval $(call LLVMRT,arm,64,aarch64-linux-gnu,64,clang --target=aarch64-linux-gnu))
+$(eval $(call LLVMRT,riscv,64,riscv64-linux-gnu,64,clang --target=riscv64-linux-gnu))
+$(eval $(call LLVMRT,x86,32,i686-linux-gnu,32,clang --target=i686-linux-gnu))
+$(eval $(call LLVMRT,arm,32,arm-linux-gnueabihf,32,clang --target=arm-linux-gnueabihf))
+$(eval $(call LLVMRT,riscv,32,riscv32-linux-gnu,32,$(RISCV32_CC)))
 llvmrt: hosts/linux/arm/bit64/libs/llvm/psystem.a \
-	hosts/linux/riscv/bit64/libs/llvm/psystem.a
+	hosts/linux/riscv/bit64/libs/llvm/psystem.a \
+	hosts/linux/x86/bit32/libs/llvm/psystem.a \
+	hosts/linux/arm/bit32/libs/llvm/psystem.a \
+	hosts/linux/riscv/bit32/libs/llvm/psystem.a
 
 all: bin/cmach bin/spew \
 	$(LIBS)/psystem.a main $(BUILD)/pgen/amd64/main.o $(LIBS)/llvm/main.o \
@@ -1217,7 +1235,8 @@ bin/spew: $(SOURCE)/spew.c
 # committing.
 #
 HOSTBINS=cmach cmacht cmachg dif genobj hashtabr hashtabs parser passym pc \
-	pcom pgen pgen_amd64 pgen_arm64 pgen_llvm pint pintt pintg pmach pmacht \
+	pcom pcom32 pgen pgen_amd64 pgen_arm64 pgen_llvm pgen_llvm32 pint pintt pintg \
+	pmach pmacht \
 	pmachg spew \
 	find_getpgm graphics_test management_test netprobe network_test \
 	services_test services_test1 sndprobe sound_test strings_test \

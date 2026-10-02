@@ -84,16 +84,23 @@ const
    ecContainerMismatch        = 103;
    ecInvalidContainerLevel    = 104;
 
-   { frame layout (see the AMD64 generator's mst): below the display come the
-     integer register pad (7 quads: 6 parameter registers and the function
-     result) and the real register pad (6 doubles); overflow parameters sit
-     above the saved frame pointer, mark and return address }
-   padsize = 104;  { 7*8 + 6*8 }
-   ovfbase = 40;   { first overflow parameter frame offset }
-   sfrslot = 0;    { frame offset holding the result frame pointer }
-   sfoslot = 16;   { frame offset where the result frame pointer of a call is
-                     left for the routine called }
-   ipjslot = 8;    { frame offset holding the non-local goto table pointer }
+   { frame layout (see the AMD64 generator's mst and pcom's parameterlist):
+     below the display come the integer register pad (6 parameter words and
+     the function result slot, which is a real wide) and the real register
+     pad (6 doubles); overflow parameters sit above the frame header, where
+     the AMD64 frame has its saved frame pointer, mark and return address.
+     The sizes come from the machine parameter block: the 64 bit model has
+     8 byte words, the 32 bit model 4 byte words and 8 byte reals, so the
+     two pads are kept apart here. }
+   intpad  = 6*ptrsize+realsize;       { the integer pad: 56 or 32 }
+   padsize = intpad+6*realsize;        { both pads: 104 or 80 }
+   ovfbase = marksize+ptrsize+adrsize; { first overflow parameter frame
+                                         offset: 40 or 32 }
+   sfrslot = 0;         { frame offset holding the result frame pointer }
+   ipjslot = ptrsize;   { frame offset holding the non-local goto table
+                          pointer }
+   sfoslot = 2*ptrsize; { frame offset where the result frame pointer of a
+                          call is left for the routine called }
 
    { pseudo value numbers }
    vfb   = -1; { the frame base pointer %fb }
@@ -201,6 +208,8 @@ var
    fnstrips: linelst; { the strip code spliced into this function }
    donelst: calptr;  { shared call results produced in this function }
    tmps: pstring;    { scratch string }
+   iw: packed array [1..3] of char; { the integer type: i64 in the 64 bit
+                                      model, i32 in the 32 bit one }
    binflst: binfptr; { the frames of the blocks }
    gsymtab: array [0..maxgbh-1] of gsymptr; { the globals that are variables
                                                of their own, by offset }
@@ -279,13 +288,28 @@ begin
 
 end;
 
+{ Every template here names the integer type as i64, the 64 bit model's.
+  In the 32 bit model (intsize 4) it is i32, and os substitutes: an i64 in
+  a template is always the integer type (the overflow intrinsics, memset
+  and lrint take it as a suffix and have the i32 forms). The prologue and
+  the declarations write to the file directly and name iw. }
 procedure os(view s: string);
 
-var i: integer;
+var i: integer; f: boolean;
 
 begin
 
-   for i := 1 to max(s) do oc(s[i])
+   i := 1;
+   while i <= max(s) do begin
+      f := false;
+      if (s[i] = 'i') and (i+2 <= max(s)) then
+         if (s[i+1] = '6') and (s[i+2] = '4') then begin
+            f := true; { an i64, unless more digits follow (none do here) }
+            if i+3 <= max(s) then if s[i+3] in ['0'..'9'] then f := false
+         end;
+      if f then begin oc(iw[1]); oc(iw[2]); oc(iw[3]); i := i+3 end
+      else begin oc(s[i]); i := i+1 end
+   end
 
 end;
 
@@ -641,10 +665,12 @@ begin
 
    ovf := 0; ipc := 0; fpc := 0;
    parsyms(bp, n, tab);
+   { each overflow parameter takes the next pointer aligned offset: a word
+     for an integer or an address, a real its size, a fat pointer two words }
    for k := 1 to n do case parclassof(tab[k]) of
-      pcint:  begin ipc := ipc+1; if ipc > 6 then ovf := ovf+8 end;
-      pcreal: begin fpc := fpc+1; if fpc > 6 then ovf := ovf+8 end;
-      pcpair: begin ipc := ipc+2; if ipc > 6 then ovf := ovf+16 end
+      pcint:  begin ipc := ipc+1; if ipc > 6 then ovf := ovf+ptrsize end;
+      pcreal: begin fpc := fpc+1; if fpc > 6 then ovf := ovf+realsize end;
+      pcpair: begin ipc := ipc+2; if ipc > 6 then ovf := ovf+2*ptrsize end
    end;
    blkovf := ovf
 
@@ -695,7 +721,7 @@ begin
    else if p = fnlvl then frameof := vfb
    else begin
 
-      a := gep(vfb, -8*p);
+      a := gep(vfb, -ptrsize*p);
       v := newv;
       oins; ov(v); os(' = load ptr, ptr '); ov(a); ol;
       frameof := v
@@ -886,7 +912,7 @@ end;
 
 begin
 
-   padbot := -(8*fnlvl+padsize);
+   padbot := -(ptrsize*fnlvl+padsize);
    keep := bi^.sjmp or (ipjlst <> nil);
    sp := bi^.slots;
    while sp <> nil do begin
@@ -898,7 +924,7 @@ begin
          if sp^.di then k := 'i' else if sp^.dr then k := 'r' else k := 'b';
          if k = 'b' then sz := 1 else sz := intsize;
          { the display is not a variable }
-         if sp^.off+sz > -8*fnlvl then k := ' ';
+         if sp^.off+sz > -ptrsize*fnlvl then k := ' ';
          named := false;
          fp := symat(bi, sp^.off);
          if fp <> nil then case fp^.cls of
@@ -1202,34 +1228,43 @@ Function open and close
   slot in declaration order. }
 procedure parparms(bp: pblock);
 
-var n, k, ii, oi2, off, ilo, ihi, rlo, rhi: integer; tab: parsymtab; c: parclass;
+var n, k, ii, oo, off, ilo, ihi, rlo, rhi: integer; tab: parsymtab; c: parclass;
 
 begin
 
    parsyms(bp, n, tab);
    fnparn := n;
-   ilo := -(8*fnlvl+56); ihi := -(8*fnlvl+8);
-   rlo := -(8*fnlvl+104); rhi := -(8*fnlvl+64);
-   ii := 0; oi2 := 0;
+   ilo := -(ptrsize*fnlvl+intpad); ihi := -(ptrsize*fnlvl+ptrsize);
+   rlo := -(ptrsize*fnlvl+intpad+6*realsize);
+   rhi := -(ptrsize*fnlvl+intpad+realsize);
+   ii := 0; oo := 0;
    for k := 1 to n do begin
 
       off := tab[k]^.off; c := parclassof(tab[k]);
       if c = pcpair then begin
          fnparc[k] := pcpair; fnparoff[k] := off;
-         if off >= ovfbase then oi2 := oi2+2 else ii := ii+2
+         if off >= ovfbase then oo := off-ovfbase+2*ptrsize else ii := ii+2
       end else if (off >= rlo) and (off <= rhi) then begin
          fnparc[k] := pcreal; fnparoff[k] := off
       end else if (off >= ilo) and (off <= ihi) then begin
          fnparc[k] := pcint; fnparoff[k] := off; ii := ii+1
       end else if off >= ovfbase then begin
-         fnparc[k] := pcint; fnparoff[k] := off; oi2 := oi2+1
+         { an overflow slot: a word of bits in the 64 bit model, whatever
+           the class (castovf converts the reals); in the 32 bit model a
+           real does not fit a word and arrives as a double (so a var real
+           past the sixth real is not told apart there) }
+         if (c = pcreal) and (intsize < realsize) then begin
+            fnparc[k] := pcreal; fnparoff[k] := off; oo := off-ovfbase+realsize
+         end else begin
+            fnparc[k] := pcint; fnparoff[k] := off; oo := off-ovfbase+ptrsize
+         end
       end else begin
          { the local copy of a structured value: the address is in the next
            integer slot }
          fnparc[k] := pcint;
          ii := ii+1;
-         if ii <= 6 then fnparoff[k] := -(8*fnlvl+8*(7-ii))
-         else begin fnparoff[k] := ovfbase+8*oi2; oi2 := oi2+1 end
+         if ii <= 6 then fnparoff[k] := -(ptrsize*fnlvl+ptrsize*(7-ii))
+         else begin fnparoff[k] := ovfbase+oo; oo := oo+ptrsize end
       end
 
    end
@@ -1314,7 +1349,7 @@ procedure opar;
 begin write(prr, '%p', k:1); if sfx <> ' ' then write(prr, sfx) end;
 
 procedure oty;
-begin if isr then write(prr, 'double ') else write(prr, 'i64 ') end;
+begin if isr then write(prr, 'double ') else write(prr, iw, ' ') end;
 
 begin
 
@@ -1325,12 +1360,12 @@ begin
    end;
    if kd = ' ' then begin
       write(prr, '  %ps', k:1); if sfx <> ' ' then write(prr, sfx);
-      writeln(prr, ' = getelementptr i8, ptr %fb, i64 ', off:1);
+      writeln(prr, ' = getelementptr i8, ptr %fb, ', iw, ' ', off:1);
       write(prr, '  store '); oty; opar;
       write(prr, ', ptr %ps', k:1); if sfx <> ' ' then write(prr, sfx);
       writeln(prr)
    end else if kd = 'b' then begin
-      write(prr, '  %pt', k:1, ' = trunc i64 '); opar; writeln(prr, ' to i8');
+      write(prr, '  %pt', k:1, ' = trunc ', iw, ' '); opar; writeln(prr, ' to i8');
       writeln(prr, '  store i8 %pt', k:1, ', ptr %lv', -off:1)
    end else begin
       write(prr, '  store '); oty; opar; writeln(prr, ', ptr %lv', -off:1)
@@ -1342,16 +1377,16 @@ begin
 
    if not fnstrip then begin
 
-      neg := 8*fnlvl+padsize+128;
+      neg := ptrsize*fnlvl+padsize+128;
       if fnlcl <> nil then neg := neg+labelvalof(fnlcl);
       { round to 16 }
       neg := ((neg+15) div 16)*16;
       pos := ovfbase+fnovf+16;
-      writeln(prr, '  %frame = alloca i8, i64 ', neg+pos:1, ', align 16');
+      writeln(prr, '  %frame = alloca i8, ', iw, ' ', neg+pos:1, ', align 16');
       { the frame is cleared, as the AMD64 generator clears the locals: file
         variables, among others, rely on it }
-      writeln(prr, '  call void @llvm.memset.p0.i64(ptr %frame, i8 0, i64 ', neg+pos:1, ', i1 false)');
-      writeln(prr, '  %fb = getelementptr i8, ptr %frame, i64 ', neg:1);
+      writeln(prr, '  call void @llvm.memset.p0.', iw, '(ptr %frame, i8 0, ', iw, ' ', neg+pos:1, ', i1 false)');
+      writeln(prr, '  %fb = getelementptr i8, ptr %frame, ', iw, ' ', neg:1);
       { the slots: an alloca each, cleared as the frame is, or the address
         of the frame bytes }
       bi := nil;
@@ -1363,7 +1398,7 @@ begin
             if sp^.own then begin
                write(prr, '  %lv', -sp^.off:1, ' = ');
                if sp^.kind = ' ' then
-                  writeln(prr, 'getelementptr i8, ptr %fb, i64 ', sp^.off:1)
+                  writeln(prr, 'getelementptr i8, ptr %fb, ', iw, ' ', sp^.off:1)
                else if sp^.kind = 'r' then begin
                   writeln(prr, 'alloca double, align 8');
                   writeln(prr, '  store double 0.0, ptr %lv', -sp^.off:1)
@@ -1373,8 +1408,8 @@ begin
                end else begin
                   { a byte whose address is taken gets a whole word, should
                     the holder of the address access more than the byte }
-                  writeln(prr, 'alloca i64, align 8');
-                  writeln(prr, '  store i64 0, ptr %lv', -sp^.off:1)
+                  writeln(prr, 'alloca ', iw, ', align 8');
+                  writeln(prr, '  store ', iw, ' 0, ptr %lv', -sp^.off:1)
                end
             end;
             sp := sp^.next
@@ -1382,21 +1417,21 @@ begin
       end;
       { display: copy the caller's entries below ours, then ours }
       for k := 1 to fnlvl-1 do begin
-         writeln(prr, '  %dl', k:1, ' = getelementptr i8, ptr %sl, i64 ', -8*k:1);
+         writeln(prr, '  %dl', k:1, ' = getelementptr i8, ptr %sl, ', iw, ' ', -ptrsize*k:1);
          writeln(prr, '  %dv', k:1, ' = load ptr, ptr %dl', k:1);
-         writeln(prr, '  %dd', k:1, ' = getelementptr i8, ptr %fb, i64 ', -8*k:1);
+         writeln(prr, '  %dd', k:1, ' = getelementptr i8, ptr %fb, ', iw, ' ', -ptrsize*k:1);
          writeln(prr, '  store ptr %dv', k:1, ', ptr %dd', k:1)
       end;
-      writeln(prr, '  %dd', fnlvl:1, ' = getelementptr i8, ptr %fb, i64 ', -8*fnlvl:1);
+      writeln(prr, '  %dd', fnlvl:1, ' = getelementptr i8, ptr %fb, ', iw, ' ', -ptrsize*fnlvl:1);
       writeln(prr, '  store ptr %fb, ptr %dd', fnlvl:1);
       { result frame pointer: the caller left it in the frame the static
         link names. Fetched only by a routine whose result frame is accessed,
         so that one entered without a static link (the program block, from
         the module entry) does not follow it. }
       if bi <> nil then if bi^.sfru then begin
-         writeln(prr, '  %sfo = getelementptr i8, ptr %sl, i64 ', sfoslot:1);
+         writeln(prr, '  %sfo = getelementptr i8, ptr %sl, ', iw, ' ', sfoslot:1);
          writeln(prr, '  %sfr = load ptr, ptr %sfo');
-         writeln(prr, '  %sfs = getelementptr i8, ptr %fb, i64 ', sfrslot:1);
+         writeln(prr, '  %sfs = getelementptr i8, ptr %fb, ', iw, ' ', sfrslot:1);
          writeln(prr, '  store ptr %sfr, ptr %sfs')
       end;
       { parameters into the frame slots they belong in }
@@ -1406,26 +1441,26 @@ begin
          pcreal: spill(k, ' ', fnparoff[k], true);
          pcpair: begin
             spill(k, 'a', fnparoff[k], false);
-            spill(k, 'b', fnparoff[k]+8, false)
+            spill(k, 'b', fnparoff[k]+ptrsize, false)
          end
 
       end;
       { non-local goto targets: a table of (label, jmp_buf) in the frame, and
         a setjmp per target landing on its label }
-      writeln(prr, '  %ips = getelementptr i8, ptr %fb, i64 ', ipjslot:1);
+      writeln(prr, '  %ips = getelementptr i8, ptr %fb, ', iw, ' ', ipjslot:1);
       if ipjlst = nil then writeln(prr, '  store ptr null, ptr %ips')
       else begin
          n := 0; ip := ipjlst;
          while ip <> nil do begin n := n+1; ip := ip^.next end;
-         writeln(prr, '  %ipt = alloca [ ', n*16+8:1, ' x i8 ], align 16');
+         writeln(prr, '  %ipt = alloca [ ', n*2*ptrsize+ptrsize:1, ' x i8 ], align 16');
          writeln(prr, '  store ptr %ipt, ptr %ips');
-         writeln(prr, '  store i64 ', n:1, ', ptr %ipt');
+         writeln(prr, '  store ', iw, ' ', n:1, ', ptr %ipt');
          n := 0; ip := ipjlst;
          while ip <> nil do begin
             writeln(prr, '  %ipj', n:1, ' = alloca [ 256 x i8 ], align 16');
-            writeln(prr, '  %ipe', n:1, ' = getelementptr i8, ptr %ipt, i64 ', 8+n*16:1);
-            writeln(prr, '  store i64 ', ip^.key:1, ', ptr %ipe', n:1);
-            writeln(prr, '  %ipf', n:1, ' = getelementptr i8, ptr %ipt, i64 ', 16+n*16:1);
+            writeln(prr, '  %ipe', n:1, ' = getelementptr i8, ptr %ipt, ', iw, ' ', ptrsize+n*2*ptrsize:1);
+            writeln(prr, '  store ', iw, ' ', ip^.key:1, ', ptr %ipe', n:1);
+            writeln(prr, '  %ipf', n:1, ' = getelementptr i8, ptr %ipt, ', iw, ' ', 2*ptrsize+n*2*ptrsize:1);
             writeln(prr, '  store ptr %ipj', n:1, ', ptr %ipf', n:1);
             n := n+1; ip := ip^.next
          end
@@ -1433,9 +1468,9 @@ begin
 
    end;
    if fncals <> nil then begin
-      writeln(prr, '  %calra = alloca [ 16 x i64 ], align 16');
-      writeln(prr, '  %calsp = alloca i64, align 8');
-      writeln(prr, '  store i64 0, ptr %calsp')
+      writeln(prr, '  %calra = alloca [ 16 x ', iw, ' ], align 16');
+      writeln(prr, '  %calsp = alloca ', iw, ', align 8');
+      writeln(prr, '  store ', iw, ' 0, ptr %calsp')
    end;
    wrtlines(prolst);
    { the setjmps come after every alloca }
@@ -1466,7 +1501,7 @@ begin
       if blkopen then begin oins; os('unreachable'); ol; term end
    end;
    write(prr, 'define ');
-   case fnretk of 0: write(prr, 'void'); 1: write(prr, 'i64'); 2: write(prr, 'double') end;
+   case fnretk of 0: write(prr, 'void'); 1: write(prr, iw); 2: write(prr, 'double') end;
    write(prr, ' @'); write(prr, '"', fnname^, '"');
    if fnstrip then writeln(prr, '() {')
    else begin ll := 0; oparlist(true); write(prr, lbuf:ll); writeln(prr, ' {'); ll := 0 end;
@@ -1477,15 +1512,15 @@ begin
    if fncals <> nil then begin
       { the return of a local call: pop the site and branch to it }
       writeln(prr, '"calsw":');
-      writeln(prr, '  %cs0 = load i64, ptr %calsp');
-      writeln(prr, '  %cs1 = sub i64 %cs0, 1');
-      writeln(prr, '  store i64 %cs1, ptr %calsp');
-      writeln(prr, '  %cs2 = getelementptr i64, ptr %calra, i64 %cs1');
-      writeln(prr, '  %cs3 = load i64, ptr %cs2');
-      writeln(prr, '  switch i64 %cs3, label %"calsw.bad" [');
+      writeln(prr, '  %cs0 = load ', iw, ', ptr %calsp');
+      writeln(prr, '  %cs1 = sub ', iw, ' %cs0, 1');
+      writeln(prr, '  store ', iw, ' %cs1, ptr %calsp');
+      writeln(prr, '  %cs2 = getelementptr ', iw, ', ptr %calra, ', iw, ' %cs1');
+      writeln(prr, '  %cs3 = load ', iw, ', ptr %cs2');
+      writeln(prr, '  switch ', iw, ' %cs3, label %"calsw.bad" [');
       cp := fncals;
       while cp <> nil do begin
-         writeln(prr, '    i64 ', cp^.k:1, ', label %"calret.', cp^.k:1, '"');
+         writeln(prr, '    ', iw, ' ', cp^.k:1, ', label %"calret.', cp^.k:1, '"');
          cp := cp^.next
       end;
       writeln(prr, '  ]');
@@ -1499,7 +1534,7 @@ begin
    np := fnalias;
    while np <> nil do begin
       write(prr, '@"', np^.name^, '" = alias ');
-      case fnretk of 0: write(prr, 'void'); 1: write(prr, 'i64'); 2: write(prr, 'double') end;
+      case fnretk of 0: write(prr, 'void'); 1: write(prr, iw); 2: write(prr, 'double') end;
       if fnstrip then write(prr, ' ()')
       else begin ll := 0; oparlist(false); write(prr, ' '); write(prr, lbuf:ll); ll := 0 end;
       writeln(prr, ', ptr @"', fnname^, '"');
@@ -1775,7 +1810,7 @@ begin
          { a parameter in the register pads or the overflow area is a word
            (an address, for a structure passed by reference), or two for a
            fat pointer; below them it is the local copy of a structure }
-         if sp^.off >= -(8*bp^.lvl+padsize) then begin
+         if sp^.off >= -(ptrsize*bp^.lvl+padsize) then begin
             if parclassof(sp) = pcpair then fp^.cls := scpair
             else fp^.cls := scscalar
          end
@@ -1795,8 +1830,8 @@ begin
    { defined as a global constant array, not as a code label }
    labeltab[x].st := defined; labeltab[x].val := labelvalue;
    putlabel(x); labeltab[x].blk := blkstk;
-   write(prr, '@"', labeltab[x].ref^, '" = private constant [ ', vl+1:1, ' x i64 ] [ i64 ', vl:1);
-   for i := 1 to vl do write(prr, ', i64 ', vt[i]:1);
+   write(prr, '@"', labeltab[x].ref^, '" = private constant [ ', vl+1:1, ' x ', iw, ' ] [ ', iw, ' ', vl:1);
+   for i := 1 to vl do write(prr, ', ', iw, ' ', vt[i]:1);
    writeln(prr, ' ]');
    addname(defsyms, labeltab[x].ref^)
 
@@ -1956,10 +1991,10 @@ begin
          end;
 
          ctmp: begin
-            write(prr, '@"', modnam^, '.', cp^.tn:1, '" = private constant [ ', cp^.tsize:1, ' x i64 ] [');
+            write(prr, '@"', modnam^, '.', cp^.tn:1, '" = private constant [ ', cp^.tsize:1, ' x ', iw, ' ] [');
             for i := 1 to cp^.tsize do begin
                if i > 1 then write(prr, ',');
-               write(prr, ' i64 ', cp^.ta[i]:1)
+               write(prr, ' ', iw, ' ', cp^.ta[i]:1)
             end;
             writeln(prr, ' ]');
             ll := 0; os(modnam^); oc('.'); oi(cp^.tn);
@@ -2009,22 +2044,22 @@ begin
 
    writeln(prr);
    writeln(prr, '; declarations');
-   writeln(prr, 'declare void @llvm.memmove.p0.p0.i64(ptr, ptr, i64, i1)');
-   writeln(prr, 'declare void @llvm.memset.p0.i64(ptr, i8, i64, i1)');
-   writeln(prr, 'declare { i64, i1 } @llvm.sadd.with.overflow.i64(i64, i64)');
-   writeln(prr, 'declare { i64, i1 } @llvm.ssub.with.overflow.i64(i64, i64)');
-   writeln(prr, 'declare { i64, i1 } @llvm.smul.with.overflow.i64(i64, i64)');
+   writeln(prr, 'declare void @llvm.memmove.p0.p0.', iw, '(ptr, ptr, ', iw, ', i1)');
+   writeln(prr, 'declare void @llvm.memset.p0.', iw, '(ptr, i8, ', iw, ', i1)');
+   writeln(prr, 'declare { ', iw, ', i1 } @llvm.sadd.with.overflow.', iw, '(', iw, ', ', iw, ')');
+   writeln(prr, 'declare { ', iw, ', i1 } @llvm.ssub.with.overflow.', iw, '(', iw, ', ', iw, ')');
+   writeln(prr, 'declare { ', iw, ', i1 } @llvm.smul.with.overflow.', iw, '(', iw, ', ', iw, ')');
    writeln(prr, 'declare double @llvm.fabs.f64(double)');
-   writeln(prr, 'declare i64 @llvm.lrint.i64.f64(double)');
+   writeln(prr, 'declare ', iw, ' @llvm.lrint.', iw, '.f64(double)');
    writeln(prr, 'declare i32 @psystem_setjmp(ptr) returns_twice');
-   writeln(prr, 'declare void @psystem_errore(i64, i64, i64) cold noreturn');
+   writeln(prr, 'declare void @psystem_errore(', iw, ', ', iw, ', ', iw, ') cold noreturn');
    writeln(prr, 'declare void @psystem_llvm_nextmod()');
    writeln(prr, 'declare void @psystem_bge(ptr)');
    writeln(prr, 'declare void @psystem_ede()');
-   writeln(prr, 'declare void @psystem_mse(i64, i64) noreturn');
-   writeln(prr, 'declare i64 @psystem_curvec()');
-   writeln(prr, 'declare void @psystem_llvm_ipj(ptr, i64)');
-   writeln(prr, '@psystem_iso7185 = external global i64');
+   writeln(prr, 'declare void @psystem_mse(', iw, ', ', iw, ') noreturn');
+   writeln(prr, 'declare ', iw, ' @psystem_curvec()');
+   writeln(prr, 'declare void @psystem_llvm_ipj(ptr, ', iw, ')');
+   writeln(prr, '@psystem_iso7185 = external global ', iw);
    np := declst;
    while np <> nil do begin
       if not innames(defsyms, np^.name^) then
@@ -2237,10 +2272,10 @@ override procedure assemble;
    function genlist(n: integer): integer;
    var a, k, e: integer; ep: expptr;
    begin
-      a := alloca(n*8+8, 'list');
+      a := alloca(n*intsize+intsize, 'list');
       for k := 0 to n-1 do begin
          popstk(ep); genexp(ep);
-         e := gep(a, k*8);
+         e := gep(a, k*intsize);
          st('i', ep^.r1a, e);
          deltre(ep)
       end;
@@ -2376,7 +2411,7 @@ override procedure assemble;
          if instab[pp^.op].insr = 2 then ipc := ipc+2
          else if isfltres(pp) then begin
             fpc := fpc+1;
-            if pascal and (fpc > 6) then begin
+            if pascal and (fpc > 6) and (intsize >= realsize) then begin
                pp^.t1a := newv;
                oins; ov(pp^.t1a); os(' = bitcast double '); ov(pp^.r1a); os(' to i64'); ol
             end
@@ -2652,10 +2687,10 @@ override procedure assemble;
       while tp <> nil do begin n := n+1; tp := tp^.next end;
       { the list order is the order the AMD64 generator pushes them, so the
         runtime sees the last of the list first }
-      a := alloca(n*8+8, 'tags');
+      a := alloca(n*intsize+intsize, 'tags');
       k := n-1; tp := pp^.next;
       while tp <> nil do begin
-         genexp(tp); e := gep(a, k*8); st('i', tp^.r1a, e);
+         genexp(tp); e := gep(a, k*intsize); st('i', tp^.r1a, e);
          k := k-1; tp := tp^.next
       end;
       k := p2i(a);
@@ -3256,10 +3291,10 @@ override procedure assemble;
                  the address of the pair would pin both in the frame }
                genexp(ep^.l^.al);
                ep^.r1a := ld('i', slotadr(ep^.l^.p, ep^.l^.q, 'i'));
-               ep^.r2a := ld('i', slotadr(ep^.l^.p, ep^.l^.q+intsize, 'i'))
+               ep^.r2a := ld('i', slotadr(ep^.l^.p, ep^.l^.q+ptrsize, 'i'))
             end else begin
                genexp(ep^.l);
-               ep^.r2a := ld('i', gep(i2p(ep^.l^.r1a), intsize));
+               ep^.r2a := ld('i', gep(i2p(ep^.l^.r1a), ptrsize));
                ep^.r1a := ld('i', i2p(ep^.l^.r1a))
             end;
 
@@ -4002,8 +4037,8 @@ begin { assemble }
          { the result slot, read as it was stored: a byte for the byte
            types }
          if op in [204, 130, 131] then
-            v := ld('b', slotadr(fnlvl, -(fnlvl*ptrsize+7*ptrsize), 'b'))
-         else v := ld('i', slotadr(fnlvl, -(fnlvl*ptrsize+7*ptrsize), 'i'));
+            v := ld('b', slotadr(fnlvl, -(fnlvl*ptrsize+intpad), 'b'))
+         else v := ld('i', slotadr(fnlvl, -(fnlvl*ptrsize+intpad), 'i'));
          oins; os('ret i64 '); ov(v); ol; term;
          fndone := true; fnretk := 1;
          botstk; deltmp
@@ -4011,7 +4046,7 @@ begin { assemble }
 
       {retr}
       129: begin parq;
-         v := ld('r', slotadr(fnlvl, -(fnlvl*ptrsize+7*ptrsize), 'r'));
+         v := ld('r', slotadr(fnlvl, -(fnlvl*ptrsize+intpad), 'r'));
          oins; os('ret double '); ov(v); ol; term;
          fndone := true; fnretk := 2;
          botstk; deltmp
@@ -4283,6 +4318,8 @@ begin (* main *)
    calcnt := 0; fncals := nil; fnstrips.first := nil; fnstrips.last := nil;
    donelst := nil;
    binflst := nil; clrgbl; clrorg;
+   if intsize = 8 then iw := 'i64' else if intsize = 4 then iw := 'i32'
+   else error('Integer size not supported');
    write('P6 Pascal LLVM IR code generator vs. ', majorver:1, '.', minorver:1);
    if experiment then write('.x');
    writeln;
