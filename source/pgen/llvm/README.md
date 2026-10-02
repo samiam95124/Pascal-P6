@@ -145,6 +145,22 @@ exported name `module.symbol`, so LLVM can tell them apart from each other
 and from the arrays. The rest live in one zero-initialized byte array at the
 offsets pcom assigned, each symbol an alias at its offset.
 
+## Cross machines
+
+The IR carries no machine assumptions beyond the 64 bit model of the
+`amd64_sysv` deck, so the same generator serves other 64 bit machines: clang
+targets them, and the runtime is C. `pc -arm -bit64` and `pc -riscv -bit64`
+select them (`-x86 -bit64` is the host); the machine blocks of `bin/pc.ins`
+set `clang --target=...` with a static link against the machine's cross glibc
+(the `gcc-<triple>` and `libc6-dev-<arch>-cross` packages), and take the
+runtime from the llvm directory of the machine's hosts tree leaf, which
+`make llvmrt` builds. The register save and restore behind the exception
+frames and the non-local goto is `psystem_jmp.c`, one assembly body per
+machine. `regress_qemu` builds the ISO 7185 conformance test for every
+machine and runs it under `qemu-user`; it passes on x86-64, arm64 and
+riscv64. The 32 bit machines wait on the 32 bit model (`mpb32` pcom, a 32 bit
+generator, `WRDSIZ32` psystem), and riscv32 on a linux toolchain.
+
 ## Status
 
 Passes the regression in llvm mode: the sample programs, the ISO 7185

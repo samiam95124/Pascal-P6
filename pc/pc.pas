@@ -181,6 +181,14 @@ var
 { compile for pgen mode (executable) }     fpgen, spgen:   boolean;
 { pgen mode through the LLVM IR target }   fllvm, sllvm:   boolean;
 { an output mode came from the command line } smode:          boolean;
+{ target machine: the architecture and the bit size, the two knobs of a
+  cross build through the LLVM target (the deck's calling convention is the
+  other, native generators' knob). Defaults to the build host. }
+fx86, sx86:     boolean;
+farm, sarm:     boolean;
+friscv, sriscv: boolean;
+fbit32, sbit32: boolean;
+fbit64, sbit64: boolean;
 { these are "pass through" options, options meant for programs we execute }
 { generate coff symbols }                  fsymcof: boolean;
 { passthrough options: these have "set/not set indicators }
@@ -509,6 +517,20 @@ begin
       setflg('amd64_sysv',      famd64sysv,  samd64sysv);
       setflg('win64',           fwindows,    swindows);
       setflg('arm64_sysv',      farm64sysv,  sarm64sysv);
+      { target machine selection: the architecture and the bit size, each
+        group exclusive }
+      sx86 := false; sarm := false; sriscv := false;
+      sbit32 := false; sbit64 := false;
+      setflg('x86',             fx86,        sx86);
+      setflg('arm',             farm,        sarm);
+      setflg('riscv',           friscv,      sriscv);
+      setflg('bit32',           fbit32,      sbit32);
+      setflg('bit64',           fbit64,      sbit64);
+      if sx86 then begin fx86 := true; farm := false; friscv := false end;
+      if sarm then begin fx86 := false; farm := true; friscv := false end;
+      if sriscv then begin fx86 := false; farm := false; friscv := true end;
+      if sbit32 then begin fbit32 := true; fbit64 := false end;
+      if sbit64 then begin fbit32 := false; fbit64 := true end;
       { host selection (overrides the runtime detection) }
       setflg('linux',           fhlinux,     shlinux);
       setflg('bsd',             fhbsd,       shbsd);
@@ -3082,8 +3104,11 @@ Conditional block: the instructions between begin and end apply only if the
 given tag is set. The tags are the hosts (linux, bsd, windows, mac), the
 calling conventions (amd64_sysv, win64, arm64_sysv), matching the host this
 pc runs on (or the host override flag) and the calling convention in force,
-and llvm, set when the LLVM IR code generator is selected (-llvm, or the
-llvm instruction). Blocks nest.
+llvm, set when the LLVM IR code generator is selected (-llvm, or the llvm
+instruction), and the target machine, its architecture (x86, arm, riscv) and
+bit size (bit32, bit64), from the -x86/-arm/-riscv and -bit32/-bit64 options
+(default: the build host). The machine tags name the hosts tree leaves. Blocks
+nest.
 
 *******************************************************************************}
 
@@ -3199,6 +3224,11 @@ begin
    else if compp(s, 'win64') then act := fwindows
    else if compp(s, 'arm64_sysv') then act := farm64sysv
    else if compp(s, 'llvm') then act := fllvm
+   else if compp(s, 'x86') then act := fx86
+   else if compp(s, 'arm') then act := farm
+   else if compp(s, 'riscv') then act := friscv
+   else if compp(s, 'bit32') then act := fbit32
+   else if compp(s, 'bit64') then act := fbit64
    else tagcon := false
 
 end;
@@ -3557,6 +3587,9 @@ begin
    spgen := false;
    fllvm := false; { set no LLVM IR target }
    smode := false; { no output mode from the command line yet }
+   { the target machine: the build host, x86 64 bit, until pc asks the
+     runtime which machine it was built for }
+   fx86 := true; farm := false; friscv := false; fbit32 := false; fbit64 := true;
    sllvm := false;
    { passthrough }
    fprtlabdef := false;  
@@ -3698,6 +3731,8 @@ begin
       writeln('       -reference           Check references');
       writeln('       -amd64_sysv         Use SYS V AMD64 ABI calling convention');
       writeln('       -windows            Use Windows x64 calling convention');
+      writeln('       -x86 -arm -riscv    Target machine architecture (llvm mode)');
+      writeln('       -bit32 -bit64       Target machine bit size (llvm mode)');
       goto 99
 
    end;

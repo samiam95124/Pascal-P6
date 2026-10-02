@@ -1,0 +1,179 @@
+#!/bin/bash
+################################################################################
+#
+# Cross machine regression through the LLVM target and qemu
+#
+# Execution:
+#
+# regress_qemu [<machine>]...
+#
+# Builds the ISO 7185 conformance test (standard_tests/iso7185pat) for each
+# target machine through the LLVM target, runs the product under the qemu
+# user mode emulator of that machine, and compares its output with the golden
+# file, as testprog does. Each product links static against the machine's
+# cross glibc, so qemu needs no sysroot.
+#
+# The machines, and what each needs on the build host:
+#
+#   x86_64    clang, qemu-x86_64 (the build host's own runtime, libs/llvm)
+#   arm64     clang, gcc-aarch64-linux-gnu, libc6-dev-arm64-cross, qemu-aarch64
+#   riscv64   clang, gcc-riscv64-linux-gnu, libc6-dev-riscv64-cross,
+#             qemu-riscv64
+#   x86_32    not yet: the 32 bit model (mpb32 pcom, 32 bit pgen_llvm,
+#   arm32     WRDSIZ32 psystem) is not built
+#   riscv32   not yet: as above, and no riscv32 linux toolchain is packaged
+#
+# The cross runtimes come from "make llvmrt", into the llvm directory of each
+# machine's hosts tree leaf (hosts/linux/<arch>/bit<bits>/libs/llvm), where
+# pc's machine blocks (bin/pc.ins) find them. A machine whose tools or runtime
+# are missing is reported as skipped, not failed.
+#
+# With no argument every machine is run. Exits 0 if every machine that ran
+# passed, 1 otherwise. The products and outputs are left in
+# build/qemu/<machine>.
+#
+################################################################################
+
+if command -v cygpath >/dev/null 2>&1; then
+    export Path="$(cygpath -pw "$PATH")"
+fi
+
+cd "$(dirname "$0")/.." || exit 1
+root=$(pwd)
+work=$root/build/qemu
+test=standard_tests/iso7185pat
+
+#
+# The machine table: name, pc machine options, qemu emulator, the runtime
+# that must be present, the cross libc that must be present.
+#
+machines="x86_64 arm64 riscv64 x86_32 arm32 riscv32"
+
+machine_opts() {
+    case "$1" in
+        x86_64)  echo "-x86 -bit64" ;;
+        arm64)   echo "-arm -bit64" ;;
+        riscv64) echo "-riscv -bit64" ;;
+        x86_32)  echo "-x86 -bit32" ;;
+        arm32)   echo "-arm -bit32" ;;
+        riscv32) echo "-riscv -bit32" ;;
+    esac
+}
+
+machine_qemu() {
+    case "$1" in
+        x86_64)  echo "qemu-x86_64" ;;
+        arm64)   echo "qemu-aarch64" ;;
+        riscv64) echo "qemu-riscv64" ;;
+        x86_32)  echo "qemu-i386" ;;
+        arm32)   echo "qemu-arm" ;;
+        riscv32) echo "qemu-riscv32" ;;
+    esac
+}
+
+machine_runtime() {
+    case "$1" in
+        x86_64)  echo "libs/llvm/main.o" ;;
+        arm64)   echo "hosts/linux/arm/bit64/libs/llvm/psystem.a" ;;
+        riscv64) echo "hosts/linux/riscv/bit64/libs/llvm/psystem.a" ;;
+        x86_32)  echo "hosts/linux/x86/bit32/libs/llvm/psystem.a" ;;
+        arm32)   echo "hosts/linux/arm/bit32/libs/llvm/psystem.a" ;;
+        riscv32) echo "hosts/linux/riscv/bit32/libs/llvm/psystem.a" ;;
+    esac
+}
+
+machine_libc() {
+    case "$1" in
+        x86_64)  echo "/usr/lib/x86_64-linux-gnu/libc.a" ;;
+        arm64)   echo "/usr/aarch64-linux-gnu/lib/libc.a" ;;
+        riscv64) echo "/usr/riscv64-linux-gnu/lib/libc.a" ;;
+        x86_32)  echo "/usr/i686-linux-gnu/lib/libc.a" ;;
+        arm32)   echo "/usr/arm-linux-gnueabihf/lib/libc.a" ;;
+        riscv32) echo "/usr/riscv32-linux-gnu/lib/libc.a" ;;
+    esac
+}
+
+if [ $# -gt 0 ]; then
+
+    for m in "$@"; do
+        case " $machines " in
+            *" $m "*) ;;
+            *) echo "*** Error: no machine $m (one of: $machines)"; exit 1 ;;
+        esac
+    done
+    machines="$@"
+
+fi
+
+if ! command -v clang >/dev/null 2>&1; then
+    echo "*** Error: the LLVM target needs clang, which is not installed"
+    exit 1
+fi
+
+passed=0; failed=0; skipped=0
+report=""
+
+for m in $machines; do
+
+    opts=$(machine_opts $m)
+    qemu=$(machine_qemu $m)
+    runtime=$(machine_runtime $m)
+    libc=$(machine_libc $m)
+    dir=$work/$m
+    rm -rf "$dir"; mkdir -p "$dir"
+
+    echo "===================== $m ====================="
+    #
+    # what is missing is a skip: the machine's qemu, cross libc or runtime
+    #
+    why=""
+    if ! command -v $qemu >/dev/null 2>&1; then why="$qemu not installed"
+    elif [ ! -f "$libc" ]; then why="cross libc $libc not installed"
+    elif [ ! -f "$runtime" ]; then why="runtime $runtime not built (make llvmrt)"
+    fi
+    if [ -n "$why" ]; then
+        echo "SKIP $m: $why"
+        skipped=$((skipped+1)); report="$report$m: skipped ($why)\n"
+        continue
+    fi
+    #
+    # build in the machine's directory, so the products of one machine never
+    # meet another's: the test source, its input and data
+    #
+    cp $test.pas $test.inp $test.dat "$dir"
+    ( cd "$dir" && pc iso7185pat -llvm $opts -r > build.log 2>&1 )
+    if [ ! -x "$dir/iso7185pat" ]; then
+        echo "*** FAIL $m: build failed (see $dir/build.log)"
+        tail -5 "$dir/build.log"
+        failed=$((failed+1)); report="$report$m: FAIL (build)\n"
+        continue
+    fi
+    #
+    # run under qemu and compare, as testprog does: both sides stripped of
+    # the volatile lines, then dif
+    #
+    ( cd "$dir" && timeout 600 $qemu ./iso7185pat < iso7185pat.inp > iso7185pat.lst 2>&1 )
+    strip "$dir/iso7185pat.lst" "$dir/tmp1"
+    strip $test.cmp "$dir/tmp2"
+    dif -w "$dir/tmp1" "$dir/tmp2" > "$dir/iso7185pat.dif"
+    difrc=$?
+    rm -f "$dir/tmp1" "$dir/tmp2"
+    if [ $difrc -gt 1 ]; then
+        echo "*** dif failed with exit status $difrc" >> "$dir/iso7185pat.dif"
+    fi
+    if [ -s "$dir/iso7185pat.dif" ]; then
+        echo "*** FAIL $m: output differs (see $dir/iso7185pat.dif)"
+        head -10 "$dir/iso7185pat.dif"
+        failed=$((failed+1)); report="$report$m: FAIL (output)\n"
+    else
+        echo "PASS $m"
+        passed=$((passed+1)); report="$report$m: pass\n"
+    fi
+
+done
+
+echo
+echo "===================== summary ====================="
+printf "$report"
+echo "Passed: $passed  Failed: $failed  Skipped: $skipped"
+[ $failed -eq 0 ]

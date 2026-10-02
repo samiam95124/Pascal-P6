@@ -1422,7 +1422,7 @@ begin
          writeln(prr, '  store i64 ', n:1, ', ptr %ipt');
          n := 0; ip := ipjlst;
          while ip <> nil do begin
-            writeln(prr, '  %ipj', n:1, ' = alloca [ 64 x i8 ], align 16');
+            writeln(prr, '  %ipj', n:1, ' = alloca [ 256 x i8 ], align 16');
             writeln(prr, '  %ipe', n:1, ' = getelementptr i8, ptr %ipt, i64 ', 8+n*16:1);
             writeln(prr, '  store i64 ', ip^.key:1, ', ptr %ipe', n:1);
             writeln(prr, '  %ipf', n:1, ' = getelementptr i8, ptr %ipt, i64 ', 16+n*16:1);
@@ -4181,7 +4181,7 @@ begin { assemble }
          { an exception frame in the prologue, registered, then the setjmp
            whose second return lands on the handler }
          if blkstk <> nil then begin bi := binfof(blkstk); bi^.sjmp := true end;
-         v := alloca(80, 'exception frame');
+         v := alloca(272, 'exception frame');
          oins; os('call void @psystem_bge(ptr '); ov(v); oc(')'); ol;
          v2 := newv;
          oins; ov(v2); os(' = call i32 @psystem_setjmp(ptr '); ov(v); oc(')'); ol;
